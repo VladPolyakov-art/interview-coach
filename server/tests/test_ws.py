@@ -45,7 +45,7 @@ def test_bad_start_and_engine_not_ready_report_errors_without_saving(client, mon
         s.send_json({"type": "user_turn", "text": "hi"})
         assert s.receive_json()["code"] == "bad_start"
 
-    async def not_ready(settings, engine_id):
+    async def not_ready(settings, engine_id, voice=False):
         return EngineStatus(code="not_running", message="Ollama is installed but not running.",
                             hint="Open the Ollama app, or run: ollama serve", hint_command="ollama serve")
     monkeypatch.setattr(ws, "check_engine", not_ready)
@@ -67,10 +67,10 @@ def test_text_turn_feedback_once_save_and_debrief(client, monkeypatch, fake_llm)
         "suggester": {"story": "Onboarding", "answer": "I ran twelve interviews.", "points": ["research"]},
     })
 
-    async def ready(settings, engine_id):
+    async def ready(settings, engine_id, voice=False):
         return EngineStatus(code="ready", ready=True, model="fake-model")
     monkeypatch.setattr(ws, "check_engine", ready)
-    monkeypatch.setattr(ws, "get_llm", lambda settings, engine_id: llm)
+    monkeypatch.setattr(ws, "get_llm", lambda settings, engine_id, voice=False: llm)
     with client.websocket_connect("/ws/session", headers={"origin": "http://testserver"}) as s:
         s.send_json({"type": "start", "mode": "interview", "input": "text", "questions": 3, "suggest": True})
         started = s.receive_json()
@@ -121,10 +121,10 @@ def test_redo_answer_removes_feedback(client, monkeypatch, fake_llm):
                             "result_type": "number", "relevant": True, "reflection": False, "evidence": "",
                             "praise": ""}})
 
-    async def ready(settings, engine_id):
+    async def ready(settings, engine_id, voice=False):
         return EngineStatus(code="ready", ready=True, model="fake-model")
     monkeypatch.setattr(ws, "check_engine", ready)
-    monkeypatch.setattr(ws, "get_llm", lambda settings, engine_id: llm)
+    monkeypatch.setattr(ws, "get_llm", lambda settings, engine_id, voice=False: llm)
     with client.websocket_connect("/ws/session") as s:
         s.send_json({"type": "start", "mode": "interview", "input": "text", "questions": 2})
         receive_until(s, "turn_complete")

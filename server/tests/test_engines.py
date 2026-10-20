@@ -144,3 +144,20 @@ async def test_engine_registry_lists_all_with_status(monkeypatch):
     assert by_id["ollama"]["selected"] and by_id["ollama"]["status"]["code"] == "not_installed"
     assert by_id["openai_compatible"]["status"]["code"] == "not_configured"
     assert by_id["claude_cli"]["status"]["code"] == "not_installed"
+
+
+async def test_ollama_voice_session_defaults_to_small_model():
+    from server import engines
+    settings = {"engine": "ollama", "ollama": {"url": "http://x", "model": "qwen3:8b", "voice_model": ""}}
+    assert engines.make_llm(settings, "ollama").model == "qwen3:8b"
+    voice = engines.make_llm(settings, "ollama", voice=True)
+    assert voice.model == "qwen3:4b-instruct"
+    settings["ollama"]["voice_model"] = "qwen3:8b"
+    assert engines.make_llm(settings, "ollama", voice=True).model == "qwen3:8b"
+
+
+async def test_ollama_voice_default_falls_back_to_installed_large_model():
+    engine = ollama.OllamaEngine("http://x", transport=ollama_transport(models=["qwen3:8b"]),
+                                 default_model=ollama.VOICE_MODEL)
+    status = await engine.status()
+    assert status.ready and status.model == "qwen3:8b"

@@ -34,15 +34,15 @@ def origin_allowed(origin: str | None, host: str | None) -> bool:
     return origin in {f"http://{host}", f"https://{host}"} or origin in config.DEV_ORIGINS
 
 
-def get_llm(settings: dict, engine_id: str) -> LLMEngine:          # patched in tests
-    return engines.make_llm(settings, engine_id)
+def get_llm(settings: dict, engine_id: str, voice: bool = False) -> LLMEngine:          # patched in tests
+    return engines.make_llm(settings, engine_id, voice=voice)
 
 
-async def check_engine(settings: dict, engine_id: str):             # patched in tests
+async def check_engine(settings: dict, engine_id: str, voice: bool = False):             # patched in tests
     if engine_id == "gemini_live":
         block = settings["gemini_live"]
         return basic_status(block.get("api_key", ""), block.get("model", ""))
-    return await get_llm(settings, engine_id).status()
+    return await get_llm(settings, engine_id, voice).status()
 
 
 def parse_start(data: dict, settings: dict) -> dict:
@@ -396,12 +396,13 @@ async def session_socket(websocket: WebSocket) -> None:
             error("bad_start", f"The first message must be a valid 'start' message ({field}).", retryable=False)
             return
         engine_id = opts["engine"]
-        status = await check_engine(settings, engine_id)
+        voice = opts["input"] != "text"       # voice sessions get the fast voice model (see engines.make_llm)
+        status = await check_engine(settings, engine_id, voice)
         if not status.ready:
             error(status.code, status.message or "The AI engine is not ready.", status.hint, retryable=True,
                   hint_command=status.hint_command, fix_url=status.fix_url, engine=engine_id)
             return
-        llm = get_llm(settings, engine_id)
+        llm = get_llm(settings, engine_id, voice)
         gate.enabled = engine_id != "gemini_live" and llm.single_worker
         profile = storage.read_profile().get("text", "")
         jd, vacancy_title, extra = "", "", []

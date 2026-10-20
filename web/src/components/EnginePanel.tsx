@@ -184,27 +184,34 @@ function OllamaModelPicker() {
   const [saved, setSaved] = useState(false);
   if (!data) return null;
   if (!data.models.length) return <p className={s.note}>{t("engines.ollama.noModels")}</p>;
-  const current = settings?.ollama.model ?? "";
-  const options = [
-    { value: "", label: t("engines.ollama.auto", { model: data.recommended }) },
+  const options = (auto: string) => [
+    { value: "", label: t("engines.ollama.auto", { model: auto }) },
     ...data.models.map((m) => ({
       value: m.name,
       label: [m.name, formatBytes(m.size), m.thinking_only ? t("engines.ollama.thinkingOnly") : "",
-        m.name === data.recommended ? t("engines.ollama.recommended") : ""].filter(Boolean).join(" · "),
+        m.name === auto ? t("engines.ollama.recommended") : ""].filter(Boolean).join(" · "),
     })),
   ];
+  const save = async (patch: { model?: string; voice_model?: string }) => {
+    setSaved(false);
+    await updateSettings({ ollama: patch });
+    setSaved(true);
+  };
   return (
     <div className={s.form}>
       <Select
         label={t("engines.ollama.modelLabel")}
-        value={current}
-        options={options}
+        value={settings?.ollama.model ?? ""}
+        options={options(data.recommended)}
         hint={[t("engines.ollama.modelHint", { model: data.recommended }), data.ram_gb ? t("engines.ollama.ram", { gb: data.ram_gb }) : ""].filter(Boolean).join(" ")}
-        onChange={async (e) => {
-          setSaved(false);
-          await updateSettings({ ollama: { model: e.target.value } });
-          setSaved(true);
-        }}
+        onChange={(e) => save({ model: e.target.value })}
+      />
+      <Select
+        label={t("engines.ollama.voiceModelLabel")}
+        value={settings?.ollama.voice_model ?? ""}
+        options={options(data.recommended_voice)}
+        hint={t("engines.ollama.voiceModelHint", { model: data.recommended_voice })}
+        onChange={(e) => save({ voice_model: e.target.value })}
       />
       <span className={s.note} aria-live="polite">{saved ? t("engines.ollama.modelSaved") : ""}</span>
     </div>

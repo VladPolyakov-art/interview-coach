@@ -63,7 +63,8 @@ DEV_ORIGINS = {o.strip().rstrip("/") for o in os.getenv(
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     "engine": "ollama",                       # ollama | openai_compatible | claude_cli | gemini_live
-    "ollama": {"url": "", "model": ""},       # "" url = env OLLAMA_URL or localhost; "" model = chosen by RAM
+    # "" url = env OLLAMA_URL or localhost; "" model = chosen by RAM; "" voice_model = qwen3:4b-instruct
+    "ollama": {"url": "", "model": "", "voice_model": ""},
     "openai_compatible": {"base_url": "", "api_key": "", "model": ""},
     "claude_cli": {"model": "haiku"},
     "gemini_live": {"api_key": "", "model": "gemini-3.8-live", "text_model": "gemini-3.5-flash-lite",

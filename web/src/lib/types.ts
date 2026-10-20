@@ -37,8 +37,10 @@ export interface OllamaModel { name: string; size: number | null; thinking_only:
 export interface OllamaModelsResponse {
   models: OllamaModel[];
   recommended: string;
+  recommended_voice: string;
   ram_gb?: number;
   selected?: string;
+  selected_voice?: string;
   status?: EngineStatus;
 }
 
@@ -56,7 +58,7 @@ export type LayerOrder = "content-first" | "delivery-first";
 
 export interface Settings {
   engine: EngineId;
-  ollama: { url: string; model: string };
+  ollama: { url: string; model: string; voice_model: string };
   openai_compatible: { base_url: string; model: string; has_api_key: boolean };
   claude_cli: { model: string };
   gemini_live: { model: string; text_model: string; voice: string; has_api_key: boolean };
@@ -74,7 +76,7 @@ export interface Settings {
 
 export interface SettingsPatch {
   engine?: EngineId;
-  ollama?: Partial<{ url: string; model: string }>;
+  ollama?: Partial<{ url: string; model: string; voice_model: string }>;
   openai_compatible?: Partial<{ base_url: string; api_key: string; model: string }>;
   claude_cli?: Partial<{ model: string }>;
   gemini_live?: Partial<{ api_key: string; model: string; text_model: string; voice: string }>;

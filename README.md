@@ -24,7 +24,8 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 cp .env.example .env            # optional: data folder, Kokoro model folder, Ollama URL
 
-ollama pull qwen3:8b            # 16 GB RAM or more; on smaller machines: ollama pull qwen3:4b-instruct
+ollama pull qwen3:4b-instruct   # voice sessions use this model by default (fastest replies)
+ollama pull qwen3:8b            # optional, 16 GB RAM or more: typed answers use it when installed
 .venv/bin/python -m server      # http://127.0.0.1:8000  (API docs at /api/docs)
 .venv/bin/python -m pytest      # tests (no network, no microphone)
 ```

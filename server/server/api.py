@@ -54,11 +54,13 @@ async def ollama_models() -> dict:
         models = await engine.list_models()
     except Exception:
         status = await engine.status()
-        return {"models": [], "status": status.model_dump(), "recommended": ollama_engine.recommended_model()}
+        return {"models": [], "status": status.model_dump(), "recommended": ollama_engine.recommended_model(),
+                "recommended_voice": ollama_engine.VOICE_MODEL}
     return {"models": [{"name": m.get("name"), "size": m.get("size"),
                         "thinking_only": ollama_engine.is_thinking_only(m.get("name", ""))} for m in models],
             "recommended": ollama_engine.recommended_model(), "ram_gb": round(ollama_engine.total_ram_gb(), 1),
-            "selected": settings["ollama"].get("model", "")}
+            "selected": settings["ollama"].get("model", ""),
+            "recommended_voice": ollama_engine.VOICE_MODEL, "selected_voice": settings["ollama"].get("voice_model", "")}
 
 
 @router.get("/engines/{engine_id}/status")

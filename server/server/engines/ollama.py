@@ -14,6 +14,8 @@ DOWNLOAD_URL = "https://ollama.com/download"
 # for machines under 16 GB of RAM.
 MODEL_SMALL = "qwen3:4b-instruct"
 MODEL_LARGE = "qwen3:8b"
+# Voice sessions default to the small model on every machine: 8b misses the 2-3 s reply target (D28).
+VOICE_MODEL = MODEL_SMALL
 # Tags known to always think (they write reasoning into the reply). We still send think:false
 # and strip a leading <think> block, but warn in the status.
 THINKING_ONLY_TAGS = {"qwen3:4b", "qwen3:4b-thinking", "deepseek-r1", "qwq"}
@@ -58,12 +60,17 @@ class OllamaEngine(LLMEngine):
     id = "ollama"
 
     def __init__(self, url: str = "http://127.0.0.1:11434", model: str = "", *,
-                 transport: httpx.AsyncBaseTransport | None = None, ram_gb: float | None = None):
+                 transport: httpx.AsyncBaseTransport | None = None, ram_gb: float | None = None,
+                 default_model: str = ""):
         self.url = url.rstrip("/")
         self.requested_model = model.strip()
         self._transport = transport
         self._ram_gb = ram_gb
+        self._default = default_model.strip()   # replaces the RAM default when no model is chosen
         self._resolved: str | None = None
+
+    def _default_model(self) -> str:
+        return self._default or recommended_model(self._ram_gb)
 
     # ----- helpers -----
     def _client(self, timeout: float | httpx.Timeout = 10) -> httpx.AsyncClient:
@@ -71,7 +78,7 @@ class OllamaEngine(LLMEngine):
 
     @property
     def model(self) -> str:
-        return self._resolved or self.requested_model or recommended_model(self._ram_gb)
+        return self._resolved or self.requested_model or self._default_model()
 
     @property
     def single_worker(self) -> bool:
@@ -97,7 +104,7 @@ class OllamaEngine(LLMEngine):
             wanted = self.requested_model
             match = wanted if wanted in names else (f"{wanted}:latest" if f"{wanted}:latest" in names else "")
             return match, names
-        default = recommended_model(self._ram_gb)
+        default = self._default_model()
         for candidate in (default, MODEL_LARGE if default == MODEL_SMALL else MODEL_SMALL):
             if candidate in names and not is_thinking_only(candidate):
                 return candidate, names
@@ -105,7 +112,7 @@ class OllamaEngine(LLMEngine):
         return (usable[0] if usable else ""), names
 
     async def status(self) -> EngineStatus:
-        default = self.requested_model or recommended_model(self._ram_gb)
+        default = self.requested_model or self._default_model()
         try:
             model, names = await self._resolve()
         except httpx.HTTPError:
@@ -138,7 +145,7 @@ class OllamaEngine(LLMEngine):
             raise EngineError("ollama_not_running", "Ollama is not running.",
                               "Open the Ollama app, or run: ollama serve") from exc
         if not model:
-            want = self.requested_model or recommended_model(self._ram_gb)
+            want = self.requested_model or self._default_model()
             raise EngineError("model_missing", f"The model {want} is not downloaded.", f"Run: ollama pull {want}")
         self._resolved = model
         return model

@@ -13,12 +13,17 @@ DESCRIPTORS: dict[str, EngineDescriptor] = {
 }
 
 
-def make_llm(settings: dict | None = None, engine_id: str | None = None) -> LLMEngine:
-    """The text LLM for the chosen engine (for gemini_live: the Gemini text model used for feedback)."""
+def make_llm(settings: dict | None = None, engine_id: str | None = None, *, voice: bool = False) -> LLMEngine:
+    """The text LLM for the chosen engine (for gemini_live: the Gemini text model used for feedback).
+    voice=True: an Ollama voice session uses ollama.voice_model, by default the small fast model."""
     settings = settings or config.load_settings()
     engine_id = engine_id or settings["engine"]
     if engine_id == "ollama":
-        return ollama.OllamaEngine(config.ollama_url(settings), settings["ollama"].get("model", ""))
+        block = settings["ollama"]
+        if voice:
+            return ollama.OllamaEngine(config.ollama_url(settings), block.get("voice_model", ""),
+                                       default_model=ollama.VOICE_MODEL)
+        return ollama.OllamaEngine(config.ollama_url(settings), block.get("model", ""))
     if engine_id == "openai_compatible":
         block = settings["openai_compatible"]
         return openai_compat.OpenAICompatibleEngine(block.get("base_url", ""), block.get("api_key", ""),
