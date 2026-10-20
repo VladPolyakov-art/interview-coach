@@ -207,3 +207,5 @@
 @media (max-width: 767px) {
   .meta { order: 2; }
 }
+/* The user's live caption pill reads as "in progress" (C3): selected fill while they speak, no animation (rule 3). */
+.lineUser .preview { background: var(--color-selected); }
