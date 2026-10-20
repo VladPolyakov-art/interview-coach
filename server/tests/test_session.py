@@ -190,3 +190,81 @@ async def test_a_real_follow_up_is_not_mistaken_for_moving_on(fake_llm):
     await wait_idle(d)
     reply = [e for e in events if e[0] == "model"][-1]
     assert reply[2]["kind"] == "follow_up" and reply[2]["question_id"] == "A1" and d.q_index == 0
+
+
+def last_mike(events):
+    return [e for e in events if e[0] == "model"][-1][1]
+
+
+async def test_repeat_after_the_offer_repeats_the_question_not_the_offer(fake_llm):
+    events = []
+    llm = fake_llm({})
+    d = make(llm, events)
+    d.transcript_history.append({"role": "model", "text": "Why this role?"})
+    await d.handle_user_text_turn("Hmm.")
+    await wait_idle(d)
+    assert last_mike(events) == content.copy("short_answer")
+    await d.handle_user_text_turn("Oh, yeah, sure, please repeat the question.")
+    await wait_idle(d)
+    assert last_mike(events) == "Sure. Why this role?"
+    user_meta = [e for e in events if e[0] == "user"][-1][2]
+    assert user_meta["question"] == "Why this role?"          # feedback sees the real question
+    assert llm.calls == []
+
+
+async def test_yes_to_the_offer_repeats_and_no_lets_them_answer(fake_llm):
+    events = []
+    d = make(fake_llm({}), events)
+    await d.handle_user_text_turn("Um.")
+    await wait_idle(d)
+    await d.handle_user_text_turn("Yes.")
+    await wait_idle(d)
+    assert last_mike(events) == "Sure. Why this role?"
+    await d.handle_user_text_turn("Um.")
+    await wait_idle(d)
+    await d.handle_user_text_turn("No, I'm ready.")
+    await wait_idle(d)
+    assert last_mike(events) == content.copy("redo_ack")
+
+
+async def test_the_repeat_offer_is_not_made_twice_in_a_row(fake_llm):
+    events = []
+    d = make(fake_llm({}), events)
+    await d.handle_user_text_turn("Um.")
+    await wait_idle(d)
+    await d.handle_user_text_turn("Well.")
+    await wait_idle(d)
+    assert last_mike(events) == content.copy("long_silence")
+
+
+async def test_repeat_during_a_follow_up_repeats_the_follow_up(fake_llm):
+    events = []
+    llm = fake_llm({"p1": {"gap": "result", "action": "follow_up", "say": "What was the result of that launch?"}})
+    d = make(llm, events)
+    await d.handle_user_text_turn(LONG)
+    await wait_idle(d)
+    await d.handle_user_text_turn("Sorry, could you repeat that?")
+    await wait_idle(d)
+    assert last_mike(events) == "Sure. What was the result of that launch?"
+
+
+async def test_small_talk_gets_a_short_reply_and_the_question(fake_llm):
+    events = []
+    llm = fake_llm({})
+    d = make(llm, events)
+    await d.handle_user_text_turn("Oh yeah hi how are you?")
+    await wait_idle(d)
+    assert last_mike(events) == "I'm good, thanks. Why this role?"
+    assert llm.calls == []
+
+
+async def test_yes_after_the_models_own_repeat_offer_repeats(fake_llm):
+    events = []
+    llm = fake_llm({"p1": {"gap": "none", "action": "wait",
+                           "say": "Take your time. Would you like me to repeat the question?"}})
+    d = make(llm, events)
+    await d.handle_user_text_turn("I think that I would like to say something about it.")
+    await wait_idle(d)
+    await d.handle_user_text_turn("Yes.")
+    await wait_idle(d)
+    assert last_mike(events) == "Sure. Why this role?"

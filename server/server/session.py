@@ -33,6 +33,12 @@ from .stt import STT, Transcript
 log = logging.getLogger("uvicorn.error")
 SENTENCE_END = re.compile(r"(.+?[.!?…])(?:\s+|$)", re.S)
 REPEAT = re.compile(r"\b(repeat|say (that|it) again|pardon|didn't (catch|hear)|one more time)\b", re.I)
+# Short replies to "Would you like me to repeat the question?"
+YES = re.compile(r"^\W*(?:yes|yeah|yep|yup|sure|please|ok(?:ay)?|go ahead|of course)\b", re.I)
+# Small talk instead of an answer ("hi, how are you?"): Mike replies briefly and asks the question again.
+SMALL_TALK = re.compile(r"\bhow (?:are|r) (?:you|u)\b|\bhow'?s it going\b|\bnice to meet you\b|^\W*(?:hi|hello|hey)\W*$",
+                        re.I)
+NO = re.compile(r"^\W*(?:no|nope|not needed|i'?m (?:ready|fine|good|ok(?:ay)?)|i (?:got|understand) it)\b", re.I)
 GAP_TAG = {"own_part": "YP", "result": "RN", "reflection": "WD", "tradeoff": "CT"}
 TAG_PREFIX = re.compile(r"^\s*(?:YP|RN|WD|CT)\s*[:\-–]\s*")
 # The model announcing a new main question in a follow-up turn (question drift).
@@ -89,6 +95,7 @@ class TextDriver:
         self.q_index = 0
         self.follow_ups: list[str] = []
         self.finished = False
+        self._repeat_offered = False            # the last line was "Would you like me to repeat the question?"
         self._snapshots: list[tuple[int, list[str], bool]] = []
         self._running = False
         self._reply_task: Optional[asyncio.Task] = None
@@ -139,8 +146,12 @@ class TextDriver:
         self._snapshots.append((self.q_index, list(self.follow_ups), self.finished))
         question = self.current_question()
         last_model = next((t for t in reversed(self.transcript_history) if t["role"] == "model"), None)
+        if self.mode == "interview" and question:                  # not "Take your time..." or "Sure. <question>"
+            asked = self.follow_ups[-1] if self.follow_ups else question.text
+        else:
+            asked = last_model["text"] if last_model else ""
         meta = {"turn_id": turn_id, "source": "voice" if transcript is not None else "text",
-                "question": last_model["text"] if last_model else "",
+                "question": asked,
                 "question_id": question.id if question else "",
                 "competency": question.competency if question else "",
                 "answer_kind": ("follow_up" if self.follow_ups else "main") if self.mode == "interview" else "turn",
@@ -212,6 +223,7 @@ class TextDriver:
         await self._cancel_reply(interrupted=False)
         if self._snapshots:
             self.q_index, self.follow_ups, self.finished = self._snapshots.pop()
+        self._repeat_offered = False
         question = drop_last_answer(self.transcript_history)
         if question:
             self._reply_task = self._spawn(
@@ -272,18 +284,35 @@ class TextDriver:
     async def _interview_reply(self, answer: str, transcript: Transcript | None) -> None:
         question = self.plan[self.q_index]
         words = len(WORD.findall(answer))
-        last_model = next((t["text"] for t in reversed(self.transcript_history) if t["role"] == "model"), question.text)
+        # What Mike is waiting for an answer to: the last follow-up in this thread, else the main question.
+        # Never his last line, which can be "Take your time..." itself.
+        asked = self.follow_ups[-1] if self.follow_ups else question.text
+        offered, self._repeat_offered = self._repeat_offered, False
         if self.finished:
             await self._deliver(self._from_list([content.copy("interview_closing")]), lambda: {"kind": "closing"})
             return
-        if REPEAT.search(answer) and words <= 12:
+        if (REPEAT.search(answer) and words <= 12) or (offered and words <= 6 and YES.search(answer)
+                                                        and not NO.search(answer)):
             self._metrics["path"] = "fixed"
-            await self._deliver(self._from_list([content.copy("repeat_question", question=last_model)]),
+            await self._deliver(self._from_list(_sentences(content.copy("repeat_question", question=asked))),
                                 lambda: {"kind": "repeat", "question_id": question.id, "thread_id": question.id})
+            return
+        if SMALL_TALK.search(answer) and words <= 10 and not self.follow_ups:
+            self._metrics["path"] = "fixed"
+            await self._deliver(self._from_list(_sentences(content.copy("small_talk", question=asked))),
+                                lambda: {"kind": "repeat", "question_id": question.id, "thread_id": question.id})
+            return
+        if offered and words <= 6 and NO.search(answer):
+            self._metrics["path"] = "fixed"
+            await self._deliver(self._from_list([content.copy("redo_ack")]),
+                                lambda: {"kind": "wait", "question_id": question.id, "thread_id": question.id})
             return
         if words < 5:
             self._metrics["path"] = "fixed"
-            await self._deliver(self._from_list([content.copy("short_answer")]),
+            # Offer to repeat once; a second short answer in a row gets only "Take your time."
+            line = "long_silence" if offered else "short_answer"
+            self._repeat_offered = not offered
+            await self._deliver(self._from_list([content.copy(line)]),
                                 lambda: {"kind": "wait", "question_id": question.id, "thread_id": question.id})
             return
         if len(self.follow_ups) >= self.max_follow_ups:
@@ -307,6 +336,8 @@ class TextDriver:
             self._error(exc.code, exc.message, hint=exc.hint)
             text = ""
         if text:
+            if self._decision == "wait" and REPEAT.search(text):
+                self._repeat_offered = True             # the model offered to repeat: "yes" now means repeat
             return
         if self._decision == "follow_up" and self._gap in GAP_TAG and GAP_TAG[self._gap] in question.follow_ups:
             fallback = question.follow_ups[GAP_TAG[self._gap]]          # the model chose a gap but said nothing

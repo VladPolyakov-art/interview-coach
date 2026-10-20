@@ -5,6 +5,7 @@
   "english_opening_topic": "Hi, I'm Mike, your English practice partner. Today's topic is {topic}. What comes to mind first?",
   "short_answer": "Take your time. Would you like me to repeat the question?",
   "repeat_question": "Sure. {question}",
+  "small_talk": "I'm good, thanks. {question}",
   "long_silence": "Take your time.",
   "redo_ack": "Sure, go ahead.",
   "voice_sample": "Hi, I'm Mike. Can you walk me through a project you're proud of?"
