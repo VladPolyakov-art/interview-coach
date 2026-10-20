@@ -3,14 +3,14 @@
  * Terminal states (failed, saving, not started from Practice) stay here as centred messages. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button, Callout, EmptyState, motionMemory, type CaptionTurn } from "../ds";
+import { Button, Callout, EmptyState, motionMemory } from "../ds";
 import { t, tMaybe } from "../i18n";
 import { useElapsed } from "../lib/hooks";
 import { useApp } from "../lib/store";
 import { selectThreads, type SessionState } from "../session/reducer";
 import { useSession, type SessionConfig } from "../session/useSession";
 import { SessionView } from "./session/SessionView";
-import type { PanelMode, SessionData, SessionHandlers, SessionPhase } from "./session/types";
+import type { PanelMode, SessionData, SessionHandlers, SessionPhase, TranscriptTurn } from "./session/types";
 import s from "./Session.module.css";
 
 interface LocationState { config?: SessionConfig; title?: string }
@@ -147,15 +147,27 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   const strictLabel = start.strictness && STRICT[start.strictness as 1 | 2 | 3] ? t(`session.strict.${STRICT[start.strictness as 1 | 2 | 3]}`) : "";
   const sub = english ? undefined : [roundLabel, strictLabel].filter(Boolean).join(" · ") || undefined;
 
-  /* Captions: this question's turns; the interim words of the answer being recorded ride on the last user line. */
-  const own = state.transcript.filter((x) => english || !x.threadId || x.threadId === state.currentThreadId).slice(english ? -6 : undefined);
-  const captions: CaptionTurn[] = own.map((x) => ({
-    id: x.key,
-    speaker: x.speaker === "user" ? "user" : "mike",
-    name: x.speaker === "user" ? (voice ? t("session.you") : t("session.captions.youTyped")) : t("session.interviewer"),
-    text: x.text,
-  }));
-  if (state.recording && state.preview) captions.push({ id: "interim", speaker: "user", name: t("session.you"), text: "", interim: state.preview });
+  /* The running transcript (D49): the whole dialogue, newest last. Mike's first line of each thread opens "Question N";
+   * follow-ups get their badge. The interim words of the answer being recorded ride on a last user line. */
+  const opened = new Set<string>();
+  const transcript: TranscriptTurn[] = state.transcript.map((x) => {
+    const mike = x.speaker !== "user";
+    let question: number | undefined;
+    if (mike && !english && x.kind === "question" && x.threadId && !opened.has(x.threadId)) {
+      opened.add(x.threadId);
+      const n = state.threadOrder.indexOf(x.threadId);
+      question = n >= 0 ? n + 1 : undefined;
+    }
+    return {
+      id: x.key,
+      speaker: mike ? "mike" : "user",
+      name: mike ? t("session.interviewer") : voice ? t("session.you") : t("session.captions.youTyped"),
+      text: x.text,
+      question,
+      followUp: mike && x.kind === "follow_up" ? true : undefined,
+    };
+  });
+  if (state.recording && state.preview) transcript.push({ id: "interim", speaker: "user", name: t("session.you"), text: "", interim: state.preview });
 
   const notices: NonNullable<SessionData["notices"]> = [];
   if (!state.recording) {
@@ -178,7 +190,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     elapsed,
     question: state.currentQuestionText,
     followUp: state.followUps.at(-1),
-    captions,
+    transcript,
     answered: userTurns > 0,
     thread: current,
     earlier: threads.slice(0, -1).reverse(),
@@ -223,7 +235,6 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
         firstTime={userTurns === 0 && !state.closing}
         muted={muted}
         micLevel={0}
-        voiceLevel={0}
         getMicLevel={getLevel}
         layerOrder={settings?.layer_order ?? "content-first"}
         withChecks={Boolean(state.stt?.word_confidence)}

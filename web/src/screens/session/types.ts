@@ -15,6 +15,14 @@ export type SessionOverlay = "none" | "browser" | "storage" | "mic-help" | "inte
 /** What the feedback panel shows. "auto" derives it from the phase (spec P0..P4). */
 export type PanelMode = "auto" | "p0" | "p1" | "p2" | "p3" | "p4" | "edit" | "recheck";
 
+/** One turn of the running transcript (session.md V2.1, D49): the whole dialogue, oldest first, newest last. */
+export interface TranscriptTurn extends CaptionTurn {
+  /** Mike's turn that opens question N: a "Question N" heading before it (interview, drill). */
+  question?: number;
+  /** Mike's follow-up question: a "Follow-up" badge. */
+  followUp?: boolean;
+}
+
 export interface TopBadge { label: string; tone: "outline"; icon?: IconName }
 
 export interface SessionSuggestion {
@@ -42,8 +50,9 @@ export interface SessionData {
   question: string;
   /** Latest follow-up of this thread, when Mike asked one. */
   followUp?: string;
-  /** Captions turns: the latest one is shown in voice mode, all of this question's in text mode. */
-  captions: CaptionTurn[];
+  /** The running transcript of the whole session (D49), newest last. The user's answer being recorded is the last turn,
+   * with `interim` words. */
+  transcript: TranscriptTurn[];
   /** The user has already answered at least once (panel P1 instead of P0). */
   answered: boolean;
   /** Feedback of the current thread (null before the first answer). */
@@ -102,8 +111,9 @@ export interface SessionViewProps {
   muted: boolean;
   /** Static mic level 0..1 (review frames); the live container passes `getMicLevel` instead. */
   micLevel: number;
-  /** Static playback level 0..1 for Mike's orb (review frames). */
-  voiceLevel: number;
+  /** Static playback level 0..1 of Mike's voice for the Presence glow. Omitted (and no `getVoiceLevel`) = a
+   * speech-like envelope while Mike speaks (the live app until the playback level is wired, stage 12d). */
+  voiceLevel?: number;
   layerOrder: LayerOrder;
   /** The recogniser gave word confidence: checks and the "words we weren't sure about" line exist. */
   withChecks: boolean;
@@ -114,7 +124,7 @@ export interface SessionViewProps {
   panel?: PanelMode;
   getMicLevel?: () => number;
   getVoiceLevel?: () => number;
-  /** Play the session entrance (orb fades in, the island docks in). Live only. */
+  /** Play the session entrance (the island docks in). Live only. */
   entering?: boolean;
   /** Review states: which flag starts with its "What did you say?" field open. */
   initialOpenHeard?: string;
@@ -126,6 +136,10 @@ export interface SessionViewProps {
   panelOpen?: boolean;
   /** Review states: an overlay of the island starts open. */
   initialOverlay?: "more" | "shortcuts";
+  /** Review states: the transcript starts scrolled up to the beginning ("reading": "Jump to latest" shows). */
+  initialFollow?: "latest" | "reading";
+  /** Force reduced motion for the Presence glow (review, stories); otherwise the OS setting. */
+  reducedMotion?: boolean;
   /** Force the island layout (review); otherwise from the container width (< 560 = stacked). */
   island?: "inline" | "stacked";
   /** Listen to the keyboard shortcuts on the window (the live app). Otherwise only while focus is inside the view. */

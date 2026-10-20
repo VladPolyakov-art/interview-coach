@@ -533,7 +533,7 @@
       "title": "First time here",
       "voice1": "Answer aloud when Mike stops. Pause to think: he waits up to {sec} s.",
       "voice2": "When you're done, stop talking or press Enter.",
-      "voice3": "Subtitles show what we heard. You can fix a wrong word after you answer.",
+      "voice3": "The conversation shows what we heard. You can fix a wrong word after you answer.",
       "text1": "Type your answer in the box below.",
       "text2": "When you're done, press Send (Enter).",
       "text3": "Feedback appears on the right after each question.",
@@ -639,7 +639,10 @@
       "transcriptEnglish": "Transcript",
       "youTyped": "You typed",
       "empty": "Mike's words appear here.",
-      "thinking": "Mike is replying"
+      "thinking": "Mike is replying",
+      "question": "Question {n}",
+      "jump": "Jump to latest",
+      "speaker": "{name}:"
     },
     "help": {
       "interrupt": "Interrupt",

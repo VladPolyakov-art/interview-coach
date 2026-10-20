@@ -4,7 +4,7 @@ import { getFakeLevel } from "./fakeLevel";
 import { MicButton } from "./MicButton";
 
 /** Thin 2px blue ring (--color-mic-live) around the button while the mic is open; its opacity and scale follow the
- * voice level (read every frame, no re-render). Blue only for the orb, the live mic and the focus ring. */
+ * voice level (read every frame, no re-render). Blue only for the Presence glow, the live mic and the focus ring. */
 const meta: Meta<typeof MicButton> = { title: "DS/MicButton", component: MicButton, tags: ["autodocs"] };
 export default meta;
 type Story = StoryObj<typeof MicButton>;

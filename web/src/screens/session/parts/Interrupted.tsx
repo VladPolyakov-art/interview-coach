@@ -1,8 +1,10 @@
 /* SessionInterrupted: inside the stage (the panel stays readable), replacing question, captions and dock (US-04 AC5,
  * US-13 AC5). Engine drop: Resume is disabled until the engine answers again; no "Continue in text" (GR5).
  * Voice drop: Mike is still running, so typing continues.
- * v2 (session.md §V2.2 S10): "End and see debrief" left the callout; the island's End does it. */
-import { Button, Callout, CopyField, Orb, StatusPill } from "../../../ds";
+ * v2 (session.md §V2.2 S10): "End and see debrief" left the callout; the island's End does it.
+ * V2.1 (D49): no orb and no second status pill: the callouts follow the transcript (the dialogue stays readable above),
+ * and the one StatusPill over the island says "Paused". */
+import { Button, Callout, CopyField } from "../../../ds";
 import { t } from "../../../i18n";
 import type { SessionHandlers } from "../types";
 import s from "./parts.module.css";
@@ -10,12 +12,6 @@ import s from "./parts.module.css";
 export function Interrupted({ kind, handlers }: { kind: "engine" | "voice"; handlers?: SessionHandlers }) {
   return (
     <section className={s.interrupted} aria-label={t("session.status.paused")} data-review-id="Session/Interrupted" data-review-section="Session · Interrupted" data-comment-target>
-      <div className={s.orbBlock}>
-        <div className={s.orbBox}>
-          <Orb state="offline" label={null} hideLabel />
-        </div>
-        <StatusPill state="paused" label={t("session.status.paused")} announce={false} />
-      </div>
       {kind === "engine" ? (
         <>
           <Callout tone="error" live="alert" title={t("session.interrupted.engineTitle")}>

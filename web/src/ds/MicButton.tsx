@@ -4,7 +4,7 @@
  * as a heavy blue mass at full level. A rAF loop reads `getLevel` and writes the CSS variable --mic on the
  * button — no React re-render per frame. `level` sets a static value instead (review frames, stories).
  * Muted: no ring, grey slashed mic icon, aria-pressed. Under reduced motion the ring still follows the level
- * (it is information), only without its transition. Blue appears only here, on the orb and on the focus ring. */
+ * (it is information), only without its transition. Blue appears only here, in the Presence glow and on the focus ring. */
 import { forwardRef, useEffect, useRef, type ButtonHTMLAttributes } from "react";
 import { Icon } from "./icons";
 import { smoothLevel } from "./motion";

@@ -1,5 +1,5 @@
-/* Status pill (G11, docs/motion.md 3.2 P6/P7 + 3.7): the one state text under the orb (session.md O5).
- * It is the orb's live region (role="status", polite): colour never tells Mike's states apart (P6).
+/* Status pill (G11, docs/motion.md 3.2 P6/P7 + 3.7): the one state text above the island (session.md O5, V2.1).
+ * It is the live region for Mike's state (Presence is aria-hidden) (role="status", polite): colour never tells Mike's states apart (P6).
  * - Dot: --color-mic-live and static only while `live` (your turn / listening with the mic open; rule 3:
  *   nothing pulses while the user speaks). Grey pulse (`pulse-dot`, .motion-loop) while thinking / connecting.
  *   Grey and still otherwise. Muted shows the slashed mic icon instead of a dot. Never blue for Mike.

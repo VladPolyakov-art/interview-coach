@@ -5,7 +5,8 @@ import { fixtureProps, type FixtureOptions } from "./fixtures";
 import { SessionPreview } from "./SessionPreview";
 import type { SessionViewProps } from "./types";
 
-/* Screens/Session: one story per state of ds/screens/session.md §4 (S1 to S14), with the v2 island (§V2). Each is a
+/* Screens/Session: one story per state of ds/screens/session.md §4 (S1 to S14), with the v2 island (§V2) and the
+ * V2.1 running transcript + Presence glow (D49). Each is a
  * frame of a real width scaled to fit, with its own OverlayRoot (the sheet and the dialog open inside it), the same
  * set-up as the review page.
  * The `frame` control switches 1440 / 900 / 768 / 375. */
@@ -92,3 +93,10 @@ export const S5PanelHidden = scene("S5 · Feedback ready, panel hidden", "feedba
 export const S6TextIsland = scene("S6 · Text mode island (box)", "text", { args: { withChecks: false } });
 export const Shortcuts = scene("Keyboard shortcuts dialog", "feedback", {}, { initialOverlay: "shortcuts" });
 export const NarrowIsland = scene("Narrow · Island, two rows", "listening", { args: { frame: "mobile" } }, { panelOpen: false });
+
+/* v2.1 (D49): running transcript + Presence glow. */
+export const S2YourTurnNoGlow = scene("S2 · Your turn (voice), no glow", "follow-up", {}, { phase: "your-turn" });
+export const S2Reading = scene("S2 · Reading above: Jump to latest", "feedback", {}, { initialFollow: "reading", panelOpen: false });
+export const ReducedSpeaking = scene("Reduced motion · Speaking", "q1-start", {}, { reducedMotion: true });
+export const ReducedListening = scene("Reduced motion · Listening", "listening", {}, { reducedMotion: true });
+export const ReducedThinking = scene("Reduced motion · Thinking", "thinking", {}, { reducedMotion: true });

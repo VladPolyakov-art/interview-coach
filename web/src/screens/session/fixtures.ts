@@ -1,10 +1,9 @@
 /* Session fixtures (ds/screens/session.md §3, §4): docs/ia.md §6 as is: Alex Morgan, Kestrel Pay · Senior Product
  * Designer, Question 2 of 5, 07:12, 11 fillers, 289 words, 2:20, 124 wpm, two phrasings and a check. Same fixture as
  * Home and Debrief. Used by the stories and the review page only; the live app never imports this file. */
-import type { CaptionTurn } from "../../ds";
 import type { FeedbackRecord, LanguageItem } from "../../lib/types";
 import type { Thread } from "../../session/reducer";
-import type { SessionData, SessionHandlers, SessionViewProps, TopBadge } from "./types";
+import type { SessionData, SessionHandlers, SessionViewProps, TopBadge, TranscriptTurn } from "./types";
 
 const noop = () => undefined;
 
@@ -121,8 +120,22 @@ function thread(key: string, number: number, question: string, records: Feedback
   return { key, number, question, records, pendingIds: [], unavailable: [] };
 }
 
-const t = (id: string, speaker: CaptionTurn["speaker"], name: string, time: string, text: CaptionTurn["text"], interim?: string): CaptionTurn =>
-  ({ id, speaker, name, time, text, interim });
+/** A transcript turn. Names: "Mike", "You" (voice) or "You typed" (text). */
+const tt = (id: string, speaker: TranscriptTurn["speaker"], time: string, text: TranscriptTurn["text"], extra: Partial<TranscriptTurn> = {}): TranscriptTurn =>
+  ({ id, speaker, name: speaker === "mike" ? "Mike" : "You", time, text, ...extra });
+
+/* The whole dialogue so far (D49: the stage is the running transcript). Question 1 is done; question 2 is current. */
+const ANSWER_Q1 = "I led the redesign of the merchant onboarding flow at my last company. I ran the research, set the scope with the PM and designed the new flow end to end.";
+const Q1_TURNS: TranscriptTurn[] = [
+  tt("m-q1", "mike", "00:04", Q1, { question: 1 }),
+  tt("u-q1", "user", "00:12", ANSWER_Q1),
+];
+const Q2_ASK = tt("m-q2", "mike", "06:40", Q2, { question: 2 });
+const Q2_ANSWER = tt("u-q2", "user", "06:48", ANSWER_Q2);
+const Q2_FOLLOW = tt("m-f2", "mike", "07:10", FOLLOW_UP, { followUp: true });
+const Q2_FOLLOW_ANSWER = tt("u-f2", "user", "07:12", ANSWER_FOLLOW);
+const FULL: TranscriptTurn[] = [...Q1_TURNS, Q2_ASK, Q2_ANSWER, Q2_FOLLOW, Q2_FOLLOW_ANSWER];
+const typed = (turns: TranscriptTurn[]) => turns.map((x) => (x.speaker === "user" ? { ...x, name: "You typed" } : x));
 
 export type FixtureScene =
   | "q1-start" | "follow-up" | "listening" | "thinking" | "feedback" | "that-not-said" | "edit" | "text" | "drill" | "english"
@@ -145,9 +158,9 @@ const SUGGESTION: SessionData["suggestion"] = {
 export function fixtureProps({ scene, layerOrder = "content-first", withChecks = true }: FixtureOptions): SessionViewProps {
   const base: SessionViewProps = {
     variant: "interview", input: "voice", phase: "mike-speaking", overlay: "none", firstTime: false, muted: false,
-    micLevel: 0, voiceLevel: 0.5, layerOrder, withChecks, suggester: "off", handlers: noopHandlers,
+    micLevel: 0, layerOrder, withChecks, suggester: "off", handlers: noopHandlers,
     data: {
-      title: TITLE, sub: "Behavioural · Standard", progress: "Question 2 of 5", elapsed: 432, question: Q2, captions: [],
+      title: TITLE, sub: "Behavioural · Standard", progress: "Question 2 of 5", elapsed: 432, question: Q2, transcript: FULL,
       answered: true, thread: null, earlier: [thread("q1", 1, Q1, [q1Record])], nextNumber: 3, pauseSec: 5,
     },
   };
@@ -162,20 +175,20 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
     case "q1-start":
       return withThread({
         progress: "Question 1 of 5", elapsed: 6, question: Q1, answered: false, earlier: [], nextNumber: 2,
-        captions: [t("m1", "mike", "Mike", "00:04", ["Tell me about a design project you're proud of.", " What was your role?"])],
+        transcript: [tt("m-q1", "mike", "00:04", ["Tell me about a design project you're proud of.", " What was your role?"], { question: 1 })],
       }, { phase: "mike-speaking", firstTime: true });
     case "follow-up":
       return withThread({
         followUp: FOLLOW_UP, thread: null,
-        captions: [t("m2", "mike", "Mike", "07:10", ["What was the result", " for the merchants?"])],
+        transcript: [...Q1_TURNS, Q2_ASK, Q2_ANSWER, { ...Q2_FOLLOW, text: ["What was the result", " for the merchants?"] }],
       }, { phase: "mike-speaking" });
     case "listening":
       return withThread({
-        captions: [t("u1", "user", "You", "07:05", "Two weeks before launch legal asked us to add a consent step to checkout. We re-planned the sprint, and I have led the redesign last spring, so I knew the flow… we tested it with", "five merchants in two")],
+        transcript: [...Q1_TURNS, Q2_ASK, tt("u-q2", "user", "06:48", "Two weeks before launch legal asked us to add a consent step to checkout. We re-planned the sprint, and I have led the redesign last spring, so I knew the flow… we tested it with", { interim: "five merchants in two" })],
       }, { phase: "listening", micLevel: 0.6 });
     case "thinking":
       return withThread({
-        captions: [t("u1", "user", "You", "07:05", "Two weeks before launch legal asked us to add a consent step to checkout. We tested it with five merchants in two days.")],
+        transcript: [...Q1_TURNS, Q2_ASK, tt("u-q2", "user", "06:48", "Two weeks before launch legal asked us to add a consent step to checkout. We tested it with five merchants in two days.")],
       }, { phase: "thinking" });
     case "feedback":
       return withThread({ thread: q2() }, { phase: "feedback", defaultStrongerOpen: true });
@@ -188,12 +201,11 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
       th.records = th.records.map((r) => ({ ...r, source: "text" }));
       return withThread({
         thread: th,
-        captions: [
-          t("m1", "mike", "Mike", "07:01", Q2),
-          t("u1", "user", "You typed", "07:03", "Two weeks before launch legal asked us to add a consent step to checkout. We re-planned the sprint and tested it with five merchants in two days."),
-          t("m2", "mike", "Mike", "07:08", FOLLOW_UP),
-          t("u2", "user", "You typed", "07:10", ANSWER_FOLLOW),
-        ],
+        transcript: typed([
+          ...Q1_TURNS, Q2_ASK,
+          tt("u-q2", "user", "07:03", "Two weeks before launch legal asked us to add a consent step to checkout. We re-planned the sprint and tested it with five merchants in two days."),
+          Q2_FOLLOW, Q2_FOLLOW_ANSWER,
+        ]),
         followUp: FOLLOW_UP,
       }, { input: "text", phase: "feedback", withChecks: false });
     }
@@ -205,7 +217,7 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
           { label: "No result", tone: "outline", icon: "content" },
           { label: "\"we\" instead of \"I\"", tone: "outline", icon: "content" },
         ] satisfies TopBadge[],
-        captions: [t("m1", "mike", "Mike", "00:05", ["Tell me about a time you led a project from start to finish.", " What did you do, and what was the result?"])],
+        transcript: [tt("m-d1", "mike", "00:05", ["Tell me about a time you led a project from start to finish.", " What did you do, and what was the result?"], { question: 1 })],
       }, { variant: "drill", phase: "mike-speaking" });
     case "english":
       return withThread({
@@ -213,10 +225,16 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
         question: "That sounds like a big change. How did your team react to the new roadmap?",
         badges: [{ label: "B2", tone: "outline", icon: "language" }],
         thread: thread("t4", 4, "", [english1]), earlier: [thread("t3", 3, "", [])], nextNumber: null,
-        captions: [],
+        transcript: [
+          tt("m-e1", "mike", "04:02", "So, what are you working on at the moment?"),
+          tt("u-e1", "user", "04:10", "I work on the roadmap for our payments team. We plan the next two quarters."),
+          tt("m-e2", "mike", "04:31", "Nice. What changed in the plan this quarter?"),
+          tt("u-e2", "user", "04:40", english1.answer),
+          tt("m-e3", "mike", "05:12", "That sounds like a big change. How did your team react to the new roadmap?"),
+        ],
       }, { variant: "english", phase: "feedback", withChecks: false });
     case "connecting":
-      return withThread({ progress: "Question 1 of 5", elapsed: 0, question: "", answered: false, earlier: [], nextNumber: 2, captions: [] }, { phase: "connecting", firstTime: true });
+      return withThread({ progress: "Question 1 of 5", elapsed: 0, question: "", answered: false, earlier: [], nextNumber: 2, transcript: [] }, { phase: "connecting", firstTime: true });
     case "interrupted-engine":
       return withThread({ thread: q2() }, { phase: "interrupted", overlay: "interrupted-engine" });
     case "interrupted-voice":
@@ -224,7 +242,7 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
     case "mic-help":
       return withThread({
         progress: "Question 1 of 5", elapsed: 6, question: Q1, answered: false, earlier: [], nextNumber: 2,
-        captions: [t("m1", "mike", "Mike", "00:04", Q1)],
+        transcript: [Q1_TURNS[0]!],
       }, { phase: "your-turn", overlay: "mic-help", firstTime: true, muted: true });
     case "storage":
       return withThread({ thread: q2() }, { phase: "between", overlay: "storage" });
@@ -233,6 +251,7 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
     case "overflow":
       return withThread({
         title: TITLE_LONG, question: Q2_LONG, thread: q2({ overflow: true }), elapsed: 3734,
+        transcript: [...Q1_TURNS, { ...Q2_ASK, text: Q2_LONG }, Q2_ANSWER, Q2_FOLLOW, Q2_FOLLOW_ANSWER],
         stronger: undefined,
       }, { phase: "feedback", defaultStrongerOpen: true });
     case "preparing":
@@ -241,12 +260,12 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
       return withThread({ thread: { ...q2(), records: [], unavailable: [{ id: "fb-q2-main", code: "unavailable", message: "" }] } }, { phase: "unavailable" });
     case "muted":
       return withThread({
-        captions: [t("m2", "mike", "Mike", "07:10", FOLLOW_UP)], followUp: FOLLOW_UP,
+        transcript: [...Q1_TURNS, Q2_ASK, Q2_ANSWER, Q2_FOLLOW], followUp: FOLLOW_UP,
       }, { phase: "your-turn", muted: true });
     case "suggester":
       return withThread({
         progress: "Question 1 of 5", elapsed: 6, question: Q1, answered: false, earlier: [], nextNumber: 2, suggestion: SUGGESTION,
-        captions: [t("m1", "mike", "Mike", "00:04", Q1)],
+        transcript: [Q1_TURNS[0]!],
       }, { phase: "your-turn", suggester: "on" });
   }
 }

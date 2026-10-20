@@ -1,39 +1,23 @@
 /* Screen-local parts of the Session (stage, dock, panel content). Spacing rhythm from the map: sections --space-8,
  * panels / cards --space-5, groups --space-4, rows --space-2. Every value is a token. */
 
-/* ---------- question block ---------- */
-.question { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; }
-.who { display: flex; align-items: baseline; gap: var(--space-2); margin: 0; font-size: var(--text-sm); }
-.whoName { font-weight: var(--weight-semibold); }
-.whoRole { color: var(--color-text-tertiary); }
-.questionText {
-  max-width: var(--layout-narrow);
+/* ---------- running transcript (D49) ---------- */
+.transcript { display: flex; flex-direction: column; gap: var(--space-4); width: 100%; min-width: 0; }
+.turn { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+/* "Question N": a quiet heading that starts each question's part of the dialogue. */
+.turnQuestion {
   margin: 0;
-  font-size: var(--text-xl);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-normal);
-  text-wrap: balance;
+  padding-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--color-text-secondary);
 }
-.questionDim { color: var(--color-text-secondary); }
-.follow { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
-.followText { margin: 0; font-size: var(--text-lg); line-height: var(--leading-normal); }
-@container session (width < 768px) {
-  .questionText { font-size: var(--text-lg); }
-  .followText { font-size: var(--text-md); }
-}
-
-/* ---------- orb + status pill ---------- */
-.orbBlock { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
-.orbBox { display: flex; justify-content: center; max-width: 100%; }
-@container session (width < 768px) {
-  /* No mid token for the narrow orb: 1.5 × the small one (session.md 3.5). */
-  .orbBox { --orb-size: calc(var(--orb-size-sm) * 1.5); }
-}
-
-/* ---------- captions + transcript ---------- */
-.captions { width: 100%; max-width: var(--layout-narrow); }
-.transcriptBox { display: flex; flex-direction: column; min-height: 0; max-height: calc(var(--text-lg) * var(--leading-relaxed) * 9); }
+.turn:first-child .turnQuestion { padding-top: 0; }
+.interimWords { color: var(--color-text-secondary); }
+/* Mike's new streamed chunk: opacity only, no blur (CONTRACT 4.4). */
+.chunkIn { animation: global(fade-in) var(--duration-slow) var(--ease-enter) backwards; }
+.transcriptFooter { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
 
 /* ---------- first-time tips ---------- */
 .tips { width: 100%; max-width: var(--layout-narrow); border-radius: var(--radius-md); }
@@ -57,7 +41,6 @@
 
 /* ---------- interrupted ---------- */
 .interrupted { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-5); width: 100%; max-width: var(--layout-narrow); }
-.interrupted .orbBlock { align-self: center; }
 .interruptedNote { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
 .interruptedActions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 

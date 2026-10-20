@@ -64,9 +64,6 @@ function Catalogue() {
           </div>
         )}
       </Row>
-      <Row name="orb-in" note="session orb entrance">
-        {(k) => <div key={k} style={{ ...box, animation: "orb-in var(--duration-slower) var(--ease-standard) backwards" }}>Orb</div>}
-      </Row>
       <Row name="dialog-in" note="dialog box">
         {(k) => <div key={k} style={{ ...box, animation: "dialog-in var(--duration-slow) var(--ease-enter) backwards" }}>Dialog</div>}
       </Row>

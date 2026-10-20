@@ -2,9 +2,12 @@
  * - Mike: no bubble, plain text (`--text-md`, relaxed leading); a small "Mike" name on the first message of a turn.
  * - User: an end-aligned `--color-subtle` bubble (`--radius-lg`), max 80% of the log (88% when the log is narrow).
  * - `state`: `final`, `pending` (a TextShimmer line, only while real work runs: reading a file, opening a link),
- *   `error` (an alert icon before the text; no status colour, the words carry it).
+ *   `error` (an alert icon before the text; no status colour, the words carry it), `interim` (the user's words still
+ *   being recognised, Session D49: the bubble gets a thin --color-mic-live outline; the words update in place).
  * - Slots: `attachment` (a pasted job, a file) above the text, `actions` (quick replies, a link) under it.
- * Messages sit in a ChatLog (`role="log"`, polite), so new ones are announced without moving focus.
+ * Messages sit in a ChatLog (`role="log"`, polite), so new ones are announced without moving focus. ChatLog
+ * `size="lg"` is the Session transcript (text-lg, md in a narrow log); `live={false}` drops the announcements where the
+ * words are already heard (Mike's TTS, the user's own voice).
  * Motion (docs/motion.md 3.7 "Setup message"): `rise-in` `slow` when `animate`; quiet and reduced-motion rules apply. */
 import type { ReactNode } from "react";
 import { Icon } from "./icons";
@@ -13,7 +16,7 @@ import s from "./ChatMessage.module.css";
 
 export interface ChatMessageProps {
   speaker: "mike" | "user";
-  state?: "final" | "pending" | "error";
+  state?: "final" | "pending" | "error" | "interim";
   /** Speaker name shown above the message ("Mike"): first message of a turn only. */
   name?: string;
   /** Pending line ("Reading the job…"). */
@@ -30,7 +33,7 @@ export interface ChatMessageProps {
 export function ChatMessage({
   speaker, state = "final", name, pendingLabel, attachment, actions, children, animate, className, reviewId,
 }: ChatMessageProps) {
-  const cls = [s.message, s[speaker], animate ? "motion-rise" : "", className ?? ""].filter(Boolean).join(" ");
+  const cls = [s.message, s[speaker], state === "interim" ? s.interim : "", animate ? "motion-rise" : "", className ?? ""].filter(Boolean).join(" ");
   return (
     <div className={cls} data-review-id={reviewId ?? `ChatMessage/${speaker}-${state}`} data-state={state}>
       {name ? <span className={s.name}>{name}</span> : null}
@@ -52,13 +55,17 @@ export interface ChatLogProps {
   /** Accessible name ("Setup with Mike"). */
   label: string;
   children: ReactNode;
+  /** Text size: `md` (setup chat) or `lg` (the Session transcript; md when the log is narrow). */
+  size?: "md" | "lg";
+  /** Announce new messages (polite). Off where the words are already heard (the Session: Mike's voice, your own). */
+  live?: boolean;
   className?: string;
 }
 
 /** The message list: `role="log"`, polite; adapts the bubble width to its own box (container query). */
-export function ChatLog({ label, children, className }: ChatLogProps) {
+export function ChatLog({ label, children, size = "md", live = true, className }: ChatLogProps) {
   return (
-    <div role="log" aria-live="polite" aria-label={label} className={`${s.log} ${className ?? ""}`} data-review-id="ChatLog">
+    <div role="log" aria-live={live ? "polite" : "off"} aria-label={label} className={`${s.log} ${size === "lg" ? s.lg : ""} ${className ?? ""}`} data-review-id={size === "lg" ? "ChatLog/lg" : "ChatLog"}>
       {children}
     </div>
   );

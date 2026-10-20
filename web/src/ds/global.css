@@ -123,7 +123,6 @@ kbd {
 @keyframes dialog-out { to { opacity: 0; transform: translateY(var(--space-2)) scale(0.97); } }
 @keyframes panel-in-x { from { transform: translateX(var(--space-8)); } }
 @keyframes panel-in-y { from { transform: translateY(var(--space-4)); } }
-@keyframes orb-in { from { opacity: 0; transform: scale(0.6); } }
 @keyframes word-in { from { opacity: 0; filter: blur(3px); } }
 @keyframes skeleton { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @keyframes shimmer-text { from { background-position: 120% 0; } to { background-position: -120% 0; } }
@@ -175,7 +174,9 @@ kbd {
 }
 
 /* Rule 3: nothing loops while the user is speaking. The session screen sets data-motion-quiet while the mic
- * records an answer; every looping element carries .motion-loop (skeletons, shimmer, dots, pulse). */
+ * records an answer; every looping element carries .motion-loop (skeletons, shimmer, dots, pulse).
+ * Exceptions (D49): the mic ring and the Presence glow follow the user's voice while listening: that is feedback, not
+ * a loop, and the Presence canvas is not .motion-loop. */
 [data-motion-quiet="true"] .motion-loop,
 [data-motion-quiet="true"] .motion-loop *,
 [data-motion-quiet="true"] .shimmer-text {
@@ -196,7 +197,7 @@ kbd {
     --duration-loop-dots: 0ms;
     --duration-loop-skeleton: 0ms;
     --duration-loop-shimmer: 0ms;
-    --duration-orb: 0ms;
+    --duration-presence-sweep: 0ms;
   }
 
   html { scroll-behavior: auto; }

@@ -10,7 +10,7 @@ const allow = new Set(["ds/tokens.css"]);
 const colour = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/;
 // Primitive scales are emitted into tokens.css only so the semantic aliases resolve; components use semantic roles.
 // --color-alpha-* is the generated name for the alpha primitives (--alpha-* is checked too, in case of a rename).
-const primitive = /var\(\s*--(?:color-(?:gray|blue|blueteal|red|amber|green|alpha)-|alpha-|elevation-)/;
+const primitive = /var\(\s*--(?:color-(?:gray|blue|red|amber|green|alpha)-|alpha-|elevation-)/;
 const problems = [];
 
 function walk(dir) {

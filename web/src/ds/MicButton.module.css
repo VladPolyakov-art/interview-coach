@@ -16,7 +16,7 @@
   transition: transform var(--duration-fast) var(--ease-standard);
 }
 /* Thin live ring (session.md §7.3): 2px --color-mic-live at --space-1 outside the face, same ring language as
- * the orb's listening ring. Opacity .4 → 1 and scale 1 → 1.15 follow the level, 120ms linear (v1 D8). */
+ * the v1 orb's listening ring (retired in D49). Opacity .4 → 1 and scale 1 → 1.15 follow the level, 120ms linear (v1 D8). */
 .ring {
   position: absolute;
   inset: calc(-1 * var(--space-1));

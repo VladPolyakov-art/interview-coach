@@ -3,8 +3,11 @@
  * the viewport. No top bar, no dock: one floating island at the bottom centre of the stage. */
 .root {
   container: session / inline-size;
-  /* Island height, measured by the view (ResizeObserver); this default is the one-row pill. */
-  --island-h: calc(var(--control-h-lg) + var(--space-2) * 2);
+  /* Height of the dock (state text + island), measured by the view (ResizeObserver); this default is the one-row pill
+   * plus one line of state text. */
+  --island-h: calc(var(--control-h-lg) + var(--space-2) * 2 + var(--space-10));
+  /* D49: the glow box along the top edge; its bottom is the first text line (Presence text-safe mask). */
+  --stage-reach: var(--presence-reach);
   --island-offset: var(--space-6);
   /* Wide, panel open: the stage content shifts left by half of what the floating panel takes (V2.4, "Stage shift"). */
   --stage-shift: calc((var(--layout-panel) + var(--space-4)) / -2);
@@ -21,20 +24,46 @@
 
 /* ---------- stage ---------- */
 .stage { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* Presence (D49): full stage width along the top edge, never takes a click. */
+.presenceBox { position: absolute; inset-inline: 0; top: 0; height: var(--stage-reach); z-index: 0; pointer-events: none; }
+/* The transcript starts under the glow (margin, not padding: no text ever scrolls under it, P4). Newest at the bottom:
+ * the column sits at the end of the scroller. The bottom keeps room for the dock.
+ * Both ends fade (a mask on the scroller's own box, not on its content): older turns fade out at the glow line instead
+ * of being cut mid-line, and while the user reads above, turns fade out before the dock (state text + island) instead
+ * of running under it. A mask reads only alpha: "black" here means opaque, not a colour. */
 .scroll {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
+  margin-top: var(--stage-reach);
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   justify-content: center;
-  /* The top bar is gone: its height stays as quiet space (P4). The bottom keeps room for the island. */
-  padding: var(--layout-topbar) var(--space-8) calc(var(--island-h) + var(--island-offset) + var(--space-8));
+  /* Top padding = the fade height, so the first turn is never faded when scrolled to the very top. */
+  padding: var(--space-8) var(--space-8) calc(var(--island-h) + var(--island-offset) + var(--space-8));
+  --dock-top: calc(100% - var(--island-h) - var(--island-offset));
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--space-8),
+    black calc(var(--dock-top) - var(--space-8)),
+    transparent var(--dock-top)
+  );
 }
-.flow { display: flex; flex-direction: column; align-items: center; gap: var(--space-8); width: 100%; max-width: var(--layout-narrow); margin-block: auto; min-width: 0; }
-.orbBlock { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); max-width: 100%; }
-.orbBox { display: flex; justify-content: center; max-width: 100%; }
-.captionsBox { width: 100%; }
-.transcriptBox { display: flex; flex-direction: column; min-height: 0; max-height: calc(var(--text-lg) * var(--leading-relaxed) * 9); }
+.flow { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-8); width: 100%; max-width: var(--layout-narrow); margin-top: auto; min-width: 0; }
+
+/* "Jump to latest": above the dock, centred, only while the user reads above. */
+.jumpWrap {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(var(--island-h) + var(--island-offset) + var(--space-3));
+  z-index: var(--z-sticky);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.jump { pointer-events: auto; box-shadow: var(--shadow-raised); }
 
 /* ---------- island (sticky bottom centre of the stage, V2.1) ---------- */
 .islandWrap {
@@ -47,6 +76,9 @@
   padding-inline: var(--space-8);
   pointer-events: none;
 }
+/* The dock: the one state text (O5) right above the island. */
+.dock { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; max-width: var(--layout-narrow); min-width: 0; }
+.status { display: flex; justify-content: center; max-width: 100%; pointer-events: auto; }
 .islandBox { display: flex; justify-content: center; width: 100%; max-width: var(--layout-narrow); min-width: 0; }
 .islandBox > * { pointer-events: auto; }
 
@@ -55,15 +87,16 @@
 .root[data-panel="open"] .shift { transform: translateX(var(--stage-shift)); }
 /* Shifted content must still fit left of the panel on a 1024-1280 window. */
 .root[data-panel="open"] .flow,
-.root[data-panel="open"] .islandBox {
+.root[data-panel="open"] .dock {
   max-width: min(var(--layout-narrow), calc(100cqw - var(--layout-panel) - var(--space-4) * 3 - var(--space-8) * 2));
 }
 
 @container session (width < 768px) {
   .root { --island-offset: var(--space-4); }
+  .body { --stage-reach: var(--presence-reach-sm); }
   .scroll { padding: var(--space-8) var(--layout-gutter) calc(var(--island-h) + var(--island-offset) + var(--space-6)); }
   .flow { gap: var(--space-5); }
-  .orbBox { --orb-size: calc(var(--orb-size-sm) * 1.5); }
+  .dock { gap: var(--space-2); }
   /* Two-row island: full width minus the gutter, above the home indicator (V2.7). */
   .islandWrap { padding-inline: var(--layout-gutter); bottom: calc(var(--island-offset) + env(safe-area-inset-bottom)); }
 }

@@ -4,7 +4,7 @@ import { ChipGroup, Chip } from "./Badge";
 import { ChatLog, ChatMessage } from "./ChatMessage";
 import { ComposerAttachment } from "./Composer";
 
-/** ChatMessage (G22): Mike's setup chat on Home. Mike = plain text, no bubble; the user = a subtle end-aligned bubble.
+/** ChatMessage (G22): Mike's setup chat on Home and the Session transcript (D49). Mike = plain text, no bubble; the user = a subtle end-aligned bubble.
  * `pending` only while real work runs (reading a file, opening a link); `error` = alert icon, no status colour. */
 const meta: Meta<typeof ChatMessage> = { title: "DS/ChatMessage", component: ChatMessage, tags: ["autodocs"] };
 export default meta;
@@ -64,6 +64,21 @@ export const Narrow: Story = {
       <ChatLog label="Setup with Mike">
         <ChatMessage speaker="mike" name="Mike">Anything else I should know? For example a story from your CV you want to use, or a question that worries you.</ChatMessage>
         <ChatMessage speaker="user">I always ramble on “tell me about yourself”, please push me on that one.</ChatMessage>
+      </ChatLog>
+    </div>
+  ),
+};
+
+/** Session transcript (D49): `size="lg"`, not announced (the words are heard); the live answer is `interim`. */
+export const SessionTranscript: Story = {
+  render: () => (
+    <div style={frame}>
+      <ChatLog label="Conversation" size="lg" live={false}>
+        <ChatMessage speaker="mike">Tell me about a time you had to change your plan late in a project. What happened?</ChatMessage>
+        <ChatMessage speaker="user" state="interim">
+          Two weeks before launch legal asked us to add a consent step to checkout.
+          <span style={{ color: "var(--color-text-secondary)" }}> we tested it with five</span>
+        </ChatMessage>
       </ChatLog>
     </div>
   ),
