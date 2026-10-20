@@ -76,8 +76,9 @@ app/
 
 ## Before publishing
 
-Run the personal-data check with your own denylist (kept outside the repository):
+Run the personal-data check with your own denylist (kept outside the repository). CI runs only the built-in
+checks (Cyrillic text, e-mail addresses), because it has no denylist:
 
 ```bash
-.venv/bin/python scripts/pii_scan.py      # reads ~/.config/interview-coach/denylist.txt or IC_PII_PATTERNS
+.venv/bin/python scripts/pii_scan.py --require-denylist   # reads ~/.config/interview-coach/denylist.txt or IC_PII_PATTERNS
 ```
