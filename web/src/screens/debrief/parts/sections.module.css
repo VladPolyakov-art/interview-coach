@@ -1,0 +1,41 @@
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.headText { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.label { margin: 0; color: var(--color-text-secondary); font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.sub { margin: 0; color: var(--color-text-tertiary); font-size: var(--text-sm); }
+.lead { font-weight: var(--weight-semibold); }
+
+.verdict { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.headline {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+.line { margin: 0; max-width: 60ch; color: var(--color-text-secondary); font-size: var(--text-md); line-height: var(--leading-relaxed); overflow-wrap: anywhere; }
+.scale { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+
+.block { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-6); min-width: 0; }
+.action { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; min-width: 0; max-width: 28ch; }
+.hint { margin: 0; color: var(--color-text-secondary); font-size: var(--text-sm); line-height: var(--leading-normal); }
+.exampleHint { margin: 0; color: var(--color-text-secondary); font-size: var(--text-md); max-width: 60ch; }
+.linkAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-h-lg);
+  color: var(--color-text-link);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+@container page (width < 560px) {
+  .headline { font-size: var(--text-xl); }
+  .actions { flex-direction: column; align-items: stretch; gap: var(--space-4); }
+  .action { max-width: none; align-items: stretch; }
+  .action > button { width: 100%; }
+}

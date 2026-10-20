@@ -1,13 +1,17 @@
-/* History of saved sessions and the trash (soft delete with restore). */
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Badge, Button, Callout, durationMs, EmptyState, IconButton, Skeleton } from "../ds";
+/* History of saved sessions (live container of `history/HistoryView`) and the trash (soft delete with restore). */
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Button, Callout, durationMs, EmptyState, Skeleton, useFreshOnce, useToast } from "../ds";
 import { t, tp } from "../i18n";
 import { Page } from "../components/Page";
 import { api } from "../lib/api";
-import { formatDate, formatDateTime, formatDuration } from "../lib/format";
+import { formatDate, formatDateTime } from "../lib/format";
 import { useLoad } from "../lib/hooks";
 import { errorMessage } from "../lib/store";
+import type { SessionSummary } from "../lib/types";
+import { renameSession } from "./debrief/rename";
+import { HistoryView } from "./history/HistoryView";
+import type { HistoryRowModel, TrackFilter } from "./history/types";
 import s from "./History.module.css";
 
 /* ---------- row motion (docs/motion.md 3.4: rows enter staggered once, a removed row slides out) ---------- */
@@ -53,72 +57,95 @@ function useRowExit(remove: (id: string) => void) {
   return { exit, rowProps };
 }
 
-export function HistoryScreen() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const initialNotice = (location.state as { notice?: string } | null)?.notice ?? "";
-  const [notice, setNotice] = useState(initialNotice);
-  const [error, setError] = useState("");
-  const list = useLoad(() => api.sessions());
-  const sessions = list.data?.sessions ?? [];
-  const enter = useFirstLoadStagger(Boolean(list.data));
-  const rows = useRowExit((id) => list.setData((d) => (d ? { ...d, sessions: d.sessions.filter((x) => x.id !== id) } : d)));
+/** The saved summary carries a verdict sentence and an answer count, nothing else; the row shows what it has. */
+export function rowFromSummary(x: SessionSummary): HistoryRowModel {
+  const result = x.verdict || (x.answers > 0 ? tp("history.result.answered", x.answers) : t("history.result.noDebrief"));
+  return {
+    id: x.id,
+    title: x.title || t("debrief.title"),
+    track: x.mode === "english" ? "english" : "interview",
+    startedAt: x.started_at,
+    durationS: x.duration_s ?? undefined,
+    result,
+  };
+}
 
-  const remove = async (id: string, title: string, li: HTMLElement | null) => {
-    setError("");
+const parseTrack = (v: string | null): TrackFilter => (v === "interview" || v === "english" ? v : "all");
+/** Rows stagger in once per visit (motion.md N10), not on every return to the list. */
+const seen = new Set<string>();
+
+export function HistoryScreen() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const toast = useToast();
+  const [notice, setNotice] = useState("");
+  const list = useLoad(() => api.sessions());
+  const trashed = useLoad(() => api.trash());
+  const fresh = useFreshOnce(seen, "history");
+  const now = useMemo(() => new Date(), []);
+  const rows = useMemo(() => (list.data?.sessions ?? []).map(rowFromSummary), [list.data]);
+
+  const undo = (trashId: string) => {
+    api.restoreSession(trashId)
+      .then(() => { list.reload(); trashed.reload(); })
+      .catch((e: unknown) => setNotice(errorMessage(e)));
+  };
+  const showTrashed = (trashId: string) => {
+    toast.show({ message: t("history.toast.trashed"), action: trashId ? { label: t("common.undo"), onClick: () => undo(trashId) } : undefined });
+  };
+
+  // Arrived from a debrief that was just moved to Trash: the same toast with Undo (debrief.md §4).
+  const arrival = useRef(false);
+  useEffect(() => {
+    const state = location.state as { trashed?: { title: string; trashId: string } } | null;
+    if (!state?.trashed || arrival.current) return;
+    arrival.current = true;
+    showTrashed(state.trashed.trashId);
+    trashed.reload();
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  const onTrash = async (id: string) => {
+    setNotice("");
     try {
-      await api.deleteSession(id);
-      setNotice(t("debrief.deleted"));
-      rows.exit(id, li);
+      const { trash_id } = await api.deleteSession(id);
+      list.setData((d) => (d ? { ...d, sessions: d.sessions.filter((x) => x.id !== id) } : d));
+      trashed.reload();
+      showTrashed(trash_id);
+      return true;
     } catch (e) {
-      setError(`${title}: ${errorMessage(e)}`);
+      setNotice(`${rows.find((r) => r.id === id)?.title ?? ""}: ${errorMessage(e)}`.replace(/^: /, ""));
+      return false;
+    }
+  };
+  const onRename = async (id: string, title: string) => {
+    setNotice("");
+    try {
+      const saved = await renameSession(id, title);
+      list.setData((d) => (d ? { ...d, sessions: d.sessions.map((x) => (x.id === id ? { ...x, title: saved } : x)) } : d));
+      return true;
+    } catch {
+      setNotice(t("history.toast.renameFailed"));
+      return false;
     }
   };
 
   return (
-    <Page title={t("history.title")} sub={t("history.subtitle")} actions={<Link to="/history/trash">{t("history.trash")}</Link>}>
-      {notice ? <Callout tone="success" live="status" actions={<Link to="/history/trash">{t("history.trash")}</Link>}>{notice}</Callout> : null}
-      {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
-      {list.loading && !list.data ? <Skeleton variant="row" rows={4} /> : null}
-      {list.error ? (
-        <Callout tone="error" actions={<Button size="sm" variant="secondary" onClick={list.reload}>{t("common.retry")}</Button>}>
-          {t("history.loadError")}
-        </Callout>
-      ) : null}
-      {list.data && !sessions.length ? (
-        <EmptyState icon="history" title={t("history.empty")}
-          actions={<Button variant="primary" icon="practice" onClick={() => navigate("/")}>{t("history.start")}</Button>}>
-          {t("history.emptyBody")}
-        </EmptyState>
-      ) : null}
-      {sessions.length ? (
-        <ul className={s.list}>
-          {sessions.map((x, i) => {
-            const motion = { ...enter(i), ...rows.rowProps(x.id) };
-            return (
-            <li key={x.id} {...motion} className={`${s.row} ${motion.className ?? ""}`}>
-              <div className={s.main}>
-                <Link className={s.titleLink} to={`/sessions/${x.id}`} aria-label={t("history.open", { title: x.title })}>{x.title}</Link>
-                <span className={s.meta}>
-                  {x.mode ? <Badge tone="outline">{t(`history.mode.${x.mode}`)}</Badge> : null}
-                  <span>{formatDateTime(x.started_at)}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{formatDuration(x.duration_s)}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{tp("debrief.answers", x.answers)}</span>
-                </span>
-                <span className={s.verdict}>{x.verdict || t("history.noVerdict")}</span>
-              </div>
-              <div className={s.side}>
-                <IconButton icon="trash" label={t("history.delete", { title: x.title })}
-                  onClick={(e) => void remove(x.id, x.title, e.currentTarget.closest("li"))} />
-              </div>
-            </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </Page>
+    <HistoryView
+      state={list.error ? "error" : list.loading && !list.data ? "loading" : "ready"}
+      rows={rows}
+      now={now}
+      track={parseTrack(params.get("track"))}
+      onTrackChange={(next) => setParams(next === "all" ? {} : { track: next }, { replace: true })}
+      trashCount={trashed.data?.items.length ?? 0}
+      enterStagger={fresh}
+      notice={notice || undefined}
+      onTrash={onTrash}
+      onRename={onRename}
+      onRetry={list.reload}
+    />
   );
 }
 

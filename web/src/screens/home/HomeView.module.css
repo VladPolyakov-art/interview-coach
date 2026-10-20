@@ -1,0 +1,22 @@
+/* Home layout. Container names: `shell` (AppShell root) and `page` (<main>); widths are listed in docs/frontend.md.
+ * `.home.home` beats Page's own single-class rules (gap, narrow padding) without !important. */
+.home.home { gap: var(--space-6); }
+.orb { order: -1; display: flex; justify-content: center; }
+
+/* Track switch: centred pill, full width on phones. Targets the radiogroup by role (the DS pill hugs its options). */
+.track { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; }
+.trackSwitch { display: flex; justify-content: center; width: 100%; }
+.trackHint { color: var(--color-text-tertiary); font-size: var(--text-sm); max-width: var(--layout-narrow); }
+
+.panel { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+/* The panel continues the page's stagger (header, orb, switch come first). */
+.nested { --stagger-base: 4; }
+.workOn { margin-bottom: var(--space-2); }
+.compose { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+
+@container page (width < 560px) {
+  .home.home { padding-top: var(--space-8); }
+  .trackSwitch > * { width: 100%; }
+  .trackSwitch [role="radiogroup"] { display: flex; width: 100%; }
+  .trackSwitch [role="radio"] { flex: 1 1 0; }
+}

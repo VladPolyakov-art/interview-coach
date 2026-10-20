@@ -1,0 +1,50 @@
+/* History list. Layout by container `page` (widths: wide >= 840, medium 560-839, narrow < 560); no viewport queries. */
+.page { display: contents; }
+.inner { padding-bottom: var(--space-16); }
+.body { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.filter { align-self: flex-start; }
+.groups { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.groupLabel {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.trashLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--control-h-sm);
+  color: var(--color-text-link);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.inlineLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-h-sm);
+  color: var(--color-text-link);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.metaItem { display: inline-flex; align-items: center; gap: var(--space-1); }
+/* The result is one short line; a long verdict sentence gives way to two lines at most (never coloured). */
+.result {
+  display: -webkit-box;
+  max-width: 32ch;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+.filteredEmpty { padding-block: var(--space-4); }
+.toast { display: flex; justify-content: flex-start; }
+
+@container page (width < 560px) {
+  .result { max-width: none; }
+}

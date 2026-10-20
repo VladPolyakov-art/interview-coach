@@ -2,6 +2,7 @@ import { Frame } from "./Frame";
 import { Gallery } from "./Gallery";
 import { ENTRIES } from "./entries";
 import { CommentButton } from "./CommentButton";
+import { DECISIONS } from "./decisions";
 import { REVIEW_SCREENS, type ReviewScreen, type ReviewState } from "./screens";
 import s from "./review.module.css";
 
@@ -20,8 +21,8 @@ function StateBlock({ screen, state }: { screen: ReviewScreen; state: ReviewStat
       {state.note && <p className={s.note}>{state.note}</p>}
       {desktop && themes.map((th) => (
         <div key={th} className={s.frameWrap} data-review-section={`${key}@1440${th === "dark" ? " dark" : ""}`} data-comment-target data-review-id={`${key}@1440-${th}`}>
-          <span className={s.frameLabel}>1440 · {th === "dark" ? "тёмная" : "светлая"}</span>
-          <Frame {...DESKTOP} theme={th} prefix={`${key}@1440-${th}`}>{state.render()}</Frame>
+          <span className={s.frameLabel}>1440 · {th === "dark" ? "тёмная" : "светлая"}{state.tall ? " · во всю высоту" : ""}</span>
+          <Frame {...DESKTOP} tall={state.tall} theme={th} prefix={`${key}@1440-${th}`}>{state.render()}</Frame>
         </div>
       ))}
       {mobile && (
@@ -29,7 +30,7 @@ function StateBlock({ screen, state }: { screen: ReviewScreen; state: ReviewStat
           {themes.map((th) => (
             <div key={th} className={s.phone} data-review-section={`${key}@375${th === "dark" ? " dark" : ""}`} data-comment-target data-review-id={`${key}@375-${th}`}>
               <span className={s.frameLabel}>375 · {th === "dark" ? "тёмная" : "светлая"}</span>
-              <Frame {...MOBILE} theme={th} prefix={`${key}@375-${th}`}>{state.render()}</Frame>
+              <Frame {...MOBILE} tall={state.tall} theme={th} prefix={`${key}@375-${th}`}>{state.render()}</Frame>
             </div>
           ))}
         </div>
@@ -55,10 +56,25 @@ export function ReviewPage() {
         </p>
         <nav className={s.toc} aria-label="Разделы">
           {REVIEW_SCREENS.map((sc) => <a key={sc.id} href={`#${sc.id}`}>{sc.title}</a>)}
+          <a href="#decisions">Решения по умолчанию · {DECISIONS.length}</a>
           <a href="#components">Компоненты · {ENTRIES.length} / {specimens}</a>
           <a href="#components-dark">Компоненты · тёмная</a>
         </nav>
       </header>
+
+      <section id="decisions" className={s.section} aria-labelledby="h-decisions">
+        <h2 id="h-decisions" className={s.h2}>Решения по умолчанию</h2>
+        <p className={s.note}>Экраны собраны с этими ответами. Если не согласен — оставь комментарий на строке, переделаю.</p>
+        <ol className={s.decisions}>
+          {DECISIONS.map((d) => (
+            <li key={d.id} className={s.decision} data-review-section={`Решение · ${d.question}`} data-comment-target data-review-id={`Decision/${d.id}`}>
+              <span className={s.decisionScreen}>{d.screen}</span>
+              <span className={s.decisionQ}>{d.question}</span>
+              <span className={s.decisionA}>{d.chosen}{d.alt && <span className={s.decisionAlt}> · иначе: {d.alt}</span>}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       {REVIEW_SCREENS.map((sc) => (
         <section key={sc.id} id={sc.id} className={s.section} aria-labelledby={`h-${sc.id}`}>

@@ -1,0 +1,72 @@
+/* Session layout. The root is a size container named `session`; every width rule is a container query on it
+ * (review frames and the real window behave the same). Height comes from the parent (100%), never from the viewport. */
+.root {
+  container: session / inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+}
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--layout-panel);
+}
+@container session (width < 1024px) {
+  .body { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- stage ---------- */
+.stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-10) var(--space-8) var(--space-6);
+}
+.flow { display: flex; flex-direction: column; align-items: center; gap: var(--space-8); width: 100%; max-width: var(--layout-narrow); margin-block: auto; min-width: 0; }
+.orbBlock { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); max-width: 100%; }
+.orbBox { display: flex; justify-content: center; max-width: 100%; }
+.captionsBox { width: 100%; }
+.transcriptBox { display: flex; flex-direction: column; min-height: 0; max-height: calc(var(--text-lg) * var(--leading-relaxed) * 9); }
+.dockWrap {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-8) var(--space-6);
+  background: var(--color-canvas);
+}
+.reopen { align-self: center; }
+.waiting { margin: 0; text-align: center; }
+
+@container session (width < 768px) {
+  .scroll { padding: var(--space-6) var(--layout-gutter) var(--space-4); }
+  .flow { gap: var(--space-5); }
+  .orbBox { --orb-size: calc(var(--orb-size-sm) * 1.5); }
+  /* Dock: sticky at the bottom, its own surface and a hairline above it. */
+  .dockWrap {
+    position: sticky;
+    bottom: 0;
+    padding: var(--space-3) var(--layout-gutter);
+    border-top: var(--border-width) solid var(--color-border-subtle);
+  }
+}
+
+/* ---------- feedback column (wide) ---------- */
+.panelCol {
+  container: panel / inline-size;
+  min-height: 0;
+  display: flex;
+  padding: var(--space-4);
+  background: var(--color-sidebar);
+}
+.panelCol > * { flex: 1 1 auto; min-width: 0; }

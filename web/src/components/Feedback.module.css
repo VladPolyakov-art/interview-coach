@@ -61,3 +61,38 @@
 .stronger { display: flex; flex-direction: column; gap: var(--space-2); }
 .rewrite { font-size: var(--text-sm); line-height: var(--leading-relaxed); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-subtle); }
 .placeholder { background: var(--color-mark-fix); color: var(--color-text-primary); font-weight: var(--weight-semibold); border-radius: var(--radius-sm); padding: 0 var(--space-1); }
+
+/* ---------- live panel (Session): layer blocks are a left rule, no box (session.md 3.9) ---------- */
+.answerRow { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; }
+.live { gap: var(--space-5); }
+.live .block {
+  padding: 0 0 0 var(--space-4);
+  border: 0;
+  border-left: var(--border-width-strong) solid var(--color-layer-session-rule);
+  border-radius: 0;
+}
+.live .item { padding: var(--space-4); }
+.live .fix { font-size: var(--text-md); }
+.live .quote { font-style: normal; }
+.fixSm { font-size: var(--text-sm); color: var(--color-text-primary); line-height: var(--leading-normal); }
+.star { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle);
+}
+.metricsOne { grid-template-columns: minmax(0, 1fr); }
+.metricsGrid dt { font-size: var(--text-sm); color: var(--color-text-tertiary); }
+.metricsGrid dd { margin: 0; font-size: var(--text-sm); color: var(--color-text-primary); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
+.saidField { gap: var(--space-3); }
+.strongerBtn { align-self: flex-start; }
+.strongerBtn svg:last-child { transition: transform var(--duration-base) var(--ease-standard); }
+.strongerBtn[aria-expanded="true"] svg:last-child { transform: rotate(180deg); }
+/* The panel is a narrow container: three metric columns stack into one row each below ~320px. */
+@container panel (max-width: 320px) {
+  .metricsGrid { grid-template-columns: minmax(0, 1fr); }
+}

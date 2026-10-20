@@ -1,4 +1,8 @@
 import type { ReactNode } from "react";
+import { sessionReview } from "../screens/session/review";
+import { homeReview } from "../screens/home/review";
+import { historyReview } from "../screens/history/review";
+import { debriefReview } from "../screens/debrief/review";
 
 /*
  * Screens on the review page. Each screen agent adds its own entry file (screens/<name>/review.tsx) and registers it here.
@@ -15,6 +19,8 @@ export interface ReviewState {
   mobile?: boolean;
   /** also render the dark theme; default false */
   dark?: boolean;
+  /** grow the frame to the full content height instead of cutting at the viewport height; default false */
+  tall?: boolean;
 }
 
 export interface ReviewScreen {
@@ -24,4 +30,4 @@ export interface ReviewScreen {
   states: ReviewState[];
 }
 
-export const REVIEW_SCREENS: ReviewScreen[] = [];
+export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview];

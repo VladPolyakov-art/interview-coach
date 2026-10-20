@@ -1,0 +1,6 @@
+/* Page rhythm comes from components/Page (sections --space-10, narrow --space-8). The Debrief only adds its own lists. */
+.page { min-width: 0; }
+.questions { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.list { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.list button { scroll-margin-top: var(--space-6); }
+.skipped { margin: 0; font-size: var(--text-sm); color: var(--color-text-tertiary); }

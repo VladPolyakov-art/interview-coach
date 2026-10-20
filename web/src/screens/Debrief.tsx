@@ -1,238 +1,162 @@
-/* Debrief of a saved session (REST): verdict, weak spots, per-thread feedback (no level labels: live panel only), transcript. */
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { Badge, Button, Callout, Card, EmptyState, Icon, Skeleton } from "../ds";
-import { t, tMaybe, tp } from "../i18n";
-import { ThreadFeedback, type FlagAction } from "../components/Feedback";
-import { Page, Section } from "../components/Page";
-import { api } from "../lib/api";
-import { formatDateTime, formatDuration } from "../lib/format";
+/* Debrief of a saved session (live container). The screen itself is the pure `DebriefView` (screens/debrief/);
+ * this file loads the session, polls while the debrief is being written, and wires the actions to the REST API. */
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useFreshOnce } from "../ds";
+import { t } from "../i18n";
+import { api, ApiError } from "../lib/api";
 import { useInterval, useLoad } from "../lib/hooks";
 import { errorMessage, useApp } from "../lib/store";
-import type { FeedbackRecord, SessionRecord } from "../lib/types";
-import type { StrongerState, Thread } from "../session/reducer";
-import s from "./Debrief.module.css";
+import type { FeedbackRecord } from "../lib/types";
+import type { StrongerState } from "../session/reducer";
+import { DebriefView } from "./debrief/DebriefView";
+import { DEFAULT_OPEN, exampleSam } from "./debrief/fixtures";
+import { feedbackOfFlag, mapRecord, threadsFromRecord } from "./debrief/mapRecord";
+import { renameSession } from "./debrief/rename";
 
-/** Group saved feedback the same way the live panel does: one thread per main question (English: per turn). */
-export function threadsFromRecord(record: SessionRecord): Thread[] {
-  const map = new Map<string, Thread>();
-  const order: string[] = [];
-  const qIndex = (id: string) => record.questions.findIndex((q) => q.id === id);
-  for (const fb of record.feedback) {
-    const key = record.mode === "english" ? `t:${fb.id}` : fb.question_id || "general";
-    let th = map.get(key);
-    if (!th) {
-      const q = record.questions.find((x) => x.id === key);
-      th = { key, number: 0, question: q?.text ?? fb.question, records: [], pendingIds: [], unavailable: [] };
-      map.set(key, th);
-      order.push(key);
-    }
-    th.records.push(fb);
-  }
-  const threads = order.map((k) => map.get(k)!);
-  threads.forEach((th, i) => {
-    const idx = record.mode === "english" ? -1 : qIndex(th.key);
-    th.number = idx >= 0 ? idx + 1 : i + 1;
-  });
-  return threads;
-}
+export { threadsFromRecord };
 
-/** Server evidence refers to answers as "q1", "q2"…; show them as "Question 1". */
-function evidenceLabel(ref: string) {
-  const m = /^q(\d+)$/i.exec(ref);
-  return m ? t("feedback.question", { n: Number(m[1]) }) : ref;
+/** The build-up plays on the first open of each session in this visit (Debrief build-up, motion.md). */
+const seen = new Set<string>();
+
+/** `/sessions/example`: the built-in sample debrief (History empty state link); never reads the saved sessions. */
+function ExampleDebrief() {
+  const navigate = useNavigate();
+  const { settings } = useApp();
+  return (
+    <DebriefView
+      variant="example"
+      state="ready"
+      model={exampleSam}
+      layerOrder={settings?.layer_order ?? "content-first"}
+      ui={{ open: DEFAULT_OPEN.example }}
+      onStartFirst={() => navigate("/")}
+    />
+  );
 }
 
 export function DebriefScreen() {
+  const { id = "" } = useParams();
+  return id === "example" ? <ExampleDebrief /> : <LiveDebrief />;
+}
+
+function LiveDebrief() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { settings } = useApp();
   const session = useLoad(() => api.session(id), [id]);
   const [stronger, setStronger] = useState<Record<string, StrongerState>>({});
-  const [showTranscript, setShowTranscript] = useState(false);
   const [rerunning, setRerunning] = useState(false);
-  const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
   const [polls, setPolls] = useState(0);
+  /** Bumped when an optimistic change failed: the view starts again from the saved data. */
+  const [epoch, setEpoch] = useState(0);
   const record = session.data;
+  const fresh = useFreshOnce(seen, `debrief:${id}`);
+  const loadedOnce = useRef(false);
+  if (record) loadedOnce.current = true;
 
   // The debrief may still be being written right after a session: poll for up to a minute.
-  const waiting = Boolean(record && !record.debrief && record.feedback.length && polls < 20);
+  const waiting = Boolean(record && record.mode === "interview" && !record.debrief && record.feedback.length && polls < 20);
   useInterval(() => {
     setPolls((n) => n + 1);
     api.session(id).then((r) => session.setData(r)).catch(() => {});
   }, 3000, waiting);
-  useEffect(() => { setPolls(0); }, [id]);
+  useEffect(() => { setPolls(0); setStronger({}); setNotice(""); }, [id]);
 
-  const threads = useMemo(() => (record ? threadsFromRecord(record) : []), [record]);
-
-  if (session.loading && !record) return (
-    <Page title={t("debrief.title")}>
-      {/* Ghost of the debrief: summary card, then a feedback card (3.5). */}
-      <Skeleton variant="card" lines={3} label={t("debrief.loading")} />
-      <Skeleton variant="card" lines={2} label={t("debrief.loading")} />
-    </Page>
+  const model = useMemo(
+    () => (record ? mapRecord(record, { obsidian: Boolean(settings?.obsidian_dir), stronger, waiting }) : undefined),
+    [record, settings?.obsidian_dir, stronger, waiting],
   );
-  if (session.error || !record) {
+
+  if (!record) {
+    const gone = session.error instanceof ApiError && session.error.status === 404;
     return (
-      <Page title={t("debrief.title")}>
-        <EmptyState icon="info" title={t("debrief.notFound")} actions={<Link to="/history">{t("debrief.history")}</Link>} />
-      </Page>
+      <DebriefView
+        variant="interview"
+        state={session.loading ? "loading" : gone ? "notFound" : "error"}
+        layerOrder={settings?.layer_order ?? "content-first"}
+        onRetry={session.reload}
+      />
     );
   }
 
+  const fail = (e: unknown) => { setNotice(errorMessage(e)); setEpoch((n) => n + 1); };
   const replaceFeedback = (fb: FeedbackRecord) =>
     session.setData({ ...record, feedback: record.feedback.map((x) => (x.id === fb.id ? fb : x)) });
 
-  const onFlag = (feedbackId: string, flagId: string, action: FlagAction) => {
-    setActionError("");
-    api.sessionFlag(record.id, flagId, feedbackId, action)
-      .then(({ language }) => {
-        const fb = record.feedback.find((x) => x.id === feedbackId);
-        if (fb) replaceFeedback({ ...fb, layers: { ...fb.layers, language } });
-      })
-      .catch((e: unknown) => setActionError(errorMessage(e)));
+  const flag = (flagId: string, action: "dismiss" | "restore") => {
+    const fb = feedbackOfFlag(record, flagId);
+    if (!fb) return;
+    setNotice("");
+    api.sessionFlag(record.id, flagId, fb.id, action)
+      .then(({ language }) => replaceFeedback({ ...fb, layers: { ...fb.layers, language } }))
+      .catch(fail);
   };
-  const onStronger = (feedbackId: string) => {
-    setStronger((m) => ({ ...m, [feedbackId]: { status: "loading" } }));
-    api.sessionStronger(record.id, feedbackId)
-      .then((v) => setStronger((m) => ({ ...m, [feedbackId]: { status: "ready", ...v } })))
-      .catch((e: unknown) => setStronger((m) => ({ ...m, [feedbackId]: { status: "unavailable", message: errorMessage(e) } })));
+  const askStronger = (n: number) => {
+    const th = threadsFromRecord(record).find((x) => x.number === n);
+    const main = th?.records.find((r) => r.answer_kind === "main") ?? th?.records[0];
+    if (!main) return;
+    setStronger((m) => ({ ...m, [main.id]: { status: "loading" } }));
+    api.sessionStronger(record.id, main.id)
+      .then((v) => setStronger((m) => ({ ...m, [main.id]: { status: "ready", ...v } })))
+      .catch((e: unknown) => setStronger((m) => ({ ...m, [main.id]: { status: "unavailable", message: errorMessage(e) } })));
   };
   const rerun = () => {
     setRerunning(true);
-    setActionError("");
+    setNotice("");
     api.rerunDebrief(record.id)
       .then((debrief) => session.setData({ ...record, debrief }))
-      .catch((e: unknown) => setActionError(errorMessage(e)))
+      .catch((e: unknown) => setNotice(errorMessage(e)))
       .finally(() => setRerunning(false));
   };
-  const remove = async () => {
+  const trash = async () => {
     try {
-      await api.deleteSession(record.id);
-      navigate("/history", { replace: true, state: { notice: t("debrief.deleted") } });
+      const { trash_id } = await api.deleteSession(record.id);
+      navigate("/history", { replace: true, state: { trashed: { title: record.title, trashId: trash_id } } });
     } catch (e) {
-      setActionError(errorMessage(e));
+      setNotice(errorMessage(e));
     }
   };
-
-  const answers = record.stats?.answers ?? record.feedback.filter((f) => f.answer_kind !== "follow_up").length;
-  const meta = t("debrief.meta", {
-    date: formatDateTime(record.started_at),
-    duration: formatDuration(record.duration_s),
-    answers: tp("debrief.answers", answers),
-  });
-  const d = record.debrief;
-  const layerOrder = settings?.layer_order ?? "content-first";
+  const download = () => {
+    const a = document.createElement("a");
+    a.href = api.sessionMarkdownUrl(record.id);
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  const rename = async (title: string) => {
+    try {
+      const saved = await renameSession(record.id, title);
+      session.setData({ ...record, title: saved });
+      return true;
+    } catch {
+      setNotice(t("history.toast.renameFailed"));
+      return false;
+    }
+  };
+  const practise = () => navigate(record.mode === "english" ? "/?track=english" : "/");
 
   return (
-    <Page
-      title={record.title || t("debrief.title")}
-      sub={meta}
-      actions={
-        <>
-          <Button variant="primary" icon="practice" onClick={() => navigate(record.mode === "english" ? "/?track=english" : "/")}>
-            {t("debrief.practiceAgain")}
-          </Button>
-          <a href={api.sessionMarkdownUrl(record.id)} download>
-            <Icon name="download" size="sm" /> {t("debrief.download")}
-          </a>
-        </>
-      }
-    >
-      {actionError ? <Callout tone="error" live="alert">{actionError}</Callout> : null}
-
-      <Section title={t("debrief.verdict")} id="verdict">
-        {d ? (
-          <Card className={s.block}>
-            <p className={s.verdict}>{d.verdict}</p>
-            {d.too_short && !d.verdict ? <Callout tone="info">{t("debrief.tooShort")}</Callout> : null}
-            {d.source === "template" && !d.too_short ? (
-              <Callout tone="warning" actions={<Button size="sm" variant="secondary" icon="refresh" loading={rerunning} onClick={rerun}>{rerunning ? t("debrief.rerunning") : t("debrief.rerun")}</Button>}>
-                {t("debrief.template")}
-              </Callout>
-            ) : null}
-          </Card>
-        ) : waiting ? (
-          <Card className={s.block}>
-            <p className="shimmer-text" role="status">{t("debrief.pending")}</p>
-            <Skeleton lines={3} label={t("debrief.pending")} />
-          </Card>
-        ) : record.feedback.length ? (
-          <Button variant="secondary" icon="refresh" loading={rerunning} onClick={rerun}>{t("debrief.rerun")}</Button>
-        ) : (
-          <p className={s.meta}>{t("debrief.noFeedback")}</p>
-        )}
-      </Section>
-
-      {d ? (
-        <div className={s.grid}>
-          <Card className={s.block}>
-            <h3 className={s.blockTitle}><Icon name="alert" size="sm" />{t("debrief.weakSpots")}</h3>
-            <ul className={s.spots}>
-              {d.weak_spots.map((w) => (
-                <li key={`${w.layer}-${w.tag}`} className={s.spot}>
-                  <span className={s.spotHead}>
-                    <Badge tone={w.layer} icon={w.layer} tinted>{t(`feedback.layer.${w.layer}`)}</Badge>
-                    <span>{w.text || tMaybe(`feedback.tag.${w.tag}`, w.tag.replace(/_/g, " "))}</span>
-                  </span>
-                  {w.evidence?.length ? <span className={s.evidence}>{t("debrief.evidence", { list: w.evidence.map(evidenceLabel).join(", ") })}</span> : null}
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <Card className={s.block}>
-            {d.strength ? (
-              <>
-                <h3 className={s.blockTitle}><Icon name="check" size="sm" />{t("debrief.strength")}</h3>
-                <p>{d.strength}</p>
-              </>
-            ) : null}
-            <h3 className={s.blockTitle}><Icon name="arrowRight" size="sm" />{t("debrief.nextStep")}</h3>
-            <p>{d.next_step}</p>
-          </Card>
-        </div>
-      ) : null}
-
-      <Section title={t("debrief.answers")} id="answers">
-        {threads.length ? (
-          <div className={s.threads}>
-            {threads.map((th) => (
-              <Card key={th.key}>
-                <ThreadFeedback thread={th} mode={record.mode} layerOrder={layerOrder} live={false}
-                  onFlag={onFlag} onStronger={onStronger} stronger={stronger} headingLevel={3} />
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className={s.meta}>{t("debrief.noFeedback")}</p>
-        )}
-      </Section>
-
-      <Section
-        title={t("debrief.transcript")}
-        id="transcript"
-        action={
-          <Button variant="link" size="sm" aria-expanded={showTranscript} aria-controls="transcript-list" onClick={() => setShowTranscript(!showTranscript)}>
-            {showTranscript ? t("debrief.hideTranscript") : t("debrief.showTranscript")}
-          </Button>
-        }
-      >
-        {showTranscript ? (
-          <ol className={s.transcript} id="transcript-list">
-            {record.transcript.map((turn, i) => (
-              <li key={i} className={s.turn}>
-                <span className={s.who}>{turn.role === "user" ? t("session.you") : t("session.interviewer")}</span>
-                <span className={s.text}>{turn.text}</span>
-              </li>
-            ))}
-          </ol>
-        ) : null}
-      </Section>
-
-      <div className={s.actions}>
-        <Link to="/history">{t("debrief.history")}</Link>
-        <Button variant="ghost" icon="trash" onClick={() => void remove()}>{t("debrief.delete")}</Button>
-      </div>
-    </Page>
+    <DebriefView
+      key={epoch}
+      variant={record.mode === "english" ? "english" : "interview"}
+      state="ready"
+      model={model}
+      layerOrder={settings?.layer_order ?? "content-first"}
+      buildUp={fresh}
+      rerunning={rerunning}
+      notice={notice || undefined}
+      onRename={rename}
+      onRerun={rerun}
+      onDownload={download}
+      onTrash={() => void trash()}
+      onDrill={practise}
+      onPractise={practise}
+      onDismiss={(_q, flagId) => flag(flagId, "dismiss")}
+      onRestore={(_q, flagId) => flag(flagId, "restore")}
+      onStronger={askStronger}
+    />
   );
 }

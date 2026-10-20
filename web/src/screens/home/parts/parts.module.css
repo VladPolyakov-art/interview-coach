@@ -1,0 +1,108 @@
+/* Home parts. Widths in @container are container widths: `page` = <main>, `shell` = AppShell root (docs/frontend.md). */
+
+/* ---- link (looks like the DS `link` button) ---- */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-link);
+  text-underline-offset: 0.2em;
+}
+
+/* ---- shared text ---- */
+.helper { color: var(--color-text-secondary); font-size: var(--text-sm); text-align: center; }
+.helperTertiary { color: var(--color-text-tertiary); font-size: var(--text-sm); }
+.sectionHead { display: flex; flex-direction: column; gap: var(--space-1); }
+.sectionTitle { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.sectionTitleStrong { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+
+/* ---- banners ---- */
+.banners { order: -2; display: flex; flex-direction: column; gap: var(--space-3); }
+.banners:empty { display: none; }
+.bannerActions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.bannerBody { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.bannerNote { color: var(--color-text-secondary); font-size: var(--text-sm); }
+
+/* ---- What to work on ---- */
+/* Layer badges are monochrome on --color-subtle, the same as this card: outline look here. */
+.workOn [data-review-id^="Badge/"],
+.exampleCard [data-review-id^="Badge/"] { background: transparent; border-color: var(--color-border-control); }
+.workOnFooter { display: flex; flex-direction: column; gap: var(--space-4); width: 100%; }
+.misheard { color: var(--color-text-tertiary); font-size: var(--text-sm); }
+/* Focus: the group label sits inline with the chips (the DS group stacks it above). */
+.focusGroup.focusGroup { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: var(--space-3); row-gap: var(--space-2); }
+.drill { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.drillScope { color: var(--color-text-tertiary); font-size: var(--text-sm); min-width: 0; flex: 1 1 12rem; overflow-wrap: anywhere; }
+
+/* ---- round type ---- */
+.round { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+
+/* ---- composer wrapper ---- */
+.composer { min-width: 0; }
+
+/* ---- basis, Start, disclaimer ---- */
+.basis { display: flex; flex-direction: column; gap: var(--space-2); }
+.basisLine { display: flex; align-items: flex-start; gap: var(--space-2); color: var(--color-text-secondary); font-size: var(--text-sm); }
+.basisLine > svg { flex: none; margin-top: var(--space-1); }
+.cvNudge { color: var(--color-text-secondary); font-size: var(--text-sm); }
+.startBlock { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+.startSlot { display: inline-flex; max-width: 100%; animation: global(fade-in) var(--duration-fast) var(--ease-enter) backwards; }
+.reason, .startLine { color: var(--color-text-secondary); font-size: var(--text-sm); }
+.disclaimer { text-align: center; color: var(--color-text-tertiary); font-size: var(--text-sm); }
+.disclaimer .link { font-size: inherit; }
+
+/* Sticky Start bar: phones only (shell < 640), shown when Start scrolls out of view. */
+.sticky { display: none; }
+
+/* ---- example (first visit) ---- */
+.example { display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-6); }
+.exampleTitle { font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.exampleCard { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+.exampleRows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); width: 100%; }
+.exampleRow { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
+.exampleRow > :first-child { flex: none; }
+.exampleText { font-size: var(--text-sm); min-width: 0; overflow-wrap: anywhere; }
+.exampleLevel { color: var(--color-text-tertiary); }
+.exampleFoot { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+
+/* ---- English ---- */
+.level { display: flex; flex-direction: column; gap: var(--space-3); }
+.levelCard { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); text-align: start; min-width: 0; }
+.levelCode { font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.levelText { font-size: var(--text-sm); color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.phrases { min-width: 0; }
+.phrasesCard { display: flex; flex-direction: column; gap: var(--space-4); }
+.phraseRows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.phraseRow { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.phrase { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.phraseFrom { color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.phraseTo { color: var(--color-text-primary); overflow-wrap: anywhere; }
+.phraseTimes { color: var(--color-text-tertiary); flex: none; }
+.phrasesToggle { align-self: flex-start; }
+.phrasesEmpty { text-align: center; color: var(--color-text-tertiary); font-size: var(--text-sm); }
+
+/* ---- narrow page (< 560) ---- */
+@container page (width < 560px) {
+  .startButton.startButton { width: 100%; }
+  .startSlot { width: 100%; }
+  .startBlock { align-items: stretch; }
+  .startBlock > button { align-self: center; }
+  .drill > button { width: 100%; }
+  .phraseRow { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---- phones (shell < 640) ---- */
+@container shell (width < 640px) {
+  .sticky {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    z-index: var(--z-sticky);
+    margin: 0 calc(-1 * var(--layout-gutter));
+    padding: var(--space-3) var(--layout-gutter);
+    background: var(--color-canvas);
+    border-top: var(--border-width) solid var(--color-border-subtle);
+    animation: global(fade-in) var(--duration-fast) var(--ease-enter) backwards;
+  }
+}

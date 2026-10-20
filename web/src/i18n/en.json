@@ -257,7 +257,21 @@
       "from_other": "From your last {n} interviews",
       "count_one": "{n} session",
       "count_other": "{n} sessions",
-      "lastSession": "Last session: {title} · {date}"
+      "lastSession": "Last session: {title} · {date}",
+      "focus": "Focus",
+      "all": "All",
+      "drill": "Drill my weak spots",
+      "scopeAll": "{n} questions aimed at all {total}",
+      "scopeFocus": "{n} questions aimed at: {list}",
+      "scopeMin": "~{min} min",
+      "scopeJob": "{job} job",
+      "more": "+ {n} more: {list}",
+      "showAll": "Show all",
+      "showLess": "Show less",
+      "misheard": "Words you marked as misheard aren't counted.",
+      "loading": "Loading your weak spots…",
+      "empty": "Weak spots and “Drill my weak spots” appear after your first interview.",
+      "lastShort": "Last session: {title} · {date}"
     },
     "vacancies": {
       "title": "Which interview are you preparing for?",
@@ -279,10 +293,10 @@
       "type": "Round type",
       "hr": "HR screen",
       "behavioural": "Behavioural",
-      "mix": "Mix",
+      "mix": "Unseen mix",
       "hrHint": "Motivation, salary, why this company.",
       "behaviouralHint": "Stories from your work: what you did and what changed.",
-      "mixHint": "A bit of both, like most first interviews.",
+      "mixHint": "Questions you can't prepare for, like a real first round.",
       "strictness": "Strictness",
       "gentle": "Gentle",
       "standard": "Standard",
@@ -295,7 +309,9 @@
       "basisJobNoCv": "Questions from the {job} job and the general question bank.",
       "basisCv": "Questions from your CV and the general question bank.",
       "basisGeneral": "General questions for any role.",
-      "length": "{n} questions · about {min} minutes"
+      "length": "{n} questions · about {min} minutes",
+      "technical": "Technical",
+      "technicalHint": "Questions from your CV and the job: how you would do the work, in any role."
     },
     "answerMode": "How you answer",
     "voice": "Voice",
@@ -308,8 +324,85 @@
       "content": "Missing result: end with what changed.",
       "language": "\"I am responsible of\" → \"I'm responsible for\"",
       "delivery": "14 fillers · 2:50 · 132 wpm: shorter answers land better",
-      "after": "Weak spots appear here after your first interview."
-    }
+      "after": "Weak spots appear here after your first interview.",
+      "open": "Open example debrief",
+      "helper": "Weak spots and “Drill my weak spots” appear after your first interview.",
+      "langFrom": "I am responsible",
+      "langWrong": "of",
+      "langTo": "I'm responsible",
+      "langRight": "for",
+      "langLevel": "B1 grammar"
+    },
+    "greetingName": "{greeting}, {name}",
+    "trackHint": "English practice: just talk at your level, no interview needed.",
+    "orbIdle": "Mike is ready when you are.",
+    "orbOffline": "Mike is offline.",
+    "engine": {
+      "ollamaDown": "The AI model (Ollama) isn't running. Open the Ollama app, or paste this into Terminal:",
+      "recheck": "We check again every 5 seconds.",
+      "tryNow": "Try again now",
+      "reason": "Start the AI model first."
+    },
+    "browser": {
+      "body": "This browser can't run speech recognition. Use Chrome or Edge, or answer by typing.",
+      "useText": "Use text mode",
+      "dismiss": "Dismiss for this session",
+      "typing": "You'll answer by typing."
+    },
+    "storage": {
+      "body": "We can't read your saved sessions. Check the data folder in Settings.",
+      "open": "Open storage settings"
+    },
+    "strictness": {
+      "gentle": {
+        "label": "Gentle",
+        "desc": "At most one follow-up, only when a result is missing."
+      },
+      "standard": {
+        "label": "Standard",
+        "desc": "A follow-up when an answer misses your role, a result or a reflection."
+      },
+      "tough": {
+        "label": "Tough",
+        "desc": "Up to two follow-ups, and Mike asks for numbers."
+      },
+      "aria": "Strictness: {level}",
+      "menu": "Strictness"
+    },
+    "composer": {
+      "label": "Paste a job description or a link",
+      "placeholderNone": "Paste a job description or a link (optional)",
+      "placeholderAttached": "Paste another job or a link",
+      "file": "File",
+      "saved": "Saved jobs",
+      "listLabel": "Saved jobs",
+      "add": "Add this job",
+      "addJob": "Add a job",
+      "options": "{company} options",
+      "edit": "Edit job",
+      "delete": "Delete job",
+      "remove": "Remove job, use general questions",
+      "search": "Find a job",
+      "loadingJob": "Loading the job…"
+    },
+    "job": {
+      "short": "Short description: questions will be mostly general",
+      "fromLink": "Added from a link"
+    },
+    "basis": {
+      "job": "Questions from your CV, the {job} job and the general question bank",
+      "jobNoCv": "Questions from the {job} job and the general question bank",
+      "cv": "Questions from your CV and the general question bank",
+      "general": "General questions for any role"
+    },
+    "typeInstead": "Type instead",
+    "connecting": "One moment…",
+    "reason": {
+      "loading": "Loading your jobs…",
+      "level": "Pick your level to start."
+    },
+    "disclaimer": "Practice only: no help during real interviews.",
+    "free": "What's free"
   },
   "english": {
     "level": "Your level",
@@ -334,7 +427,24 @@
     },
     "start": "Start talking",
     "after": "After each of your turns you'll see up to 3 corrections with a reason. Nothing appears while you speak.",
-    "free": "Free forever: no limits on English practice."
+    "free": "Free forever: no limits on English practice.",
+    "levelPick": "Pick one. You can change it any time.",
+    "lastChoice": "{level}: your last choice. Change it any time.",
+    "startReason": "Pick your level to start.",
+    "typing": "You'll answer by typing.",
+    "phrases": {
+      "title": "Phrases to review",
+      "sub": "From your English sessions",
+      "times_one": "{n} time",
+      "times_other": "{n} times",
+      "shouldBe": "should be",
+      "practise": "Practise these phrases",
+      "scope_one": "A short talk that uses this phrase · ~{min} min",
+      "scope_other": "A short talk that uses these {n} phrases · ~{min} min",
+      "empty": "Phrases you often get wrong will appear here after your first session.",
+      "showAll": "Show all ({n})",
+      "showLess": "Show less"
+    }
   },
   "vacancy": {
     "title": "Add a job",
@@ -348,12 +458,34 @@
     "url": "Link to the job posting",
     "urlHint": "Some pages need a login. If it doesn't work, paste the text instead.",
     "fileLabel": "File",
-    "fileHint": "PDF, DOCX, TXT, MD or HTML.",
+    "fileHint": "PDF, DOCX, TXT, MD or HTML · up to 5 MB",
     "jobTitle": "Name for this job",
     "jobTitleHint": "For example: Kestrel Pay · Senior Product Designer. Leave empty to use the first line.",
     "save": "Save job",
     "saving": "Saving…",
-    "error": "Couldn't add this job."
+    "error": "Couldn't add this job.",
+    "editTitle": "Edit job",
+    "company": "Company",
+    "role": "Role",
+    "extracted": "We filled these in from the text. Change them if they're wrong.",
+    "short": "This text is short, so questions will be mostly general.",
+    "filePrivacy": "The file stays on this computer.",
+    "fileZone": "Job description file",
+    "drop": "Drop a file here or",
+    "browse": "browse",
+    "fileRemove": "Remove file",
+    "reading": "Reading the file…",
+    "fileError": "We couldn't read this file. It may be a scan or password-protected. Paste the text instead.",
+    "fileErrorTitle": "Couldn't read the file",
+    "toPaste": "Switch to Paste",
+    "fetch": "Fetch",
+    "fetching": "Opening the page…",
+    "linkError": "We couldn't open this page: it needs a login. Paste the text instead.",
+    "linkErrorTitle": "Couldn't open the page",
+    "delete": "Delete job",
+    "saveAndStart": "Save and start",
+    "deleteTitle": "Delete {name}?",
+    "deleteBody": "Your sessions with this job stay in History."
   },
   "session": {
     "title": "Interview session",
@@ -384,23 +516,28 @@
     "status": {
       "label": "Status",
       "connecting": "Connecting",
-      "preparing": "Getting ready",
+      "preparing": "Mike is getting ready",
       "listening": "Listening",
       "thinking": "Thinking",
-      "speaking": "Speaking",
+      "speaking": "Mike is speaking",
       "yourTurn": "Your turn",
       "muted": "Muted",
-      "ended": "Ended"
+      "ended": "Ended",
+      "between": "Your feedback is ready",
+      "paused": "Paused",
+      "preparingFeedback": "Preparing your feedback",
+      "saved": "Your answer is saved"
     },
     "heard": "What we heard. A wrong word? Fix it after you answer.",
     "firstTime": {
       "title": "First time here",
-      "voice1": "Answer aloud when Mike stops. Pause to think: he waits.",
+      "voice1": "Answer aloud when Mike stops. Pause to think: he waits up to {sec} s.",
       "voice2": "When you're done, stop talking or press Enter.",
       "voice3": "Subtitles show what we heard. You can fix a wrong word after you answer.",
       "text1": "Type your answer in the box below.",
-      "text2": "When you're done, press Send (Enter). Shift+Enter adds a new line.",
-      "text3": "Feedback appears on the right after each question."
+      "text2": "When you're done, press Send (Enter).",
+      "text3": "Feedback appears on the right after each question.",
+      "voice1Manual": "Answer aloud when Mike stops. Take your time: Mike waits until you press Send now."
     },
     "controls": {
       "label": "Session controls",
@@ -412,13 +549,18 @@
       "talk": "Talk now",
       "typeInstead": "Type instead",
       "pauseHelp": "Pause to think: your answer is sent after {sec} s of quiet.",
-      "manualHelp": "Your answer is sent when you press Send now (Enter)."
+      "manualHelp": "Your answer is sent when you press Send now (Enter).",
+      "help": "Keyboard shortcuts"
     },
     "input": {
       "label": "Your answer",
       "placeholder": "Type your answer",
       "send": "Send",
-      "hint": "Enter to send · Shift+Enter for a new line"
+      "hint": "Enter to send · Shift+Enter for a new line",
+      "hintSend": "to send",
+      "hintNewline": "for a new line",
+      "enter": "Enter",
+      "shiftEnter": "Shift+Enter"
     },
     "suggest": {
       "toggle": "Show a sample answer",
@@ -466,7 +608,101 @@
       "saveFailed": "Couldn't save the session."
     },
     "missing": "This session wasn't started from Practice.",
-    "warnings": "Notes from the engine"
+    "warnings": "Notes from the engine",
+    "titleDrill": "Drill",
+    "elapsedAria": "Elapsed time {m} minutes {s} seconds",
+    "round": {
+      "hr": "HR screen",
+      "behavioural": "Behavioural",
+      "mix": "Unseen mix"
+    },
+    "strict": {
+      "gentle": "Gentle",
+      "standard": "Standard",
+      "tough": "Tough"
+    },
+    "sub": {
+      "connecting": "Starting the local engine…",
+      "speaking": "Press Space to interrupt",
+      "yourTurn": "Answer when you're ready",
+      "yourTurnText": "Type your answer below",
+      "listening": "Take your time. Mike waits for {sec} s of quiet.",
+      "listeningManual": "Press Send now when you're done.",
+      "between": "Mike asks question {n} when you press Next question.",
+      "betweenLast": "That was the last question.",
+      "muted": "Press M to unmute",
+      "paused": "Your answers so far are saved."
+    },
+    "captions": {
+      "subtitles": "Subtitles",
+      "transcript": "Transcript of question {n}",
+      "transcriptEnglish": "Transcript",
+      "youTyped": "You typed",
+      "empty": "Mike's words appear here.",
+      "thinking": "Mike is replying"
+    },
+    "help": {
+      "interrupt": "Interrupt",
+      "mute": "Mute",
+      "redo": "Redo",
+      "send": "Send now",
+      "type": "Type instead",
+      "space": "Space",
+      "enter": "Enter"
+    },
+    "connectingPill": "Connecting to Mike…",
+    "panel": {
+      "feedbackFor": "Feedback for question {n}",
+      "feedbackForTurn": "Feedback for turn {n}",
+      "hide": "Hide feedback",
+      "nextQuestion": "Next question",
+      "seeDebrief": "See your debrief",
+      "rechecking": "Checking question {n} again…",
+      "more": "Feedback for question {n}"
+    },
+    "edit": {
+      "title": "Question {n} · Edit what I said",
+      "titleTyped": "Question {n} · Edit my answer",
+      "hint": "Change any word we misheard. Only this answer is checked again.",
+      "hintTyped": "Only this answer is checked again.",
+      "answer": "Your answer",
+      "followUp": "Your follow-up",
+      "underlined": "Words we weren't sure about are underlined.",
+      "save": "Save and check again"
+    },
+    "banner": {
+      "browserTitle": "This browser can't recognise speech",
+      "browserBody": "Use Chrome or Edge for voice, or answer by typing. You can switch back any time.",
+      "useText": "Use text mode",
+      "dismiss": "Dismiss for this session",
+      "storageTitle": "We can't save to this computer",
+      "storageBody": "The data folder is read-only. Your debrief will be offered as a download at the end.",
+      "fixSettings": "Fix in Settings"
+    },
+    "interrupted": {
+      "engineTitle": "The AI model (Ollama) stopped responding",
+      "engineBody": "Your answers so far are saved. Open the Ollama app, or paste this into Terminal:",
+      "command": "ollama serve",
+      "engineRetry": "We check again every 5 seconds. Resume turns on when it's back.",
+      "resume": "Resume",
+      "endDebrief": "End and see debrief",
+      "voiceTitle": "The voice connection dropped",
+      "voiceBody": "Your answers so far are saved. Mike is still running, so you can carry on by typing.",
+      "resumeVoice": "Resume voice",
+      "continueText": "Continue in text"
+    },
+    "micHelp": {
+      "title": "Mike can't hear you",
+      "blocked": "The microphone is blocked in this browser.",
+      "step1": "Click the lock icon left of the address bar.",
+      "step2": "Set Microphone to Allow.",
+      "step3": "Press Try again.",
+      "none": "No microphone found. Plug in a headset or pick another input in your system sound settings, then press Try again.",
+      "useText": "Use text mode",
+      "tryAgain": "Try again"
+    },
+    "stageLabel": "Interview",
+    "mikeRole": "Mike"
   },
   "feedback": {
     "panel": "Feedback",
@@ -538,14 +774,19 @@
       "mayBeMisheard": "(may be misheard)",
       "didYouSay": "Did you say this?",
       "yesSaid": "Yes, I said that",
-      "noSaid": "No",
+      "noSaid": "No, I said…",
       "removed": "Removed: we won't flag this again in this session.",
       "removedMisheard": "You marked \"{text}\" as misheard: not counted.",
       "confirmed": "You confirmed this one.",
-      "more_one": "{n} more not shown",
-      "more_other": "{n} more not shown",
+      "more_one": "{n} more phrasing not shown",
+      "more_other": "{n} more phrasings not shown",
       "phraseToKeep": "Phrase to keep",
-      "unconfirmedLeft": "Unanswered checks stay uncounted."
+      "unconfirmedLeft": "Unanswered checks stay uncounted.",
+      "heardOpenTitle": "That's not what I said: removed, not counted.",
+      "whatDidYouSay": "What did you say? (optional)",
+      "saveHeard": "Save",
+      "skip": "Skip",
+      "typed": "You typed"
     },
     "delivery": {
       "fillers": "Fillers {n}",
@@ -557,7 +798,12 @@
       "fast": "fast",
       "pauses": "Long pauses {n}",
       "textMode": "Pace and fillers aren't available in text mode.",
-      "nothing": "Nothing to fix here."
+      "nothing": "Nothing to fix here.",
+      "fillersLabel": "Fillers",
+      "lengthLabel": "Length",
+      "paceLabel": "Pace",
+      "lengthValue": "{time} ({words})",
+      "paceValue": "{wpm} wpm, {verdict}"
     },
     "stronger": {
       "show": "Show a stronger answer",
@@ -593,6 +839,16 @@
       "filler_high": "Too many fillers",
       "long_pauses": "Long pauses",
       "restarts": "Restarted sentences"
+    },
+    "edit": "Edit what I said",
+    "editTyped": "Edit my answer",
+    "star": {
+      "situation": "Situation",
+      "task": "Task",
+      "action": "Action",
+      "result": "Result",
+      "missing": "{name}: missing",
+      "label": "Answer structure"
     }
   },
   "debrief": {
@@ -607,12 +863,26 @@
     "template": "The AI model wasn't available, so this debrief was built from your feedback without it.",
     "rerun": "Write the debrief again",
     "rerunning": "Writing…",
-    "evidence": "From: {list}",
+    "evidence": {
+      "questions_one": "Question",
+      "questions_other": "Questions",
+      "mostIn": "Most in question",
+      "goTo": "Go to question {n}"
+    },
     "answers": "Your answers",
     "transcript": "Transcript",
     "showTranscript": "Show the full transcript",
     "hideTranscript": "Hide the transcript",
-    "meta": "{date} · {duration} · {answers}",
+    "meta": {
+      "label": "Session details",
+      "questions_one": "{n} question",
+      "questions_other": "{n} questions",
+      "followUps_one": "{n} follow-up",
+      "followUps_other": "{n} follow-ups",
+      "turns_one": "{n} turn",
+      "turns_other": "{n} turns",
+      "answered": "{answered} of {total} questions answered"
+    },
     "answers_one": "{n} answer",
     "answers_other": "{n} answers",
     "download": "Download as Markdown",
@@ -621,7 +891,144 @@
     "noFeedback": "No feedback was recorded for this session.",
     "notFound": "This session wasn't found. It may have been deleted.",
     "delete": "Move to trash",
-    "deleted": "Moved to trash."
+    "deleted": "Moved to trash.",
+    "back": "History",
+    "rename": "Rename session",
+    "moreActions": "More actions for this session",
+    "menu": {
+      "export": "Export to Obsidian",
+      "download": "Download as Markdown",
+      "trash": "Move to Trash"
+    },
+    "exampleBadge": "Example",
+    "savedHere": "Saved on this computer",
+    "notSaved": "Not saved",
+    "scale": {
+      "label": "Verdict scale",
+      "notReady": "Not ready yet",
+      "gettingThere": "Getting there",
+      "ready": "Ready",
+      "sr": "Verdict: {step}, step {n} of 3"
+    },
+    "workOn": "What to work on",
+    "workOnSub": "One per layer, from this session.",
+    "fixLead": "Fix:",
+    "alsoLead": "Also:",
+    "inQuestion_one": "in question",
+    "inQuestion_other": "in questions",
+    "drill": "Drill these weak spots",
+    "drillHint": "{questions} questions on these {points} points · about {minutes} min",
+    "practiseHint": "Same job and round, new questions",
+    "backHome": "Back to home",
+    "actions": "What next",
+    "qSection": "Question by question",
+    "openAll": "Open all",
+    "closeAll": "Close all",
+    "q": {
+      "number": "Question {n}",
+      "startsAt": "at {time}",
+      "followUps_one": "{n} follow-up",
+      "followUps_other": "{n} follow-ups",
+      "noFollowUp": "no follow-up",
+      "misheard": "{n} marked misheard by you",
+      "followUp": "Follow-up:",
+      "yourAnswer": "Your answer",
+      "yourFollowUp": "Your follow-up answer",
+      "typed": "You typed",
+      "showFull": "Show full answer",
+      "showLess": "Show less",
+      "edit": "Edit what I said",
+      "edited": "Edited by you",
+      "suggestion": "Answered with a suggestion",
+      "unavailable": "Feedback wasn't available for this answer. It isn't counted in the verdict.",
+      "rechecking": "Checking this answer again…"
+    },
+    "sum": {
+      "contentNothing": "Nothing major to fix",
+      "languageNothing": "Nothing to fix",
+      "phrasings_one": "{n} phrasing",
+      "phrasings_other": "{n} phrasings",
+      "fillers_one": "{n} filler",
+      "fillers_other": "{n} fillers",
+      "noFeedback": "No feedback"
+    },
+    "lang": {
+      "note": "“Heard as” is what speech recognition heard.",
+      "notWhatISaid": "Not what you said?",
+      "dismiss": "Dismiss",
+      "dismissed": "Dismissed — not counted.",
+      "editorLabel": "What you actually said",
+      "editorHint": "We'll check this question again. The rest of the debrief stays as it is.",
+      "saveCheck": "Save and check again",
+      "removedMisheard": "You marked “{text}” as misheard — not counted.",
+      "removedName": "You marked “{text}” as a name — not flagged.",
+      "removedUnsure_one": "{n} word we weren't sure about wasn't checked — not counted.",
+      "removedUnsure_other": "{n} words we weren't sure about weren't checked — not counted.",
+      "nothing": "Nothing to fix in this answer."
+    },
+    "delivery": {
+      "fillers": "Fillers",
+      "length": "Length",
+      "pace": "Pace",
+      "lengthValue": "{time}, {words}",
+      "paceValue": "{wpm} wpm, {verdict}",
+      "tip": "Most fillers: {list} — pause silently instead.",
+      "engineNote": "Your speech engine may skip some fillers, so the real count can be higher."
+    },
+    "stronger": {
+      "note": "Fill in your real number — we never invent results."
+    },
+    "partial": {
+      "title": "Not enough answers for a verdict",
+      "body": "You answered {answered} of {total} questions. Answer at least 3 and you'll get a verdict and weak spots.",
+      "skipped": "Questions {from}–{to} weren't asked — the session ended early.",
+      "skippedOne": "Question {n} wasn't asked — the session ended early."
+    },
+    "storage": {
+      "title": "We couldn't save this debrief to your computer",
+      "body": "The data folder isn't writable, so this session will be lost when you close the app.",
+      "download": "Download debrief (.md)",
+      "fix": "Fix in Settings"
+    },
+    "example": {
+      "title": "Example debrief",
+      "body": "A fictional candidate: Sam Rivera, Product Manager at Brightline. Your own debrief appears here after your first interview.",
+      "start": "Start your first interview",
+      "own": "In your own debrief, you can drill these weak spots in a short session."
+    },
+    "english": {
+      "summary": "Summary",
+      "count_one": "{n} correction.",
+      "count_other": "{n} corrections.",
+      "repeated_one": "{n} of them came up twice — it's in Phrases to review.",
+      "repeated_other": "{n} of them came up twice — they're in Phrases to review.",
+      "corrections": "Corrections",
+      "correctionsSub": "In the order they happened. “Heard as” is what speech recognition heard.",
+      "turnAt": "Turn {n} · {time}",
+      "showMore": "Show {n} more",
+      "showFewer": "Show fewer",
+      "phrases": "Phrases to review",
+      "times": "{n} times",
+      "practise": "Practise these phrases",
+      "practiseHint": "A short talk that uses these {n} phrases · about {minutes} min",
+      "becomes": "becomes",
+      "drillHintNoTime": "{questions} questions on these {points} points",
+      "turn": "Turn {n}",
+      "practiseHintNoTime": "A short talk that uses these {n} phrases"
+    },
+    "gone": {
+      "title": "This session no longer exists",
+      "body": "It was deleted from Trash, or the link is wrong.",
+      "openHistory": "Open history",
+      "goHome": "Go to home"
+    },
+    "error": {
+      "title": "We couldn't open this debrief.",
+      "body": "The session file may be damaged."
+    },
+    "drillHintNoTime": "{questions} questions on these {points} points",
+    "drillHintPoints_one": "Focused on this weak spot",
+    "drillHintPoints_other": "Focused on these {n} weak spots"
   },
   "history": {
     "title": "History",
@@ -643,7 +1050,65 @@
     },
     "noVerdict": "No debrief yet",
     "backToHistory": "Back to History",
-    "loadError": "Couldn't load your sessions."
+    "loadError": "Couldn't load your sessions.",
+    "sub": "Interviews and English practice, saved on this computer.",
+    "trashCount": "Trash ({n})",
+    "filter": {
+      "label": "Show",
+      "all": "All",
+      "interview": "Interview",
+      "english": "English"
+    },
+    "week": {
+      "this": "This week",
+      "last": "Last week",
+      "earlierIn": "Earlier in {month}",
+      "earlier": "Earlier"
+    },
+    "row": {
+      "rename": "Rename {title}",
+      "trash": "Move {title} to Trash",
+      "more": "More actions for {title}",
+      "menuRename": "Rename",
+      "menuTrash": "Move to Trash"
+    },
+    "result": {
+      "corrections_one": "{n} correction",
+      "corrections_other": "{n} corrections",
+      "partial": "No verdict — {answered} of {total} answered",
+      "answered_one": "{n} answer",
+      "answered_other": "{n} answers",
+      "noDebrief": "No debrief yet"
+    },
+    "list": "Saved sessions",
+    "emptyState": {
+      "title": "Your sessions will appear here",
+      "body": "Each interview and English practice is saved on this computer with its debrief.",
+      "start": "Start a session",
+      "example": "See an example debrief"
+    },
+    "none": {
+      "english": {
+        "title": "No English sessions yet",
+        "body": "English practice is a relaxed talk at your level, with corrections after each turn.",
+        "start": "Start English practice"
+      },
+      "interview": {
+        "title": "No interviews yet",
+        "body": "An interview is practised against a job you add, with a debrief at the end.",
+        "start": "Start an interview"
+      }
+    },
+    "error": {
+      "title": "We couldn't read your saved sessions.",
+      "body": "The data folder may have moved or lost permissions.",
+      "storage": "Open storage settings",
+      "retry": "Try again"
+    },
+    "toast": {
+      "trashed": "Moved to Trash.",
+      "renameFailed": "Couldn't rename this session. Try again."
+    }
   },
   "settings": {
     "title": "Settings",
