@@ -64,6 +64,7 @@ function ShellRoutes() {
         swapKey={routeKey(location.pathname)}
         enterClass="motion-page-in"
         exitClass="motion-fade-out"
+        className={s.routeSwap}
         focusTarget={() => document.getElementById("main")}
       >
         <Routes location={location}>
