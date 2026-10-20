@@ -150,7 +150,7 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
       suggestions={p.suggestions ?? suggestionsFor(ctx)}
       quickStart={p.quickStart !== undefined ? p.quickStart : setup ? null : (() => {
         const q = quickStartFor(ctx, textMode);
-        return !q ? null : p.loading ? { detail: "" } : { detail: q.detail };
+        return !q ? null : p.loading ? { detail: "" } : { detail: q.detail, answer: q.answer };
       })()}
       onQuickStart={() => { setStarting(true); later(() => setStarting(false), PREP_MS); }}
       composer={composer}

@@ -294,6 +294,7 @@ function PrivacySection() {
   const { settings } = useApp();
   const telemetry = useLoad(() => api.telemetry());
   const health = useLoad(() => api.health());
+  const trash = useLoad(() => api.trash());
   const { save, view } = useSave();
   const [folder, setFolder] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -330,6 +331,13 @@ function PrivacySection() {
             onClick={() => void save({ obsidian_dir: obsidian.trim() }).then(() => setFolder(null))}>{t("settings.privacy.obsidianSave")}</Button>
         </div>
         {view}
+      </Card>
+      <Card className={s.stack}>
+        <Link to="/history/trash" className={s.trashLink}>
+          <Icon name="trash" size="sm" />
+          {trash.data?.items.length ? t("history.trashCount", { n: trash.data.items.length }) : t("settings.privacy.trash")}
+        </Link>
+        <p className={s.hint}>{t("settings.privacy.trashHint")}</p>
       </Card>
     </Section>
   );

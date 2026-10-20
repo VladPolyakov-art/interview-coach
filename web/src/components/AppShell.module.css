@@ -83,6 +83,8 @@
 .chats { display: flex; flex-direction: column; gap: var(--space-0); margin: 0; padding: 0; list-style: none; }
 /* A chat row: title in secondary text, the time quiet at the end. */
 .chats .chat { gap: var(--space-3); }
+/* English sessions: a quiet "EN" before the time (tertiary text, no fill). */
+.track { margin-right: var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 
 /* ---- Bottom: engine warning (only when not ready) + account ---- */
 .foot { display: flex; flex: none; flex-direction: column; gap: var(--space-1); }

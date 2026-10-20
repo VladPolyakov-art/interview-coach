@@ -6,13 +6,17 @@
  * (review v1, D47a: an inner ring made the button look outside the input).
  * `surface: none` (v2): no border / shadow / radius / fill of its own: the composer sits inside the Session island.
  * `send.variant`: `action` = black / white (Session), `quiet` = outlined (Home, so Start stays the only primary: DS-6).
- * The send button appears with a short rise when it becomes visible (D6). Narrow parents: the toolbar wraps and the
+ * The send button appears with a short rise when it becomes visible (D6); a new `send.icon` fades in (D52: the Home
+ * start button morphs mic → arrow once there is text, like the Gemini input). `send.title` = a tooltip other than the
+ * label (the quick start's "General questions · Unseen mix · 5 questions"); `send.busy` = a spinner in place of the icon.
+ * Narrow parents: the toolbar wraps and the
  * end group drops to its own line (container query on the composer). */
 import {
   forwardRef, useEffect, useId, useImperativeHandle, useRef, type CSSProperties, type InputEvent, type KeyboardEvent, type ReactNode,
   type TextareaHTMLAttributes,
 } from "react";
 import { Icon, type IconName } from "./icons";
+import { Spinner } from "./Spinner";
 import s from "./Composer.module.css";
 
 export interface ComposerSend {
@@ -23,6 +27,10 @@ export interface ComposerSend {
   disabled?: boolean;
   /** Hide the button (Home shows it only when there is text). */
   hidden?: boolean;
+  /** Tooltip, when it should say more than `label` (D52). Defaults to `label`. */
+  title?: string;
+  /** The action is running: a spinner replaces the icon, aria-busy (D52 quick start). */
+  busy?: boolean;
   onSend?: () => void;
 }
 
@@ -74,21 +82,25 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
     if (e.defaultPrevented || !submitOnEnter) return;
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (canSend) send?.onSend?.();
+      if (canSend && !send?.busy) send?.onSend?.();
     }
   };
   const describedBy = [hint ? `${fieldId}-h` : "", error ? `${fieldId}-e` : ""].filter(Boolean).join(" ") || undefined;
 
+  const sendIcon: IconName = send?.icon ?? (sendVariant === "quiet" ? "arrowRight" : "send");
   const sendButton = send && !send.hidden ? (
     <button
       type="button"
       className={`${s.send} ${s[sendVariant]} motion-rise-base`}
       aria-label={send.label}
-      title={send.label}
+      title={send.title ?? send.label}
+      aria-busy={send.busy || undefined}
       disabled={send.disabled || disabled}
-      onClick={send.onSend}
+      onClick={send.busy ? undefined : send.onSend}
     >
-      <Icon name={send.icon ?? (sendVariant === "quiet" ? "arrowRight" : "send")} />
+      {send.busy ? <Spinner size="sm" /> : (
+        <span key={sendIcon} className={s.sendIcon}><Icon name={sendIcon} /></span>
+      )}
     </button>
   ) : null;
   const hasToolbar = Boolean(toolbarStart || toolbarEnd);

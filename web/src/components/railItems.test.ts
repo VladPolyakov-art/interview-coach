@@ -18,13 +18,13 @@ describe("rail chat rows (D51 item 6)", () => {
     expect(railWhen("nope", NOW)).toBe("");
   });
 
-  it("sorts newest first and caps the list", () => {
+  it("sorts newest first and keeps every session", () => {
     const base = { mode: "interview" as const, duration_s: 10, engine: "ollama", answers: 1, verdict: "" };
     const rows = railSessions([
       { ...base, id: "a", title: "Interview practice", started_at: new Date(2026, 9, 19).toISOString() },
       { ...base, id: "b", title: "English practice", mode: "english", started_at: new Date(2026, 9, 20, 9).toISOString() },
       { ...base, id: "c", title: "", started_at: new Date(2026, 9, 1).toISOString() },
-    ], 2, "Untitled", NOW);
-    expect(rows.map((r) => [r.id, r.title, r.track])).toEqual([["b", "English practice", "english"], ["a", "Interview practice", "interview"]]);
+    ], "Untitled", NOW);
+    expect(rows.map((r) => [r.id, r.title, r.track])).toEqual([["b", "English practice", "english"], ["a", "Interview practice", "interview"], ["c", "Untitled", "interview"]]);
   });
 });

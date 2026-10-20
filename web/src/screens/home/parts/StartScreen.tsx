@@ -2,8 +2,12 @@
  * (the footer line is pinned to the bottom of <main> by HomeView).
  * Calm like a chat start page: nothing else on screen. The composer carries the practice type (mode chip with a
  * radio menu) and a "+" for a job file; Send appears only with text or a file (motion D6). Under the composer: the
- * quick start (D51 item 1: "Start now" + what it starts), then the suggestions. */
-import type { Ref } from "react";
+ * quick start (D51 item 1: "Start now" + what it starts), then the suggestions.
+ * D52 `startLayout: "gemini"`: no pill under the field; the composer carries the fast path like the Gemini input —
+ * "+" then the mode chip on the left, a round unlabelled mic on the right (= Start now; a keyboard icon when answers
+ * are typed). Text or a file turns the mic into the Send arrow, and Send opens the setup chat as before. */
+import type { KeyboardEvent, Ref } from "react";
+import type { ComposerSend } from "../../../ds";
 import { Button, Chip, ChipGroup, Composer, ComposerAttachment, Icon, IconButton, Menu, Skeleton } from "../../../ds";
 import { t } from "../../../i18n";
 import type { HomeViewProps, Track } from "../types";
@@ -54,6 +58,28 @@ export function StartScreen(props: StartScreenProps) {
     : name ? t("chat.start.greetingName", { name }) : t("chat.start.greeting");
   const placeholder = english ? t("chat.start.placeholderEnglish") : narrow ? t("chat.start.placeholderNarrow") : t("chat.start.placeholder");
   const hasInput = Boolean(composer.text.trim() || composer.file);
+  const gemini = props.startLayout === "gemini";
+  const quick = props.quickStart;
+  const sendMessage: ComposerSend = { label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, onSend: props.onSend };
+  /* Gemini: with nothing typed the end button is the quick start (no label; the name and tooltip say what it starts). */
+  const typed = (quick?.answer ?? (props.textMode ? "text" : "voice")) === "text";
+  const send: ComposerSend = gemini && quick && !hasInput
+    ? {
+      label: t(typed ? "chat.quick.textButton" : "chat.quick.voiceButton"),
+      title: quick.detail || undefined,
+      icon: typed ? "keyboard" : "mic",
+      variant: "action",
+      disabled: props.loading || !props.engineReady,
+      busy: props.starting,
+      onSend: props.onQuickStart,
+    }
+    : sendMessage;
+  // Gemini, empty field: Enter must not start a session (only the button does); Shift+Enter still adds a line.
+  const holdEnter = gemini && quick && !hasInput
+    ? (e: KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === "Enter" && !e.shiftKey) e.preventDefault(); }
+    : undefined;
+  const addFile = english ? null : <IconButton icon="plus" size="sm" outlined label={t("chat.start.addFile")} onClick={props.onAddFile} />;
+  const modeMenu = <ModeMenu track={track} open={props.initialOverlay === "mode"} onChange={props.onModeChange} />;
 
   return (
     <div className={`${s.start} ${buildUp ? "motion-stagger" : ""}`} data-review-id="Home/Start-screen">
@@ -76,21 +102,17 @@ export function StartScreen(props: StartScreenProps) {
               actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} onClick={props.onRemoveFile} />}
             />
           ) : undefined}
-          toolbarStart={(
-            <>
-              <ModeMenu track={track} open={props.initialOverlay === "mode"} onChange={props.onModeChange} />
-              {english ? null : <IconButton icon="plus" size="sm" outlined label={t("chat.start.addFile")} onClick={props.onAddFile} />}
-            </>
-          )}
-          send={{ label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, onSend: props.onSend }}
+          onKeyDown={holdEnter}
+          toolbarStart={gemini ? <>{addFile}{modeMenu}</> : <>{modeMenu}{addFile}</>}
+          send={send}
         />
       </div>
       {composer.file ? (
         <p className={s.fileLine}><Icon name="lock" size="sm" />{t("chat.start.fileLocal")}</p>
       ) : null}
-      {props.quickStart ? (
+      {quick && !gemini ? (
         <QuickStart
-          detail={props.quickStart.detail}
+          detail={quick.detail}
           disabled={props.loading || !props.engineReady}
           starting={props.starting}
           onStart={props.onQuickStart}

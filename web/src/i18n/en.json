@@ -50,7 +50,8 @@
     "unknownEngine": "No engine chosen",
     "recent": "Recent",
     "allHistory": "All history",
-    "noSessions": "Your sessions will appear here.",
+    "noSessions": "Your practice sessions will appear here.",
+    "english": "English practice",
     "openMenu": "Open menu",
     "menu": "Menu",
     "untitled": "Untitled session",
@@ -1224,7 +1225,9 @@
       "folderHint": "Sessions, your CV and settings are saved here as plain files.",
       "obsidian": "Markdown export folder",
       "obsidianHint": "Optional. Each finished session is also saved as a Markdown note in this folder.",
-      "obsidianSave": "Save folder"
+      "obsidianSave": "Save folder",
+      "trash": "Trash",
+      "trashHint": "Sessions you moved to Trash stay here until you delete them for good."
     },
     "saved": "Saved",
     "saveError": "Couldn't save: {message}"
@@ -1260,6 +1263,8 @@
     "quick": {
       "label": "Start now",
       "aria": "Start now: {detail}",
+      "voiceButton": "Start now — voice practice",
+      "textButton": "Start now — typed practice",
       "questions_one": "{n} question",
       "questions_other": "{n} questions",
       "voice": "voice",

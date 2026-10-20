@@ -23,10 +23,10 @@ export function railWhen(iso: string, now: Date = new Date()): string {
     : { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function railSessions(sessions: SessionSummary[], max: number, untitled: string, now: Date = new Date()): RailSession[] {
+/** Every session, newest first (D52: the rail list is the history; no cap). */
+export function railSessions(sessions: SessionSummary[], untitled: string, now: Date = new Date()): RailSession[] {
   return [...sessions]
     .sort((a, b) => b.started_at.localeCompare(a.started_at))
-    .slice(0, max)
     .map((x) => ({
       id: x.id,
       title: railTitle(x.title, untitled),

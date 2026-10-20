@@ -43,6 +43,9 @@ export function HomeScreen() {
   const location = useLocation();
   const navigate = useNavigate();
   const track: Track = params.get("track") === "english" ? "english" : "interview";
+  /* D52: two start layouts to compare; `?layout=gemini|current` switches and is remembered (homePrefs). Not in Settings. */
+  const layoutParam = params.get("layout");
+  const startLayout = useMemo(() => homePrefs.startLayout(layoutParam), [layoutParam]);
   const { settings, selectedEngine, refreshEngines, updateSettings } = useApp();
   const engineReady = Boolean(selectedEngine?.status.ready);
   const vacancies = useLoad(() => api.vacancies());
@@ -232,7 +235,8 @@ export function HomeScreen() {
         textMode={textMode}
         storageError={Boolean(sessions.error)}
         suggestions={loading ? [] : suggestionsFor(ctx)}
-        quickStart={quick ? { detail: quick.detail } : loading && track === "interview" ? { detail: "" } : null}
+        quickStart={quick ? { detail: quick.detail, answer: quick.answer } : loading && track === "interview" ? { detail: "" } : null}
+        startLayout={startLayout}
         onQuickStart={quickStart}
         composer={composer}
         setup={shown}

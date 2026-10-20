@@ -144,3 +144,33 @@ export const HomeStartV2: Story = {
     />
   ),
 };
+
+/** D52 (Home, Gemini layout): with an empty field the end button is a round unlabelled action (mic = start a voice
+ * session; its tooltip says what it starts); typing morphs it into the Send arrow. `send.busy` shows a spinner. */
+function StartAction({ busy, disabled, icon = "mic" }: { busy?: boolean; disabled?: boolean; icon?: "mic" | "keyboard" }) {
+  const [v, setV] = useState("");
+  const empty = v.trim() === "";
+  return (
+    <Composer
+      label="Message Mike"
+      placeholder="Paste a job or a link, or say what you want to practise"
+      value={v}
+      minRows={1}
+      submitOnEnter
+      onChange={(e) => setV(e.target.value)}
+      toolbarStart={(
+        <>
+          <IconButton icon="plus" size="sm" outlined label="Add a job file" />
+          <Button variant="secondary" size="sm" icon="briefcase" iconRight="chevronDown">Interview</Button>
+        </>
+      )}
+      send={empty
+        ? { label: icon === "mic" ? "Start now — voice practice" : "Start now — typed practice", title: "General questions · Unseen mix · 5 questions", icon, variant: "action", busy, disabled }
+        : { label: "Send", icon: "arrowRight", variant: "action" }}
+    />
+  );
+}
+export const StartActionMic: Story = { render: () => <StartAction /> };
+export const StartActionKeyboard: Story = { render: () => <StartAction icon="keyboard" /> };
+export const StartActionBusy: Story = { render: () => <StartAction busy /> };
+export const StartActionDisabled: Story = { render: () => <StartAction disabled /> };

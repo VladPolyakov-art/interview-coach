@@ -69,6 +69,8 @@
     color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 .send:not(:disabled):active { transform: scale(0.92); }
+/* D52: a new icon (mic → arrow) fades in; global.css switches the animation off under reduced motion. */
+.sendIcon { display: inline-grid; place-items: center; animation: global(fade-in) var(--duration-fast) var(--ease-enter) backwards; }
 .action { background: var(--color-action); color: var(--color-text-on-action); }
 .action:not(:disabled):hover { background: var(--color-action-hover); }
 .action:not(:disabled):active { background: var(--color-action-pressed); }
@@ -127,4 +129,7 @@
 @container (max-width: 419px) {
   .start { flex: 1 1 100%; }
   .end { flex: 1 1 100%; justify-content: flex-end; }
+  /* D52: a lone send button (no toolbarEnd) stays on the toolbar line, at the end (the Gemini input row). */
+  .toolbar:not(:has(.end > :not(.send))) .start { flex: 1 1 auto; }
+  .toolbar:not(:has(.end > :not(.send))) .end { flex: none; }
 }

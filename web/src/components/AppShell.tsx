@@ -1,8 +1,8 @@
 /* AppShell (pattern, components.md §5; ds/screens/_index.md §2; D51 item 6: sidebar like Gemini, R4).
  * Container `shell` on the root: ≥ 1024 full rail · 640–1023 / < 640 top bar (menu button, app name, a warning badge
  * only while the AI engine is not ready) with the same rail in a left Drawer (G5).
- * Rail, top to bottom: brand · primary nav (New practice, History) · the chats = recent sessions (one quiet line each,
- * the middle part scrolls) · at the bottom an "AI engine · Not ready" row (only when it is not ready: P6) and the
+ * Rail, top to bottom: brand · New practice · the chats = ALL sessions, newest first (D52: the chat list is the history,
+ * like Gemini; one quiet line each, the middle part scrolls, no cap) · at the bottom an "AI engine · Not ready" row (only when it is not ready: P6) and the
  * account row (person icon, "You", "Saved on this computer", a gear) that opens Settings. The rail is set off from the
  * content by its fill, no line. <main> is the scroll container and the `page` container for screens.
  * `AppShellView` is pure (every state by props: review frames, stories); `AppShell` is the live container. */
@@ -29,16 +29,11 @@ export type RecentState =
 export type EngineStatus = "checking" | "ready" | "notReady";
 export interface ShellEngine { name?: string; status: EngineStatus }
 
-/** Chat rows in the rail (D51: the middle of the rail is the chat list and scrolls; 🟡 12, History has the rest). */
-export const RECENT_MAX = 12;
+/** Rows that play the enter motion on the first load (the rest appear at once: a long list must not stagger for seconds). */
+const ANIMATED_ROWS = 12;
 /** Shell width from which the full rail shows (a container width, docs/frontend.md): the drawer closes above it. */
 const SHELL_FULL_MIN = 1024;
 
-/* Primary nav (top of the rail). Settings lives in the account row at the bottom (Gemini, R4). */
-const NAV: { key: NavKey; href: string; icon: "edit" | "history"; label: () => string }[] = [
-  { key: "practice", href: "/", icon: "edit", label: () => t("nav.newPractice") },
-  { key: "history", href: "/history", icon: "history", label: () => t("nav.history") },
-];
 
 /** Engine status badge (Badge success / warning / neutral + icon). Pure. */
 export function EngineBadge({ status }: { status: EngineStatus }) {
@@ -147,9 +142,7 @@ function RailContent({ current, currentSessionId, recent, engine, animateRecent 
   return (
     <>
       <nav aria-label={t("nav.main")} className={s.nav} data-review-id="AppShell/nav">
-        {NAV.map((n) => (
-          <NavRow key={n.key} href={n.href} label={n.label()} icon={n.icon} current={current === n.key} linkAs={RouterLink} />
-        ))}
+        <NavRow href="/" label={t("nav.newPractice")} icon="edit" current={current === "practice"} linkAs={RouterLink} />
       </nav>
 
       {recent.status === "error" ? <div className={s.recent} /> : (
@@ -161,16 +154,16 @@ function RailContent({ current, currentSessionId, recent, engine, animateRecent 
             <p className={s.recentEmpty}>{t("rail.noSessions")}</p>
           ) : (
             <ul className={s.chats}>
-              {recent.items.slice(0, RECENT_MAX).map((item, i) => (
+              {recent.items.map((item, i) => (
                 <li
                   key={item.id}
-                  className={animateRecent ? "motion-row" : undefined}
-                  style={animateRecent ? ({ animationDelay: `calc(var(--duration-stagger) / 2 * ${i})` } as CSSProperties) : undefined}
+                  className={animateRecent && i < ANIMATED_ROWS ? "motion-row" : undefined}
+                  style={animateRecent && i < ANIMATED_ROWS ? ({ animationDelay: `calc(var(--duration-stagger) / 2 * ${i})` } as CSSProperties) : undefined}
                 >
                   <NavRow
                     href={`/sessions/${encodeURIComponent(item.id)}`}
                     label={item.title}
-                    end={item.when}
+                    end={item.track === "english" ? <><span className={s.track} title={t("rail.english")}>EN</span>{item.when}</> : item.when}
                     current={item.id === currentSessionId}
                     linkAs={RouterLink}
                     className={s.chat}
@@ -209,14 +202,10 @@ function RailContent({ current, currentSessionId, recent, engine, animateRecent 
 
 /* ---------- live container ---------- */
 
-function navFor(pathname: string, sessionId: string | undefined, recent: RecentState): NavKey | null {
+function navFor(pathname: string): NavKey | null {
   if (pathname === "/") return "practice";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/history")) return "history";
-  if (sessionId) {
-    const listed = recent.status === "ready" && recent.items.slice(0, RECENT_MAX).some((r) => r.id === sessionId);
-    return listed ? null : "history";
-  }
   return null;
 }
 
@@ -240,7 +229,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     api.sessions().then(
       ({ sessions }) => {
         if (!alive) return;
-        setRecent({ status: "ready", items: railSessions(sessions, RECENT_MAX, t("rail.untitled")) });
+        setRecent({ status: "ready", items: railSessions(sessions, t("rail.untitled")) });
       },
       () => { if (alive) setRecent((prev) => (prev.status === "ready" ? prev : { status: "error" })); },
     );
@@ -276,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
       <AppShellView
-        current={navFor(location.pathname, sessionId, recent)}
+        current={navFor(location.pathname)}
         currentSessionId={sessionId}
         recent={recent}
         engine={engine}

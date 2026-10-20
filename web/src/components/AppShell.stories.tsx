@@ -70,7 +70,7 @@ function Shell({ width, height, path = "/history", start, ...props }: Partial<Ap
   );
 }
 
-/** ≥ 1024: Gemini rail (D51·6) — New practice / History, the chats (one line + time), the account row with Settings. */
+/** ≥ 1024: Gemini rail (D51·6) — New practice, all the chats (one line + time), no History row (D52), the account row with Settings. */
 export const Desktop: StoryObj = { render: () => <Shell width={1440} height={900} /> };
 
 /** Home start layout (Page layout="start"). */

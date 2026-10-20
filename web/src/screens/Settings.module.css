@@ -29,3 +29,16 @@
   .nav { position: static; flex-direction: row; overflow-x: auto; padding-bottom: var(--space-1); }
   .navLink { white-space: nowrap; }
 }
+/* Privacy and data: the way to the Trash (it left the sidebar with the History row, D52). */
+.trashLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  min-height: var(--control-h-sm);
+  color: var(--color-text-link);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

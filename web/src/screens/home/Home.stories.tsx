@@ -36,6 +36,18 @@ export const StartOverflowMobile = mobile("overflowStart");
  * StartFirstVisit (General questions · Unseen mix); disabled on StartLoading / StartEngineNotRunning. */
 export const QuickStartTextMode = desktop("quickTextMode");
 export const QuickStartPressed = desktop("quickStarting");
+/* D52: the Gemini start layout (live prototype: ?layout=gemini). The mic at the end of the composer is Start now;
+ * text or a file turns it into Send; typing → keyboard icon; disabled while loading / engine not ready. */
+export const LayoutGemini = desktop("layoutGemini");
+export const LayoutGeminiMobile = mobile("layoutGemini");
+export const LayoutGeminiFirstVisit = desktop("layoutGeminiFirst");
+export const LayoutGeminiTyped = desktop("layoutGeminiTyped");
+export const LayoutGeminiFileAttached = desktop("layoutGeminiFile");
+export const LayoutGeminiTextMode = desktop("layoutGeminiTextMode");
+export const LayoutGeminiEngineNotRunning = desktop("layoutGeminiEngineDown");
+export const LayoutGeminiLoading = desktop("layoutGeminiLoading");
+export const LayoutGeminiPressed = desktop("layoutGeminiStarting");
+export const LayoutGeminiEnglish = desktop("layoutGeminiEnglish");
 
 /* ---- setup chat (§4) ---- */
 export const SetupJobReading = desktop("jobReading");
