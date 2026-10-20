@@ -96,7 +96,7 @@ function TextDock({ phase, handlers: h, sendLocked, autoFocus }: DockProps) {
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         submitOnEnter
-        minRows={2}
+        minRows={1}
         maxRows={6}
         autoFocus={autoFocus}
         send={{ label: t("session.input.send"), icon: "send", variant: "action", disabled: !canSend, onSend: send }}

@@ -12,17 +12,23 @@
   transition: border-color var(--duration-fast) var(--ease-standard);
 }
 .box:focus-within { border-color: var(--color-border-selected); }
+/* The box is the input: the keyboard ring goes around it, not around the textarea (D47a). */
+.box:has(.field:focus-visible) { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: calc(var(--border-width) * -1); }
+/* Field + inline send (no toolbar): the button stays inside the box, bottom-right, as the text grows. */
+.row { display: flex; align-items: flex-end; gap: var(--space-2); min-width: 0; }
 .invalid { border-color: var(--color-text-error); }
 .disabled { background: var(--color-subtle); box-shadow: none; }
 
-/* Borderless field; the focus ring is the global 2px ring with offset 0 (Field exception, CONTRACT 3.2). */
+/* Borderless field; the ring is drawn on .box (see above). */
 .field {
   /* Defaults; the component overrides them inline from minRows / maxRows. */
   --min-rows: 2;
   --max-rows: 8;
   --line: calc(var(--text-md) * var(--leading-normal));
   display: block;
+  flex: 1 1 auto;
   width: 100%;
+  min-width: 0;
   min-height: calc(var(--line) * var(--min-rows) + var(--space-2) * 2);
   max-height: calc(var(--line) * var(--max-rows) + var(--space-2) * 2);
   padding: var(--space-2);
@@ -37,7 +43,7 @@
   field-sizing: content;
 }
 .field::placeholder { color: var(--color-text-tertiary); }
-.field:focus-visible { outline-offset: 0; }
+.field:focus-visible { outline: none; }
 .field:disabled { cursor: not-allowed; color: var(--color-text-tertiary); }
 
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }

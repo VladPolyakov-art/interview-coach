@@ -1,8 +1,9 @@
 /* Composer (G1, R6 Ollama / R2 ChatGPT, P3): one rounded input (--radius-lg) with everything inside it.
  * Slots, top to bottom: `attachment` (a ComposerAttachment card or a Skeleton row while loading) · the field
  * (a borderless textarea that grows 2 → `maxRows`) · toolbar (`toolbarStart` / `toolbarEnd`: outlined sm buttons)
- * + the round send button. Focus-within turns the composer border to --color-border-selected (fast); the field
- * itself carries the focus ring (Field exception: offset 0, its fill is never action or checked).
+ * + the round send button. Without a toolbar the send button sits inline, bottom-right of the field (chat row, R6).
+ * Focus: the whole composer is the input: keyboard focus draws the ring on the box, never on the inner textarea
+ * (review v1, D47a: an inner ring made the button look outside the input).
  * `send.variant`: `action` = black / white (Session), `quiet` = outlined (Home, so Start stays the only primary: DS-6).
  * The send button appears with a short rise when it becomes visible (D6). Narrow parents: the toolbar wraps and the
  * end group drops to its own line (container query on the composer). */
@@ -74,45 +75,51 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
   };
   const describedBy = [hint ? `${fieldId}-h` : "", error ? `${fieldId}-e` : ""].filter(Boolean).join(" ") || undefined;
 
+  const sendButton = send && !send.hidden ? (
+    <button
+      type="button"
+      className={`${s.send} ${s[sendVariant]} motion-rise-base`}
+      aria-label={send.label}
+      title={send.label}
+      disabled={send.disabled || disabled}
+      onClick={send.onSend}
+    >
+      <Icon name={send.icon ?? (sendVariant === "quiet" ? "arrowRight" : "send")} />
+    </button>
+  ) : null;
+  const hasToolbar = Boolean(toolbarStart || toolbarEnd);
+
   return (
     <div className={`${s.root} ${className ?? ""}`} data-review-id={`Composer/${sendVariant}`}>
       <div className={`${s.box} ${disabled ? s.disabled : ""} ${error ? s.invalid : ""}`} aria-busy={busy || undefined}>
         {attachment ? <div className={s.attachment}>{attachment}</div> : null}
         <label htmlFor={fieldId} className="visually-hidden">{label}</label>
-        <textarea
-          ref={field}
-          id={fieldId}
-          className={s.field}
-          rows={minRows}
-          style={{ "--min-rows": minRows, "--max-rows": maxRows } as CSSProperties}
-          disabled={disabled}
-          value={value}
-          aria-describedby={describedBy}
-          aria-invalid={error ? true : undefined}
-          onKeyDown={keyDown}
-          onInput={(e: InputEvent<HTMLTextAreaElement>) => {
-            grow(e.currentTarget);
-            onInput?.(e);
-          }}
-          {...rest}
-        />
-        {toolbarStart || toolbarEnd || send ? (
+        <div className={s.row}>
+          <textarea
+            ref={field}
+            id={fieldId}
+            className={s.field}
+            rows={minRows}
+            style={{ "--min-rows": minRows, "--max-rows": maxRows } as CSSProperties}
+            disabled={disabled}
+            value={value}
+            aria-describedby={describedBy}
+            aria-invalid={error ? true : undefined}
+            onKeyDown={keyDown}
+            onInput={(e: InputEvent<HTMLTextAreaElement>) => {
+              grow(e.currentTarget);
+              onInput?.(e);
+            }}
+            {...rest}
+          />
+          {hasToolbar ? null : sendButton}
+        </div>
+        {hasToolbar ? (
           <div className={s.toolbar}>
             <div className={s.start}>{toolbarStart}</div>
             <div className={s.end}>
               {toolbarEnd}
-              {send && !send.hidden ? (
-                <button
-                  type="button"
-                  className={`${s.send} ${s[sendVariant]} motion-rise-base`}
-                  aria-label={send.label}
-                  title={send.label}
-                  disabled={send.disabled || disabled}
-                  onClick={send.onSend}
-                >
-                  <Icon name={send.icon ?? (sendVariant === "quiet" ? "arrowRight" : "send")} />
-                </button>
-              ) : null}
+              {sendButton}
             </div>
           </div>
         ) : null}

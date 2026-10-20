@@ -1,8 +1,9 @@
 .row {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-h-md);
+  gap: var(--space-2);
+  /* 36px row, like the chat apps the owner uses daily (R2, D47d): md minus one space step. */
+  min-height: calc(var(--control-h-md) - var(--space-1));
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);

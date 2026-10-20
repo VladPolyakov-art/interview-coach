@@ -20,9 +20,10 @@
 .rail {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
   min-height: 0;
-  padding: var(--space-4);
+  /* Tight rail (D47d): the selected pill sits 8px from the rail edges, groups 16px apart. */
+  padding: var(--space-3) var(--space-2);
   overflow-y: auto;
   border-right: var(--border-width) solid var(--color-border-subtle);
   background: var(--color-sidebar);
@@ -50,7 +51,7 @@
   transition: transform var(--duration-slow) var(--ease-standard);
 }
 .brand:hover .mark { transform: rotate(-8deg) scale(1.04); }
-.nav { display: flex; flex-direction: column; gap: var(--space-1); }
+.nav { display: flex; flex-direction: column; gap: var(--space-0); }
 
 .recent { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .recentLabel {
@@ -119,7 +120,7 @@
 }
 
 /* The rail inside the drawer (its header carries the app name and the close button). */
-.drawerRail { display: flex; flex-direction: column; gap: var(--space-6); min-height: 100%; }
+.drawerRail { display: flex; flex-direction: column; gap: var(--space-4); min-height: 100%; }
 
 /* ---- Main: the page container and the scroll container ---- */
 .main {
