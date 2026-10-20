@@ -1,8 +1,8 @@
 /* Session stage state (session.md O5 + V2.1, D49): one state text (StatusPill) and Mike's Presence, from the phase.
  * Pure, so the mapping is unit-tested (stage.test.ts).
  * Presence (D49): a glow only while someone talks or Mike thinks. Mike speaking → speaking; the user's answer being
- * recorded → listening; Mike preparing a reply → thinking. Everything else is idle (no glow): your turn before the
- * user starts talking, muted, paused, connecting, between questions. 🟡 your-turn (voice) stays idle until speech. */
+ * recorded → listening; Mike preparing a reply → thinking; your turn before the first word → waiting, a faint inviting
+ * glow (D50). Everything else is idle (no glow): muted, paused, connecting, between questions. */
 import type { PresenceState, StatusPillState } from "../../ds";
 import { t } from "../../i18n";
 import type { SessionViewProps } from "./types";
@@ -28,10 +28,10 @@ export function stageFor(p: SessionViewProps): Stage {
         ? { presence: "idle", pill: "muted", label: t("session.status.muted"), sub: t("session.sub.muted"), live: false }
         : { presence: "listening", pill: "listening", label: t("session.status.listening"), sub: sec > 0 ? t("session.sub.listening", { sec }) : t("session.sub.listeningManual"), live: true };
     case "your-turn":
-      if (!voice) return { presence: "idle", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurnText"), live: false };
+      if (!voice) return { presence: "waiting", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurnText"), live: false };
       return muted
         ? { presence: "idle", pill: "muted", label: t("session.status.muted"), sub: t("session.sub.muted"), live: false }
-        : { presence: "idle", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurn"), live: true };
+        : { presence: "waiting", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurn"), live: true };
     case "preparing":
     case "rechecking":
       return { presence: "idle", pill: "between", label: t("session.status.preparingFeedback"), live: false };

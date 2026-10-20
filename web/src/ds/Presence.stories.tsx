@@ -24,7 +24,8 @@ const LABEL: Record<PresenceState, { pill: StatusPillState; text: string }> = {
   speaking: { pill: "speaking", text: "Mike is speaking" },
   listening: { pill: "listening", text: "Listening… take your time" },
   thinking: { pill: "thinking", text: "Mike is thinking" },
-  idle: { pill: "your-turn", text: "Your turn" },
+  waiting: { pill: "your-turn", text: "Your turn" },
+  idle: { pill: "between", text: "Between questions" },
 };
 
 const frame: CSSProperties = {
@@ -63,6 +64,8 @@ export const SpeakingNoLevel: Story = { args: { state: "speaking", getLevel: und
 export const Listening: Story = { args: { state: "listening" } };
 export const Thinking: Story = { args: { state: "thinking" } };
 /** No glow: the label carries the state. 🟡 D49: idle without glow. */
+/** D50: your turn before the first word — faint, slow, inviting. */
+export const Waiting: Story = { args: { state: "waiting" } };
 export const Idle: Story = { args: { state: "idle" } };
 /** Static levels (review frames). */
 export const SpeakingStaticLevel: Story = { args: { state: "speaking", getLevel: undefined, level: 0.8 } };
@@ -84,7 +87,7 @@ export const Phone: Story = {
   ),
 };
 
-const ORDER: PresenceState[] = ["speaking", "listening", "thinking", "idle"];
+const ORDER: PresenceState[] = ["speaking", "listening", "thinking", "waiting", "idle"];
 
 function Driver() {
   const [state, setState] = useState<PresenceState>("speaking");

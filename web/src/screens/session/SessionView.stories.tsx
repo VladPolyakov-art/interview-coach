@@ -95,7 +95,7 @@ export const Shortcuts = scene("Keyboard shortcuts dialog", "feedback", {}, { in
 export const NarrowIsland = scene("Narrow · Island, two rows", "listening", { args: { frame: "mobile" } }, { panelOpen: false });
 
 /* v2.1 (D49): running transcript + Presence glow. */
-export const S2YourTurnNoGlow = scene("S2 · Your turn (voice), no glow", "follow-up", {}, { phase: "your-turn" });
+export const S2YourTurnWaiting = scene("S2 · Your turn (voice), faint glow", "follow-up", {}, { phase: "your-turn" });
 export const S2Reading = scene("S2 · Reading above: Jump to latest", "feedback", {}, { initialFollow: "reading", panelOpen: false });
 export const ReducedSpeaking = scene("Reduced motion · Speaking", "q1-start", {}, { reducedMotion: true });
 export const ReducedListening = scene("Reduced motion · Listening", "listening", {}, { reducedMotion: true });

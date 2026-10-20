@@ -3,13 +3,14 @@
  * across the width (speaking / listening), the side-to-side thinking crest, and the static reduced-motion frames.
  * Units: `u` is 0..1 across the width; heights are CSS px for a glow box of `reach` px (190 wide, 150 phone). */
 
-export type PresenceState = "idle" | "listening" | "thinking" | "speaking";
-export const PRESENCE_STATES: readonly PresenceState[] = ["idle", "listening", "thinking", "speaking"];
+/** `waiting` = your turn before the first word: a faint inviting glow (D50). */
+export type PresenceState = "idle" | "waiting" | "listening" | "thinking" | "speaking";
+export const PRESENCE_STATES: readonly PresenceState[] = ["idle", "waiting", "listening", "thinking", "speaking"];
 
 export interface PresenceFrame {
   /** Cross-fade weights of the shapes (one-hot when settled). */
   w: Record<PresenceState, number>;
-  /** Overall glow opacity 0..1: 0 at idle (no glow, D49 2), 1 while someone talks or Mike thinks. */
+  /** Overall glow opacity 0..1: 0 at idle (no glow, D49 2), WAITING_ON on your turn (D50), 1 while someone talks or Mike thinks. */
   on: number;
   /** Seconds of running time (lobe breathing). */
   t: number;
@@ -40,11 +41,14 @@ const TAU = Math.PI * 2;
 const REF_REACH = 190;
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
-const oneHot = (s: PresenceState): Record<PresenceState, number> => ({ idle: 0, listening: 0, thinking: 0, speaking: 0, [s]: 1 });
+const oneHot = (s: PresenceState): Record<PresenceState, number> => ({ idle: 0, waiting: 0, listening: 0, thinking: 0, speaking: 0, [s]: 1 });
 
-/** Glow on/off target: the glow exists only while someone is talking or Mike is thinking. */
+/** Strength of the inviting glow on your turn (D50: faint, "не надо ярче" for the rest). */
+export const WAITING_ON = 0.35;
+
+/** Glow target: none at idle, faint on your turn, full while someone is talking or Mike is thinking. */
 export function glowTarget(state: PresenceState): number {
-  return state === "idle" ? 0 : 1;
+  return state === "idle" ? 0 : state === "waiting" ? WAITING_ON : 1;
 }
 
 export function initialFrame(state: PresenceState, settled = false): PresenceFrame {
@@ -92,7 +96,7 @@ export function stepFrame(f: PresenceFrame, dt: number, { target, level, fadeS }
 }
 
 /** Reduced motion: one still frame per state (speaking: lobes raised; listening: slightly raised; thinking: crest
- * held at the left side; idle: nothing). */
+ * held at the left side; waiting: low lobes, faint; idle: nothing). */
 export function staticFrame(state: PresenceState): PresenceFrame {
   const f = initialFrame(state, true);
   f.t = 1.3;
@@ -149,7 +153,9 @@ export function columnAt(u: number, f: PresenceFrame, periodS: number, reach: nu
   const dir = f.hold ? f.hold.dir : sweepDir(f.sweepT, periodS);
   const c = crest(u, pos, dir);
   const think = (92 * c.hump + 20 * c.swell) * k;
-  const lift = w.speaking * speak + w.listening * listen + w.thinking * think;
+  // Your turn (D50): the same lobes, low and very slow, so the glow invites without reacting to anything.
+  const wait = 10 * k * lobes(u, f.t, 0.35);
+  const lift = w.speaking * speak + w.listening * listen + w.thinking * think + w.waiting * wait;
   const h = base + lift;
   // Stronger where it rises (D49: "less white, more blue"): .6 at rest height, up to .9 at the crest.
   const a = Math.min(0.9, 0.6 + 0.3 * Math.min(1, lift / (110 * k)));

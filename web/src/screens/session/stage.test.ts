@@ -13,8 +13,13 @@ describe("Session → Presence state (D49)", () => {
     expect(at("thinking")).toBe("thinking");
   });
 
+  it("your turn: a faint inviting glow (D50)", () => {
+    expect(at("your-turn")).toBe("waiting");
+    expect(at("your-turn", { input: "text" })).toBe("waiting");
+  });
+
   it("is idle (no glow) everywhere else", () => {
-    const quiet: SessionPhase[] = ["connecting", "your-turn", "between", "preparing", "feedback", "unavailable", "editing", "rechecking", "interrupted", "saving"];
+    const quiet: SessionPhase[] = ["connecting", "between", "preparing", "feedback", "unavailable", "editing", "rechecking", "interrupted", "saving"];
     for (const p of quiet) expect(at(p), p).toBe("idle");
   });
 
@@ -26,7 +31,6 @@ describe("Session → Presence state (D49)", () => {
   it("text mode: Mike still glows when he speaks and thinks", () => {
     expect(at("mike-speaking", { input: "text" })).toBe("speaking");
     expect(at("thinking", { input: "text" })).toBe("thinking");
-    expect(at("your-turn", { input: "text" })).toBe("idle");
   });
 
   it("the state is always text too", () => {

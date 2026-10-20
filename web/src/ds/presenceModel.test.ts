@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   columnAt, glowAlphaAt, initialFrame, isDark, parseHex, staticFrame, stepFrame, sweepDir, sweepPos,
-  PRESENCE_STATES, type PresenceFrame, type PresenceState, type Rgb,
+  PRESENCE_STATES, WAITING_ON, type PresenceFrame, type PresenceState, type Rgb,
 } from "./presenceModel";
 
 const REACH = 190;
@@ -39,7 +39,7 @@ describe("Presence state model", () => {
       stepFrame(f, 1 / 60, { target: s, level: 0.5, fadeS: 0.42 });
       expect(f.w[s]).toBe(1);
       run(f, 0.5, s);
-      expect(f.on).toBe(1);
+      expect(f.on).toBe(s === "waiting" ? WAITING_ON : 1);
     }
   });
 
