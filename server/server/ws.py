@@ -13,6 +13,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from . import __version__, config, content, engines, feedback, memory, planner, storage, stt, telemetry, tts
 from .engines.base import EngineError, LLMEngine
 from .engines.gemini_live import GeminiLiveDriver, basic_status
+from .priority import ModelGate
 from .session import TextDriver
 
 log = logging.getLogger("uvicorn.error")
@@ -96,6 +97,7 @@ async def session_socket(websocket: WebSocket) -> None:
     opts: dict = {}
     session: dict = {}
     llm: LLMEngine | None = None
+    gate = ModelGate(enabled=False)    # enabled for single-model engines once the engine is known
     settings = config.load_settings()
     tasks: list[asyncio.Task] = []
 
@@ -177,12 +179,18 @@ async def session_socket(websocket: WebSocket) -> None:
     # ---------- workers ----------
 
     async def wait_for_interviewer() -> None:
-        if llm is not None and llm.single_worker:
-            # One local model serves both: let Mike finish before the feedback call (keeps turns fast).
+        """Gemini Live (no gate): wait until Mike has finished his turn before a background call."""
+        if llm is not None and llm.single_worker and not gate.enabled:
             for _ in range(600):
                 if not driver.replying():
                     return
                 await asyncio.sleep(0.2)
+
+    async def in_background(job):
+        """Feedback and suggestions: after Mike (one local model serves both, D33). Cancelled and re-run if
+        Mike needs the model while the call is running."""
+        await wait_for_interviewer()
+        return await gate.background(job)
 
     def public_record(record: dict) -> dict:
         return {k: v for k, v in record.items() if k != "history_index"}
@@ -195,17 +203,19 @@ async def session_socket(websocket: WebSocket) -> None:
             try:
                 if record["id"] in dropped:
                     continue
+                if transcript is not None:
+                    await transcript.wait_words()          # word timings come from the background pass
                 low = transcript.low_confidence() if transcript is not None else []
                 record["heard_as_words"] = [w.public() for w in low]
                 record["layers"]["delivery"] = feedback.delivery_layer(
                     record["answer"], transcript, main_answer=record["answer_kind"] == "main")
                 emit("feedback", feedback=public_record(record))
-                await wait_for_interviewer()
                 failures = []
                 try:
-                    record["layers"]["language"] = await asyncio.wait_for(feedback.analyze_language(
-                        llm, record["answer"], level=opts["level"], known=terms_source, low=low,
-                        english_track=opts["mode"] == "english", ignored=ignored_terms), timeout=120)
+                    record["layers"]["language"] = await asyncio.wait_for(in_background(
+                        lambda: feedback.analyze_language(
+                            llm, record["answer"], level=opts["level"], known=terms_source, low=low,
+                            english_track=opts["mode"] == "english", ignored=ignored_terms)), timeout=180)
                 except (EngineError, asyncio.TimeoutError) as exc:
                     code = getattr(exc, "code", "timeout")
                     failures.append(code)
@@ -214,11 +224,11 @@ async def session_socket(websocket: WebSocket) -> None:
                     continue
                 emit("feedback", feedback=public_record(record))
                 if opts["mode"] == "interview":
-                    await wait_for_interviewer()
                     try:
-                        record["layers"]["content"] = await asyncio.wait_for(feedback.analyze_content(
-                            llm, question=record["question"], competency=record["competency"],
-                            transcript=record["answer"], low=low), timeout=120)
+                        record["layers"]["content"] = await asyncio.wait_for(in_background(
+                            lambda: feedback.analyze_content(
+                                llm, question=record["question"], competency=record["competency"],
+                                transcript=record["answer"], low=low)), timeout=180)
                     except (EngineError, asyncio.TimeoutError) as exc:
                         code = getattr(exc, "code", "timeout")
                         failures.append(code)
@@ -248,10 +258,10 @@ async def session_socket(websocket: WebSocket) -> None:
             question = await suggest_queue.get()
             emit("suggestion_pending", question=question)
             try:
-                await wait_for_interviewer()
-                data = await asyncio.wait_for(feedback.suggest_answer(
-                    llm, question=question, history=list(driver.transcript_history),
-                    profile=opts.get("profile", ""), jd=opts.get("jd", ""), level=opts["level"]), timeout=120)
+                history = list(driver.transcript_history)
+                data = await asyncio.wait_for(in_background(lambda: feedback.suggest_answer(
+                    llm, question=question, history=history,
+                    profile=opts.get("profile", ""), jd=opts.get("jd", ""), level=opts["level"])), timeout=180)
                 emit("suggestion", question=question, **data)
             except asyncio.CancelledError:
                 raise
@@ -264,9 +274,9 @@ async def session_socket(websocket: WebSocket) -> None:
     async def stronger_task(record: dict) -> None:
         try:
             content_layer = record["layers"].get("content") or {}
-            data = await asyncio.wait_for(feedback.stronger_version(
+            data = await asyncio.wait_for(in_background(lambda: feedback.stronger_version(
                 llm, question=record["question"], missing=content_layer.get("missing", []),
-                transcript=record["answer"]), timeout=120)
+                transcript=record["answer"])), timeout=180)
             record["stronger"] = data
             emit("stronger_version", feedback_id=record["id"], **data)
         except Exception as exc:
@@ -392,6 +402,7 @@ async def session_socket(websocket: WebSocket) -> None:
                   hint_command=status.hint_command, fix_url=status.fix_url, engine=engine_id)
             return
         llm = get_llm(settings, engine_id)
+        gate.enabled = engine_id != "gemini_live" and llm.single_worker
         profile = storage.read_profile().get("text", "")
         jd, vacancy_title, extra = "", "", []
         if opts["vacancy_id"]:
@@ -440,7 +451,7 @@ async def session_socket(websocket: WebSocket) -> None:
                 on_notice=lambda code, text: emit("notice", code=code, message=text),
                 on_preview=lambda text: emit("speech_preview", turn_id=state["voice_turn"], text=text),
                 on_error=lambda code, message, hint, retryable: error(code, message, hint, retryable),
-                on_user_transcript=user_transcript, on_metrics=metrics, **callbacks)
+                on_user_transcript=user_transcript, on_metrics=metrics, gate=gate, **callbacks)
             stt_info = recogniser.info() if recogniser else {"available": False, "backend": "none"}
         session = {"id": storage.new_id("s-"), "mode": opts["mode"], "round_type": opts["round_type"],
                    "engine": engine_id, "model": status.model or llm.model, "level": opts["level"],

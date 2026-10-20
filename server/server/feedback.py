@@ -300,15 +300,26 @@ async def analyze_content(llm: LLMEngine, *, question: str, competency: str, tra
 # ---------- Delivery layer (code only, rubric §4) ----------
 
 FILLERS = re.compile(r"\b(um+|uh+|erm+|you know|basically|actually|kind of|sort of)\b|\blike,", re.I)
+# Delivery talks only about how the answer sounded: length, pace, fillers, pauses. What to say is the content
+# layer's job, so these tips never mention actions, results or structure.
 DELIVERY_TIP = {
     "pace_fast": "Slow down at the end of each sentence; a short stop helps you and the listener.",
     "pace_slow": "Your pace was slow. Prepare the first sentence so you can start smoothly.",
-    "too_long": "Cut the background. Start with the action, then the result.",
-    "too_short": "Add what you did, step by step, and what happened in the end.",
+    "too_long": "Long answer. Aim for one to two minutes, then stop and let the interviewer ask.",
+    "too_short": "Short answer. Main answers usually take one to two minutes out loud.",
     "filler_high": "Replace 'um' with a silent pause. Try 'let me think' once at the start.",
     "long_pauses": "When you stall, use a phrase: 'The key point is...'",
     "restarts": "Plan your first five words: 'In my last project, I...'",
 }
+# Typed answers: only length can be judged, and it is shown as words, not minutes.
+DELIVERY_TIP_TEXT = {
+    "too_long": "Long for a spoken answer. Main answers are usually 150 to 350 words.",
+    "too_short": "Short for a spoken answer. Main answers are usually 150 to 350 words.",
+}
+# Typed answers are naturally shorter than spoken ones, so text mode only flags clearly short or long answers
+# (🟡 tune with real sessions). Voice mode keeps the rubric bands in seconds.
+TEXT_WORDS_S2 = (25, 420)
+TEXT_WORDS_S3 = (12, 560)
 
 
 def _band(value: float, s2: tuple, s3: tuple) -> int:
@@ -353,14 +364,15 @@ def delivery_layer(text: str, transcript: Transcript | None, *, main_answer: boo
         metrics.update({"seconds": None, "wpm": None, "long_pauses": None, "mode": "text",
                         "not_available": ["pace", "fillers", "pauses"]})
         if main_answer:
-            sev = _band(n_words, (65, 420), (35, 560))
+            sev = _band(n_words, TEXT_WORDS_S2, TEXT_WORDS_S3)
             if sev:
-                issues.append((sev, "too_long" if n_words > 350 else "too_short"))
-    if restarts >= 3:
+                issues.append((sev, "too_long" if n_words > TEXT_WORDS_S2[1] else "too_short"))
+    if voice and restarts >= 3:                        # repeated words are a speech habit, not a typing one
         issues.append((3 if restarts >= 6 else 2, "restarts"))
     top = max(issues, key=lambda item: item[0]) if issues else None
+    tips = DELIVERY_TIP if voice else {**DELIVERY_TIP, **DELIVERY_TIP_TEXT}
     return {"layer": "delivery", "status": "fix" if top else "ok", "severity": top[0] if top else 0,
-            "tag": top[1] if top else "", "fix": DELIVERY_TIP[top[1]] if top else "Nothing to fix here.",
+            "tag": top[1] if top else "", "fix": tips[top[1]] if top else "Nothing to fix here.",
             "metrics": metrics}
 
 

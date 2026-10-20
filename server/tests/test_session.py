@@ -129,3 +129,64 @@ def test_speech_parts_split_long_first_sentence():
         ["When you joined the team,", "what was the first thing you changed there?"]
     assert _speech_parts("When you joined the team, what was the first thing you changed there?", False) == \
         ["When you joined the team, what was the first thing you changed there?"]
+
+
+async def test_model_moving_on_in_a_wait_turn_becomes_the_next_question(fake_llm):
+    """Regression (qwen3:8b): Mike said "Okay. Next question: ..." in a turn labelled `wait` on the old
+    question, so the client's progress and feedback thread stayed on question 1."""
+    events = []
+    llm = fake_llm({"p1": {"gap": "none", "action": "wait",
+                           "say": "Okay. Next question: Describe the hardest bug you ever fixed."}})
+    d = make(llm, events)
+    await d.handle_user_text_turn(LONG)
+    await wait_idle(d)
+    reply = [e for e in events if e[0] == "model"][-1]
+    assert reply[1] == "Okay. Tell me about a project you owned."          # the plan's question, verbatim
+    assert reply[2]["kind"] == "question" and reply[2]["question_id"] == "B1" and reply[2]["thread_id"] == "B1"
+    assert d.q_index == 1 and d.follow_ups == []
+    assert d.transcript_history[-1]["question_id"] == "B1"
+    await d.handle_user_text_turn(LONG)                                     # the next answer belongs to B1
+    assert [e for e in events if e[0] == "user"][-1][2]["question_id"] == "B1"
+
+
+async def test_model_asking_the_next_question_as_a_follow_up_is_relabelled(fake_llm):
+    events = []
+    llm = fake_llm({"p1": {"gap": "result", "action": "follow_up", "say": "Tell me about a project you owned."}})
+    d = make(llm, events)
+    await d.handle_user_text_turn(LONG)
+    await wait_idle(d)
+    reply = [e for e in events if e[0] == "model"][-1]
+    assert reply[1] == "Okay. Tell me about a project you owned." and reply[2]["kind"] == "question"
+    assert d.q_index == 1
+
+
+async def test_model_saying_the_placeholder_name_still_moves_on(fake_llm):
+    """Seen live with qwen3:8b: {"action": "wait", "say": "Okay. NEXT_QUESTION"}."""
+    events = []
+    d = make(fake_llm({"p1": {"gap": "none", "action": "wait", "say": "Okay. NEXT_QUESTION"}}), events)
+    await d.handle_user_text_turn(LONG)
+    await wait_idle(d)
+    reply = [e for e in events if e[0] == "model"][-1]
+    assert reply[1] == "Okay. Tell me about a project you owned." and reply[2]["question_id"] == "B1"
+
+
+async def test_moving_on_after_the_last_question_closes(fake_llm):
+    events = []
+    llm = fake_llm({"p1": {"gap": "none", "action": "wait", "say": "Okay. Let's move on to your strengths."}})
+    d = make(llm, events, plan=PLAN[:1])
+    await d.handle_user_text_turn(LONG)
+    await wait_idle(d)
+    reply = [e for e in events if e[0] == "model"][-1]
+    assert reply[2]["kind"] == "closing" and d.finished
+    assert reply[1] == content.copy("interview_closing")                    # one "Okay.", not two
+
+
+async def test_a_real_follow_up_is_not_mistaken_for_moving_on(fake_llm):
+    events = []
+    llm = fake_llm({"p1": {"gap": "own_part", "action": "follow_up",
+                           "say": "I see. What was your own part in that project?"}})
+    d = make(llm, events)
+    await d.handle_user_text_turn(LONG)
+    await wait_idle(d)
+    reply = [e for e in events if e[0] == "model"][-1]
+    assert reply[2]["kind"] == "follow_up" and reply[2]["question_id"] == "A1" and d.q_index == 0

@@ -5,7 +5,13 @@ Latency plan (D33, target 2-3 s per turn):
 - the opening line is fixed copy (no model call) and the model warms up while the user answers;
 - the interviewer reply is JSON (P1) streamed; `action` arrives first, and for `next_question` the code
   speaks "Okay." plus the next question verbatim without waiting for the model;
-- `say` is spoken sentence by sentence while the model is still writing.
+- `say` is spoken sentence by sentence while the model is still writing;
+- speech is recognised in two passes: the reply starts from the text, word timings follow in the background;
+- Mike holds the model gate (priority.py) from the end of the answer until his reply text is written, so
+  feedback and suggestions on the same local model never delay him.
+
+The code owns the interview plan: when the model moves on by itself (asks NEXT_QUESTION or announces the next
+question in a follow-up turn), the code switches to the next question in the same turn and labels it as one.
 """
 from __future__ import annotations
 
@@ -21,6 +27,7 @@ from .engines.base import EngineError, LLMEngine
 from .engines.gemini_live import drop_last_answer
 from .feedback import WORD, JsonFieldStreamer, mark_misheard, hints, norm, sanitize_sentence, trim_words
 from .planner import max_follow_ups
+from .priority import ModelGate
 from .stt import STT, Transcript
 
 log = logging.getLogger("uvicorn.error")
@@ -28,6 +35,10 @@ SENTENCE_END = re.compile(r"(.+?[.!?…])(?:\s+|$)", re.S)
 REPEAT = re.compile(r"\b(repeat|say (that|it) again|pardon|didn't (catch|hear)|one more time)\b", re.I)
 GAP_TAG = {"own_part": "YP", "result": "RN", "reflection": "WD", "tradeoff": "CT"}
 TAG_PREFIX = re.compile(r"^\s*(?:YP|RN|WD|CT)\s*[:\-–]\s*")
+# The model announcing a new main question in a follow-up turn (question drift).
+MOVE_ON = re.compile(r"\b(?:next|another|new)[ _]question\b|\b(?:my|our) (?:last|final) question\b|\bmoving on\b|"
+                     r"\b(?:let'?s|let us|we'?ll|I'?ll|now) (?:move|go) on\b|\blet'?s (?:turn|move) to\b", re.I)
+DRIFT_OVERLAP = 0.7      # share of the next question's words that marks a sentence as that question
 PREVIEW_SECONDS = 12
 MAX_RECORD_BYTES = 16000 * 2 * 240      # up to 4 minutes per answer
 
@@ -44,7 +55,7 @@ class TextDriver:
                  on_audio_chunk: Optional[Callable] = None, on_notice: Optional[Callable] = None,
                  on_preview: Optional[Callable] = None, on_error: Optional[Callable] = None,
                  on_user_transcript: Optional[Callable] = None, on_metrics: Optional[Callable] = None,
-                 **_ignored) -> None:
+                 gate: ModelGate | None = None, **_ignored) -> None:
         self.llm = llm
         self.mode = mode
         self.plan = list(plan or [])
@@ -72,6 +83,7 @@ class TextDriver:
         self.on_error = on_error
         self.on_user_transcript = on_user_transcript
         self.on_metrics = on_metrics
+        self.gate = gate or ModelGate(enabled=False)
 
         self.transcript_history: list[dict] = []
         self.q_index = 0
@@ -87,6 +99,9 @@ class TextDriver:
         self._decision = ""
         self._gap = "none"
         self._metrics: dict = {}
+        self._holding = False
+        self._hold_token = 0
+        self._word_tasks: set[asyncio.Task] = set()
 
     # ---------- interface shared with GeminiLiveDriver ----------
 
@@ -117,8 +132,10 @@ class TextDriver:
                                     turn_id: int | None = None, stt_ms: int | None = None) -> None:
         clean = norm(text)[:4000]
         if not clean:
+            self._release()
             return
         await self._cancel_reply(interrupted=True)
+        self._hold()
         self._snapshots.append((self.q_index, list(self.follow_ups), self.finished))
         question = self.current_question()
         last_model = next((t for t in reversed(self.transcript_history) if t["role"] == "model"), None)
@@ -153,22 +170,43 @@ class TextDriver:
             self._error("stt_unavailable", "Speech recognition is not installed on this computer. Type your answer "
                                            "or use the browser's speech recognition.", retryable=False)
             return
+        self._hold()
         started = time.perf_counter()
         try:
-            transcript = await asyncio.to_thread(self.stt.transcribe, pcm)
+            transcript = await asyncio.to_thread(self.stt.transcribe, pcm, False)   # text first (latency)
         except Exception as exc:
+            self._release()
             log.warning("STT failed: %s", type(exc).__name__)
             self._error("stt_failed", "Could not recognise speech. Try again or type your answer.")
             return
         stt_ms = round((time.perf_counter() - started) * 1000)
         if not transcript.text.strip():
+            self._release()
             if self.on_notice:
                 self.on_notice("not_heard", "I didn't catch that. Please try again a little louder or closer to the "
                                             "microphone.")
             return
+        transcript.words_ready = asyncio.Event()
+        task = asyncio.create_task(self._word_pass(pcm, transcript, turn_id))
+        self._word_tasks.add(task)
+        task.add_done_callback(self._word_tasks.discard)
         if self.on_user_transcript:
             self.on_user_transcript(transcript, turn_id)
         await self.handle_user_text_turn(transcript.text, transcript, turn_id, stt_ms)
+
+    async def _word_pass(self, pcm: bytes, transcript: Transcript, turn_id: int | None) -> None:
+        """Word timings and confidence for feedback ("possibly misheard", pace), after Mike's reply text."""
+        try:
+            full = await self.gate.background(lambda: asyncio.to_thread(self.stt.transcribe, pcm, True),
+                                              preemptible=False)
+            transcript.words = full.words
+            if transcript.low_confidence() and self.on_user_transcript:
+                self.on_user_transcript(transcript, turn_id)
+        except Exception as exc:
+            log.warning("STT word pass failed: %s", type(exc).__name__)
+        finally:
+            if transcript.words_ready is not None:
+                transcript.words_ready.set()
 
     async def redo_answer(self) -> str:
         await self._cancel_reply(interrupted=False)
@@ -189,6 +227,7 @@ class TextDriver:
         self._running = False
         self._recording = False
         self._stop_preview()
+        self._release()
         for task in (self._reply_task, self._warm_task):
             if task and not task.done():
                 task.cancel()
@@ -221,10 +260,14 @@ class TextDriver:
         await self._deliver(self._from_list(_sentences(text)), lambda: meta)
 
     async def _respond(self, answer: str, transcript: Transcript | None) -> None:
-        if self.mode == "interview":
-            await self._interview_reply(answer, transcript)
-        else:
-            await self._tutor_reply()
+        token = self._hold_token
+        try:
+            if self.mode == "interview":
+                await self._interview_reply(answer, transcript)
+            else:
+                await self._tutor_reply()
+        finally:
+            self._release(token)
 
     async def _interview_reply(self, answer: str, transcript: Transcript | None) -> None:
         question = self.plan[self.q_index]
@@ -274,13 +317,18 @@ class TextDriver:
         await self._advance()
 
     def _follow_meta(self) -> dict:
+        if self._decision == "moved_on":
+            if self.finished:
+                return {"kind": "closing"}
+            question = self.plan[self.q_index]
+            return {"kind": "question", "question_id": question.id, "thread_id": question.id}
         question = self.plan[self.q_index]
         kind = "wait" if self._decision == "wait" else "follow_up"
         return {"kind": kind, "question_id": question.id, "thread_id": question.id, "gap": self._gap}
 
     async def _p1_sentences(self, messages: list[dict]) -> AsyncIterator[str]:
         streamer = JsonFieldStreamer()
-        pending, said, first = "", [], True
+        pending, said, first, moved = "", [], True, False
         agen = self.llm.chat_stream(messages, temperature=0.3, max_tokens=160,
                                     json_schema=content.schema("p1_interviewer"))
         try:
@@ -303,18 +351,27 @@ class TextDriver:
                     if sentence is None:                       # a repeated follow-up: move on instead
                         self._decision = "next_question" if not said else self._decision
                         return
+                    if sentence and self._moves_on(sentence):
+                        moved = True
+                        break
                     if sentence:
                         first = False
                         said.append(sentence)
                         yield sentence
                         if "?" in sentence:
                             return                             # exactly one question per turn
-                if streamer.say_done:
+                if moved or streamer.say_done:
                     break
         finally:
             await agen.aclose()
             self._decision = self._decision or streamer.action or "follow_up"
-        rest = self._clean(trim_words(pending.strip(), 30), first) if pending.strip() else ""
+        rest = "" if moved else (self._clean(trim_words(pending.strip(), 30), first) if pending.strip() else "")
+        if rest and self._moves_on(rest):
+            moved = True
+        if moved:
+            for line in self._move_on(said):
+                yield line
+            return
         if rest is None:
             if not said:
                 self._decision = "next_question"               # never repeat a follow-up
@@ -324,6 +381,35 @@ class TextDriver:
             yield rest
         if said and self._decision != "wait":
             self.follow_ups.append(" ".join(said))
+
+    def _moves_on(self, sentence: str) -> bool:
+        """True when a sentence in a follow-up turn starts a new main question (question drift)."""
+        if MOVE_ON.search(sentence):
+            return True
+        nxt = self.plan[self.q_index + 1] if self.q_index + 1 < len(self.plan) else None
+        if nxt is None:
+            return False
+        target = {w.lower() for w in WORD.findall(nxt.text)}
+        if len(target) < 4:
+            return False
+        words = {w.lower() for w in WORD.findall(sentence)}
+        return len(words & target) / len(target) >= DRIFT_OVERLAP
+
+    def _move_on(self, said: list[str]) -> list[str]:
+        """The model moved on by itself: the code asks the planned next question verbatim, in the same turn,
+        and the turn is labelled as that question (or the closing line after the last one)."""
+        log.info("Interviewer moved on by itself; asking the planned next question")
+        self._decision = "moved_on"
+        self._metrics["moved_on"] = True
+        lines = [] if said else ["Okay."]
+        nxt = self.plan[self.q_index + 1] if self.q_index + 1 < len(self.plan) else None
+        if nxt is None:
+            self.finished = True
+            closing = _sentences(content.copy("interview_closing"))
+            return lines + (closing[1:] if said and closing and closing[0] == "Okay." else closing)
+        self.q_index += 1
+        self.follow_ups = []
+        return lines + [nxt.text]
 
     def _clean(self, sentence: str, first: bool) -> str | None:
         """Sanitize one interviewer sentence. None when it repeats a follow-up already asked."""
@@ -336,6 +422,7 @@ class TextDriver:
         return sentence
 
     async def _advance(self) -> None:
+        self._metrics.setdefault("path", "fixed")
         nxt = self.plan[self.q_index + 1] if self.q_index + 1 < len(self.plan) else None
         if nxt is None:
             self.finished = True
@@ -390,9 +477,11 @@ class TextDriver:
         """Show and speak sentences as they arrive; record the turn (even a cut-off one) at the end."""
         full = ""
         speech: asyncio.Queue = asyncio.Queue()
-        voice = asyncio.create_task(self._voice_worker(speech)) if self.speak else None
+        heard = asyncio.Event()
+        voice = asyncio.create_task(self._voice_worker(speech, heard)) if self.speak else None
         started = False
         completed = False
+        token = self._hold_token
         try:
             async for sentence in sentences:
                 if not started:
@@ -408,9 +497,16 @@ class TextDriver:
                         await speech.put(part)
             if voice:
                 await speech.put(None)
+                # Background jobs wait for Mike's first audio too: speech synthesis shares the machine with them.
+                first = asyncio.ensure_future(heard.wait())
+                await asyncio.wait({voice, first}, return_when=asyncio.FIRST_COMPLETED)
+                first.cancel()
+            self._release(token)                # text written and first audio out: background jobs may run now
+            if voice:
                 await voice
             completed = True
         finally:
+            self._release(token)
             if voice and not voice.done():
                 voice.cancel()
             if full:
@@ -428,7 +524,7 @@ class TextDriver:
                     self.on_response_complete()
         return full
 
-    async def _voice_worker(self, speech: asyncio.Queue) -> None:
+    async def _voice_worker(self, speech: asyncio.Queue, heard: asyncio.Event | None = None) -> None:
         while True:
             sentence = await speech.get()
             if sentence is None:
@@ -442,6 +538,8 @@ class TextDriver:
                 self._metrics.setdefault("first_audio_ms", self._ms())
                 if self.on_audio_chunk:
                     self.on_audio_chunk(pcm[i:i + tts.CHUNK_BYTES])
+                if heard:
+                    heard.set()
 
     def _ms(self) -> int | None:
         t0 = self._metrics.get("t0")
@@ -463,6 +561,20 @@ class TextDriver:
             await asyncio.gather(task, return_exceptions=True)
             if interrupted and self.on_interrupted:
                 self.on_interrupted()
+
+    def _hold(self) -> None:
+        """Mike takes the model (from the end of the user's answer until his reply is written and audible)."""
+        self._hold_token += 1
+        if not self._holding:
+            self._holding = True
+            self.gate.hold()
+
+    def _release(self, token: int | None = None) -> None:
+        """Give the model back. With a token, only if no newer answer took it since (a cancelled reply must
+        not release the hold of the answer that interrupted it)."""
+        if self._holding and (token is None or token == self._hold_token):
+            self._holding = False
+            self.gate.release()
 
     def _spawn(self, coro) -> asyncio.Task:
         """Start a reply; an unexpected failure is reported instead of silently ending the turn."""

@@ -1,21 +1,47 @@
 """FastAPI application: REST API, session WebSocket and (when built) the React app from app/web/dist."""
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, api, config, ws
+from . import __version__, api, config, stt, tts, ws
 
 log = logging.getLogger("uvicorn.error")
+
+
+def preload_speech() -> None:
+    """Load Whisper and Kokoro once at startup so the first session does not wait for them (D33).
+    Off with IC_PRELOAD=0 (tests)."""
+    settings = config.load_settings()
+    try:
+        tts.preload(settings, settings.get("voice") or "", settings.get("kokoro_speed", 1.0))
+    except Exception as exc:  # speech is optional
+        log.warning("Kokoro preload failed: %s", type(exc).__name__)
+    recogniser = stt.get_stt(settings)
+    if recogniser.available:
+        recogniser.warm_up()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = None
+    if os.getenv("IC_PRELOAD", "1") != "0":
+        task = asyncio.ensure_future(asyncio.to_thread(preload_speech))
+    yield
+    if task is not None and not task.done():
+        task.cancel()
 
 
 def create_app() -> FastAPI:
     config.ensure_meta()
     app = FastAPI(title="Interview Coach", version=__version__, docs_url="/api/docs", redoc_url=None,
-                  openapi_url="/api/openapi.json")
+                  openapi_url="/api/openapi.json", lifespan=lifespan)
     app.include_router(api.router)
     app.include_router(ws.router)
 

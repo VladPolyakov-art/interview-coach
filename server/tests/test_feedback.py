@@ -122,3 +122,18 @@ async def test_debrief_short_session_and_fallback(fake_llm):
     result = await feedback.debrief(llm, [rec, rec, rec], layer_order="content-first", past="none")
     assert [s["tag"] for s in result["weak_spots"]] == ["no_result"]
     assert "great" not in result["verdict"].lower()
+
+
+def test_delivery_is_mode_aware_and_only_about_length():
+    """A 41-word typed answer is fine; a short one gets a length tip, never content advice."""
+    typed = " ".join(["word"] * 41)
+    assert feedback.delivery_layer(typed, None)["status"] == "ok"
+    short = feedback.delivery_layer(" ".join(["word"] * 15), None)
+    assert short["tag"] == "too_short" and short["severity"] == 2
+    assert "words" in short["fix"] and not any(w in short["fix"].lower() for w in ("did", "step", "result", "action"))
+    assert feedback.delivery_layer("I I I I did it it it, then then then we shipped.", None)["tag"] != "restarts"
+    words = [Word(w, i * 0.4, i * 0.4 + 0.3, 0.9) for i, w in enumerate(("I led the work " * 10).split())]
+    spoken = feedback.delivery_layer(" ".join(w.w for w in words), Transcript(text="x", words=words))
+    assert spoken["tag"] == "too_short" and "minutes" in spoken["fix"]                 # 16 s spoken
+    for tip in feedback.DELIVERY_TIP.values():
+        assert not any(w in tip.lower() for w in ("step by step", "what happened", "the result"))

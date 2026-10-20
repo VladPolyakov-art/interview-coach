@@ -41,6 +41,11 @@ SENTENCE_END = re.compile(r"(.+?[.!?…])\s+", re.S)
 _kokoro = None
 _kokoro_dir: Path | None = None
 _lock = threading.Lock()
+# Short fixed lines ("Okay.", "Take your time.") are synthesised once per voice: they often open a reply,
+# so a cached copy makes Mike's first audio instant.
+CACHE_MAX_WORDS = 4
+_cache: dict[tuple, bytes] = {}
+COMMON_LINES = ("Okay.", "I see.", "Thank you.", "Understood.", "Take your time.", "Sure, go ahead.")
 
 
 def model_files(settings: dict | None = None) -> tuple[Path, Path]:
@@ -63,6 +68,11 @@ def kokoro_model(settings: dict | None = None):
             return None
         _kokoro = Kokoro(str(model), str(voices))
         _kokoro_dir = model.parent
+        _cache.clear()
+        try:   # the first synthesis initialises the ONNX session (about 2 s); do it now, not in Mike's first line
+            _kokoro.create("Okay.", voice=DEFAULT_VOICE, speed=1.0, lang="en-us")
+        except Exception:  # pragma: no cover - a broken model shows up on first real use
+            pass
         return _kokoro
 
 
@@ -95,10 +105,25 @@ def synthesize_pcm(text: str, voice: str = "", speed: float = 1.0, settings: dic
     if model is None or not text.strip():
         return b""
     voice = resolve_voice(voice)
+    key = (text.strip(), voice, round(speed, 2))
+    if key in _cache:
+        return _cache[key]
     with _lock:
         samples, _rate = model.create(text, voice=voice, speed=speed,
                                       lang="en-gb" if voice.startswith("b") else "en-us")
-    return (np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes()
+    pcm = (np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes()
+    if len(text.split()) <= CACHE_MAX_WORDS and len(_cache) < 256:
+        _cache[key] = pcm
+    return pcm
+
+
+def preload(settings: dict | None = None, voice: str = "", speed: float = 1.0) -> bool:
+    """Load Kokoro and cache the common short lines for this voice. False when speech is not available."""
+    if kokoro_model(settings) is None:
+        return False
+    for line in COMMON_LINES:
+        synthesize_pcm(line, voice, speed, settings)
+    return True
 
 
 def synthesize_wav(text: str, voice: str = "", speed: float = 1.0, settings: dict | None = None) -> bytes:

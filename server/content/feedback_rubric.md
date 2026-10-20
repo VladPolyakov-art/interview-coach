@@ -164,7 +164,8 @@ Judges the shape of the speaking, from numbers the app computes. The model does 
 Notes:
 - Response latency is **not penalised**. Thinking is part of a good answer (E7). It only matters if it is followed by a freeze with no recovery phrase; then the tip points to the time-buying pack.
 - 🟡 Recognisers may remove fillers; the panel notes "fillers may be undercounted with this engine" (F29 AC3). Never state a filler count as exact.
-- In text mode: only length is shown; pace and fillers say "not available in text mode" (US-19 AC4).
+- In text mode: only length is shown; pace and fillers say "not available in text mode" (US-19 AC4). Typed answers run shorter than spoken ones, so text length bands are wider (🟡): S2 under 25 or over 420 words, S3 under 12 or over 560 words. Restarts are counted in voice mode only.
+- Delivery tips speak only about length, pace, fillers and pauses. What to add or cut (action, result, structure) is the content layer's job (2026-10-20: a "too short" tip that said "add what you did" read as content advice).
 - Count only fillers present in the recognised text. A filler line the user marks "that's not what I said" is removed from the count (GR9).
 - One fix: the highest severity metric. Tip text templates:
 
@@ -172,8 +173,8 @@ Notes:
 |---|---|
 | Pace too fast | "Slow down at the end of each sentence; a short stop helps you and the listener." |
 | Pace too slow | "Your pace was slow. Prepare the first sentence so you can start smoothly." |
-| Too long | "Cut the background. Start with the action, then the result." |
-| Too short | "Add what you did, step by step, and what happened in the end." |
+| Too long | Voice: "Long answer. Aim for one to two minutes, then stop and let the interviewer ask." Text: "Long for a spoken answer. Main answers are usually 150 to 350 words." |
+| Too short | Voice: "Short answer. Main answers usually take one to two minutes out loud." Text: "Short for a spoken answer. Main answers are usually 150 to 350 words." |
 | Fillers | "Replace 'um' with a silent pause. Try 'let me think' once at the start." |
 | Long pauses | "When you stall, use a phrase: 'The key point is…' (see Phrase packs)." |
 | Restarts | "Plan your first five words: 'In my last project, I…'" |

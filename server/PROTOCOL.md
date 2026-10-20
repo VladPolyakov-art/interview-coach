@@ -127,6 +127,10 @@ cut-off line). `turn_id` is a non-negative integer chosen by the client; it is e
 - `kind`: `question` (a main question), `follow_up`, `wait` (asks the user to go on), `repeat`, `closing`,
   `ack` (not recorded in the transcript), `turn` (English mode). `interrupted: true` marks a cut-off line.
 - `thread_id` groups a main question with its follow-ups.
+- The server owns the question order. If the model moves on by itself in a follow-up or `wait` turn ("Next
+  question: ..."), the code stops the model's line there and asks the plan's next question verbatim in the same
+  turn, so the turn ends as `kind: "question"` with the new `question_id` and `thread_id` (or `closing` after the
+  last question).
 
 User side (voice input):
 ```json
@@ -137,13 +141,17 @@ User side (voice input):
 {"type": "notice", "code": "not_heard", "message": "I didn't catch that. Please try again a little louder or closer to the microphone."}
 ```
 `speech_preview` is display-only. `low_conf` lists words below 0.5 recogniser confidence ("possibly misheard").
+Speech is recognised in two passes so Mike can answer sooner: the first `user_transcript` has the text and an
+empty `low_conf`; word confidence is computed in the background, and if any word is below 0.5 the same
+`user_transcript` (same `turn_id` and text) is sent again with `low_conf` filled. Replace it by `turn_id`.
 
 ```json
 {"type": "turn_metrics", "turn_id": 3, "stt_ms": 640, "path": "model", "first_text_ms": 820,
  "first_audio_ms": 1190, "total_ms": 2950, "model": "qwen3:8b"}
 ```
-`path`: `model` (the model chose the reply) or `fixed` (code reply without a model call). Times are measured from
-the moment the server has the user's text.
+`path`: `model` (the model chose the reply) or `fixed` (code reply without a model call, for example when the
+follow-ups for a question are used up). `moved_on: true` is added when the model moved on by itself and the code
+asked the next question (see Turns). Times are measured from the moment the server has the user's text.
 
 ### Feedback (one record per answer of 5 words or more)
 
@@ -180,8 +188,13 @@ the moment the server has the user's text.
   severity 2 or 3 count in the debrief.
 - In English mode the language layer may carry `"phrase_to_keep": {"phrase": "...", "why": "..."}`.
 - Delivery `metrics.mode` is `text` for typed answers, with `"not_available": ["pace", "fillers", "pauses"]`.
-- On engines that run one local model (Ollama, a local OpenAI-compatible server), feedback waits until Mike has
-  finished replying, so it never slows down the interview.
+  Delivery tips only talk about length, pace, fillers and pauses. Typed answers are judged by word count
+  (main answer: tip below 25 words or above 420; strong tip below 12 or above 560) with text-mode copy; restarts
+  are counted for voice only.
+- On engines that run one local model (Ollama, a local OpenAI-compatible server), Mike always has priority:
+  feedback, suggestions and stronger versions wait until Mike has finished replying, and a job that is running
+  when the user answers again is stopped and run again afterwards. Feedback for a voice answer starts after word
+  confidence is ready. Feedback may therefore arrive a few seconds later than the reply; it never slows Mike down.
 
 ```json
 {"type": "flag_updated", "feedback_id": "fb-1a2b3c4d", "flag": {"id": "f9e8d7c6", "status": "confirmed", "...": "..."},
@@ -245,7 +258,8 @@ the moment the server has the user's text.
 2. `activity_start` + PCM + `audio_stream_end` -> `user_transcript` -> `turn_complete` (user) -> `feedback_pending`.
 3. Mike replies: a follow-up (streamed sentence by sentence, with audio) or "Okay." plus the next question (the
    code speaks it verbatim as soon as the model chooses `next_question`) -> `turn_metrics`.
-4. `feedback` x3 (delivery, language, content). The user may `flag_action` or `request_stronger`.
+4. `user_transcript` again if some words are possibly misheard, then `feedback` x3 (delivery, language,
+   content) after Mike's reply. The user may `flag_action` or `request_stronger`.
 5. After the last question Mike gives the closing line. `end_session` -> `saving` -> `session_saved` -> `debrief`.
 
 **Gemini Live.** Same messages; Mike's voice and both transcripts come from Gemini, `speech_preview` and

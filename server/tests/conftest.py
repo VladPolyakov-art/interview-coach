@@ -14,6 +14,7 @@ def isolated_data(tmp_path, monkeypatch):
     monkeypatch.setenv("IC_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("KOKORO_MODEL_DIR", str(tmp_path / "no-kokoro"))   # text-only in tests
     monkeypatch.delenv("OLLAMA_URL", raising=False)
+    monkeypatch.setenv("IC_PRELOAD", "0")                                  # no Whisper/Kokoro loading in tests
     from server import tts
     monkeypatch.setattr(tts, "_kokoro", None)
     yield tmp_path / "data"
