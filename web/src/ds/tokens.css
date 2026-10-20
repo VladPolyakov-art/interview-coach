@@ -1,0 +1,225 @@
+/*
+ * PROVISIONAL — replaced by stage-10 tokens.
+ *
+ * Source: docs/moodboard_candidates_v2.md §4 (cool neutral palette, blue accent #2B66D9, direction "Calm studio").
+ * The stage-10 moodboard gate is still pending: when tokens/tokens.json is approved, execution/tokens_build.py
+ * generates the real ds/tokens.css and this file is replaced. Components consume ONLY these custom properties
+ * (scripts/check-tokens.mjs fails the lint on colour literals anywhere else), so the swap touches no component.
+ *
+ * Theme model: light on :root; dark via the OS setting unless the user forced light, or via data-theme="dark".
+ * Values marked 🟡 are not in the moodboard doc and were not contrast-checked by tokens_build.py.
+ */
+
+:root {
+  /* ---------- colour: surfaces (4.1 light) ---------- */
+  --color-canvas: #F6F7F9;
+  --color-raised: #FFFFFF;
+  --color-subtle: #EEF0F3;
+  --color-selected: #EEF4FD;
+  --color-scrim: rgba(15, 18, 23, 0.40); /* 🟡 dialog backdrop */
+
+  /* ---------- colour: text ---------- */
+  --color-text-primary: #1A1D23;
+  --color-text-secondary: #4E5562;
+  --color-text-tertiary: #646B77;
+  --color-text-on-accent: #FFFFFF;
+
+  /* ---------- colour: accent (one meaning: Mike is live / the primary action) ---------- */
+  --color-accent: #2B66D9;
+  --color-accent-hover: #2356BD;
+  --color-accent-pressed: #1D4699;
+  --color-accent-strong: #2356BD;   /* live chip text on tint */
+  --color-accent-text: #2B66D9;     /* links */
+
+  /* ---------- colour: borders and focus ---------- */
+  --color-border-control: #7D8490;
+  --color-border-subtle: #E1E4E8;
+  --color-focus: #2B66D9;
+
+  /* ---------- colour: feedback layers (always label + icon + colour, never colour alone) ---------- */
+  --color-layer-content: #1F63C7;
+  --color-layer-content-tint: #E6F0FC;
+  --color-layer-language: #5B47C9;
+  --color-layer-language-tint: #EFEBFD;
+  --color-layer-delivery: #855C00;
+  --color-layer-delivery-tint: #FAF1DC;
+
+  /* ---------- colour: status ---------- */
+  --color-success: #1E7A4F;
+  --color-success-tint: #E7F3EC; /* 🟡 */
+  --color-warning: #9A5B00;
+  --color-warning-tint: #FBF1E1; /* 🟡 */
+  --color-error: #BC3B28;
+  --color-error-tint: #FBEAE7;   /* 🟡 */
+
+  /* ---------- colour: orb (graphic; state is always given as text too) ---------- */
+  --color-orb-core: #2B66D9;
+  --color-orb-edge: #8AB2EF;
+  --color-orb-idle: #C9CED6; /* 🟡 neutral orb when Mike is not live */
+
+  /* ---------- shadow ---------- */
+  --shadow-raised: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-overlay: 0 12px 32px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.08);
+
+  /* ---------- typography (Inter, self-hosted via @fontsource-variable/inter) ---------- */
+  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;   /* 12 */
+  --text-sm: 0.875rem;  /* 14 */
+  --text-md: 1rem;      /* 16 */
+  --text-lg: 1.125rem;  /* 18 */
+  --text-xl: 1.375rem;  /* 22 */
+  --text-2xl: 1.75rem;  /* 28 */
+  --text-3xl: 2.125rem; /* 34 */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --tracking-caps: 0.06em;
+
+  /* ---------- space (4 px grid) ---------- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ---------- radius ---------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ---------- borders and focus ring (2 px + 2 px offset, offset is mandatory) ---------- */
+  --border-width: 1px;
+  --border-width-strong: 2px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ---------- sizes ---------- */
+  --control-h-sm: 2rem;
+  --control-h-md: 2.5rem;
+  --control-h-lg: 3rem;
+  --icon-sm: 1rem;
+  --icon-md: 1.25rem;
+  --icon-lg: 1.5rem;
+  --orb-size: 13.75rem;    /* 220 */
+  --orb-size-sm: 6rem;     /* 96 (text mode) */
+  --toggle-w: 2.5rem;
+  --toggle-h: 1.5rem;
+
+  /* ---------- layout ---------- */
+  --layout-rail: 15rem;        /* 240 */
+  --layout-panel: 27.5rem;     /* 440 */
+  --layout-content: 60rem;     /* 960 */
+  --layout-narrow: 45rem;      /* 720 */
+  --layout-topbar: 4rem;       /* 64 */
+  --layout-gutter: 1rem;       /* phone side gutter */
+  --layout-dialog: 35rem;      /* 560 */
+
+  /* ---------- motion (calm: no loops, nothing blinks while the user speaks) ---------- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---------- z-index ---------- */
+  --z-sticky: 10;
+  --z-overlay: 50;
+  --z-dialog: 100;
+  --z-toast: 200;
+}
+
+/* Dark theme values (4.2 / 4.3). Defined once as a mixin-like block, applied twice below. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-canvas: #0F1217;
+    --color-raised: #171B22;
+    --color-subtle: #1E232B;
+    --color-selected: #172338;
+    --color-scrim: rgba(0, 0, 0, 0.60);
+    --color-text-primary: #E9EBEF;
+    --color-text-secondary: #A8AFBA;
+    --color-text-tertiary: #8C939E;
+    --color-text-on-accent: #FFFFFF;
+    --color-accent: #2B66D9;
+    --color-accent-hover: #3270E0;
+    --color-accent-pressed: #2356BD;
+    --color-accent-strong: #7FAEF7;
+    --color-accent-text: #7FAEF7;
+    --color-border-control: #687080;
+    --color-border-subtle: #262C35;
+    --color-focus: #7FAEF7;
+    --color-layer-content: #66B0FF;
+    --color-layer-content-tint: #243345;
+    --color-layer-language: #B3A6FF;
+    --color-layer-language-tint: #303145;
+    --color-layer-delivery: #E2C27A;
+    --color-layer-delivery-tint: #373630;
+    --color-success: #46C28E;
+    --color-success-tint: #17271F;
+    --color-warning: #FFA24C;
+    --color-warning-tint: #2B2117;
+    --color-error: #FF6B61;
+    --color-error-tint: #2D1A19;
+    --color-orb-core: #3270E0;
+    --color-orb-edge: #7FAEF7;
+    --color-orb-idle: #3A414D;
+    --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-canvas: #0F1217;
+  --color-raised: #171B22;
+  --color-subtle: #1E232B;
+  --color-selected: #172338;
+  --color-scrim: rgba(0, 0, 0, 0.60);
+  --color-text-primary: #E9EBEF;
+  --color-text-secondary: #A8AFBA;
+  --color-text-tertiary: #8C939E;
+  --color-text-on-accent: #FFFFFF;
+  --color-accent: #2B66D9;
+  --color-accent-hover: #3270E0;
+  --color-accent-pressed: #2356BD;
+  --color-accent-strong: #7FAEF7;
+  --color-accent-text: #7FAEF7;
+  --color-border-control: #687080;
+  --color-border-subtle: #262C35;
+  --color-focus: #7FAEF7;
+  --color-layer-content: #66B0FF;
+  --color-layer-content-tint: #243345;
+  --color-layer-language: #B3A6FF;
+  --color-layer-language-tint: #303145;
+  --color-layer-delivery: #E2C27A;
+  --color-layer-delivery-tint: #373630;
+  --color-success: #46C28E;
+  --color-success-tint: #17271F;
+  --color-warning: #FFA24C;
+  --color-warning-tint: #2B2117;
+  --color-error: #FF6B61;
+  --color-error-tint: #2D1A19;
+  --color-orb-core: #3270E0;
+  --color-orb-edge: #7FAEF7;
+  --color-orb-idle: #3A414D;
+  --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

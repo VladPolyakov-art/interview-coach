@@ -1,0 +1,52 @@
+"""Engine registry: descriptors, status and factories for the selected engine."""
+from __future__ import annotations
+
+from .. import config
+from . import claude_cli, gemini_live, ollama, openai_compat
+from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine
+
+DESCRIPTORS: dict[str, EngineDescriptor] = {
+    "ollama": ollama.DESCRIPTOR,
+    "openai_compatible": openai_compat.DESCRIPTOR,
+    "claude_cli": claude_cli.DESCRIPTOR,
+    "gemini_live": gemini_live.DESCRIPTOR,
+}
+
+
+def make_llm(settings: dict | None = None, engine_id: str | None = None) -> LLMEngine:
+    """The text LLM for the chosen engine (for gemini_live: the Gemini text model used for feedback)."""
+    settings = settings or config.load_settings()
+    engine_id = engine_id or settings["engine"]
+    if engine_id == "ollama":
+        return ollama.OllamaEngine(config.ollama_url(settings), settings["ollama"].get("model", ""))
+    if engine_id == "openai_compatible":
+        block = settings["openai_compatible"]
+        return openai_compat.OpenAICompatibleEngine(block.get("base_url", ""), block.get("api_key", ""),
+                                                    block.get("model", ""))
+    if engine_id == "claude_cli":
+        return claude_cli.ClaudeCLIEngine(settings["claude_cli"].get("model", "haiku"))
+    if engine_id == "gemini_live":
+        block = settings["gemini_live"]
+        return gemini_live.GeminiTextEngine(block.get("api_key", ""), block.get("text_model", ""),
+                                            block.get("model", ""))
+    raise EngineError("unknown_engine", f"Unknown engine {engine_id}")
+
+
+async def engine_status(engine_id: str, settings: dict | None = None) -> EngineStatus:
+    settings = settings or config.load_settings()
+    try:
+        return await make_llm(settings, engine_id).status()
+    except EngineError as exc:
+        return EngineStatus(code="error", message=exc.message, hint=exc.hint)
+
+
+async def all_engines(settings: dict | None = None) -> list[dict]:
+    import asyncio
+    settings = settings or config.load_settings()
+    statuses = await asyncio.gather(*(engine_status(eid, settings) for eid in DESCRIPTORS))
+    return [{**DESCRIPTORS[eid].model_dump(), "status": status.model_dump(), "selected": eid == settings["engine"]}
+            for eid, status in zip(DESCRIPTORS, statuses)]
+
+
+__all__ = ["DESCRIPTORS", "EngineDescriptor", "EngineError", "EngineStatus", "LLMEngine", "make_llm",
+           "engine_status", "all_engines"]

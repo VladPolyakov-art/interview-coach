@@ -1,0 +1,425 @@
+"""REST API. Errors use HTTP status codes with a JSON body {"detail": {"code": ..., "message": ...}}."""
+from __future__ import annotations
+
+import asyncio
+import time
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import PlainTextResponse, Response
+from pydantic import BaseModel, Field
+
+from . import (DATA_VERSION, __version__, config, content, engines, feedback, memory, planner, storage, stt,
+               telemetry, tts)
+from .documents import DocumentError, read_file, read_url
+from .engines import ollama as ollama_engine
+from .engines.base import EngineError
+
+router = APIRouter(prefix="/api")
+
+
+def fail(status: int, code: str, message: str, **extra) -> HTTPException:
+    return HTTPException(status_code=status, detail={"code": code, "message": message, **extra})
+
+
+def check_origin(request: Request) -> None:
+    """State-changing calls only from this app's own pages or the Vite dev server (CSRF guard)."""
+    origin = request.headers.get("origin")
+    if not origin:
+        return
+    host = request.headers.get("host", "")
+    if origin.rstrip("/") not in {f"http://{host}", f"https://{host}"} | config.DEV_ORIGINS:
+        raise fail(403, "origin_not_allowed", "This request came from another website.")
+
+
+# ---------- health, engines, settings ----------
+
+@router.get("/health")
+async def health() -> dict:
+    return {"ok": True, "version": __version__, "data_version": DATA_VERSION, "data_dir": str(config.data_dir()),
+            "web_built": config.web_dist_dir().joinpath("index.html").is_file()}
+
+
+@router.get("/engines")
+async def list_engines() -> dict:
+    settings = config.load_settings()
+    return {"selected": settings["engine"], "engines": await engines.all_engines(settings)}
+
+
+@router.get("/engines/ollama/models")
+async def ollama_models() -> dict:
+    settings = config.load_settings()
+    engine = ollama_engine.OllamaEngine(config.ollama_url(settings), settings["ollama"].get("model", ""))
+    try:
+        models = await engine.list_models()
+    except Exception:
+        status = await engine.status()
+        return {"models": [], "status": status.model_dump(), "recommended": ollama_engine.recommended_model()}
+    return {"models": [{"name": m.get("name"), "size": m.get("size"),
+                        "thinking_only": ollama_engine.is_thinking_only(m.get("name", ""))} for m in models],
+            "recommended": ollama_engine.recommended_model(), "ram_gb": round(ollama_engine.total_ram_gb(), 1),
+            "selected": settings["ollama"].get("model", "")}
+
+
+@router.get("/engines/{engine_id}/status")
+async def engine_status(engine_id: str) -> dict:
+    if engine_id not in engines.DESCRIPTORS:
+        raise fail(404, "unknown_engine", "Unknown engine.")
+    return (await engines.engine_status(engine_id)).model_dump()
+
+
+@router.post("/engines/{engine_id}/test")
+async def engine_test(engine_id: str, request: Request) -> dict:
+    """A tiny real request to the engine, with its latency."""
+    check_origin(request)
+    if engine_id not in engines.DESCRIPTORS:
+        raise fail(404, "unknown_engine", "Unknown engine.")
+    settings = config.load_settings()
+    llm = engines.make_llm(settings, engine_id)
+    status = await llm.status()
+    if not status.ready:
+        return {"ok": False, "status": status.model_dump()}
+    started = time.perf_counter()
+    if hasattr(llm, "test"):                       # Claude CLI and Gemini: their own real round trip
+        tested = await llm.test()
+        return {"ok": tested.ready, "status": tested.model_dump(),
+                "latency_ms": round((time.perf_counter() - started) * 1000)}
+    try:
+        reply = await asyncio.wait_for(llm.complete(
+            [{"role": "system", "content": "Reply with one word."}, {"role": "user", "content": "Say: ready"}],
+            temperature=0, max_tokens=8), timeout=90)
+    except (EngineError, asyncio.TimeoutError) as exc:
+        return {"ok": False, "status": status.model_dump(), "code": getattr(exc, "code", "timeout"),
+                "message": getattr(exc, "message", "The engine did not answer in time.")}
+    return {"ok": bool(reply.strip()), "status": status.model_dump(),
+            "latency_ms": round((time.perf_counter() - started) * 1000), "reply": reply.strip()[:40]}
+
+
+class SettingsPatch(BaseModel):
+    model_config = {"extra": "forbid"}
+    engine: Optional[str] = None
+    ollama: Optional[dict] = None
+    openai_compatible: Optional[dict] = None
+    claude_cli: Optional[dict] = None
+    gemini_live: Optional[dict] = None
+    voice: Optional[str] = None
+    kokoro_speed: Optional[float] = None
+    stt: Optional[dict] = None
+    answer_suggester: Optional[bool] = None
+    telemetry_opt_in: Optional[bool] = None
+    obsidian_dir: Optional[str] = None
+    layer_order: Optional[str] = None
+    level: Optional[str] = None
+    strictness: Optional[int] = None
+    questions_per_session: Optional[int] = None
+
+
+@router.get("/settings")
+async def get_settings() -> dict:
+    return config.public_settings()
+
+
+@router.post("/settings")
+async def post_settings(patch: SettingsPatch, request: Request) -> dict:
+    check_origin(request)
+    data = patch.model_dump(exclude_none=True)
+    if "engine" in data and data["engine"] not in config.ENGINES:
+        raise fail(422, "unknown_engine", "Unknown engine.")
+    if data.get("obsidian_dir"):
+        from pathlib import Path
+        if not Path(data["obsidian_dir"]).expanduser().is_dir():
+            raise fail(422, "folder_not_found", "That folder does not exist.")
+    for section in ("openai_compatible", "gemini_live"):
+        block = data.get(section)
+        if block is not None and "api_key" in block and block["api_key"] is None:
+            block.pop("api_key")
+    return config.public_settings(config.update_settings(data))
+
+
+# ---------- speech ----------
+
+@router.get("/voices")
+async def voices() -> dict:
+    return {"voices": tts.list_voices(), "default": tts.DEFAULT_VOICE, "tts": tts.status()}
+
+
+@router.get("/voices/sample")
+async def voice_sample(voice: str = "") -> Response:
+    settings = config.load_settings()
+    if not tts.status(settings)["available"]:
+        raise fail(503, "tts_unavailable", "Speech is not set up. The app works in text-only mode.")
+    wav = await asyncio.to_thread(tts.synthesize_wav, content.copy("voice_sample"), voice,
+                                  settings["kokoro_speed"], settings)
+    return Response(wav, media_type="audio/wav")
+
+
+@router.get("/tts")
+async def tts_status() -> dict:
+    return tts.status()
+
+
+@router.get("/stt")
+async def stt_status() -> dict:
+    return stt.get_stt(config.load_settings()).info()
+
+
+# ---------- profile (CV / about me) ----------
+
+class ProfileBody(BaseModel):
+    text: str = Field(max_length=40000)
+    source: str = Field(default="pasted", max_length=300)
+
+
+class UploadBody(BaseModel):
+    name: str = Field(max_length=300)
+    data: str = Field(max_length=12_000_000)        # base64
+
+
+@router.get("/profile")
+async def get_profile() -> dict:
+    return storage.read_profile()
+
+
+@router.put("/profile")
+async def put_profile(body: ProfileBody, request: Request) -> dict:
+    check_origin(request)
+    return storage.save_profile(body.text, body.source)
+
+
+@router.post("/profile/upload")
+async def upload_profile(body: UploadBody, request: Request) -> dict:
+    check_origin(request)
+    try:
+        text = await asyncio.to_thread(read_file, body.name, body.data)
+    except DocumentError as exc:
+        raise fail(422, exc.code, exc.message)
+    return storage.save_profile(text, f"file:{body.name}")
+
+
+@router.delete("/profile")
+async def delete_profile(request: Request) -> dict:
+    check_origin(request)
+    storage.delete_profile()
+    return {"ok": True}
+
+
+# ---------- vacancies (job postings) ----------
+
+class VacancyBody(BaseModel):
+    title: str = Field(default="", max_length=200)
+    text: str = Field(default="", max_length=40000)
+    url: str = Field(default="", max_length=2000)
+    file: Optional[UploadBody] = None
+
+
+def _vacancy_or_404(vacancy_id: str) -> dict:
+    try:
+        return storage.read_record("vacancies", vacancy_id)
+    except (OSError, ValueError):
+        raise fail(404, "not_found", "Job posting not found.")
+
+
+@router.get("/vacancies")
+async def list_vacancies() -> dict:
+    items = sorted(storage.list_records("vacancies"), key=lambda v: v.get("created_at", ""), reverse=True)
+    return {"vacancies": [{"id": v["id"], "title": v.get("title", ""), "created_at": v.get("created_at", ""),
+                           "source": v.get("source", ""), "questions": len(v.get("questions", []))} for v in items]}
+
+
+@router.post("/vacancies")
+async def create_vacancy(body: VacancyBody, request: Request) -> dict:
+    check_origin(request)
+    text, source = body.text.strip(), "pasted"
+    try:
+        if not text and body.url:
+            text, source = await asyncio.to_thread(read_url, body.url), body.url
+        elif not text and body.file:
+            text, source = await asyncio.to_thread(read_file, body.file.name, body.file.data), f"file:{body.file.name}"
+    except DocumentError as exc:
+        raise fail(422, exc.code, exc.message)
+    if len(text) < 80:
+        raise fail(422, "too_short", "Paste the job posting text (at least a few sentences).")
+    title = body.title.strip() or next((line.strip() for line in text.splitlines() if line.strip()), "Job posting")[:80]
+    record = {"id": storage.new_id("v-"), "title": title, "text": text, "source": source[:300],
+              "created_at": storage.now_iso(), "questions": []}
+    return storage.save_record("vacancies", record)
+
+
+@router.get("/vacancies/{vacancy_id}")
+async def get_vacancy(vacancy_id: str) -> dict:
+    return _vacancy_or_404(vacancy_id)
+
+
+@router.delete("/vacancies/{vacancy_id}")
+async def delete_vacancy(vacancy_id: str, request: Request) -> dict:
+    check_origin(request)
+    try:
+        return storage.trash_record("vacancies", vacancy_id)
+    except FileNotFoundError:
+        raise fail(404, "not_found", "Job posting not found.")
+
+
+@router.post("/vacancies/{vacancy_id}/questions")
+async def vacancy_questions(vacancy_id: str, request: Request) -> dict:
+    """P0: questions from the user's CV and this job posting; cached on the vacancy record."""
+    check_origin(request)
+    vacancy = _vacancy_or_404(vacancy_id)
+    settings = config.load_settings()
+    llm = engines.make_llm(settings)
+    try:
+        questions = await planner.generate_questions(llm, storage.read_profile().get("text", ""), vacancy["text"])
+    except EngineError as exc:
+        raise fail(502, exc.code, exc.message, hint=exc.hint)
+    vacancy["questions"] = [q.public() for q in questions]
+    storage.save_record("vacancies", vacancy)
+    return {"questions": vacancy["questions"]}
+
+
+@router.get("/question-bank")
+async def question_bank() -> dict:
+    return {"questions": [q.public() for q in content.question_bank()], "round_types": content.ROUND_TYPES}
+
+
+# ---------- sessions ----------
+
+def _session_or_404(session_id: str) -> dict:
+    try:
+        return storage.read_record("sessions", session_id)
+    except (OSError, ValueError):
+        raise fail(404, "not_found", "Session not found.")
+
+
+@router.get("/sessions")
+async def list_sessions() -> dict:
+    items = sorted(storage.list_records("sessions"), key=lambda s: s.get("started_at", ""), reverse=True)
+    return {"sessions": [{"id": s["id"], "title": s.get("title", ""), "mode": s.get("mode", ""),
+                          "started_at": s.get("started_at", ""), "duration_s": s.get("duration_s"),
+                          "engine": s.get("engine", ""), "answers": (s.get("stats") or {}).get("answers", 0),
+                          "verdict": (s.get("debrief") or {}).get("verdict", "")} for s in items]}
+
+
+@router.get("/sessions/trash")
+async def sessions_trash() -> dict:
+    return {"items": storage.list_trash("sessions")}
+
+
+@router.post("/sessions/trash/{trash_id}/restore")
+async def restore_session(trash_id: str, request: Request) -> dict:
+    check_origin(request)
+    try:
+        data = storage.restore_record("sessions", trash_id)
+    except FileNotFoundError:
+        raise fail(404, "not_found", "Not in the trash.")
+    except FileExistsError:
+        raise fail(409, "conflict", "A session with this id already exists.")
+    return {"ok": True, "id": data.get("id")}
+
+
+@router.get("/sessions/{session_id}")
+async def get_session(session_id: str) -> dict:
+    return _session_or_404(session_id)
+
+
+@router.get("/sessions/{session_id}/markdown")
+async def session_markdown(session_id: str) -> PlainTextResponse:
+    return PlainTextResponse(storage.render_session_markdown(_session_or_404(session_id)),
+                             media_type="text/markdown; charset=utf-8")
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str, request: Request) -> dict:
+    check_origin(request)
+    try:
+        return storage.trash_record("sessions", session_id)
+    except FileNotFoundError:
+        raise fail(404, "not_found", "Session not found.")
+
+
+@router.post("/sessions/{session_id}/debrief")
+async def rerun_debrief(session_id: str, request: Request) -> dict:
+    check_origin(request)
+    session = _session_or_404(session_id)
+    settings = config.load_settings()
+    llm = None
+    if session.get("mode") == "interview":
+        try:
+            llm = engines.make_llm(settings)
+        except EngineError:
+            llm = None
+    past = memory.past_weak_spots_text(session_id)
+    session["debrief"] = await feedback.debrief(llm, session.get("feedback", []),
+                                                layer_order=settings["layer_order"], past=past)
+    storage.save_session(session)
+    return session["debrief"]
+
+
+class FlagBody(BaseModel):
+    feedback_id: str = Field(max_length=40)
+    action: str = Field(max_length=20)
+
+
+@router.post("/sessions/{session_id}/flags/{flag_id}")
+async def session_flag(session_id: str, flag_id: str, body: FlagBody, request: Request) -> dict:
+    check_origin(request)
+    session = _session_or_404(session_id)
+    record = next((r for r in session.get("feedback", []) if r.get("id") == body.feedback_id), None)
+    if record is None:
+        raise fail(404, "not_found", "Feedback not found.")
+    try:
+        flag = feedback.apply_flag_action(record, flag_id, body.action)
+    except ValueError:
+        raise fail(422, "unknown_action", "Use confirm, dismiss or restore.")
+    except KeyError:
+        raise fail(404, "not_found", "Correction not found.")
+    storage.save_session(session)
+    return {"flag": flag, "language": record["layers"]["language"]}
+
+
+class StrongerBody(BaseModel):
+    feedback_id: str = Field(max_length=40)
+
+
+@router.post("/sessions/{session_id}/stronger")
+async def session_stronger(session_id: str, body: StrongerBody, request: Request) -> dict:
+    check_origin(request)
+    session = _session_or_404(session_id)
+    record = next((r for r in session.get("feedback", []) if r.get("id") == body.feedback_id), None)
+    if record is None:
+        raise fail(404, "not_found", "Feedback not found.")
+    llm = engines.make_llm(config.load_settings())
+    try:
+        data = await feedback.stronger_version(llm, question=record.get("question", ""),
+                                               missing=(record.get("layers", {}).get("content") or {}).get("missing", []),
+                                               transcript=record.get("answer", ""))
+    except EngineError as exc:
+        raise fail(502, exc.code, exc.message)
+    record["stronger"] = data
+    storage.save_session(session)
+    return data
+
+
+@router.get("/memory")
+async def get_memory() -> dict:
+    return memory.summary()
+
+
+# ---------- telemetry (opt-in, local file only) ----------
+
+class TelemetryBody(BaseModel):
+    opt_in: bool
+    clear: bool = False
+
+
+@router.get("/telemetry")
+async def get_telemetry() -> dict:
+    return telemetry.info()
+
+
+@router.post("/telemetry")
+async def post_telemetry(body: TelemetryBody, request: Request) -> dict:
+    check_origin(request)
+    settings = config.update_settings({"telemetry_opt_in": body.opt_in})
+    if body.clear:
+        telemetry.clear()
+    return telemetry.info(settings)
+

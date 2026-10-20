@@ -1,0 +1,34 @@
+.tabsPanel { display: flex; flex-direction: column; gap: var(--space-8); padding-top: var(--space-6); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-3); }
+.cardInner { display: flex; flex-direction: column; gap: var(--space-1); min-height: calc(var(--control-h-lg) * 2); }
+.cardTitle { font-weight: var(--weight-semibold); display: flex; justify-content: space-between; gap: var(--space-2); align-items: flex-start; }
+.cardMeta { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.cardWrap { position: relative; }
+.cardDelete { position: absolute; right: var(--space-2); bottom: var(--space-2); }
+.addCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: calc(var(--control-h-lg) * 2 + var(--space-5) * 2);
+  border: var(--border-width) dashed var(--color-border-control);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.addCard:hover { background: var(--color-subtle); color: var(--color-text-primary); }
+.round { display: grid; gap: var(--space-5); }
+.helper { font-size: var(--text-sm); color: var(--color-text-secondary); margin-top: var(--space-2); }
+.basis { font-size: var(--text-sm); color: var(--color-text-secondary); display: flex; gap: var(--space-2); align-items: flex-start; }
+.startRow { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
+.reason { font-size: var(--text-sm); color: var(--color-warning); }
+.weak { display: flex; flex-direction: column; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.weakRow { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-sm); }
+.weakCount { color: var(--color-text-tertiary); }
+.example { display: flex; flex-direction: column; gap: var(--space-3); }
+.exampleRow { display: flex; gap: var(--space-3); align-items: baseline; font-size: var(--text-sm); flex-wrap: wrap; }
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: var(--space-3); }
+.levelCode { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.qSelect { max-width: 10rem; }
