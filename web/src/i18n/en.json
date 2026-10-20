@@ -46,7 +46,26 @@
     "notReady": "Not ready",
     "checking": "Checking…",
     "storage": "Saved on this computer",
-    "unknownEngine": "No engine chosen"
+    "unknownEngine": "No engine chosen",
+    "recent": "Recent",
+    "allHistory": "All history",
+    "noSessions": "Your sessions will appear here.",
+    "openMenu": "Open menu",
+    "menu": "Menu",
+    "untitled": "Untitled session"
+  },
+  "overlay": {
+    "dismiss": "Dismiss",
+    "notifications": "Notifications",
+    "noMatches": "No matches",
+    "more": "More actions"
+  },
+  "rename": {
+    "label": "Session title",
+    "save": "Save title",
+    "empty": "Add a title, or press Esc to keep the old one.",
+    "counter": "{n} / {max}",
+    "action": "Rename"
   },
   "theme": {
     "label": "Theme",

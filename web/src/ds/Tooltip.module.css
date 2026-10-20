@@ -1,0 +1,28 @@
+.anchor { display: inline-flex; max-width: 100%; min-width: 0; vertical-align: top; }
+.anchorBlock { display: flex; width: 100%; min-width: 0; }
+/* Inline (gallery): the anchor, then the visible tip under it in the flow. */
+.inlineWrap { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+/* A block anchor keeps its width (so a forced-open tooltip still shows the text cut); the tip sizes to its text. */
+.anchorBlock.inlineWrap { align-items: stretch; }
+.inlineWrap > * { max-width: 100%; min-width: 0; }
+.inlineWrap > .tip { align-self: flex-start; max-width: min(var(--layout-panel), 100%); }
+
+/* Inverted surface (the action pair: 4.5:1+ in both themes), no blur, no glow. */
+.tip {
+  max-width: var(--layout-panel);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-action);
+  color: var(--color-text-on-action);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  box-shadow: var(--shadow-overlay);
+  overflow-wrap: anywhere;
+  animation: global(fade-in) var(--duration-fast) var(--ease-enter) backwards;
+}
+.floating { position: fixed; z-index: var(--z-toast); pointer-events: auto; }
+:global([data-overlay-root]) > .floating { position: absolute; }
+.floating.bottom { margin-top: var(--space-1); }
+.floating.top { margin-top: calc(-1 * var(--space-1)); }
+.inline { position: relative; }

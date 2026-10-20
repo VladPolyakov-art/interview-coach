@@ -29,7 +29,8 @@
   font-weight: var(--weight-regular);
   color: var(--color-text-tertiary);
 }
-@media (max-width: 767px) {
+/* Narrow page column (560px: a container width, docs/frontend.md): hints go, labels stay. */
+@container page (width < 560px) {
   .hint { display: none; }
 }
 

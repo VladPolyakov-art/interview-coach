@@ -1,0 +1,119 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
+import { Button, IconButton } from "./Button";
+import { Composer, ComposerAttachment, type ComposerProps } from "./Composer";
+import { Skeleton } from "./Skeleton";
+import { TextShimmer } from "./TextShimmer";
+
+/** Composer (G1): one rounded input with the attachment card, the field, a toolbar and the round send button inside.
+ * `send.variant`: `quiet` on Home (Start stays the only primary), `action` in Session text mode. */
+const meta: Meta<typeof Composer> = { title: "DS/Composer", component: Composer, tags: ["autodocs"] };
+export default meta;
+type Story = StoryObj<typeof Composer>;
+
+const KESTREL = (
+  <ComposerAttachment
+    title="Kestrel Pay"
+    meta="Senior Product Designer · Added Oct 18"
+    preview="Own the end-to-end checkout experience for small merchants on web and mobile."
+    status="12 questions from this job"
+    actions={
+      <>
+        <IconButton icon="more" label="Kestrel Pay options" size="sm" />
+        <IconButton icon="x" label="Remove job, use general questions" size="sm" />
+      </>
+    }
+  />
+);
+
+const HOME_TOOLBAR = {
+  toolbarStart: (
+    <>
+      <Button variant="secondary" size="sm" icon="upload">File</Button>
+      <Button variant="secondary" size="sm" icon="folder" iconRight="chevronDown" aria-haspopup="listbox" aria-expanded={false}>Saved jobs</Button>
+    </>
+  ),
+  toolbarEnd: <Button variant="secondary" size="sm" iconRight="chevronDown" aria-label="Strictness: Standard">Standard</Button>,
+};
+
+function Home(props: Partial<ComposerProps> & { initial?: string }) {
+  const { initial = "", ...rest } = props;
+  const [v, setV] = useState(initial);
+  return (
+    <Composer
+      label="Paste a job description or a link"
+      placeholder="Paste another job or a link"
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      send={{ label: "Add this job", icon: "arrowRight", variant: "quiet", hidden: v.trim() === "" }}
+      {...HOME_TOOLBAR}
+      {...rest}
+    />
+  );
+}
+
+/** Home, returning user: job attached, send hidden until there is text. */
+export const HomeWithAttachment: Story = { render: () => <Home attachment={KESTREL} /> };
+/** Home, first visit: no job, toolbar shows only "File". */
+export const HomeEmpty: Story = {
+  render: () => (
+    <Home
+      placeholder="Paste a job description or a link (optional)"
+      toolbarStart={<Button variant="secondary" size="sm" icon="upload">File</Button>}
+      toolbarEnd={undefined}
+    />
+  ),
+};
+/** Pasted text: the quiet send button rises in. */
+export const HomePasted: Story = {
+  render: () => <Home attachment={KESTREL} initial="https://jobs.lumenhealth.example/product-designer-design-systems" />,
+};
+/** Job being prepared: status shimmers. */
+export const HomePreparing: Story = {
+  render: () => (
+    <Home
+      attachment={<ComposerAttachment title="Fieldnote" meta="Lead UX Designer · Added Oct 9" status={<TextShimmer status>Preparing questions…</TextShimmer>} />}
+    />
+  ),
+};
+/** Loading the saved job: skeleton row in the attachment slot, aria-busy. */
+export const Loading: Story = { render: () => <Home busy attachment={<Skeleton variant="row" rows={1} label="Loading the job…" />} /> };
+export const Error: Story = { render: () => <Home initial="kestrelpay.example/jobs/42" error="This link didn't open. Paste the job text instead." /> };
+export const Disabled: Story = { render: () => <Home disabled attachment={KESTREL} /> };
+
+function Session(props: Partial<ComposerProps>) {
+  const [v, setV] = useState("");
+  return (
+    <Composer
+      label="Your answer"
+      placeholder="Type your answer"
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      submitOnEnter
+      send={{ label: "Send", icon: "send", variant: "action", disabled: v.trim() === "", onSend: () => setV("") }}
+      hint="Enter to send · Shift+Enter for a new line"
+      {...props}
+    />
+  );
+}
+/** Session text mode: black send button, Enter sends. */
+export const SessionTyping: Story = { render: () => <Session /> };
+/** Overflow: long answer grows to 8 rows, then scrolls; long attachment clamps to 2 lines. */
+export const Overflow: Story = {
+  render: () => (
+    <Home
+      attachment={
+        <ComposerAttachment
+          title="Kestrel Pay — Merchant Platform, Checkout, Payments and Onboarding Experience Group (Europe and North America)"
+          meta="Senior Product Designer, Checkout and Merchant Onboarding (web, iOS, Android) · Added Oct 18"
+          preview="Own the end-to-end checkout experience for small merchants on web and mobile, partner with engineering and risk."
+          status="12 questions from this job"
+          actions={<IconButton icon="x" label="Remove job, use general questions" size="sm" />}
+        />
+      }
+      initial={Array.from({ length: 14 }, (_, i) => `Line ${i + 1}: Own the end-to-end checkout experience for small merchants.`).join("\n")}
+    />
+  ),
+};
+/** Narrow parent (343px, the 375 frame): the toolbar end group drops to its own line. */
+export const Narrow: Story = { render: () => <div style={{ width: "21.4375rem" }}><Home attachment={KESTREL} initial="Paste" /></div> };

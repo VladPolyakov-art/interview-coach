@@ -1,9 +1,10 @@
-/* Live mic indicator (docs/motion.md 3.3 D8 adapted, moodboard Q1): the round mute button of the session dock.
- * While the mic is open, a blue --color-mic-live disc behind the button follows the real voice level:
- * opacity .35 + level × .65, scale .8 + level × .35 (calm: ≤ .35 scale change). A rAF loop reads `getLevel`
- * and writes the CSS variable --mic on the button — no React re-render per frame.
- * Muted: no disc, grey slashed mic icon, aria-pressed. Under reduced motion the disc still follows the level
- * (it is information), only without its transition. */
+/* Live mic indicator (G10; docs/motion.md 3.7 "Mic live ring", moodboard Q1, session.md O4): the round mute
+ * button of the session dock. While the mic is open, a thin 2px --color-mic-live ring around the face follows
+ * the real voice level: opacity .4 + level × .6, scale 1 + level × .15. It replaced the solid disc, which read
+ * as a heavy blue mass at full level. A rAF loop reads `getLevel` and writes the CSS variable --mic on the
+ * button — no React re-render per frame. `level` sets a static value instead (review frames, stories).
+ * Muted: no ring, grey slashed mic icon, aria-pressed. Under reduced motion the ring still follows the level
+ * (it is information), only without its transition. Blue appears only here, on the orb and on the focus ring. */
 import { forwardRef, useEffect, useRef, type ButtonHTMLAttributes } from "react";
 import { Icon } from "./icons";
 import { smoothLevel } from "./motion";
@@ -17,22 +18,29 @@ export interface MicButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElem
   live: boolean;
   /** Current level 0..1 (read every animation frame). */
   getLevel?: () => number;
+  /** Static level 0..1 when there is no live source (review frames, stories). Ignored when `getLevel` is set. */
+  level?: number;
 }
 
 export const MicButton = forwardRef<HTMLButtonElement, MicButtonProps>(function MicButton(
-  { label, muted, live, getLevel, className, type, ...rest },
+  { label, muted, live, getLevel, level: staticLevel, className, type, ...rest },
   ref,
 ) {
   const own = useRef<HTMLButtonElement | null>(null);
   const active = live && !muted;
   const getLevelRef = useRef(getLevel);
   getLevelRef.current = getLevel;
+  const hasSource = Boolean(getLevel);
 
   useEffect(() => {
     const el = own.current;
     if (!el) return;
     if (!active) {
       el.style.setProperty("--mic", "0");
+      return;
+    }
+    if (!hasSource) {
+      el.style.setProperty("--mic", clamp01(staticLevel ?? 0).toFixed(3));
       return;
     }
     let raf = 0;
@@ -44,7 +52,7 @@ export const MicButton = forwardRef<HTMLButtonElement, MicButtonProps>(function 
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [active]);
+  }, [active, staticLevel, hasSource]);
 
   return (
     <button
@@ -55,13 +63,18 @@ export const MicButton = forwardRef<HTMLButtonElement, MicButtonProps>(function 
       }}
       type={type ?? "button"}
       className={`${s.mic} ${active ? s.live : ""} ${className ?? ""}`}
+      data-review-id={`MicButton/${muted ? "muted" : active ? "live" : "idle"}`}
       aria-label={label}
       title={label}
       aria-pressed={muted}
       {...rest}
     >
-      <span className={s.disc} aria-hidden="true" />
+      <span className={s.ring} aria-hidden="true" />
       <span className={s.face}><Icon name={muted ? "micOff" : "mic"} /></span>
     </button>
   );
 });
+
+function clamp01(n: number) {
+  return Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
+}

@@ -3,3 +3,4 @@ dist/
 storybook-static/
 .screens/
 *.log
+dist-review/

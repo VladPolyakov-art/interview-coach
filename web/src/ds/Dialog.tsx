@@ -1,21 +1,100 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
-import { durationMs, runExit } from "./motion";
+import { useEffect, useId, useRef, type ReactNode, type Ref } from "react";
+import { durationMs, runExit, usePresence } from "./motion";
+import { OverlayPortal, useOverlayRoot } from "./OverlayRoot";
+import { trapTab, useOverlayFocus } from "./overlay";
 import s from "./Dialog.module.css";
 
 export interface DialogProps {
   open: boolean;
   title: ReactNode;
   children?: ReactNode;
+  /** End-aligned actions (the primary last). On a narrow dialog they stack, primary on top. */
   actions: ReactNode;
+  /** Start-aligned actions, e.g. "Delete job" in the vacancy editor (edit mode). */
+  actionsStart?: ReactNode;
   onClose: () => void;
+  /** Render open in the document flow: no portal, no scrim, no focus move. For stories and the review gallery. */
+  inline?: boolean;
 }
 
-/** Modal built on native <dialog>: focus trap, Esc and inert background come from the platform.
- * Motion (docs/motion.md 3.3 D11): enters with `dialog-in` and a plain scrim fade (no blur). On close the
- * dialog leaves the top layer at once — the page is interactive again and focus returns to the opener
- * immediately — while a non-interactive copy of its box plays `dialog-out` (rule 5: the exit never blocks,
- * and it ends on a timer even if `animationend` never fires). Esc goes through the same exit. */
-export function Dialog({ open, title, children, actions, onClose }: DialogProps) {
+/** Modal decision. Three render modes, one look:
+ * - **modal** (the app): native <dialog> + showModal(): focus trap, Esc and inert background come from the platform.
+ * - **contained** (inside an OverlayRoot, i.e. a review frame): non-modal <dialog open> in the frame's layer with a
+ *   plain scrim element; Esc, a Tab trap and focus return are done here. It never escapes the scaled frame.
+ * - **inline**: the open dialog box in the flow, for the gallery.
+ * Motion (docs/motion.md 3.3 D11, 3.7): `dialog-in` and a plain scrim fade (no blur). On close the modal leaves the top
+ * layer at once — the page is interactive again and focus returns immediately — while a non-interactive copy of its box
+ * plays `dialog-out` (rule 5: the exit never blocks, it ends on a timer even if `animationend` never fires). */
+export function Dialog(props: DialogProps) {
+  const { inside } = useOverlayRoot();
+  if (props.inline) return props.open ? <DialogBox {...props} mode="inline" /> : null;
+  if (inside) return <ContainedDialog {...props} />;
+  return <ModalDialog {...props} />;
+}
+
+interface BoxProps extends DialogProps {
+  mode: "inline" | "contained";
+  className?: string;
+  ref?: Ref<HTMLDialogElement>;
+}
+
+function DialogBox({ title, children, actions, actionsStart, onClose, mode, open, className, ref }: BoxProps) {
+  const id = useId();
+  return (
+    <dialog
+      ref={ref}
+      open
+      className={`${s.dialog} ${mode === "inline" ? s.inline : s.contained} ${className ?? ""}`}
+      aria-labelledby={`${id}-t`}
+      aria-modal={mode === "contained" ? true : undefined}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+          return;
+        }
+        if (mode === "contained") trapTab(e, e.currentTarget);
+      }}
+    >
+      <Inner id={id} title={title} actions={actions} actionsStart={actionsStart}>{children}</Inner>
+    </dialog>
+  );
+}
+
+function Inner({ id, title, children, actions, actionsStart }: {
+  id: string; title: ReactNode; children?: ReactNode; actions: ReactNode; actionsStart?: ReactNode;
+}) {
+  return (
+    <div className={s.inner}>
+      <h2 id={`${id}-t`} className={s.title}>{title}</h2>
+      {children ? <div className={s.body}>{children}</div> : null}
+      <div className={s.actionsRow}>
+        {actionsStart ? <div className={s.actionsStart}>{actionsStart}</div> : null}
+        <div className={s.actions}>{actions}</div>
+      </div>
+    </div>
+  );
+}
+
+function ContainedDialog(props: DialogProps) {
+  const { open } = props;
+  const { mounted, leaving } = usePresence(open);
+  const box = useRef<HTMLDialogElement>(null);
+  useOverlayFocus(box, open && mounted);
+  if (!mounted) return null;
+  return (
+    <OverlayPortal>
+      <div className={s.containedRoot}>
+        <div className={`${s.scrim} ${leaving ? s.scrimOut : ""}`} aria-hidden="true" />
+        <DialogBox {...props} open={open && !leaving} mode="contained" ref={box} className={leaving ? s.leaving : undefined} />
+      </div>
+    </OverlayPortal>
+  );
+}
+
+function ModalDialog({ open, title, children, actions, actionsStart, onClose }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const cancelExit = useRef<(() => void) | null>(null);
@@ -51,16 +130,12 @@ export function Dialog({ open, title, children, actions, onClose }: DialogProps)
   return (
     <dialog
       ref={ref}
-      className={s.dialog}
+      className={`${s.dialog} ${s.modal}`}
       aria-labelledby={`${id}-t`}
       onClose={() => { if (open) onClose(); }}
       onCancel={(e) => { e.preventDefault(); onClose(); }}
     >
-      <div className={s.inner}>
-        <h2 id={`${id}-t`} className={s.title}>{title}</h2>
-        {children ? <div className={s.body}>{children}</div> : null}
-        <div className={s.actions}>{actions}</div>
-      </div>
+      <Inner id={id} title={title} actions={actions} actionsStart={actionsStart}>{children}</Inner>
     </dialog>
   );
 }

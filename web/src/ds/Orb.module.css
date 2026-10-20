@@ -1,29 +1,58 @@
-.wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
-.orb {
+/* Orb concept 1 "voice-led". Size from --orb-size / --orb-size-sm, shrinks with a narrow parent (never overflows).
+ * The ring sits --space-2 outside the disc; the figure reserves that room in every state, so the listening ring
+ * appearing never shifts the layout. */
+.wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); max-width: 100%; }
+.figure {
+  --orb-d: var(--orb-size);
+  --ring-out: calc(var(--space-2) + var(--border-width-strong));
   position: relative;
-  width: var(--orb-size);
-  height: var(--orb-size);
+  width: var(--orb-d);
+  max-width: calc(100% - 2 * var(--ring-out));
+  aspect-ratio: 1;
+  margin: var(--ring-out);
+}
+.sm { --orb-d: var(--orb-size-sm); }
+.disc {
+  --voice: 0;
+  position: absolute;
+  inset: 0;
   border-radius: var(--radius-pill);
-  background: radial-gradient(circle at 35% 30%, var(--color-orb-edge), var(--color-orb-core) 70%);
-  transition: transform var(--duration-slow) var(--ease-standard), opacity var(--duration-slow) var(--ease-standard),
-    filter var(--duration-slow) var(--ease-standard);
+  /* Centred stops (session.md O3): the edge fades into the canvas as pigment, not as a light source. */
+  background: radial-gradient(circle at 50% 50%, var(--color-orb-core) 0 60%, var(--color-orb-edge) 100%);
+  transition: transform var(--duration-slow) var(--ease-standard), background-color var(--duration-slow) var(--ease-standard);
 }
-.sm { width: var(--orb-size-sm); height: var(--orb-size-sm); }
-.idle, .offline, .muted { background: var(--color-orb-idle); }
-.offline { opacity: 0.6; }
-.thinking { opacity: 0.8; }
-/* The user is speaking: the orb holds still (owner rule: nothing moves while the user talks). */
-.listening {
-  box-shadow: 0 0 0 var(--border-width-strong) var(--color-raised), 0 0 0 calc(var(--border-width-strong) * 3) var(--color-orb-edge);
+/* Not live: grey, flat (P2). */
+.idle, .muted, .offline { background: var(--color-orb-idle); }
+/* Speaking, voice-led: scale follows Mike's level, 120ms linear like the mic ring; silence = still. */
+.voiceLed {
+  transform: scale(calc(1 + var(--voice) * 0.05));
+  transition: transform calc(var(--duration-stagger) * 1.5) linear;
 }
-/* Mike is speaking: a slow, single-axis breath. Disabled by reduced motion. */
-.speaking { animation: breathe var(--duration-orb) var(--ease-orb) infinite alternate; }
-@keyframes breathe {
-  from { transform: scale(0.97); }
+/* Speaking without a level source (stage-12 fallback): concept 3's slow breath. */
+.breath { animation: orb-breath var(--duration-orb) var(--ease-orb) infinite alternate; }
+@keyframes orb-breath {
+  from { transform: scale(0.98); }
   to { transform: scale(1.02); }
 }
+/* Thinking: a held breath — shrink, hold, come back — once per --duration-orb. */
+.hold { animation: orb-hold var(--duration-orb) var(--ease-orb) infinite; }
+@keyframes orb-hold {
+  0%, 100% { transform: scale(1); }
+  35%, 65% { transform: scale(0.94); }
+}
+/* The "open ear": a still 2px ring in the core blue (the edge blue is below 3:1 on white). */
+.ring {
+  position: absolute;
+  inset: calc(-1 * var(--ring-out));
+  border: var(--border-width-strong) solid var(--color-orb-core);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+  pointer-events: none;
+}
+.ringOn { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .speaking { animation: none; }
+  .voiceLed { transform: none; }
 }
 .label {
   font-size: var(--text-md);
@@ -33,5 +62,5 @@
   min-height: calc(var(--text-md) * var(--leading-normal));
 }
 .sub { font-size: var(--text-sm); color: var(--color-text-secondary); text-align: center; }
-/* Session entrance: a wrapper scales, so the orb's own state animation (breathe) is never cut. */
+/* Session entrance: a wrapper scales, so the orb's own state motion is never cut. */
 .enter { animation: global(orb-in) var(--duration-slower) var(--ease-standard) backwards; }

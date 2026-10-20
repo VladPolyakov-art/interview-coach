@@ -1,0 +1,29 @@
+.root { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); max-width: 100%; text-align: center; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-sm);
+  max-width: 100%;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+}
+.dot {
+  flex: none;
+  width: calc(var(--space-1) * 1.5);
+  height: calc(var(--space-1) * 1.5);
+  border-radius: var(--radius-pill);
+  background: var(--color-text-tertiary);
+}
+/* Blue only while the user's mic is open; static (rule 3). */
+.dotLive { background: var(--color-mic-live); }
+.dotPulse { animation: global(pulse-dot) var(--duration-loop-dots) var(--ease-standard) infinite; }
+.icon { display: inline-flex; color: var(--color-text-secondary); }
+.label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.labelIn { animation: global(fade-in) var(--duration-fast) var(--ease-standard) backwards; }
+.sub { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: 100%; }

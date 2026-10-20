@@ -1,1 +1,5 @@
-.center { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+/* Heights come down from the root (no vh): AppShell and centred states fill #root (ds/screens/_index.md §2.3). */
+:global(html),
+:global(body),
+:global(#root) { height: 100%; }
+.center { display: flex; align-items: center; justify-content: center; height: 100%; }

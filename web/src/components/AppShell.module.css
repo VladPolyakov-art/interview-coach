@@ -1,18 +1,29 @@
+/* AppShell. Root = container `shell` (widths below are container widths, docs/frontend.md — the one place literal
+ * px is allowed): ≥ 1024 full rail · 640–1023 top bar + drawer · < 640 top bar, badge only.
+ * Heights come from the parent (height: 100% from #root / the review frame), no vh. <main> scrolls. */
 .shell {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-canvas);
+  container: shell / inline-size;
+}
+/* The root can't query itself: the grid lives one level down. */
+.frame {
   display: grid;
   grid-template-columns: var(--layout-rail) minmax(0, 1fr);
-  min-height: 100vh;
-  /* The rail column keeps its surface below the sticky rail on long pages. */
-  background: linear-gradient(to right, var(--color-sidebar) var(--layout-rail), var(--color-canvas) var(--layout-rail));
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
 }
+
+/* ---- Rail (≥ 1024) ---- */
 .rail {
-  position: sticky;
-  top: 0;
-  height: 100vh;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-6) var(--space-4);
+  min-height: 0;
+  padding: var(--space-4);
+  overflow-y: auto;
   border-right: var(--border-width) solid var(--color-border-subtle);
   background: var(--color-sidebar);
 }
@@ -20,10 +31,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: var(--control-h-md);
   padding: 0 var(--space-2);
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-md);
   color: var(--color-text-primary);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
   text-decoration: none;
 }
 .mark {
@@ -32,49 +44,99 @@
   justify-content: center;
   width: var(--control-h-sm);
   height: var(--control-h-sm);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   background: var(--color-action);
   color: var(--color-text-on-action);
   transition: transform var(--duration-slow) var(--ease-standard);
 }
 .brand:hover .mark { transform: rotate(-8deg) scale(1.04); }
 .nav { display: flex; flex-direction: column; gap: var(--space-1); }
-.navLink {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-h-md);
+
+.recent { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.recentLabel {
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
   color: var(--color-text-secondary);
-  text-decoration: none;
   font-size: var(--text-sm);
-  font-weight: var(--weight-regular);
-  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+  font-weight: var(--weight-medium);
 }
-.navLink:hover { background: var(--color-hover); color: var(--color-text-primary); }
-/* Selected row: grey fill + weight 500 + aria-current (the greys are close on purpose, fill alone is not enough). */
-.navLink[aria-current="page"] { background: var(--color-selected); color: var(--color-text-primary); font-weight: var(--weight-medium); }
+.recentSkeleton { padding: var(--space-1) var(--space-3); }
+.recentEmpty { padding: 0 var(--space-3); color: var(--color-text-tertiary); font-size: var(--text-sm); }
+/* Button link sm look on a router link (a link, not a button: it navigates). */
+.allHistory {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-3);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+}
+.allHistory:hover { text-decoration-thickness: var(--border-width-strong); }
+
 .status {
-  margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  margin-top: auto;
   padding: var(--space-3);
   border-radius: var(--radius-md);
   background: var(--color-subtle);
   font-size: var(--text-sm);
 }
 .statusLink { display: flex; flex-direction: column; gap: var(--space-1); color: inherit; text-decoration: none; }
-.statusLink:hover .statusName { text-decoration: underline; }
-.statusLabel { font-size: var(--text-sm); color: var(--color-text-tertiary); }
-.statusName { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-medium); flex-wrap: wrap; }
-.storage { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); font-size: var(--text-sm); }
-.main { min-width: 0; position: relative; }
+.statusLink:hover .statusName > span:first-child { text-decoration: underline; }
+.statusLabel { color: var(--color-text-tertiary); font-size: var(--text-sm); }
+.statusName { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-weight: var(--weight-medium); }
+.storage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+.storage:hover { color: var(--color-text-primary); }
+
+/* ---- Top bar (< 1024) ---- */
+.topbar { display: none; }
+.topbarName {
+  color: var(--color-text-primary);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.topbarEngine { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; margin-left: auto; }
+.topbarEngineName {
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The rail inside the drawer (its header carries the app name and the close button). */
+.drawerRail { display: flex; flex-direction: column; gap: var(--space-6); min-height: 100%; }
+
+/* ---- Main: the page container and the scroll container ---- */
+.main {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--color-canvas);
+  container: page / inline-size;
+}
+.main:focus { outline: none; }
+.page { display: flow-root; min-height: 100%; }
+
 .skip {
   position: absolute;
-  left: var(--space-4);
   top: calc(-1 * var(--control-h-lg) * 2);
+  left: var(--space-4);
   z-index: var(--z-toast);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
@@ -83,23 +145,19 @@
 }
 .skip:focus { top: var(--space-4); }
 
-@media (max-width: 767px) {
-  .shell { grid-template-columns: minmax(0, 1fr); background: var(--color-canvas); }
-  .rail {
-    position: sticky;
-    z-index: var(--z-sticky);
-    height: auto;
-    flex-direction: row;
+@container shell (width < 1024px) {
+  .frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .rail { display: none; }
+  .topbar {
+    display: flex;
     align-items: center;
-    flex-wrap: wrap;
     gap: var(--space-2);
-    padding: var(--space-2) var(--layout-gutter);
-    border-right: 0;
+    height: var(--layout-topbar);
+    padding: 0 var(--layout-gutter) 0 var(--space-2);
     border-bottom: var(--border-width) solid var(--color-border-subtle);
+    background: var(--color-canvas);
   }
-  .brandText { display: none; }
-  .nav { flex-direction: row; }
-  .navText { display: none; }
-  .status { margin: 0 0 0 auto; padding: var(--space-1) var(--space-2); background: transparent; }
-  .statusLabel, .storage { display: none; }
+}
+@container shell (width < 640px) {
+  .topbarEngineName { display: none; }
 }

@@ -26,3 +26,12 @@ function Demo() {
   );
 }
 export const Default: StoryObj = { render: () => <Demo /> };
+
+/** Narrow page column (< 560, container `page`): the hints hide, labels stay. */
+export const NarrowPage: StoryObj = {
+  render: () => (
+    <div style={{ width: 343, maxWidth: "100%", containerType: "inline-size", containerName: "page" }}>
+      <Demo />
+    </div>
+  ),
+};
