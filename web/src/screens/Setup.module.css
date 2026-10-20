@@ -26,7 +26,7 @@
 .num {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--icon-lg); height: var(--icon-lg); border-radius: var(--radius-pill);
-  border: var(--border-width) solid currentColor; font-size: var(--text-xs);
+  border: var(--border-width) solid currentColor; font-size: var(--text-sm);
 }
 .main {
   flex: 1;

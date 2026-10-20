@@ -36,4 +36,4 @@
 .inputWrap .control { padding-right: var(--space-12); }
 .adorn { position: absolute; right: var(--space-1); display: inline-flex; }
 
-.counter { font-size: var(--text-xs); color: var(--color-text-tertiary); text-align: right; }
+.counter { font-size: var(--text-sm); color: var(--color-text-tertiary); text-align: right; }
