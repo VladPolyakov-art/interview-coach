@@ -13,7 +13,7 @@
 .mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--control-h-sm); height: var(--control-h-sm);
-  border-radius: var(--radius-md); background: var(--color-accent); color: var(--color-text-on-accent);
+  border-radius: var(--radius-md); background: var(--color-action); color: var(--color-text-on-action);
 }
 .steps { display: flex; gap: var(--space-2); margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
 .step {
@@ -47,15 +47,15 @@
 .checkHead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
 .checkTitle { font-weight: var(--weight-semibold); display: flex; gap: var(--space-2); align-items: center; }
 .hint { font-size: var(--text-sm); color: var(--color-text-secondary); }
-.ok { font-size: var(--text-sm); color: var(--color-success); display: inline-flex; gap: var(--space-1); align-items: center; }
-.warn { font-size: var(--text-sm); color: var(--color-warning); }
+.ok { font-size: var(--text-sm); color: var(--color-text-success); display: inline-flex; gap: var(--space-1); align-items: center; }
+.warn { font-size: var(--text-sm); color: var(--color-text-warning); }
 .meter {
   height: var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--color-subtle);
   overflow: hidden;
 }
-.meterFill { height: 100%; background: var(--color-success); border-radius: var(--radius-pill); transition: width var(--duration-fast) linear; }
+.meterFill { height: 100%; background: var(--color-mic-live); border-radius: var(--radius-pill); transition: width var(--duration-fast) linear; }
 .row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
 .fileInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 @media (max-width: 767px) {

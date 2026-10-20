@@ -8,14 +8,16 @@ export interface BadgeProps {
   tone?: BadgeTone;
   icon?: IconName;
   dot?: boolean;
+  /** Layer tones only: soft tint background. Debrief only (Session layers are monochrome). */
+  tinted?: boolean;
   children: ReactNode;
   title?: string;
 }
 
 /** Static status label. Tone is never the only signal: always pair it with text. */
-export function Badge({ tone = "neutral", icon, dot, children, title }: BadgeProps) {
+export function Badge({ tone = "neutral", icon, dot, tinted, children, title }: BadgeProps) {
   return (
-    <span className={`${s.badge} ${s[tone]}`} title={title}>
+    <span className={`${s.badge} ${s[tone]}${tinted ? ` ${s.tinted}` : ""}`} title={title}>
       {dot ? <span className={s.dot} aria-hidden="true" /> : null}
       {icon ? <Icon name={icon} size="sm" /> : null}
       {children}

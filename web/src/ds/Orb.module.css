@@ -17,7 +17,7 @@
   box-shadow: 0 0 0 var(--border-width-strong) var(--color-raised), 0 0 0 calc(var(--border-width-strong) * 3) var(--color-orb-edge);
 }
 /* Mike is speaking: a slow, single-axis breath. Disabled by reduced motion. */
-.speaking { animation: breathe 2.4s var(--ease-standard) infinite alternate; }
+.speaking { animation: breathe var(--duration-orb) var(--ease-orb) infinite alternate; }
 @keyframes breathe {
   from { transform: scale(0.97); }
   to { transform: scale(1.02); }

@@ -163,7 +163,7 @@ export function DebriefScreen() {
               {d.weak_spots.map((w) => (
                 <li key={`${w.layer}-${w.tag}`} className={s.spot}>
                   <span className={s.spotHead}>
-                    <Badge tone={w.layer} icon={w.layer}>{t(`feedback.layer.${w.layer}`)}</Badge>
+                    <Badge tone={w.layer} icon={w.layer} tinted>{t(`feedback.layer.${w.layer}`)}</Badge>
                     <span>{w.text || tMaybe(`feedback.tag.${w.tag}`, w.tag.replace(/_/g, " "))}</span>
                   </span>
                   {w.evidence?.length ? <span className={s.evidence}>{t("debrief.evidence", { list: w.evidence.map(evidenceLabel).join(", ") })}</span> : null}

@@ -51,7 +51,7 @@ function fixCount(records: FeedbackRecord[], layer: "content" | "delivery") {
   return { fixes, pending, any };
 }
 
-function SummaryRow({ records, mode, order }: { records: FeedbackRecord[]; mode: "interview" | "english"; order: LayerOrder }) {
+function SummaryRow({ records, mode, order, tinted }: { records: FeedbackRecord[]; mode: "interview" | "english"; order: LayerOrder; tinted: boolean }) {
   const items = layerSequence(order, mode).map((layer) => {
     let label: string;
     if (layer === "language") {
@@ -66,7 +66,7 @@ function SummaryRow({ records, mode, order }: { records: FeedbackRecord[]; mode:
     }
     return (
       <li key={layer}>
-        <Badge tone={layer} icon={ICON[layer]}>{t(`feedback.layer.${layer}`)} · {label}</Badge>
+        <Badge tone={layer} icon={ICON[layer]} tinted={tinted}>{t(`feedback.layer.${layer}`)} · {label}</Badge>
       </li>
     );
   });
@@ -130,7 +130,7 @@ export function ThreadFeedback({ thread, mode, layerOrder, live, onFlag, onStron
         <H className={s.headTitle} ref={headingRef} tabIndex={-1}>{title}{sub ? <span className={s.headSub}> · {sub}</span> : null}</H>
         {thread.question ? <p className={s.question}>{thread.question}</p> : null}
       </div>
-      <SummaryRow records={records} mode={mode} order={layerOrder} />
+      <SummaryRow records={records} mode={mode} order={layerOrder} tinted={!live} />
       <Button variant="link" size="sm" className={s.answerToggle} aria-expanded={showAnswer} aria-controls={answersId} onClick={() => setShowAnswer(!showAnswer)}>
         {showAnswer ? t("feedback.hideAnswer") : voiced ? t("feedback.showAnswer") : t("feedback.showTyped")}
       </Button>

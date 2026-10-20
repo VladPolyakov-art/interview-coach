@@ -19,6 +19,16 @@ export const Tones: StoryObj = {
     </div>
   ),
 };
+/** Debrief only: soft layer tints (Session layers are monochrome, see Tones). */
+export const DebriefTints: StoryObj = {
+  render: () => (
+    <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+      <Badge tone="content" icon="content" tinted>Content</Badge>
+      <Badge tone="language" icon="language" tinted>Language</Badge>
+      <Badge tone="delivery" icon="delivery" tinted>Delivery</Badge>
+    </div>
+  ),
+};
 export const Chips: StoryObj = {
   render: () => (
     <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>

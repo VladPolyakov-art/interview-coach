@@ -9,14 +9,14 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "lint": "eslint . --max-warnings=0 && node scripts/check-tokens.mjs",
+    "lint": "eslint . --max-warnings=0 && node scripts/check-tokens.mjs && node scripts/check-vars.mjs",
     "test": "vitest run",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static",
     "e2e": "node scripts/e2e.mjs"
   },
   "dependencies": {
-    "@fontsource-variable/inter": "5.2.8",
+    "@fontsource-variable/manrope": "5.3.0",
     "react": "19.2.9",
     "react-dom": "19.2.9",
     "react-router-dom": "7.18.4"

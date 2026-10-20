@@ -15,8 +15,8 @@
 .info { background: var(--color-subtle); }
 .info .icon { color: var(--color-text-secondary); }
 .success { background: var(--color-success-tint); }
-.success .icon { color: var(--color-success); }
+.success .icon { color: var(--color-text-success); }
 .warning { background: var(--color-warning-tint); }
-.warning .icon { color: var(--color-warning); }
+.warning .icon { color: var(--color-text-warning); }
 .error { background: var(--color-error-tint); }
-.error .icon { color: var(--color-error); }
+.error .icon { color: var(--color-text-error); }

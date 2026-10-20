@@ -9,17 +9,18 @@
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   text-decoration: none;
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   font-size: var(--text-sm);
 }
-.navLink:hover { background: var(--color-subtle); color: var(--color-text-primary); }
-.navLink[aria-current="page"] { background: var(--color-selected); color: var(--color-text-primary); }
+.navLink:hover { background: var(--color-hover); color: var(--color-text-primary); }
+/* Selected row: grey fill + weight 500 + aria-current. */
+.navLink[aria-current="page"] { background: var(--color-selected); color: var(--color-text-primary); font-weight: var(--weight-medium); }
 .content { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
 .stack { display: flex; flex-direction: column; gap: var(--space-5); }
 .row { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
 .row > .grow { flex: 1; min-width: 12rem; }
 .hint { font-size: var(--text-sm); color: var(--color-text-secondary); }
-.status { font-size: var(--text-sm); color: var(--color-success); display: inline-flex; gap: var(--space-1); align-items: center; }
+.status { font-size: var(--text-sm); color: var(--color-text-success); display: inline-flex; gap: var(--space-1); align-items: center; }
 .narrowField { max-width: 16rem; }
 .fileInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 @media (max-width: 1023px) {

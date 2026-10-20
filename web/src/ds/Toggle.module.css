@@ -26,9 +26,9 @@
   background: var(--color-text-secondary);
   transition: transform var(--duration-fast) var(--ease-standard);
 }
-.switch[aria-checked="true"] { background: var(--color-accent); border-color: var(--color-accent); }
+.switch[aria-checked="true"] { background: var(--color-checked); border-color: var(--color-checked); }
 .switch[aria-checked="true"]::after {
-  background: var(--color-text-on-accent);
+  background: var(--color-text-on-checked);
   transform: translateX(calc(var(--toggle-w) - var(--toggle-h)));
 }
 .switch:disabled { opacity: 0.5; cursor: not-allowed; }

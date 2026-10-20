@@ -21,7 +21,7 @@
 .tab:hover { color: var(--color-text-primary); }
 .tab[aria-selected="true"] {
   color: var(--color-text-primary);
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-border-selected);
 }
 .hint {
   font-weight: var(--weight-regular);

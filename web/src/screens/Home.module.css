@@ -18,12 +18,12 @@
   font-weight: var(--weight-medium);
   cursor: pointer;
 }
-.addCard:hover { background: var(--color-subtle); color: var(--color-text-primary); }
+.addCard:hover { background: var(--color-hover); color: var(--color-text-primary); }
 .round { display: grid; gap: var(--space-5); }
 .helper { font-size: var(--text-sm); color: var(--color-text-secondary); margin-top: var(--space-2); }
 .basis { font-size: var(--text-sm); color: var(--color-text-secondary); display: flex; gap: var(--space-2); align-items: flex-start; }
 .startRow { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
-.reason { font-size: var(--text-sm); color: var(--color-warning); }
+.reason { font-size: var(--text-sm); color: var(--color-text-secondary); }
 .weak { display: flex; flex-direction: column; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .weakRow { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-sm); }
 .weakCount { color: var(--color-text-tertiary); }

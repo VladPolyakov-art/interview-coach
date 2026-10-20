@@ -1,5 +1,5 @@
 /* Base styles: reset, typography, focus ring. Consumes tokens only. */
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/manrope";
 @import "./tokens.css";
 
 *,
@@ -30,7 +30,6 @@ body {
   font-size: var(--text-md);
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "cv11", "ss01";
 }
 
 h1,
@@ -60,7 +59,7 @@ h3 {
 }
 
 a {
-  color: var(--color-accent-text);
+  color: var(--color-text-link);
   text-underline-offset: 0.2em;
 }
 
@@ -105,6 +104,13 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-orb: 0ms;
+  }
+
   *,
   *::before,
   *::after {

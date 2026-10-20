@@ -6,7 +6,7 @@
   min-height: var(--control-h-md);
   padding: 0 var(--space-4);
   border: var(--border-width) solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-tight);
@@ -28,28 +28,30 @@
 .full { width: 100%; }
 
 .primary {
-  background: var(--color-accent);
-  color: var(--color-text-on-accent);
+  background: var(--color-action);
+  color: var(--color-text-on-action);
 }
-.primary:not(:disabled):hover { background: var(--color-accent-hover); }
-.primary:not(:disabled):active { background: var(--color-accent-pressed); }
+.primary:not(:disabled):hover { background: var(--color-action-hover); }
+.primary:not(:disabled):active { background: var(--color-action-pressed); }
+.primary:disabled,
+.primary[aria-disabled="true"] { background: var(--color-action-disabled); color: var(--color-text-disabled); opacity: 1; }
 
 .secondary {
   background: var(--color-raised);
   color: var(--color-text-primary);
   border-color: var(--color-border-control);
 }
-.secondary:not(:disabled):hover { background: var(--color-subtle); }
+.secondary:not(:disabled):hover { background: var(--color-hover); }
 
 .ghost {
   background: transparent;
   color: var(--color-text-primary);
 }
-.ghost:not(:disabled):hover { background: var(--color-subtle); }
+.ghost:not(:disabled):hover { background: var(--color-hover); }
 
 .link {
   background: transparent;
-  color: var(--color-accent-text);
+  color: var(--color-text-link);
   padding: 0 var(--space-1);
   min-height: auto;
   text-decoration: underline;
@@ -58,8 +60,8 @@
 
 .danger {
   background: var(--color-raised);
-  color: var(--color-error);
-  border-color: var(--color-error);
+  color: var(--color-text-error);
+  border-color: var(--color-text-error);
 }
 .danger:not(:disabled):hover { background: var(--color-error-tint); }
 
@@ -87,8 +89,9 @@
   color: var(--color-text-secondary);
   cursor: pointer;
 }
-.iconButton:not(:disabled):hover { background: var(--color-subtle); color: var(--color-text-primary); }
+.iconButton:not(:disabled):hover { background: var(--color-hover); color: var(--color-text-primary); }
 .iconButton:disabled { opacity: 0.5; cursor: not-allowed; }
 .iconButton.sm { width: var(--control-h-sm); height: var(--control-h-sm); min-height: 0; padding: 0; }
 .iconButton.outlined { border-color: var(--color-border-control); background: var(--color-raised); }
-.iconButton[aria-pressed="true"] { background: var(--color-selected); color: var(--color-accent-strong); }
+/* Pressed = selected fill + the "on" icon variant supplied by the caller (e.g. micOff) + aria-pressed. */
+.iconButton[aria-pressed="true"] { background: var(--color-selected); color: var(--color-text-primary); }

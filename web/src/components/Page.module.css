@@ -14,8 +14,6 @@
 .sectionTitle {
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-caps);
   color: var(--color-text-secondary);
 }
 .row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }

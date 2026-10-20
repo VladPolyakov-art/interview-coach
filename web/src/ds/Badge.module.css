@@ -12,14 +12,16 @@
   border: var(--border-width) solid transparent;
 }
 .neutral { background: var(--color-subtle); color: var(--color-text-secondary); }
-.live { background: var(--color-selected); color: var(--color-accent-strong); }
-.success { background: var(--color-success-tint); color: var(--color-success); }
-.warning { background: var(--color-warning-tint); color: var(--color-warning); }
-.error { background: var(--color-error-tint); color: var(--color-error); }
+.live { background: var(--color-selected); color: var(--color-text-primary); }
+.success { background: var(--color-success-tint); color: var(--color-text-success); }
+.warning { background: var(--color-warning-tint); color: var(--color-text-warning); }
+.error { background: var(--color-error-tint); color: var(--color-text-error); }
 .outline { background: transparent; color: var(--color-text-secondary); border-color: var(--color-border-subtle); }
-.content { background: var(--color-layer-content-tint); color: var(--color-layer-content); }
-.language { background: var(--color-layer-language-tint); color: var(--color-layer-language); }
-.delivery { background: var(--color-layer-delivery-tint); color: var(--color-layer-delivery); }
+/* Layer badges are monochrome (label + icon tell the layers apart). The soft tints are debrief-only: opt in with tinted. */
+.content, .language, .delivery { background: var(--color-subtle); color: var(--color-layer-session-text); }
+.tinted.content { background: var(--color-layer-content-tint); }
+.tinted.language { background: var(--color-layer-language-tint); }
+.tinted.delivery { background: var(--color-layer-delivery-tint); }
 .dot { width: var(--space-2); height: var(--space-2); border-radius: var(--radius-pill); background: currentColor; flex: none; }
 
 .chip {
@@ -35,6 +37,7 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
-.chip:hover { background: var(--color-subtle); }
-.chip[aria-pressed="true"] { background: var(--color-selected); border-color: var(--color-accent); color: var(--color-accent-strong); }
+.chip:hover { background: var(--color-hover); }
+/* Selected chip = inverted fill (non-colour cue: the inversion itself) + aria-pressed. */
+.chip[aria-pressed="true"] { background: var(--color-checked); border-color: var(--color-border-selected); color: var(--color-text-on-checked); }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }

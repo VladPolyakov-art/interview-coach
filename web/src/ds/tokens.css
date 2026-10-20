@@ -1,86 +1,67 @@
 /*
- * PROVISIONAL — replaced by stage-10 tokens.
- *
- * Source: docs/moodboard_candidates_v2.md §4 (cool neutral palette, blue accent #2B66D9, direction "Calm studio").
- * The stage-10 moodboard gate is still pending: when tokens/tokens.json is approved, execution/tokens_build.py
- * generates the real ds/tokens.css and this file is replaced. Components consume ONLY these custom properties
- * (scripts/check-tokens.mjs fails the lint on colour literals anywhere else), so the swap touches no component.
- *
- * Theme model: light on :root; dark via the OS setting unless the user forced light, or via data-theme="dark".
- * Values marked 🟡 are not in the moodboard doc and were not contrast-checked by tokens_build.py.
+ * Stage-10 design tokens. Generated from tokens/tokens.json by execution/tokens_build.py -
+ * do not edit by hand: regenerate (python3 execution/tokens_build.py) and copy ds/tokens.css here.
+ * Reduced motion is NOT generated: it lives in global.css.
  */
-
+/* Сгенерировано execution/tokens_build.py из tokens/tokens.json — руками не править */
 :root {
-  /* ---------- colour: surfaces (4.1 light) ---------- */
-  --color-canvas: #F6F7F9;
-  --color-raised: #FFFFFF;
-  --color-subtle: #EEF0F3;
-  --color-selected: #EEF4FD;
-  --color-scrim: rgba(15, 18, 23, 0.40); /* 🟡 dialog backdrop */
-
-  /* ---------- colour: text ---------- */
-  --color-text-primary: #1A1D23;
-  --color-text-secondary: #4E5562;
-  --color-text-tertiary: #646B77;
-  --color-text-on-accent: #FFFFFF;
-
-  /* ---------- colour: accent (one meaning: Mike is live / the primary action) ---------- */
-  --color-accent: #2B66D9;
-  --color-accent-hover: #2356BD;
-  --color-accent-pressed: #1D4699;
-  --color-accent-strong: #2356BD;   /* live chip text on tint */
-  --color-accent-text: #2B66D9;     /* links */
-
-  /* ---------- colour: borders and focus ---------- */
-  --color-border-control: #7D8490;
-  --color-border-subtle: #E1E4E8;
-  --color-focus: #2B66D9;
-
-  /* ---------- colour: feedback layers (always label + icon + colour, never colour alone) ---------- */
-  --color-layer-content: #1F63C7;
-  --color-layer-content-tint: #E6F0FC;
-  --color-layer-language: #5B47C9;
-  --color-layer-language-tint: #EFEBFD;
-  --color-layer-delivery: #855C00;
-  --color-layer-delivery-tint: #FAF1DC;
-
-  /* ---------- colour: status ---------- */
-  --color-success: #1E7A4F;
-  --color-success-tint: #E7F3EC; /* 🟡 */
-  --color-warning: #9A5B00;
-  --color-warning-tint: #FBF1E1; /* 🟡 */
-  --color-error: #BC3B28;
-  --color-error-tint: #FBEAE7;   /* 🟡 */
-
-  /* ---------- colour: orb (graphic; state is always given as text too) ---------- */
-  --color-orb-core: #2B66D9;
-  --color-orb-edge: #8AB2EF;
-  --color-orb-idle: #C9CED6; /* 🟡 neutral orb when Mike is not live */
-
-  /* ---------- shadow ---------- */
-  --shadow-raised: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
-  --shadow-overlay: 0 12px 32px rgba(16, 24, 40, 0.16), 0 2px 6px rgba(16, 24, 40, 0.08);
-
-  /* ---------- typography (Inter, self-hosted via @fontsource-variable/inter) ---------- */
-  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --text-xs: 0.75rem;   /* 12 */
-  --text-sm: 0.875rem;  /* 14 */
-  --text-md: 1rem;      /* 16 */
-  --text-lg: 1.125rem;  /* 18 */
-  --text-xl: 1.375rem;  /* 22 */
-  --text-2xl: 1.75rem;  /* 28 */
-  --text-3xl: 2.125rem; /* 34 */
-  --leading-tight: 1.25;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.65;
+  --color-gray-0: #FFFFFF;
+  --color-gray-25: #F9F9F9;
+  --color-gray-50: #F3F3F3;
+  --color-gray-100: #EBEBEB;
+  --color-gray-150: #E2E2E2;
+  --color-gray-200: #D4D4D4;
+  --color-gray-300: #B4B4B4;
+  --color-gray-400: #949494;
+  --color-gray-500: #858585;
+  --color-gray-550: #777777;
+  --color-gray-600: #686868;
+  --color-gray-700: #4A4A4A;
+  --color-gray-750: #333333;
+  --color-gray-800: #2A2A2A;
+  --color-gray-850: #222222;
+  --color-gray-900: #1C1C1C;
+  --color-gray-950: #141414;
+  --color-gray-975: #0E0E0E;
+  --color-blue-300: #8DB4F5;
+  --color-blue-400: #5C93EE;
+  --color-blue-500: #3473E0;
+  --color-blue-600: #2459C8;
+  --color-blue-700: #1C469E;
+  --color-blueteal-50: #E5F2F5;
+  --color-blueteal-900: #142A2F;
+  --color-red-50: #F9ECEA;
+  --color-red-600: #A1362B;
+  --color-red-300: #EE8B80;
+  --color-red-900: #2B1A18;
+  --color-amber-50: #F8F0E0;
+  --color-amber-700: #845A00;
+  --color-amber-300: #DDB15E;
+  --color-amber-900: #2A2216;
+  --color-green-50: #EAF3ED;
+  --color-green-700: #2D6A47;
+  --color-green-300: #82C29C;
+  --color-green-900: #16241B;
+  --color-alpha-black-40: #00000066;
+  --color-alpha-black-60: #00000099;
+  --font-sans: Manrope Variable, Manrope, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-mono: ui-monospace, SF Mono, Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.125rem;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --tracking-caps: 0.06em;
-
-  /* ---------- space (4 px grid) ---------- */
-  --space-0: 0;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --space-0: 0px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -91,135 +72,179 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
   --space-16: 4rem;
-
-  /* ---------- radius ---------- */
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-pill: 999px;
-
-  /* ---------- borders and focus ring (2 px + 2 px offset, offset is mandatory) ---------- */
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
   --border-width: 1px;
   --border-width-strong: 2px;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
-
-  /* ---------- sizes ---------- */
   --control-h-sm: 2rem;
   --control-h-md: 2.5rem;
   --control-h-lg: 3rem;
   --icon-sm: 1rem;
   --icon-md: 1.25rem;
   --icon-lg: 1.5rem;
-  --orb-size: 13.75rem;    /* 220 */
-  --orb-size-sm: 6rem;     /* 96 (text mode) */
+  --orb-size: 13.75rem;
+  --orb-size-sm: 6rem;
   --toggle-w: 2.5rem;
   --toggle-h: 1.5rem;
-
-  /* ---------- layout ---------- */
-  --layout-rail: 15rem;        /* 240 */
-  --layout-panel: 27.5rem;     /* 440 */
-  --layout-content: 60rem;     /* 960 */
-  --layout-narrow: 45rem;      /* 720 */
-  --layout-topbar: 4rem;       /* 64 */
-  --layout-gutter: 1rem;       /* phone side gutter */
-  --layout-dialog: 35rem;      /* 560 */
-
-  /* ---------- motion (calm: no loops, nothing blinks while the user speaks) ---------- */
+  --layout-rail: 15rem;
+  --layout-rail-collapsed: 4rem;
+  --layout-panel: 27.5rem;
+  --layout-content: 60rem;
+  --layout-narrow: 45rem;
+  --layout-topbar: 4rem;
+  --layout-gutter: 1rem;
+  --layout-dialog: 35rem;
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
+  --duration-orb: 2400ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-
-  /* ---------- z-index ---------- */
+  --ease-enter: cubic-bezier(0, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+  --ease-orb: cubic-bezier(0.37, 0, 0.63, 1);
   --z-sticky: 10;
   --z-overlay: 50;
   --z-dialog: 100;
   --z-toast: 200;
+  --elevation-raised-light: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --elevation-overlay-light: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --elevation-raised-dark: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --elevation-overlay-dark: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --color-canvas: var(--color-gray-0);
+  --color-sidebar: var(--color-gray-25);
+  --color-raised: var(--color-gray-0);
+  --color-subtle: var(--color-gray-50);
+  --color-hover: var(--color-gray-50);
+  --color-selected: var(--color-gray-100);
+  --color-scrim: var(--color-alpha-black-40);
+  --color-action: var(--color-gray-950);
+  --color-action-hover: var(--color-gray-800);
+  --color-action-pressed: var(--color-gray-750);
+  --color-action-disabled: var(--color-gray-100);
+  --color-checked: var(--color-gray-950);
+  --color-text-primary: var(--color-gray-950);
+  --color-text-secondary: var(--color-gray-700);
+  --color-text-tertiary: var(--color-gray-600);
+  --color-text-disabled: var(--color-gray-600);
+  --color-text-link: var(--color-gray-950);
+  --color-text-on-action: var(--color-gray-0);
+  --color-text-on-checked: var(--color-gray-0);
+  --color-text-error: var(--color-red-600);
+  --color-text-warning: var(--color-amber-700);
+  --color-text-success: var(--color-green-700);
+  --color-border-subtle: var(--color-gray-150);
+  --color-border-control: var(--color-gray-500);
+  --color-border-selected: var(--color-gray-950);
+  --color-focus: var(--color-blue-600);
+  --color-mic-live: var(--color-blue-600);
+  --color-orb-core: var(--color-blue-500);
+  --color-orb-edge: var(--color-blue-300);
+  --color-orb-idle: var(--color-gray-200);
+  --color-layer-session-text: var(--color-gray-950);
+  --color-layer-session-rule: var(--color-gray-200);
+  --color-layer-content-tint: var(--color-blueteal-50);
+  --color-layer-language-tint: var(--color-gray-50);
+  --color-layer-delivery-tint: var(--color-gray-100);
+  --color-mark-fix: var(--color-gray-100);
+  --color-mark-heard: var(--color-gray-500);
+  --color-error-tint: var(--color-red-50);
+  --color-warning-tint: var(--color-amber-50);
+  --color-success-tint: var(--color-green-50);
+  --shadow-raised: var(--elevation-raised-light);
+  --shadow-overlay: var(--elevation-overlay-light);
 }
-
-/* Dark theme values (4.2 / 4.3). Defined once as a mixin-like block, applied twice below. */
+[data-theme="dark"] {
+  --color-canvas: var(--color-gray-950);
+  --color-sidebar: var(--color-gray-975);
+  --color-raised: var(--color-gray-900);
+  --color-subtle: var(--color-gray-850);
+  --color-hover: var(--color-gray-850);
+  --color-selected: var(--color-gray-800);
+  --color-scrim: var(--color-alpha-black-60);
+  --color-action: var(--color-gray-100);
+  --color-action-hover: var(--color-gray-150);
+  --color-action-pressed: var(--color-gray-200);
+  --color-action-disabled: var(--color-gray-800);
+  --color-checked: var(--color-gray-100);
+  --color-text-primary: var(--color-gray-100);
+  --color-text-secondary: var(--color-gray-300);
+  --color-text-tertiary: var(--color-gray-400);
+  --color-text-disabled: var(--color-gray-400);
+  --color-text-link: var(--color-gray-100);
+  --color-text-on-action: var(--color-gray-950);
+  --color-text-on-checked: var(--color-gray-950);
+  --color-text-error: var(--color-red-300);
+  --color-text-warning: var(--color-amber-300);
+  --color-text-success: var(--color-green-300);
+  --color-border-subtle: var(--color-gray-750);
+  --color-border-control: var(--color-gray-550);
+  --color-border-selected: var(--color-gray-100);
+  --color-focus: var(--color-blue-400);
+  --color-mic-live: var(--color-blue-400);
+  --color-orb-core: var(--color-blue-500);
+  --color-orb-edge: var(--color-blue-700);
+  --color-orb-idle: var(--color-gray-700);
+  --color-layer-session-text: var(--color-gray-100);
+  --color-layer-session-rule: var(--color-gray-750);
+  --color-layer-content-tint: var(--color-blueteal-900);
+  --color-layer-language-tint: var(--color-gray-850);
+  --color-layer-delivery-tint: var(--color-gray-800);
+  --color-mark-fix: var(--color-gray-800);
+  --color-mark-heard: var(--color-gray-550);
+  --color-error-tint: var(--color-red-900);
+  --color-warning-tint: var(--color-amber-900);
+  --color-success-tint: var(--color-green-900);
+  --shadow-raised: var(--elevation-raised-dark);
+  --shadow-overlay: var(--elevation-overlay-dark);
+}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-canvas: #0F1217;
-    --color-raised: #171B22;
-    --color-subtle: #1E232B;
-    --color-selected: #172338;
-    --color-scrim: rgba(0, 0, 0, 0.60);
-    --color-text-primary: #E9EBEF;
-    --color-text-secondary: #A8AFBA;
-    --color-text-tertiary: #8C939E;
-    --color-text-on-accent: #FFFFFF;
-    --color-accent: #2B66D9;
-    --color-accent-hover: #3270E0;
-    --color-accent-pressed: #2356BD;
-    --color-accent-strong: #7FAEF7;
-    --color-accent-text: #7FAEF7;
-    --color-border-control: #687080;
-    --color-border-subtle: #262C35;
-    --color-focus: #7FAEF7;
-    --color-layer-content: #66B0FF;
-    --color-layer-content-tint: #243345;
-    --color-layer-language: #B3A6FF;
-    --color-layer-language-tint: #303145;
-    --color-layer-delivery: #E2C27A;
-    --color-layer-delivery-tint: #373630;
-    --color-success: #46C28E;
-    --color-success-tint: #17271F;
-    --color-warning: #FFA24C;
-    --color-warning-tint: #2B2117;
-    --color-error: #FF6B61;
-    --color-error-tint: #2D1A19;
-    --color-orb-core: #3270E0;
-    --color-orb-edge: #7FAEF7;
-    --color-orb-idle: #3A414D;
-    --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.04);
-    --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
-  }
-}
-
-:root[data-theme="dark"] {
-  --color-canvas: #0F1217;
-  --color-raised: #171B22;
-  --color-subtle: #1E232B;
-  --color-selected: #172338;
-  --color-scrim: rgba(0, 0, 0, 0.60);
-  --color-text-primary: #E9EBEF;
-  --color-text-secondary: #A8AFBA;
-  --color-text-tertiary: #8C939E;
-  --color-text-on-accent: #FFFFFF;
-  --color-accent: #2B66D9;
-  --color-accent-hover: #3270E0;
-  --color-accent-pressed: #2356BD;
-  --color-accent-strong: #7FAEF7;
-  --color-accent-text: #7FAEF7;
-  --color-border-control: #687080;
-  --color-border-subtle: #262C35;
-  --color-focus: #7FAEF7;
-  --color-layer-content: #66B0FF;
-  --color-layer-content-tint: #243345;
-  --color-layer-language: #B3A6FF;
-  --color-layer-language-tint: #303145;
-  --color-layer-delivery: #E2C27A;
-  --color-layer-delivery-tint: #373630;
-  --color-success: #46C28E;
-  --color-success-tint: #17271F;
-  --color-warning: #FFA24C;
-  --color-warning-tint: #2B2117;
-  --color-error: #FF6B61;
-  --color-error-tint: #2D1A19;
-  --color-orb-core: #3270E0;
-  --color-orb-edge: #7FAEF7;
-  --color-orb-idle: #3A414D;
-  --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --duration-fast: 0ms;
-    --duration-base: 0ms;
-    --duration-slow: 0ms;
+    --color-canvas: var(--color-gray-950);
+    --color-sidebar: var(--color-gray-975);
+    --color-raised: var(--color-gray-900);
+    --color-subtle: var(--color-gray-850);
+    --color-hover: var(--color-gray-850);
+    --color-selected: var(--color-gray-800);
+    --color-scrim: var(--color-alpha-black-60);
+    --color-action: var(--color-gray-100);
+    --color-action-hover: var(--color-gray-150);
+    --color-action-pressed: var(--color-gray-200);
+    --color-action-disabled: var(--color-gray-800);
+    --color-checked: var(--color-gray-100);
+    --color-text-primary: var(--color-gray-100);
+    --color-text-secondary: var(--color-gray-300);
+    --color-text-tertiary: var(--color-gray-400);
+    --color-text-disabled: var(--color-gray-400);
+    --color-text-link: var(--color-gray-100);
+    --color-text-on-action: var(--color-gray-950);
+    --color-text-on-checked: var(--color-gray-950);
+    --color-text-error: var(--color-red-300);
+    --color-text-warning: var(--color-amber-300);
+    --color-text-success: var(--color-green-300);
+    --color-border-subtle: var(--color-gray-750);
+    --color-border-control: var(--color-gray-550);
+    --color-border-selected: var(--color-gray-100);
+    --color-focus: var(--color-blue-400);
+    --color-mic-live: var(--color-blue-400);
+    --color-orb-core: var(--color-blue-500);
+    --color-orb-edge: var(--color-blue-700);
+    --color-orb-idle: var(--color-gray-700);
+    --color-layer-session-text: var(--color-gray-100);
+    --color-layer-session-rule: var(--color-gray-750);
+    --color-layer-content-tint: var(--color-blueteal-900);
+    --color-layer-language-tint: var(--color-gray-850);
+    --color-layer-delivery-tint: var(--color-gray-800);
+    --color-mark-fix: var(--color-gray-800);
+    --color-mark-heard: var(--color-gray-550);
+    --color-error-tint: var(--color-red-900);
+    --color-warning-tint: var(--color-amber-900);
+    --color-success-tint: var(--color-green-900);
+    --shadow-raised: var(--elevation-raised-dark);
+    --shadow-overlay: var(--elevation-overlay-dark);
   }
 }
