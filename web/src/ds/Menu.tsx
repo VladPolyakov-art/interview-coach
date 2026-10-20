@@ -15,6 +15,7 @@ import {
 import { t } from "../i18n";
 import { Input } from "./Field";
 import { Icon, type IconName } from "./icons";
+import { Kbd } from "./Kbd";
 import { usePresence } from "./motion";
 import { OverlayPortal, useOverlayRoot } from "./OverlayRoot";
 import { dialogHost, useAnchoredPosition, useOutsidePress, type Placement } from "./overlay";
@@ -28,6 +29,10 @@ export interface MenuItem {
   description?: string;
   /** Radio item (role="menuitemradio"): a check marks the current one. Leave undefined for plain actions. */
   checked?: boolean;
+  /** Checkbox item (role="menuitemcheckbox", v2): `checked` is the on / off state; selecting it keeps the menu open. */
+  checkbox?: boolean;
+  /** Keyboard shortcut hint at the end of the row ("?", "F"): a Kbd, also announced via aria-keyshortcuts. */
+  shortcut?: string;
   disabled?: boolean;
   onSelect?: () => void;
 }
@@ -73,6 +78,8 @@ interface CommonProps {
 export interface ActionMenuProps extends CommonProps {
   kind?: "menu";
   items: MenuEntry[];
+  /** Static block above the items (Session More menu: title + round · strictness). Not focusable, labels nothing. */
+  header?: ReactNode;
 }
 
 export interface ListboxMenuProps extends CommonProps {
@@ -170,6 +177,7 @@ export function Menu(props: MenuProps) {
   ) : (
     <MenuPopup
       items={(props as ActionMenuProps).items}
+      header={(props as ActionMenuProps).header}
       popupId={popupId}
       triggerId={triggerProps.id}
       floatingRef={floatingRef}
@@ -219,8 +227,8 @@ function isItem(e: MenuEntry): e is MenuItem {
   return !("separator" in e);
 }
 
-function MenuPopup({ items, popupId, floatingRef, focusIntent, onClose, side, align, style, ready, leaving, inline, label }: PopupBase & {
-  items: MenuEntry[]; triggerId: string; align: "start" | "end";
+function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, side, align, style, ready, leaving, inline, label }: PopupBase & {
+  items: MenuEntry[]; header?: ReactNode; triggerId: string; align: "start" | "end";
 }) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const enabled = items.map((e, i) => (isItem(e) && !e.disabled ? i : -1)).filter((i) => i >= 0);
@@ -259,7 +267,7 @@ function MenuPopup({ items, popupId, floatingRef, focusIntent, onClose, side, al
     }
   };
 
-  const hasChecks = items.some((e) => isItem(e) && e.checked !== undefined);
+  const hasChecks = items.some((e) => isItem(e) && (e.checked !== undefined || e.checkbox));
   return (
     <div
       ref={floatingRef}
@@ -270,32 +278,39 @@ function MenuPopup({ items, popupId, floatingRef, focusIntent, onClose, side, al
       style={style}
       onKeyDown={onKey}
     >
+      {header ? <div className={s.header}>{header}</div> : null}
+      {header ? <div role="separator" className={s.separator} /> : null}
       {items.map((entry, i) => {
         if (!isItem(entry)) return <div key={entry.id} role="separator" className={s.separator} />;
-        const radio = entry.checked !== undefined;
+        const checkable = entry.checked !== undefined || entry.checkbox;
         return (
           <button
             key={entry.id}
             ref={(el) => { itemRefs.current[i] = el; }}
             type="button"
-            role={radio ? "menuitemradio" : "menuitem"}
-            aria-checked={radio ? entry.checked : undefined}
+            role={entry.checkbox ? "menuitemcheckbox" : checkable ? "menuitemradio" : "menuitem"}
+            aria-checked={checkable ? Boolean(entry.checked) : undefined}
+            aria-keyshortcuts={entry.shortcut}
             disabled={entry.disabled}
             tabIndex={-1}
             className={s.item}
             onClick={() => {
-              onClose(true);
+              // A checkbox toggles in place (the menu stays open, focus stays on the item); everything else closes.
+              if (!entry.checkbox) onClose(true);
               entry.onSelect?.();
             }}
           >
             {hasChecks ? (
-              <span className={s.check} aria-hidden="true">{entry.checked ? <Icon name="check" size="sm" /> : null}</span>
+              <span className={`${s.check} ${entry.checkbox ? s.box : ""}`} aria-hidden="true">
+                {entry.checked ? <Icon name="check" size="sm" /> : null}
+              </span>
             ) : null}
             {entry.icon ? <span className={s.itemIcon}><Icon name={entry.icon} size="sm" /></span> : null}
             <span className={s.itemText}>
               <span className={s.itemLabel}>{entry.label}</span>
               {entry.description ? <span className={s.itemDescription}>{entry.description}</span> : null}
             </span>
+            {entry.shortcut ? <span className={s.shortcut} aria-hidden="true"><Kbd>{entry.shortcut}</Kbd></span> : null}
           </button>
         );
       })}

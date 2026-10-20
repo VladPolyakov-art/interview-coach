@@ -57,3 +57,8 @@ export { NavRow, PlainLink } from "./NavRow";
 export type { LinkComponent, LinkLikeProps } from "./NavRow";
 export { ListRow, ListRows } from "./ListRow";
 export { InlineRename, RENAME_MAX } from "./InlineRename";
+// v2 (review v1 → D47): Session island, setup chat
+export { Island } from "./Island";
+export type { IslandGroup, IslandProps } from "./Island";
+export { ChatMessage, ChatLog } from "./ChatMessage";
+export type { ChatMessageProps } from "./ChatMessage";

@@ -75,6 +75,22 @@
 .optionLabel { font-weight: var(--weight-semibold); }
 .optionMeta { color: var(--color-text-tertiary); }
 
+.item .itemText { flex: 1 1 auto; }
+.shortcut { flex: none; display: inline-flex; align-items: center; margin-inline-start: var(--space-3); height: calc(var(--text-sm) * var(--leading-normal)); }
+/* Checkbox item (v2): a small square box; checked = inverted fill, like Checkbox (G7). */
+.box {
+  align-self: flex-start;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  margin-block-start: calc((var(--text-sm) * var(--leading-normal) - var(--icon-sm)) / 2);
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+}
+.item[aria-checked="true"] .box { background: var(--color-checked); border-color: var(--color-checked); color: var(--color-text-on-action); }
+.item[role="menuitemcheckbox"][aria-checked="true"] .itemLabel { font-weight: var(--weight-medium); }
+/* Header (v2 More menu): static context above the items. */
+.header { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-3); max-width: calc(var(--layout-panel) - var(--space-10)); }
+
 .separator { height: var(--border-width); margin: var(--space-1) var(--space-2); background: var(--color-border-subtle); }
 
 .search { padding: var(--space-2) var(--space-2) 0; }

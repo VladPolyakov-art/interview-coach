@@ -1,0 +1,40 @@
+.log { container: chat / inline-size; display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+
+.message { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.mike { align-items: stretch; }
+.user { align-items: flex-end; }
+
+.name { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-primary); }
+
+.text {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-primary);
+}
+.bubble {
+  display: flex;
+  gap: var(--space-2);
+  max-width: 80%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-subtle);
+  color: var(--color-text-primary);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+.body { min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.body p { margin: 0; }
+.errorIcon { flex: none; display: inline-flex; align-items: center; height: calc(var(--text-md) * var(--leading-relaxed)); color: var(--color-text-secondary); }
+
+.attachment { max-width: 80%; min-width: 0; }
+.mike .attachment { max-width: 100%; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.user .actions { justify-content: flex-end; }
+
+@container chat (max-width: 559px) {
+  .bubble, .attachment { max-width: 88%; }
+}

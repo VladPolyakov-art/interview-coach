@@ -129,3 +129,28 @@ export const NarrowSheet: StoryObj = {
     </Frame>
   ),
 };
+
+/* v2: header slot, checkbox item (menuitemcheckbox, stays open), shortcut hints (Kbd at the end). Session More menu. */
+function MoreDemo({ open }: { open?: boolean }) {
+  const [sample, setSample] = useState(false);
+  const items: MenuEntry[] = [
+    { id: "sample", label: "Show a sample answer", description: "Practice only. Say it in your own words.", checkbox: true, checked: sample, onSelect: () => setSample((v) => !v) },
+    { id: "sep", separator: true },
+    { id: "keys", label: "Keyboard shortcuts", icon: "keyboard", shortcut: "?" },
+    { id: "mic", label: "Microphone help", icon: "mic" },
+  ];
+  const header = (
+    <>
+      <span style={{ fontSize: "var(--text-sm)", fontWeight: "var(--weight-semibold)" }}>Kestrel Pay · Senior Product Designer</span>
+      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-secondary)" }}>Behavioural · Standard</span>
+    </>
+  );
+  return (
+    <Menu inline={open} open={open ? true : undefined} label="More" header={header} items={items} placement="top-end"
+      trigger={(p) => <IconButton {...p} icon="more" label="More" />} />
+  );
+}
+/** v2 More menu: header, checkbox item and shortcut hints, interactive. */
+export const HeaderCheckboxShortcut: StoryObj = { render: () => <div style={{ paddingTop: "var(--space-16)" }}><MoreDemo /></div> };
+/** v2 More menu, open and static. */
+export const HeaderCheckboxShortcutOpen: StoryObj = { render: () => <MoreDemo open /> };

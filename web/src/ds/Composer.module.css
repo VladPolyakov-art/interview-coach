@@ -16,6 +16,9 @@
 .box:has(.field:focus-visible) { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: calc(var(--border-width) * -1); }
 /* Field + inline send (no toolbar): the button stays inside the box, bottom-right, as the text grows. */
 .row { display: flex; align-items: flex-end; gap: var(--space-2); min-width: 0; }
+/* surface: none (v2) — no own surface; the parent (Island) draws it. The focus ring stays, with the inner radius. */
+.box.bare { padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; box-shadow: none; }
+.box.bare.disabled { background: transparent; }
 .invalid { border-color: var(--color-text-error); }
 .disabled { background: var(--color-subtle); box-shadow: none; }
 

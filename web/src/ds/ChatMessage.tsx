@@ -1,0 +1,65 @@
+/* ChatMessage (G22, ds/screens/_index.md §4.1, home.md §4): one message in Mike's setup chat.
+ * - Mike: no bubble, plain text (`--text-md`, relaxed leading); a small "Mike" name on the first message of a turn.
+ * - User: an end-aligned `--color-subtle` bubble (`--radius-lg`), max 80% of the log (88% when the log is narrow).
+ * - `state`: `final`, `pending` (a TextShimmer line, only while real work runs: reading a file, opening a link),
+ *   `error` (an alert icon before the text; no status colour, the words carry it).
+ * - Slots: `attachment` (a pasted job, a file) above the text, `actions` (quick replies, a link) under it.
+ * Messages sit in a ChatLog (`role="log"`, polite), so new ones are announced without moving focus.
+ * Motion (docs/motion.md 3.7 "Setup message"): `rise-in` `slow` when `animate`; quiet and reduced-motion rules apply. */
+import type { ReactNode } from "react";
+import { Icon } from "./icons";
+import { TextShimmer } from "./TextShimmer";
+import s from "./ChatMessage.module.css";
+
+export interface ChatMessageProps {
+  speaker: "mike" | "user";
+  state?: "final" | "pending" | "error";
+  /** Speaker name shown above the message ("Mike"): first message of a turn only. */
+  name?: string;
+  /** Pending line ("Reading the job…"). */
+  pendingLabel?: string;
+  attachment?: ReactNode;
+  actions?: ReactNode;
+  children?: ReactNode;
+  /** Play the entrance (new message). Off for messages restored on load. */
+  animate?: boolean;
+  className?: string;
+  reviewId?: string;
+}
+
+export function ChatMessage({
+  speaker, state = "final", name, pendingLabel, attachment, actions, children, animate, className, reviewId,
+}: ChatMessageProps) {
+  const cls = [s.message, s[speaker], animate ? "motion-rise" : "", className ?? ""].filter(Boolean).join(" ");
+  return (
+    <div className={cls} data-review-id={reviewId ?? `ChatMessage/${speaker}-${state}`} data-state={state}>
+      {name ? <span className={s.name}>{name}</span> : null}
+      {attachment ? <div className={s.attachment}>{attachment}</div> : null}
+      {state === "pending" ? (
+        <TextShimmer as="p" size="md" status>{pendingLabel ?? children}</TextShimmer>
+      ) : children ? (
+        <div className={speaker === "user" ? s.bubble : s.text}>
+          {state === "error" ? <span className={s.errorIcon}><Icon name="alert" size="sm" /></span> : null}
+          <div className={s.body}>{children}</div>
+        </div>
+      ) : null}
+      {actions ? <div className={s.actions}>{actions}</div> : null}
+    </div>
+  );
+}
+
+export interface ChatLogProps {
+  /** Accessible name ("Setup with Mike"). */
+  label: string;
+  children: ReactNode;
+  className?: string;
+}
+
+/** The message list: `role="log"`, polite; adapts the bubble width to its own box (container query). */
+export function ChatLog({ label, children, className }: ChatLogProps) {
+  return (
+    <div role="log" aria-live="polite" aria-label={label} className={`${s.log} ${className ?? ""}`} data-review-id="ChatLog">
+      {children}
+    </div>
+  );
+}

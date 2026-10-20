@@ -117,3 +117,30 @@ export const Overflow: Story = {
 };
 /** Narrow parent (343px, the 375 frame): the toolbar end group drops to its own line. */
 export const Narrow: Story = { render: () => <div style={{ width: "21.4375rem" }}><Home attachment={KESTREL} initial="Paste" /></div> };
+/** v2 `surface: none`: no own box — the composer lives inside another surface (Session island in text mode). */
+export const SurfaceNone: Story = {
+  render: () => (
+    <div style={{ width: "var(--layout-narrow)", maxWidth: "100%", padding: "var(--space-3)", border: "var(--border-width) solid var(--color-border-subtle)", borderRadius: "var(--radius-lg)", background: "var(--color-raised)", boxShadow: "var(--shadow-raised)" }}>
+      <Session surface="none" minRows={1} maxRows={6} hint={undefined} />
+    </div>
+  ),
+};
+/** v2 Home start: one row, mode chip + plus inside, the black send action appears with text. */
+export const HomeStartV2: Story = {
+  render: () => (
+    <Home
+      label="Message Mike"
+      placeholder="Paste a job or a link, or say what you want to practise"
+      minRows={1}
+      initial="I have an HR screen with Lumen tomorrow"
+      send={{ label: "Send", icon: "arrowRight", variant: "action" }}
+      toolbarStart={(
+        <>
+          <Button variant="secondary" size="sm" icon="briefcase" iconRight="chevronDown" aria-label="Practice type: Interview">Interview</Button>
+          <IconButton icon="plus" size="sm" outlined label="Add a job file" />
+        </>
+      )}
+      toolbarEnd={undefined}
+    />
+  ),
+};

@@ -4,6 +4,7 @@
  * + the round send button. Without a toolbar the send button sits inline, bottom-right of the field (chat row, R6).
  * Focus: the whole composer is the input: keyboard focus draws the ring on the box, never on the inner textarea
  * (review v1, D47a: an inner ring made the button look outside the input).
+ * `surface: none` (v2): no border / shadow / radius / fill of its own: the composer sits inside the Session island.
  * `send.variant`: `action` = black / white (Session), `quiet` = outlined (Home, so Start stays the only primary: DS-6).
  * The send button appears with a short rise when it becomes visible (D6). Narrow parents: the toolbar wraps and the
  * end group drops to its own line (container query on the composer). */
@@ -43,13 +44,16 @@ export interface ComposerProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaE
   error?: string;
   /** Loading: aria-busy on the composer (pair with a Skeleton row in `attachment`). */
   busy?: boolean;
+  /** `own` (default): the composer draws its own box (border, radius, shadow). `none` (v2): no own surface, it
+   * lives inside another one (the Session island in text mode); the keyboard ring stays on the field area. */
+  surface?: "own" | "none";
   className?: string;
 }
 
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
   {
     label, attachment, toolbarStart, toolbarEnd, send, submitOnEnter, minRows = 2, maxRows = 8, hint, error, busy,
-    className, id, onKeyDown, onInput, disabled, value, ...rest
+    surface = "own", className, id, onKeyDown, onInput, disabled, value, ...rest
   },
   ref,
 ) {
@@ -90,8 +94,8 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
   const hasToolbar = Boolean(toolbarStart || toolbarEnd);
 
   return (
-    <div className={`${s.root} ${className ?? ""}`} data-review-id={`Composer/${sendVariant}`}>
-      <div className={`${s.box} ${disabled ? s.disabled : ""} ${error ? s.invalid : ""}`} aria-busy={busy || undefined}>
+    <div className={`${s.root} ${className ?? ""}`} data-review-id={`Composer/${sendVariant}${surface === "none" ? "-bare" : ""}`}>
+      <div className={`${s.box} ${surface === "none" ? s.bare : ""} ${disabled ? s.disabled : ""} ${error ? s.invalid : ""}`} aria-busy={busy || undefined}>
         {attachment ? <div className={s.attachment}>{attachment}</div> : null}
         <label htmlFor={fieldId} className="visually-hidden">{label}</label>
         <div className={s.row}>

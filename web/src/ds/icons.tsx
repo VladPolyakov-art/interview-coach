@@ -7,11 +7,13 @@ export type IconName =
   | "sun" | "moon" | "monitor" | "trash" | "edit" | "content" | "language" | "delivery" | "alert" | "info"
   | "sparkle" | "user" | "briefcase" | "upload" | "link" | "file" | "clock" | "plus" | "download" | "lock"
   | "hand" | "chat" | "cpu" | "globe" | "terminal" | "key" | "folder" | "eye"
-  | "menu" | "more" | "search";
+  | "menu" | "more" | "search" | "panel";
 
 const paths: Record<IconName, ReactNode> = {
   menu: (<path d="M4 7h16M4 12h16M4 17h16" />),
   more: (<><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" strokeWidth={2.75} /></>),
+  /* v2: the feedback panel toggle (a window with a right-hand panel). */
+  panel: (<><rect x="3" y="4.5" width="18" height="15" rx="2" /><path d="M14.5 4.5v15" /></>),
   search: (<><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></>),
   mic: (<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
   micOff: (<><path d="M15 9.5V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 4.6 2.5M5 11a7 7 0 0 0 11.2 5.6M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18" /></>),
