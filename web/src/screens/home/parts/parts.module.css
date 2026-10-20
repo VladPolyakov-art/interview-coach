@@ -48,7 +48,7 @@
 .log { min-width: 0; }
 .turn { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 /* A Mike message that continues the previous one (same turn) sits closer. */
-.turnCont { margin-top: calc(var(--space-3) - var(--space-6)); }
+.turnCont { margin-top: calc(var(--space-3) - var(--space-8)); }
 .text { margin: 0; }
 .headerStep { color: var(--color-text-tertiary); font-variant-numeric: tabular-nums; }
 .headerSkip { margin-inline-start: auto; }
@@ -100,7 +100,7 @@
 
 /* ---- example ---- */
 .exampleCard { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
-.exampleCard [data-review-id^="Badge/"] { background: transparent; border-color: var(--color-border-control); }
+.exampleCard [data-review-id^="Badge/"] { background: var(--color-surface-chip); }
 .exampleRows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); width: 100%; }
 .exampleRow { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
 .exampleRow > :first-child { flex: none; }

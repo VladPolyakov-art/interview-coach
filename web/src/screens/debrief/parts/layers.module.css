@@ -4,7 +4,6 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: var(--border-width) solid var(--color-border-subtle);
   border-radius: var(--radius-md);
   min-width: 0;
 }
@@ -52,9 +51,8 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  border: var(--border-width) solid var(--color-border-subtle);
   border-radius: var(--radius-md);
-  background: var(--color-raised);
+  background: var(--color-surface-card);
   min-width: 0;
 }
 .turn { margin: 0; font-size: var(--text-sm); color: var(--color-text-tertiary); font-variant-numeric: tabular-nums; }
@@ -74,9 +72,8 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-3);
-  border: var(--border-width) solid var(--color-border-control);
   border-radius: var(--radius-md);
-  background: var(--color-raised);
+  background: var(--color-surface-card);
 }
 
 @container page (width < 560px) {

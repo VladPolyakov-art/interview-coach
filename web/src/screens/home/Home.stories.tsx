@@ -32,6 +32,10 @@ export const StartBrowserUnsupported = desktop("browserUnsupported");
 export const StartStorageUnreadable = desktop("storageError");
 export const StartOverflow = desktop("overflowStart");
 export const StartOverflowMobile = mobile("overflowStart");
+/* Quick start (D51 item 1): "Start now" under the composer — on StartReturning (Kestrel Pay · Behavioural) and
+ * StartFirstVisit (General questions · Unseen mix); disabled on StartLoading / StartEngineNotRunning. */
+export const QuickStartTextMode = desktop("quickTextMode");
+export const QuickStartPressed = desktop("quickStarting");
 
 /* ---- setup chat (§4) ---- */
 export const SetupJobReading = desktop("jobReading");

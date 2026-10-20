@@ -2,7 +2,6 @@
   position: relative;
   display: flex;
   gap: var(--space-1);
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
 }
 .tab {
   display: inline-flex;

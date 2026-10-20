@@ -5,7 +5,7 @@
   flex-wrap: wrap;
   gap: var(--space-1);
   padding: var(--space-1);
-  background: var(--color-subtle);
+  background: var(--color-surface-chip);
   border-radius: var(--radius-pill);
   border: 0;
   margin: 0;
@@ -36,12 +36,12 @@
   white-space: nowrap;
   transition: color var(--duration-fast) var(--ease-standard);
 }
-.option:hover { color: var(--color-text-primary); }
-.option[aria-checked="true"] {
-  background: var(--color-raised);
-  color: var(--color-text-primary);
-  border-color: var(--color-border-subtle);
-  box-shadow: var(--shadow-raised);
+.option:not(:disabled):hover { color: var(--color-text-primary); }
+/* D51: no strokes. The selected segment is the inverted chip fill (the thumb below), label = on-checked, hover never changes it. */
+.option[aria-checked="true"],
+.option[aria-checked="true"]:not(:disabled):hover {
+  background: var(--color-surface-chip-selected);
+  color: var(--color-text-on-checked);
 }
 .option:disabled { opacity: 0.5; cursor: not-allowed; }
 .wrap { display: flex; flex-direction: column; min-width: 0; }
@@ -58,10 +58,8 @@
   left: 0;
   width: var(--thumb-w);
   height: var(--thumb-h);
-  border: var(--border-width) solid var(--color-border-subtle);
   border-radius: var(--radius-pill);
-  background: var(--color-raised);
-  box-shadow: var(--shadow-raised);
+  background: var(--color-surface-chip-selected);
   transform: translate(var(--thumb-x), var(--thumb-y));
   pointer-events: none;
 }
@@ -70,8 +68,7 @@
 .slide {
   transition: transform var(--duration-base) var(--ease-standard), width var(--duration-base) var(--ease-standard);
 }
-.hasThumb .option[aria-checked="true"] {
+.hasThumb .option[aria-checked="true"],
+.hasThumb .option[aria-checked="true"]:not(:disabled):hover {
   background: transparent;
-  border-color: transparent;
-  box-shadow: none;
 }

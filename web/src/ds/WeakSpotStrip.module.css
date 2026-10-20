@@ -38,7 +38,7 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-5);
-  border: var(--border-width) solid var(--color-border-subtle);
+  border: 0;
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
   min-width: 0;

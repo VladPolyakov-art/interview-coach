@@ -140,6 +140,8 @@ export interface HomeViewProps {
   /** US-23: saved sessions can't be read. */
   storageError?: boolean;
   suggestions: Suggestion[];
+  /** Quick start (D51 item 1): what one click starts, as the quiet line next to "Start now". None: not offered (English). */
+  quickStart?: { detail: string } | null;
   composer: { text: string; file?: { name: string; size: string } };
   setup?: SetupModel;
   /** Saved jobs, for the plan's Change job listbox. */
@@ -160,6 +162,7 @@ export interface HomeViewProps {
   onRemoveFile?: () => void;
   onSend?: () => void;
   onSuggestion?: (id: SuggestionId) => void;
+  onQuickStart?: () => void;
   onReply?: (turnId: string, replyId: string) => void;
   onTurnAction?: (turnId: string, actionId: TurnActionId) => void;
   onSkip?: () => void;

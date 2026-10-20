@@ -14,9 +14,10 @@ export default meta;
 const READY: RecentState = {
   status: "ready",
   items: [
-    { id: "s3", title: "Kestrel Pay · Senior Product Designer", track: "interview" },
-    { id: "s2", title: "English · Talk about your work", track: "english" },
-    { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview" },
+    { id: "s3", title: "Kestrel Pay · Senior Product Designer", track: "interview", when: "10:42 AM" },
+    { id: "s2", title: "English practice", track: "english", when: "Oct 17" },
+    { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview", when: "Oct 14" },
+    { id: "s0", title: "Interview practice", track: "interview", when: "Oct 12" },
   ],
 };
 const ENGINE = { name: "Ollama · qwen3:4b", status: "ready" as const };
@@ -69,16 +70,16 @@ function Shell({ width, height, path = "/history", start, ...props }: Partial<Ap
   );
 }
 
-/** ≥ 1024: full rail — nav rows, Recent (compact rows + All history), engine status at the bottom. */
+/** ≥ 1024: Gemini rail (D51·6) — New practice / History, the chats (one line + time), the account row with Settings. */
 export const Desktop: StoryObj = { render: () => <Shell width={1440} height={900} /> };
 
 /** Home start layout (Page layout="start"). */
 export const DesktopStart: StoryObj = { render: () => <Shell width={1440} height={900} path="/" start /> };
 
-/** 640–1023: top bar (menu, app name, engine name + badge); the rail lives in a drawer. */
+/** 640–1023: top bar (menu, app name; a Not ready badge only when the engine is down); the rail lives in a drawer. */
 export const Tablet: StoryObj = { render: () => <Shell width={800} height={720} /> };
 
-/** < 640: top bar with the badge only; page column narrow (< 560). */
+/** < 640: the same top bar; page column narrow (< 560). */
 export const Mobile: StoryObj = { render: () => <Shell width={375} height={812} /> };
 
 /** < 1024 with the rail drawer open (inside the frame). */
@@ -88,6 +89,17 @@ export const MobileDrawerOpen: StoryObj = { render: () => <Shell width={375} hei
 export const RecentLoading: StoryObj = {
   render: () => <Shell width={1440} height={900} recent={{ status: "loading" }} engine={{ status: "checking" }} />,
 };
+
+/** Engine not ready: a warning row above the account (→ Settings · AI engine) and the badge in the top bar (P6). */
+export const EngineNotReady: StoryObj = {
+  render: () => <Shell width={1440} height={900} engine={{ name: "Ollama · qwen3:4b", status: "notReady" }} />,
+};
+export const EngineNotReadyTablet: StoryObj = {
+  render: () => <Shell width={800} height={720} engine={{ name: "Ollama · qwen3:4b", status: "notReady" }} />,
+};
+
+/** Settings open: the account row is current. */
+export const SettingsCurrent: StoryObj = { render: () => <Shell width={1440} height={900} path="/settings" current="settings" /> };
 
 /** First run: no sessions yet, no engine chosen. */
 export const RecentEmpty: StoryObj = {

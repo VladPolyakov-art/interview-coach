@@ -8,7 +8,6 @@
   min-width: calc(var(--layout-rail) - var(--space-10));
   max-width: var(--layout-panel);
   padding: var(--space-1);
-  border: var(--border-width) solid var(--color-border-subtle);
   border-radius: var(--radius-md);
   background: var(--color-raised);
   color: var(--color-text-primary);

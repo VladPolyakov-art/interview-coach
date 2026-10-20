@@ -7,8 +7,8 @@ import {
   PRESENCE_STATES, WAITING_ON, type PresenceFrame, type PresenceState, type Rgb,
 } from "./presenceModel";
 
-const REACH = 190;
-const REACH_SM = 150;
+const REACH = 220;
+const REACH_SM = 170;
 const FADE = 64;
 const MASK = 0.12;
 const PERIOD = 2.8;
@@ -87,6 +87,17 @@ describe("Presence shapes", () => {
         expect(Math.max(...part) - Math.min(...h)).toBeGreaterThan(8);
       }
     }
+  });
+
+  it("speaking: the centre goes deeper than the sides (D51)", () => {
+    const h = heights(staticFrame("speaking"));
+    const n = h.length - 1;
+    const centre = Math.max(...h.slice(Math.round(0.4 * n), Math.round(0.6 * n)));
+    const side = Math.max(...h.slice(0, Math.round(0.2 * n)), ...h.slice(Math.round(0.8 * n)));
+    const floor = Math.min(...h);
+    // Lift above the resting edge: the centre goes about twice as deep as the sides, which still move.
+    expect(centre - floor).toBeGreaterThan(2 * (side - floor));
+    expect(side - floor).toBeGreaterThan(8);
   });
 
   it("thinking is one broad crest sweeping side to side (ping-pong)", () => {

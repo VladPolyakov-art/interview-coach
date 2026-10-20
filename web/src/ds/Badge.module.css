@@ -11,14 +11,15 @@
   white-space: nowrap;
   border: var(--border-width) solid transparent;
 }
-.neutral { background: var(--color-subtle); color: var(--color-text-secondary); }
+.neutral { background: var(--color-surface-chip); color: var(--color-text-secondary); }
 .live { background: var(--color-selected); color: var(--color-text-primary); }
 .success { background: var(--color-success-tint); color: var(--color-text-success); }
 .warning { background: var(--color-warning-tint); color: var(--color-text-warning); }
 .error { background: var(--color-error-tint); color: var(--color-text-error); }
-.outline { background: transparent; color: var(--color-text-secondary); border-color: var(--color-border-subtle); }
+/* D51: no stroke; the outline tone is a quiet chip fill. */
+.outline { background: var(--color-surface-chip); color: var(--color-text-secondary); }
 /* Layer badges are monochrome (label + icon tell the layers apart). The soft tints are debrief-only: opt in with tinted. */
-.content, .language, .delivery { background: var(--color-subtle); color: var(--color-layer-session-text); }
+.content, .language, .delivery { background: var(--color-surface-chip); color: var(--color-layer-session-text); }
 .tinted.content { background: var(--color-layer-content-tint); }
 .tinted.language { background: var(--color-layer-language-tint); }
 .tinted.delivery { background: var(--color-layer-delivery-tint); }
@@ -31,22 +32,30 @@
   min-height: var(--control-h-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-pill);
-  border: var(--border-width) solid var(--color-border-control);
-  background: var(--color-raised);
+  border: 0;
+  background: var(--color-surface-chip);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: background-color var(--duration-base) var(--ease-standard), border-color var(--duration-base) var(--ease-standard),
-    color var(--duration-base) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--duration-base) var(--ease-standard), color var(--duration-base) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 .chip:not(:disabled):active { transform: scale(0.96); }
-.chip:not(:disabled):hover { background: var(--color-hover); }
+/* D51: a chip is a fill, never a stroke. Hover shifts the fill one step and never touches the label colour. */
+.chip:not(:disabled):hover { background: var(--color-surface-chip-hover); }
 /* Selected chip = inverted fill (non-colour cue: the inversion itself) + aria-pressed / aria-checked.
- * The focus ring keeps its 2px offset (global): flush against the black / white fill it would fail. */
+ * Selected + hover / press = the selected fill one step over, label unchanged (the rule has to outrank the plain hover,
+ * which is how the "All" label once turned unreadable). The focus ring keeps its 2px offset (global). */
 .chip[aria-pressed="true"],
-.chip[aria-checked="true"] { background: var(--color-checked); border-color: var(--color-border-selected); color: var(--color-text-on-checked); }
-/* Disabled = colour tokens, no opacity (DS-5); the reason sits in visible text next to the group. */
-.chip:disabled { background: var(--color-subtle); border-color: var(--color-border-subtle); color: var(--color-text-tertiary); cursor: not-allowed; }
+.chip[aria-checked="true"] { background: var(--color-surface-chip-selected); color: var(--color-text-on-checked); }
+.chip[aria-pressed="true"]:not(:disabled):hover,
+.chip[aria-checked="true"]:not(:disabled):hover,
+.chip[aria-pressed="true"]:not(:disabled):active,
+.chip[aria-checked="true"]:not(:disabled):active { background: var(--color-surface-chip-selected-hover); color: var(--color-text-on-checked); }
+/* Disabled = colour tokens, no opacity (DS-5); the reason sits in visible text next to the group. Hover does nothing. */
+.chip:disabled,
+.chip[aria-pressed="true"]:disabled,
+.chip[aria-checked="true"]:disabled { background: var(--color-surface-chip); color: var(--color-text-tertiary); cursor: not-allowed; }
 .count { color: inherit; font-variant-numeric: tabular-nums; }
 .chip:not([aria-pressed="true"]):not([aria-checked="true"]) .count { color: var(--color-text-secondary); }
 /* 44px hit area on touch screens (CONTRACT 5.3) without changing the 32px pill. */

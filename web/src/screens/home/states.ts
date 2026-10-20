@@ -41,18 +41,18 @@ export const ENGINE_DOWN: ShellEngine = { name: "Ollama · qwen3:4b", status: "n
 export const RECENT_READY: RecentState = {
   status: "ready",
   items: [
-    { id: "s3", title: "Kestrel Pay · Senior Product Designer", track: "interview" },
-    { id: "s2", title: "English · Talk about your work", track: "english" },
-    { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview" },
+    { id: "s3", title: "Kestrel Pay · Senior Product Designer", track: "interview", when: "Oct 19" },
+    { id: "s2", title: "English practice", track: "english", when: "Oct 17" },
+    { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview", when: "Oct 14" },
   ],
 };
 export const RECENT_EMPTY: RecentState = { status: "ready", items: [] };
 export const RECENT_LONG: RecentState = {
   status: "ready",
   items: [
-    { id: "s3", title: "Kestrel Payments International Holdings · Senior Staff Product Designer, Platform Experience and Growth", track: "interview" },
-    { id: "s2", title: "English · Talk about your work and the projects you are most proud of this year", track: "english" },
-    { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview" },
+    { id: "s3", title: "Kestrel Payments International Holdings · Senior Staff Product Designer, Platform Experience and Growth", track: "interview", when: "10:42 AM" },
+    { id: "s2", title: "English · Talk about your work and the projects you are most proud of this year", track: "english", when: "Oct 17" },
+    { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview", when: "Oct 14, 2025" },
   ],
 };
 
@@ -98,6 +98,8 @@ export const SCENES = {
     recent: { status: "error" },
   },
   overflowStart: { ...ret, ctx: CTX_OVERFLOW, label: "Overflow, text +30%", props: { name: LONG_NAME }, recent: RECENT_LONG },
+  quickTextMode: { ...ret, label: "Quick start, answering by typing", props: { name: "Alex", textMode: true } },
+  quickStarting: { ...ret, label: "Quick start pressed", props: { name: "Alex", starting: true } },
 
   /* ---------- setup chat ---------- */
   jobReading: { ...ret, label: "Reading a pasted job", inputs: [{ do: "begin", input: { kind: "text", text: PASTED_TEXT } }], hold: true },

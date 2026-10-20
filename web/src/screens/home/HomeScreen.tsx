@@ -3,7 +3,8 @@
  * Gaps the server has today (🟡, home.md §9): no "technical" round (runs as the mixed round, B2), no field for the
  * user's note (UI only, B3), no questions status (we track the prepare call, B5), the last interview's job and round
  * are not in SessionSummary (remembered job + remembered round, B8), Drill = a 3-question mixed session (B7), no
- * recurring-phrases data (English phrases empty), no profile name (h1 without the name, US-08 AC3). */
+ * recurring-phrases data (English phrases empty), no profile name (h1 without the name, US-08 AC3).
+ * Quick start (D51 item 1, quickStart.ts): "Start now" opens the session straight away with the last settings. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { durationMs, motionMemory, shouldBuildUp } from "../../ds";
@@ -18,6 +19,7 @@ import { useApp } from "../../lib/store";
 import type { Vacancy } from "../../lib/types";
 import { buildSessionConfig } from "../../session/startConfig";
 import { homePrefs, shortDate } from "./homePrefs";
+import { quickStartFor } from "./quickStart";
 import { HomeView } from "./HomeView";
 import {
   begin, change, pick, planFor, removeNote, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
@@ -199,6 +201,19 @@ export function HomeScreen() {
   const unsupportedSpeech = stt.data?.available === false && !browserSttSupported();
   const loading = (vacancies.loading && !vacancies.data) || (sessions.loading && !sessions.data);
   const shown = setup ? setupModel(ctx, setup) : undefined;
+  /* Quick start (D51 item 1): one click, the last settings (general questions on a first visit), no setup chat. */
+  // While Home loads the row keeps its place (disabled, no detail) so it doesn't jump in later.
+  const quick = setup || loading ? null : quickStartFor(ctx, textMode || unsupportedSpeech);
+  const quickStart = () => {
+    if (!quick || !engineReady) return;
+    homePrefs.setRound(quick.round);
+    const config = buildSessionConfig({
+      mode: "interview", answer: quick.answer, roundType: quick.roundType, strictness: quick.strictness,
+      questions: quick.questions, vacancyId: quick.jobId ?? undefined,
+    }, settings, stt.data);
+    const title = list.find((v) => v.id === quick.jobId)?.title ?? "";
+    leave(() => navigate("/session", { state: { config, title, roundType: config.start.round_type } }));
+  };
 
   return (
     <>
@@ -217,6 +232,8 @@ export function HomeScreen() {
         textMode={textMode}
         storageError={Boolean(sessions.error)}
         suggestions={loading ? [] : suggestionsFor(ctx)}
+        quickStart={quick ? { detail: quick.detail } : loading && track === "interview" ? { detail: "" } : null}
+        onQuickStart={quickStart}
         composer={composer}
         setup={shown}
         jobs={setup ? [...setup.jobs, ...ctx.jobs.filter((j) => !setup.jobs.some((x) => x.id === j.id))] : ctx.jobs}

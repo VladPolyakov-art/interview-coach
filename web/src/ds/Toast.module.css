@@ -20,7 +20,7 @@
   gap: var(--space-3);
   min-height: var(--control-h-lg);
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  border: var(--border-width) solid var(--color-border-subtle);
+  border: 0;
   border-radius: var(--radius-md);
   background: var(--color-raised);
   color: var(--color-text-primary);
@@ -37,7 +37,7 @@
 }
 .message { flex: 1 1 auto; min-width: 0; }
 .icon { display: inline-flex; color: var(--color-text-error); }
-.error { border-color: var(--color-text-error); }
+.error { box-shadow: var(--shadow-overlay), inset 0 0 0 var(--border-width) var(--color-text-error); }
 
 .inline { transition: none; max-width: min(var(--layout-dialog), 100%); }
 @starting-style {

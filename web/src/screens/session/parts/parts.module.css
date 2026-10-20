@@ -7,14 +7,18 @@
 /* "Question N": a quiet heading that starts each question's part of the dialogue. */
 .turnQuestion {
   margin: 0;
-  padding-top: var(--space-2);
+  padding-top: var(--space-4);
   font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-tight);
   color: var(--color-text-secondary);
 }
 .turn:first-child .turnQuestion { padding-top: 0; }
+/* "Follow-up": quiet small text above Mike's line, not an outlined pill. */
+.followUp { font-size: var(--text-sm); line-height: var(--leading-tight); color: var(--color-text-secondary); }
 .interimWords { color: var(--color-text-secondary); }
+/* Interim bubble: the whole line is secondary until the answer is final. */
+.turnInterim p { color: var(--color-text-secondary); }
 /* Mike's new streamed chunk: opacity only, no blur (CONTRACT 4.4). */
 .chunkIn { animation: global(fade-in) var(--duration-slow) var(--ease-enter) backwards; }
 .transcriptFooter { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }

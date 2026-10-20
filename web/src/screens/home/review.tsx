@@ -12,10 +12,12 @@ const state = (id: string, label: string, sceneId: HomeSceneId, extra: Partial<R
 export const homeReview: ReviewScreen = {
   id: "home",
   title: "Home",
-  note: "v2: стартовый экран как в чат-приложении (приветствие, одно поле, до трёх подсказок) → короткая настройка с Майком (до 3 вопросов, быстрые ответы, «Skip questions») → карточка плана с одной чёрной кнопкой Start interview. Реплики Майка — по сценарию, без LLM. Всё кликабельно.",
+  note: "v2 + D51: стартовый экран как в чат-приложении (приветствие, одно поле, до трёх подсказок) → короткая настройка с Майком (до 3 вопросов, быстрые ответы, «Skip questions») → карточка плана с одной чёрной кнопкой Start interview. Реплики Майка — по сценарию, без LLM. Всё кликабельно.",
   states: [
-    state("start-returning", "Старт: вернувшийся пользователь", "returning", { dark: true, note: "Без орба и без блоков: приветствие, поле «Message Mike» с чипом режима и «+», три подсказки. Слабые места — только чипом «Drill my weak spots» (D47e)." }),
-    state("start-first", "Старт: первый визит", "firstVisit", { note: "Подсказки «General questions», «Show me an example», «Practise English». Recent в рейле пустой." }),
+    state("start-returning", "Старт: вернувшийся пользователь", "returning", { dark: true, note: "Приветствие, поле «Message Mike» с чипом режима и «+», под ним «Start now» (D51·1: один клик — сессия с прошлыми настройками: Kestrel Pay · Behavioural · 5 questions · voice), ниже три подсказки. Сайдбар как в Gemini (D51·6): New practice, History → чаты → аккаунт с настройками внизу." }),
+    state("start-first", "Старт: первый визит", "firstVisit", { note: "«Start now» = General questions · Unseen mix · 5 questions · voice. Подсказки «General questions», «Show me an example», «Practise English». Чатов в рейле пока нет." }),
+    state("start-quick-engine-down", "Старт: движок не запущен", "engineDown", { note: "«Start now» неактивна, причина — в баннере сверху; в рейле над аккаунтом строка «AI engine · Not ready» (ведёт в Settings → AI engine)." }),
+    state("start-quick-text", "Start now: ответы текстом", "quickTextMode", { note: "Подпись следует режиму ввода: «… · typing»." }),
     state("start-mode", "Старт: выбор режима", "modeMenu", { note: "Чип режима в поле, как выбор модели у Gemini/Ollama: Interview / English practice с описаниями (вопрос Q3)." }),
     state("start-pasted", "Старт: вставлена вакансия", "pasted", { note: "Кнопка Send появляется только с текстом или файлом. ≥ 80 символов или ссылка — это вакансия." }),
     state("setup-reading", "Чат: Майк читает вакансию", "jobReading", { note: "Вставленный текст свёрнут до 3 строк + «Show all». Шиммер только пока идёт реальная работа." }),

@@ -1,4 +1,4 @@
-/* Island (G21): raised surface, hairline border, pill (voice) / lg (text box) / xl (two rows on phones). */
+/* Island (G21): card fill (D51: no stroke), pill (voice) / lg (text box) / xl (two rows on phones). */
 .island {
   display: flex;
   flex-direction: column;
@@ -7,10 +7,9 @@
   max-width: 100%;
   min-width: 0;
   padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid var(--color-border-subtle);
+  border: 0;
   border-radius: var(--radius-pill);
-  background: var(--color-raised);
-  box-shadow: var(--shadow-raised);
+  background: var(--color-surface-card);
   color: var(--color-text-primary);
 }
 .box { width: 100%; padding: var(--space-3); border-radius: var(--radius-lg); }

@@ -5,8 +5,7 @@
   gap: var(--space-4);
   align-items: center;
   padding: var(--space-4) var(--space-5);
-  background: var(--color-raised);
-  border: var(--border-width) solid var(--color-border-subtle);
+  background: var(--color-surface-card);
   border-radius: var(--radius-lg);
 }
 .main { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }

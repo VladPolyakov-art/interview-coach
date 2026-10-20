@@ -5,8 +5,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-4) var(--space-8);
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
-  background: var(--color-raised);
+  background: var(--color-canvas);
   flex-wrap: wrap;
 }
 .brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-semibold); }

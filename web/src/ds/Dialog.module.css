@@ -1,6 +1,6 @@
 .dialog {
   padding: 0;
-  border: var(--border-width) solid var(--color-border-subtle);
+  border: 0;
   border-radius: var(--radius-xl);
   background: var(--color-raised);
   color: var(--color-text-primary);

@@ -1,7 +1,7 @@
 /* Presence model (ds/Presence, D49): the pure maths behind Mike's glow along the top edge of the Session stage.
  * No DOM here, so vitest covers it: state weights and the fade, the voice followers, the height profile with lobes
  * across the width (speaking / listening), the side-to-side thinking crest, and the static reduced-motion frames.
- * Units: `u` is 0..1 across the width; heights are CSS px for a glow box of `reach` px (190 wide, 150 phone). */
+ * Units: `u` is 0..1 across the width; heights are CSS px for a glow box of `reach` px (220 wide, 170 phone). */
 
 /** `waiting` = your turn before the first word: a faint inviting glow (D50). */
 export type PresenceState = "idle" | "waiting" | "listening" | "thinking" | "speaking";
@@ -37,8 +37,8 @@ export const LOBES = [
 ] as const;
 const LOBE_SIGMA = 0.085;
 const TAU = Math.PI * 2;
-/** Reference reach the amplitudes are designed for (desktop, 190px). */
-const REF_REACH = 190;
+/** Reference reach the amplitudes are designed for (desktop, 220px). */
+const REF_REACH = 220;
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
 const oneHot = (s: PresenceState): Record<PresenceState, number> => ({ idle: 0, waiting: 0, listening: 0, thinking: 0, speaking: 0, [s]: 1 });
@@ -119,6 +119,13 @@ export function sweepDir(timeS: number, periodS: number): number {
   return Math.sin((Math.PI * timeS) / periodS);
 }
 
+/** Speaking only (D51 5): a steady deep tongue in the centre (gently breathing), over the lobes that keep the sides
+ * moving. 0..1 at u. */
+export function centreTongue(u: number, t: number): number {
+  const d = (u - 0.5) / 0.15;
+  return Math.exp(-(d * d)) * (0.8 + 0.2 * Math.sin(TAU * 0.5 * t));
+}
+
 /** Lobe sum 0..~1.2 at u (each lobe = amplitude × own breathing). `rate` slows the breathing (listening is calmer). */
 function lobes(u: number, t: number, rate: number): number {
   let sum = 0;
@@ -147,7 +154,7 @@ export function columnAt(u: number, f: PresenceFrame, periodS: number, reach: nu
   const k = reach / REF_REACH;
   const base = 40 * k;
   const { w } = f;
-  const speak = (24 + 96 * f.voice) * k * lobes(u, f.t, 1);
+  const speak = (24 + 96 * f.voice) * k * (0.5 * lobes(u, f.t, 1) + 0.9 * centreTongue(u, f.t));
   const listen = (14 + 70 * f.micS) * k * lobes(u, f.t, 0.6);
   const pos = f.hold ? f.hold.pos : sweepPos(f.sweepT, periodS);
   const dir = f.hold ? f.hold.dir : sweepDir(f.sweepT, periodS);

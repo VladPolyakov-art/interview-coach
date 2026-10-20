@@ -1,11 +1,13 @@
 /* Start screen (home.md v2 §3, D47a/b): a text greeting (no orb), one composer, up to three suggestions
  * (the footer line is pinned to the bottom of <main> by HomeView).
  * Calm like a chat start page: nothing else on screen. The composer carries the practice type (mode chip with a
- * radio menu) and a "+" for a job file; Send appears only with text or a file (motion D6). */
+ * radio menu) and a "+" for a job file; Send appears only with text or a file (motion D6). Under the composer: the
+ * quick start (D51 item 1: "Start now" + what it starts), then the suggestions. */
 import type { Ref } from "react";
 import { Button, Chip, ChipGroup, Composer, ComposerAttachment, Icon, IconButton, Menu, Skeleton } from "../../../ds";
 import { t } from "../../../i18n";
 import type { HomeViewProps, Track } from "../types";
+import { QuickStart } from "./QuickStart";
 import { TextLink } from "./TextLink";
 import s from "./parts.module.css";
 
@@ -85,6 +87,14 @@ export function StartScreen(props: StartScreenProps) {
       </div>
       {composer.file ? (
         <p className={s.fileLine}><Icon name="lock" size="sm" />{t("chat.start.fileLocal")}</p>
+      ) : null}
+      {props.quickStart ? (
+        <QuickStart
+          detail={props.quickStart.detail}
+          disabled={props.loading || !props.engineReady}
+          starting={props.starting}
+          onStart={props.onQuickStart}
+        />
       ) : null}
       <div className={s.suggestions} aria-busy={props.loading || undefined} data-review-id="Home/Suggestions" data-review-section="Home · Suggestions" data-comment-target>
         {props.loading && !suggestions.length ? (

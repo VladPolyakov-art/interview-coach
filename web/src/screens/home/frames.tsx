@@ -13,6 +13,7 @@ import {
   begin, change, pick, removeNote, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
   type JobResult, type ScriptContext, type SetupState,
 } from "./script";
+import { quickStartFor } from "./quickStart";
 import { SCENES, type HomeScene, type HomeSceneId, type SceneInput } from "./states";
 import type { SetupModel } from "./types";
 
@@ -147,6 +148,11 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
       name={p.name}
       engineReady={p.engineReady ?? true}
       suggestions={p.suggestions ?? suggestionsFor(ctx)}
+      quickStart={p.quickStart !== undefined ? p.quickStart : setup ? null : (() => {
+        const q = quickStartFor(ctx, textMode);
+        return !q ? null : p.loading ? { detail: "" } : { detail: q.detail };
+      })()}
+      onQuickStart={() => { setStarting(true); later(() => setStarting(false), PREP_MS); }}
       composer={composer}
       setup={view}
       jobs={setup ? [...setup.jobs, ...ctx.jobs.filter((j) => !setup.jobs.some((x) => x.id === j.id))] : ctx.jobs}

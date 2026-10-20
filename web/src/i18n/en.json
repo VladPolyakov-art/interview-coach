@@ -36,6 +36,7 @@
   },
   "nav": {
     "main": "Main",
+    "newPractice": "New practice",
     "practice": "Practice",
     "history": "History",
     "settings": "Settings"
@@ -52,7 +53,10 @@
     "noSessions": "Your sessions will appear here.",
     "openMenu": "Open menu",
     "menu": "Menu",
-    "untitled": "Untitled session"
+    "untitled": "Untitled session",
+    "you": "You",
+    "account": "You, saved on this computer. Settings",
+    "engineWarning": "AI engine"
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -1252,6 +1256,14 @@
         "interviewDesc": "Mike asks interview questions, with feedback after each answer.",
         "englishDesc": "Just talk at your level. Corrections after each of your turns."
       }
+    },
+    "quick": {
+      "label": "Start now",
+      "aria": "Start now: {detail}",
+      "questions_one": "{n} question",
+      "questions_other": "{n} questions",
+      "voice": "voice",
+      "text": "typing"
     },
     "suggest": {
       "again": "{company} again",

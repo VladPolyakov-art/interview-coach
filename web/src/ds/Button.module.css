@@ -35,23 +35,24 @@
   background: var(--color-action);
   color: var(--color-text-on-action);
 }
-.primary:not(:disabled):hover { background: var(--color-action-hover); }
-.primary:not(:disabled):active { background: var(--color-action-pressed); }
+.primary:not(:disabled):not([aria-disabled="true"]):hover { background: var(--color-action-hover); }
+.primary:not(:disabled):not([aria-disabled="true"]):active { background: var(--color-action-pressed); }
 .primary:disabled,
 .primary[aria-disabled="true"] { background: var(--color-action-disabled); color: var(--color-text-disabled); opacity: 1; }
 
 .secondary {
-  background: var(--color-raised);
+  background: var(--color-surface-chip);
   color: var(--color-text-primary);
-  border-color: var(--color-border-control);
 }
-.secondary:not(:disabled):hover { background: var(--color-hover); }
+.secondary:not(:disabled):not([aria-disabled="true"]):hover { background: var(--color-surface-chip-hover); }
+.secondary:not(:disabled):not([aria-disabled="true"]):active { background: var(--color-surface-chip-hover); }
 
 .ghost {
   background: transparent;
   color: var(--color-text-primary);
 }
-.ghost:not(:disabled):hover { background: var(--color-hover); }
+.ghost:not(:disabled):not([aria-disabled="true"]):hover,
+.ghost:not(:disabled):not([aria-disabled="true"]):active { background: var(--color-hover); }
 
 .link {
   background: transparent;
@@ -62,12 +63,13 @@
   text-underline-offset: 0.2em;
 }
 
+/* D51: the irreversible action keeps its meaning in the label colour, not in a stroke. */
 .danger {
-  background: var(--color-raised);
+  background: var(--color-surface-chip);
   color: var(--color-text-error);
-  border-color: var(--color-text-error);
 }
-.danger:not(:disabled):hover { background: var(--color-error-tint); }
+.danger:not(:disabled):not([aria-disabled="true"]):hover,
+.danger:not(:disabled):not([aria-disabled="true"]):active { background: var(--color-error-tint); }
 
 .spin {
   width: var(--icon-sm);
@@ -95,8 +97,15 @@
 }
 .iconButton:not(:disabled):active { transform: scale(0.94); }
 .iconButton:not(:disabled):hover { background: var(--color-hover); color: var(--color-text-primary); }
+.iconButton.outlined:not(:disabled):hover { background: var(--color-surface-chip-hover); }
 .iconButton:disabled { opacity: 0.5; cursor: not-allowed; }
 .iconButton.sm { width: var(--control-h-sm); height: var(--control-h-sm); min-height: 0; padding: 0; }
-.iconButton.outlined { border-color: var(--color-border-control); background: var(--color-raised); }
+/* D51: `outlined` keeps its name for the API but has no stroke: a chip fill. */
+.iconButton.outlined { background: var(--color-surface-chip); }
 /* Pressed = selected fill + the "on" icon variant supplied by the caller (e.g. micOff) + aria-pressed. */
 .iconButton[aria-pressed="true"] { background: var(--color-selected); color: var(--color-text-primary); }
+/* Pressed + hover: the selected fill one step over, the icon colour unchanged. */
+.iconButton[aria-pressed="true"]:not(:disabled):hover,
+.iconButton.outlined[aria-pressed="true"]:not(:disabled):hover { background: var(--color-surface-chip-hover); color: var(--color-text-primary); }
+.iconButton:disabled:hover { background: transparent; }
+.iconButton.outlined:disabled:hover { background: var(--color-surface-chip); }

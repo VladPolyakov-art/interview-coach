@@ -6,15 +6,16 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-8) var(--space-4);
-  border: var(--border-width) dashed var(--color-border-control);
+  border: var(--border-width) dashed transparent;
   border-radius: var(--radius-md);
-  background: var(--color-raised);
+  background: var(--color-surface-card);
   text-align: center;
   transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
 /* Drag-over: solid selected border + hover fill (monochrome, no glow). */
-.over { border-style: solid; border-color: var(--color-border-selected); background: var(--color-hover); }
-.disabled { background: var(--color-subtle); border-color: var(--color-border-subtle); color: var(--color-text-tertiary); }
+/* D51: the drop zone is a fill; a drag over it is the one place a stroke carries meaning. */
+.over { border-style: solid; border-color: var(--color-border-selected); background: var(--color-surface-card-hover); }
+.disabled { background: var(--color-subtle); color: var(--color-text-tertiary); }
 .icon { display: inline-flex; color: var(--color-text-secondary); }
 .prompt { font-size: var(--text-sm); color: var(--color-text-primary); }
 .prompt button { vertical-align: baseline; }
@@ -24,9 +25,8 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3);
-  border: var(--border-width) solid var(--color-border-subtle);
   border-radius: var(--radius-md);
-  background: var(--color-subtle);
+  background: var(--color-surface-card);
   min-width: 0;
 }
 .fileIcon {

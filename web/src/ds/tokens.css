@@ -91,8 +91,8 @@
   --icon-sm: 1rem;
   --icon-md: 1.25rem;
   --icon-lg: 1.5rem;
-  --presence-reach: 11.875rem;
-  --presence-reach-sm: 9.375rem;
+  --presence-reach: 13.75rem;
+  --presence-reach-sm: 10.625rem;
   --presence-fade: 4rem;
   --presence-mask-stop: 0.12;
   --toggle-w: 2.5rem;
@@ -125,7 +125,7 @@
   --z-toast: 200;
   --elevation-raised-light: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
   --elevation-overlay-light: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
-  --elevation-raised-dark: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --elevation-raised-dark: 0 0 0 0 rgba(255, 255, 255, 0);
   --elevation-overlay-dark: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
   --color-canvas: var(--color-gray-0);
   --color-sidebar: var(--color-gray-25);
@@ -168,6 +168,13 @@
   --color-error-tint: var(--color-red-50);
   --color-warning-tint: var(--color-amber-50);
   --color-success-tint: var(--color-green-50);
+  --color-surface-card: var(--color-gray-50);
+  --color-surface-card-hover: var(--color-gray-100);
+  --color-surface-chip: var(--color-gray-100);
+  --color-surface-chip-hover: var(--color-gray-150);
+  --color-surface-chip-selected: var(--color-gray-950);
+  --color-surface-chip-selected-hover: var(--color-gray-800);
+  --color-surface-field: var(--color-gray-100);
   --shadow-raised: var(--elevation-raised-light);
   --shadow-overlay: var(--elevation-overlay-light);
 }
@@ -213,6 +220,13 @@
   --color-error-tint: var(--color-red-900);
   --color-warning-tint: var(--color-amber-900);
   --color-success-tint: var(--color-green-900);
+  --color-surface-card: var(--color-gray-900);
+  --color-surface-card-hover: var(--color-gray-850);
+  --color-surface-chip: var(--color-gray-800);
+  --color-surface-chip-hover: var(--color-gray-750);
+  --color-surface-chip-selected: var(--color-gray-100);
+  --color-surface-chip-selected-hover: var(--color-gray-150);
+  --color-surface-field: var(--color-gray-800);
   --shadow-raised: var(--elevation-raised-dark);
   --shadow-overlay: var(--elevation-overlay-dark);
 }
@@ -259,6 +273,13 @@
     --color-error-tint: var(--color-red-900);
     --color-warning-tint: var(--color-amber-900);
     --color-success-tint: var(--color-green-900);
+    --color-surface-card: var(--color-gray-900);
+    --color-surface-card-hover: var(--color-gray-850);
+    --color-surface-chip: var(--color-gray-800);
+    --color-surface-chip-hover: var(--color-gray-750);
+    --color-surface-chip-selected: var(--color-gray-100);
+    --color-surface-chip-selected-hover: var(--color-gray-150);
+    --color-surface-field: var(--color-gray-800);
     --shadow-raised: var(--elevation-raised-dark);
     --shadow-overlay: var(--elevation-overlay-dark);
   }

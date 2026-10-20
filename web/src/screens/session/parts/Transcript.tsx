@@ -1,14 +1,14 @@
 /* Running transcript (session.md V2.1, D49): the whole dialogue in the centre of the stage, newest at the bottom, in a
  * centred column. Built from ChatLog / ChatMessage (size lg): Mike = plain text, the user = a bubble.
- * - "Question N" heading before the turn that opens each question; a Follow-up badge on Mike's follow-ups.
+ * - "Question N" heading before the turn that opens each question; a quiet Follow-up label on Mike's follow-ups.
  * - Mike's streamed words (text as chunks): each new chunk fades in (opacity only). New Mike turns rise in; turns
  *   present at the first render never animate. The user's own words never animate (rule 3): they update in place.
- * - The answer being recorded is the last turn: ChatMessage `interim` (thin live outline) + interim words secondary.
+ * - The answer being recorded is the last turn: ChatMessage `interim` (65% bubble, secondary words) + interim words secondary.
  * - Mike preparing a reply: a Mike line with the 3-dot loader.
  * - Not announced (ChatLog live=false): Mike is heard through TTS, and the user is speaking. Each turn starts with a
  *   visually hidden speaker name for screen readers. */
 import { useState } from "react";
-import { Badge, ChatLog, ChatMessage, Dots } from "../../../ds";
+import { ChatLog, ChatMessage, Dots } from "../../../ds";
 import { t } from "../../../i18n";
 import type { TranscriptTurn } from "../types";
 import s from "./parts.module.css";
@@ -37,14 +37,14 @@ export function Transcript({ turns, label, pending, recording, footer }: Transcr
           const chunks = Array.isArray(turn.text) ? turn.text : [turn.text];
           const streamed = turn.speaker === "mike" && Array.isArray(turn.text);
           return (
-            <div key={turn.id} className={s.turn}>
+            <div key={turn.id} className={`${s.turn} ${turn.id === liveId ? s.turnInterim : ""}`}>
               {turn.question ? <h2 className={s.turnQuestion}>{t("session.captions.question", { n: turn.question })}</h2> : null}
               <ChatMessage
                 speaker={turn.speaker}
                 state={turn.id === liveId ? "interim" : "final"}
                 animate={fresh}
                 reviewId={`Session/Transcript/${turn.speaker}${turn.id === liveId ? "-interim" : ""}`}
-                attachment={turn.followUp ? <Badge tone="outline">{t("session.followUp")}</Badge> : undefined}
+                attachment={turn.followUp ? <span className={s.followUp}>{t("session.followUp")}</span> : undefined}
               >
                 <p>
                   <span className="visually-hidden">{t("session.captions.speaker", { name: turn.name })} </span>
