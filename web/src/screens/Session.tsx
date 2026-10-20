@@ -81,22 +81,15 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     }
   }, [threads, state.recording, english]);
 
-  /* Keyboard (the help line under the dock lists them): Space interrupts, M mutes, R redoes, T types, Enter sends. */
+  /* The tab says where you are (session.md §V2.3: the title left the screen for the More menu). */
   useEffect(() => {
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable)) return;
-      if (!live || !voice || e.metaKey || e.ctrlKey || e.altKey) return;
-      const key = e.key.toLowerCase();
-      if (key === "m") { e.preventDefault(); actions.toggleMute(); }
-      else if (key === "r" && (state.recording || userTurns > 0)) { e.preventDefault(); actions.redo(); }
-      else if (key === "t") { e.preventDefault(); actions.switchToText(); }
-      else if (key === " " && target?.tagName !== "BUTTON") { e.preventDefault(); actions.interrupt(); }
-      else if (e.key === "Enter" && state.recording && target?.tagName !== "BUTTON") { e.preventDefault(); actions.sendNow(); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [live, voice, state.recording, userTurns, actions]);
+    if (!live) return;
+    const prev = document.title;
+    const company = title.split(" · ")[0];
+    const where = english ? t("session.turn", { n: userTurns + 1 }) : total && questionIndex >= 0 ? t("session.progress", { n: questionIndex + 1, total }) : "";
+    document.title = [where, company].filter(Boolean).join(" · ");
+    return () => { document.title = prev; };
+  }, [live, title, english, userTurns, total, questionIndex]);
 
   /* ---------- terminal states ---------- */
   if (state.phase === "failed") {
@@ -181,6 +174,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     sub,
     badges: english && start.level ? [{ label: start.level, tone: "outline", icon: "language" }] : undefined,
     progress,
+    step: !english && total && questionIndex >= 0 ? { n: questionIndex + 1, of: total } : undefined,
     elapsed,
     question: state.currentQuestionText,
     followUp: state.followUps.at(-1),
@@ -211,7 +205,6 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     onSendNow: actions.sendNow,
     onRedo: actions.redo,
     onTypeInstead: actions.switchToText,
-    onMode: (m) => { if (m === "text" && voice) actions.switchToText(); },
     onSendText: actions.sendText,
     onFlag: actions.flag,
     onStronger: actions.stronger,
@@ -240,6 +233,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
         panel={panel}
         entering
         autoFocusComposer
+        globalKeys
       />
     </div>
   );

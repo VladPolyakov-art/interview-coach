@@ -49,20 +49,6 @@
 .suggestAnswer { margin: 0; line-height: var(--leading-relaxed); }
 .suggestList { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-1); }
 
-/* ---------- dock ---------- */
-.dock { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); width: 100%; max-width: var(--layout-narrow); margin-inline: auto; }
-.dock[data-input="text"] { align-items: stretch; }
-.dockRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3); width: 100%; }
-.help { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1) var(--space-4); margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
-.helpItem { display: inline-flex; align-items: center; gap: var(--space-1); }
-.hint { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
-@container session (width < 768px) {
-  .help { display: none; }
-}
-@media (pointer: coarse) {
-  .help { display: none; }
-}
-
 /* ---------- banners ---------- */
 .banners { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; max-width: var(--layout-narrow); margin-inline: auto; padding: var(--space-4) var(--space-8) 0; }
 @container session (width < 768px) {
@@ -89,3 +75,9 @@
 .editTitle { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); outline: none; }
 .editHint { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
 .editActions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* Keyboard shortcuts dialog (V2.3) */
+.keys { display: grid; grid-template-columns: max-content 1fr; align-items: baseline; gap: var(--space-2) var(--space-4); margin: 0; }
+.keyRow { display: contents; }
+.keyRow dt, .keyRow dd { margin: 0; }
+.keysHint { margin: var(--space-4) 0 0; font-size: var(--text-sm); color: var(--color-text-secondary); }

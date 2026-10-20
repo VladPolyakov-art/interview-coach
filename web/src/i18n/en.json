@@ -702,7 +702,46 @@
       "tryAgain": "Try again"
     },
     "stageLabel": "Interview",
-    "mikeRole": "Mike"
+    "mikeRole": "Mike",
+    "island": {
+      "status": "Status",
+      "voice": "Voice",
+      "tools": "Tools",
+      "exit": "Exit",
+      "step": "{n} of {of}",
+      "redo": "Redo answer (R)",
+      "redoNone": "Nothing to redo yet",
+      "redoLater": "Redo is available after Mike finishes",
+      "type": "Type instead (T)",
+      "toVoice": "Switch to voice (T)",
+      "switchToVoice": "Switch to voice",
+      "feedbackShow": "Show feedback (F)",
+      "feedbackHide": "Hide feedback (F)",
+      "feedbackFirst": "Feedback comes after your first answer",
+      "feedbackListening": "Feedback after your answer",
+      "more": "More",
+      "menu": "Session menu",
+      "shortcuts": "Keyboard shortcuts",
+      "micHelp": "Microphone help",
+      "voiceUnavailable": "Voice isn't available in this browser",
+      "thinking": "Thinking",
+      "preparing": "Preparing feedback",
+      "micDisabled": "The microphone is paused while the session is interrupted"
+    },
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "close": "Close",
+      "hint": "Shortcuts work when the cursor isn't in a text field (Enter and Esc work everywhere).",
+      "space": "Interrupt Mike or talk now",
+      "enter": "Send your answer now",
+      "m": "Mute or unmute",
+      "r": "Redo answer",
+      "t": "Type instead",
+      "f": "Show or hide feedback",
+      "n": "Next question",
+      "esc": "Close the panel, menu or this list",
+      "q": "Show this list"
+    }
   },
   "feedback": {
     "panel": "Feedback",

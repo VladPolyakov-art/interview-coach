@@ -32,8 +32,10 @@ export interface SessionData {
   sub?: string;
   /** Drill and English: Badge `outline` chips next to the title. */
   badges?: TopBadge[];
-  /** "Question 2 of 5" / "Turn 4" */
+  /** "Question 2 of 5" / "Turn 4": the island's aria-label and document.title. */
   progress: string;
+  /** Interview / drill: the island's short form "2 of 5" (session.md §V2.1). */
+  step?: { n: number; of: number };
   /** Seconds since the session went live. */
   elapsed: number;
   /** Main question text of the current thread (Mike's words on the stage). */
@@ -71,8 +73,6 @@ export interface SessionHandlers {
   onSendNow?: () => void;
   onRedo?: () => void;
   onTypeInstead?: () => void;
-  /** Segmented switch. Only "text" is reachable from voice (the backend can't switch back mid-session). */
-  onMode?: (mode: SessionInput) => void;
   /** Returns true when the text was accepted (the composer then clears). */
   onSendText?: (text: string) => boolean;
   onNext?: () => void;
@@ -114,15 +114,22 @@ export interface SessionViewProps {
   panel?: PanelMode;
   getMicLevel?: () => number;
   getVoiceLevel?: () => number;
-  /** Play the session entrance (orb grows into place, top bar meta drops in). Live only. */
+  /** Play the session entrance (orb fades in, the island docks in). Live only. */
   entering?: boolean;
   /** Review states: which flag starts with its "What did you say?" field open. */
   initialOpenHeard?: string;
   /** Review states: answers / stronger answer start open. */
   defaultShowAnswer?: boolean;
   defaultStrongerOpen?: boolean;
-  /** Review states: the feedback sheet starts closed (mid / narrow). Default open for the feedback phases. */
-  sheetClosed?: boolean;
+  /** The feedback panel (wide: floating panel; mid / narrow: drawer / sheet). Undefined = automatic: it opens on its
+   * own when feedback is ready and closes when Mike asks the next question (session.md §V2.4). The user's toggle wins. */
+  panelOpen?: boolean;
+  /** Review states: an overlay of the island starts open. */
+  initialOverlay?: "more" | "shortcuts";
+  /** Force the island layout (review); otherwise from the container width (< 560 = stacked). */
+  island?: "inline" | "stacked";
+  /** Listen to the keyboard shortcuts on the window (the live app). Otherwise only while focus is inside the view. */
+  globalKeys?: boolean;
   /** Keep the dock's text-mode draft (live container owns the Composer value only inside the view). */
   autoFocusComposer?: boolean;
 }

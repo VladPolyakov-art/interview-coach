@@ -10,7 +10,7 @@ const noop = () => undefined;
 
 /** Every action present, none doing anything: the review frames show each button. */
 export const noopHandlers: SessionHandlers = {
-  onEnd: noop, onToggleMute: noop, onInterrupt: noop, onSendNow: noop, onRedo: noop, onTypeInstead: noop, onMode: noop,
+  onEnd: noop, onToggleMute: noop, onInterrupt: noop, onSendNow: noop, onRedo: noop, onTypeInstead: noop,
   onSendText: () => true, onNext: noop, onSeeDebrief: noop, onFlag: noop, onSaveHeard: noop, onStronger: noop,
   onEdit: noop, onSaveEdit: noop, onCancelEdit: noop, onSetSuggest: noop, onDismissBanner: noop, onUseText: noop,
   onFixSettings: noop, onResume: noop, onEndAndDebrief: noop, onTryAgain: noop, onCloseMicHelp: noop,
@@ -152,9 +152,12 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
     },
   };
   const q2 = (o: Partial<Opts> = {}) => thread("q2", 2, Q2, [mainRecord({ withChecks, ...o }), followRecord]);
-  const withThread = (data: Partial<SessionData>, props: Partial<SessionViewProps>): SessionViewProps => ({
-    ...base, ...props, data: { ...base.data, ...data },
-  });
+  const withThread = (data: Partial<SessionData>, props: Partial<SessionViewProps>): SessionViewProps => {
+    const merged = { ...base.data, ...data };
+    // The island's short form "2 of 5" comes from the same fixture line as the aria-label "Question 2 of 5".
+    const m = /(\d+) of (\d+)/.exec(merged.progress);
+    return { ...base, ...props, data: { ...merged, step: m ? { n: Number(m[1]), of: Number(m[2]) } : undefined } };
+  };
   switch (scene) {
     case "q1-start":
       return withThread({
@@ -229,7 +232,7 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
       return withThread({ thread: q2() }, { phase: "between", overlay: "browser" });
     case "overflow":
       return withThread({
-        title: TITLE_LONG, question: Q2_LONG, thread: q2({ overflow: true }),
+        title: TITLE_LONG, question: Q2_LONG, thread: q2({ overflow: true }), elapsed: 3734,
         stronger: undefined,
       }, { phase: "feedback", defaultStrongerOpen: true });
     case "preparing":

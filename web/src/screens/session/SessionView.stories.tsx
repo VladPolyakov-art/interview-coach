@@ -3,9 +3,11 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { OverlayRoot } from "../../ds/OverlayRoot";
 import { fixtureProps, type FixtureOptions } from "./fixtures";
 import { SessionPreview } from "./SessionPreview";
+import type { SessionViewProps } from "./types";
 
-/* Screens/Session: one story per state of ds/screens/session.md §4 (S1 to S14). Each is a frame of a real width scaled to
- * fit, with its own OverlayRoot (the sheet and the dialog open inside it), the same set-up as the review page.
+/* Screens/Session: one story per state of ds/screens/session.md §4 (S1 to S14), with the v2 island (§V2). Each is a
+ * frame of a real width scaled to fit, with its own OverlayRoot (the sheet and the dialog open inside it), the same
+ * set-up as the review page.
  * The `frame` control switches 1440 / 900 / 768 / 375. */
 type Frame = "desktop" | "mid" | "tablet" | "mobile";
 interface Args extends Omit<FixtureOptions, "scene"> { frame: Frame }
@@ -42,7 +44,7 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
   );
 }
 
-function scene(name: string, sceneId: FixtureOptions["scene"], extra: Partial<Story> = {}): Story {
+function scene(name: string, sceneId: FixtureOptions["scene"], extra: Partial<Story> = {}, view: Partial<SessionViewProps> = {}): Story {
   return {
     name,
     ...extra,
@@ -50,7 +52,7 @@ function scene(name: string, sceneId: FixtureOptions["scene"], extra: Partial<St
       const [w, h] = SIZE[frame];
       return (
         <Scaled key={`${frame}:${sceneId}:${layerOrder}:${withChecks}`} width={w} height={h}>
-          <SessionPreview {...fixtureProps({ scene: sceneId, layerOrder, withChecks })} />
+          <SessionPreview {...fixtureProps({ scene: sceneId, layerOrder, withChecks })} {...view} />
         </Scaled>
       );
     },
@@ -83,3 +85,10 @@ export const S14dSuggester = scene("S14d · Answer suggester on", "suggester");
 /* The same feedback on a phone and in the mid layout: bottom sheet and right drawer. */
 export const NarrowFeedback = scene("Narrow · Feedback sheet", "feedback", { args: { frame: "mobile" } });
 export const MidFeedback = scene("Mid · Feedback drawer", "feedback", { args: { frame: "mid" } });
+
+/* v2 island (session.md §V2.9). */
+export const S1IslandMoreOpen = scene("S1 · Island, More menu open", "q1-start", {}, { initialOverlay: "more" });
+export const S5PanelHidden = scene("S5 · Feedback ready, panel hidden", "feedback", {}, { panelOpen: false });
+export const S6TextIsland = scene("S6 · Text mode island (box)", "text", { args: { withChecks: false } });
+export const Shortcuts = scene("Keyboard shortcuts dialog", "feedback", {}, { initialOverlay: "shortcuts" });
+export const NarrowIsland = scene("Narrow · Island, two rows", "listening", { args: { frame: "mobile" } }, { panelOpen: false });

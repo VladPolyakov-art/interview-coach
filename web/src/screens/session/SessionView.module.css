@@ -1,7 +1,13 @@
-/* Session layout. The root is a size container named `session`; every width rule is a container query on it
- * (review frames and the real window behave the same). Height comes from the parent (100%), never from the viewport. */
+/* Session layout (v2, session.md §V2). The root is a size container named `session`; every width rule is a container
+ * query on it (review frames and the real window behave the same). Height comes from the parent (100%), never from
+ * the viewport. No top bar, no dock: one floating island at the bottom centre of the stage. */
 .root {
   container: session / inline-size;
+  /* Island height, measured by the view (ResizeObserver); this default is the one-row pill. */
+  --island-h: calc(var(--control-h-lg) + var(--space-2) * 2);
+  --island-offset: var(--space-6);
+  /* Wide, panel open: the stage content shifts left by half of what the floating panel takes (V2.4, "Stage shift"). */
+  --stage-shift: calc((var(--layout-panel) + var(--space-4)) / -2);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -11,62 +17,73 @@
   background: var(--color-canvas);
   color: var(--color-text-primary);
 }
-.body {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--layout-panel);
-}
-@container session (width < 1024px) {
-  .body { grid-template-columns: minmax(0, 1fr); }
-}
+.body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
 
 /* ---------- stage ---------- */
-.stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.stage { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .scroll {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   justify-content: center;
-  padding: var(--space-10) var(--space-8) var(--space-6);
+  /* The top bar is gone: its height stays as quiet space (P4). The bottom keeps room for the island. */
+  padding: var(--layout-topbar) var(--space-8) calc(var(--island-h) + var(--island-offset) + var(--space-8));
 }
 .flow { display: flex; flex-direction: column; align-items: center; gap: var(--space-8); width: 100%; max-width: var(--layout-narrow); margin-block: auto; min-width: 0; }
 .orbBlock { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); max-width: 100%; }
 .orbBox { display: flex; justify-content: center; max-width: 100%; }
 .captionsBox { width: 100%; }
 .transcriptBox { display: flex; flex-direction: column; min-height: 0; max-height: calc(var(--text-lg) * var(--leading-relaxed) * 9); }
-.dockWrap {
-  flex: none;
+
+/* ---------- island (sticky bottom centre of the stage, V2.1) ---------- */
+.islandWrap {
+  position: absolute;
+  inset-inline: 0;
+  bottom: var(--island-offset);
+  z-index: var(--z-sticky);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-8) var(--space-6);
-  background: var(--color-canvas);
+  justify-content: center;
+  padding-inline: var(--space-8);
+  pointer-events: none;
 }
-.reopen { align-self: center; }
-.waiting { margin: 0; text-align: center; }
+.islandBox { display: flex; justify-content: center; width: 100%; max-width: var(--layout-narrow); min-width: 0; }
+.islandBox > * { pointer-events: auto; }
+
+/* Stage shift (docs/motion.md "Stage shift"): transform only, `slower`, instant under reduced motion (tokens = 0). */
+.shift { transition: transform var(--duration-slower) var(--ease-standard); }
+.root[data-panel="open"] .shift { transform: translateX(var(--stage-shift)); }
+/* Shifted content must still fit left of the panel on a 1024-1280 window. */
+.root[data-panel="open"] .flow,
+.root[data-panel="open"] .islandBox {
+  max-width: min(var(--layout-narrow), calc(100cqw - var(--layout-panel) - var(--space-4) * 3 - var(--space-8) * 2));
+}
 
 @container session (width < 768px) {
-  .scroll { padding: var(--space-6) var(--layout-gutter) var(--space-4); }
+  .root { --island-offset: var(--space-4); }
+  .scroll { padding: var(--space-8) var(--layout-gutter) calc(var(--island-h) + var(--island-offset) + var(--space-6)); }
   .flow { gap: var(--space-5); }
   .orbBox { --orb-size: calc(var(--orb-size-sm) * 1.5); }
-  /* Dock: sticky at the bottom, its own surface and a hairline above it. */
-  .dockWrap {
-    position: sticky;
-    bottom: 0;
-    padding: var(--space-3) var(--layout-gutter);
-    border-top: var(--border-width) solid var(--color-border-subtle);
-  }
+  /* Two-row island: full width minus the gutter, above the home indicator (V2.7). */
+  .islandWrap { padding-inline: var(--layout-gutter); bottom: calc(var(--island-offset) + env(safe-area-inset-bottom)); }
 }
 
-/* ---------- feedback column (wide) ---------- */
-.panelCol {
+/* ---------- floating feedback panel (wide, V2.4): no scrim, the session stays usable ---------- */
+.float {
   container: panel / inline-size;
-  min-height: 0;
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-overlay);
   display: flex;
-  padding: var(--space-4);
-  background: var(--color-sidebar);
+  width: var(--layout-panel);
+  min-height: 0;
 }
-.panelCol > * { flex: 1 1 auto; min-width: 0; }
+.float > * { flex: 1 1 auto; min-width: 0; }
+.panel { box-shadow: var(--shadow-overlay); }
+/* Drawer slide (docs/motion.md "Drawer G5"): translateX + opacity. */
+@keyframes panel-in { from { opacity: 0; transform: translateX(var(--space-6)); } }
+@keyframes panel-out { to { opacity: 0; transform: translateX(var(--space-6)); } }
+.floatIn { animation: panel-in var(--duration-slower) var(--ease-enter) backwards; }
+.floatOut { animation: panel-out var(--duration-exit) var(--ease-exit) forwards; pointer-events: none; }
