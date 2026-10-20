@@ -2,7 +2,7 @@
  * configured order, flag actions, and the stronger answer. Used live in the session and read-only-ish in the debrief.
  * All model and user text is rendered as React text nodes (never as HTML). */
 import { useId, useState, type ReactNode } from "react";
-import { Badge, Button, Callout, Icon, Spinner } from "../ds";
+import { Badge, Button, Callout, Icon, Skeleton } from "../ds";
 import { t, tMaybe, tp } from "../i18n";
 import { formatClock } from "../lib/format";
 import type {
@@ -111,9 +111,13 @@ export function ThreadFeedback({ thread, mode, layerOrder, live, onFlag, onStron
           {thread.question ? <p className={s.question}>{thread.question}</p> : null}
         </div>
         {thread.pendingIds.length ? (
-          <p className={s.pending} role="status">
-            {mode === "english" ? t("feedback.p2English") : t("feedback.p2", { n: thread.number })}
-          </p>
+          /* Feedback on its way (3.5): the waiting line shimmers over a ghost of the card. */
+          <>
+            <p className={s.pending} role="status">
+              <span className="shimmer-text">{mode === "english" ? t("feedback.p2English") : t("feedback.p2", { n: thread.number })}</span>
+            </p>
+            <Skeleton variant="card" />
+          </>
         ) : (
           <Callout tone="info">{t("feedback.p4")}</Callout>
         )}
@@ -185,7 +189,7 @@ function LayerBlock({ layer, records, live, onFlag }: { layer: LayerName; record
 function LayerBody({ layer, record, live, onFlag }: { layer: LayerName; record: FeedbackRecord; live: boolean; onFlag?: ThreadFeedbackProps["onFlag"] }) {
   const data = record.layers[layer];
   if (!data) {
-    return record.complete ? <p className={s.ok}>{t("feedback.layerUnavailable")}</p> : <p className={s.pending}>{t("feedback.stillChecking")}</p>;
+    return record.complete ? <p className={s.ok}>{t("feedback.layerUnavailable")}</p> : <Skeleton lines={2} label={t("feedback.stillChecking")} />;
   }
   if (data.status === "unavailable") return <p className={s.ok}>{t("feedback.layerUnavailable")}</p>;
   if (layer === "content") return <ContentBody data={data as ContentLayer} />;
@@ -356,7 +360,7 @@ function Stronger({ record, state, onRequest }: { record: FeedbackRecord; state?
         {open ? t("feedback.stronger.hide") : t("feedback.stronger.show")}
       </Button>
       {open ? (
-        state?.status === "loading" && !ready ? <Spinner label={t("feedback.stronger.loading")} /> :
+        state?.status === "loading" && !ready ? <Skeleton lines={3} label={t("feedback.stronger.loading")} /> :
         ready?.rewrite ? (
           <>
             <Rewrite text={ready.rewrite} placeholders={ready.placeholders ?? []} />

@@ -5,12 +5,11 @@
   border-radius: var(--radius-pill);
   border: var(--border-width-strong) solid var(--color-border-subtle);
   border-top-color: currentColor;
-  animation: spin 0.9s linear infinite;
+  animation: global(spin) var(--duration-loop-dots) linear infinite;
   flex: none;
 }
 .sm { width: var(--icon-sm); height: var(--icon-sm); }
 .lg { width: var(--icon-lg); height: var(--icon-lg); }
-@keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation: none; border-top-color: var(--color-border-subtle); border-right-color: currentColor; }
 }

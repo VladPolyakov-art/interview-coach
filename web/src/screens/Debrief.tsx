@@ -1,7 +1,7 @@
 /* Debrief of a saved session (REST): verdict, weak spots, per-thread feedback (no level labels: live panel only), transcript. */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Badge, Button, Callout, Card, EmptyState, Icon, Spinner } from "../ds";
+import { Badge, Button, Callout, Card, EmptyState, Icon, Skeleton } from "../ds";
 import { t, tMaybe, tp } from "../i18n";
 import { ThreadFeedback, type FlagAction } from "../components/Feedback";
 import { Page, Section } from "../components/Page";
@@ -65,7 +65,13 @@ export function DebriefScreen() {
 
   const threads = useMemo(() => (record ? threadsFromRecord(record) : []), [record]);
 
-  if (session.loading && !record) return <Page title={t("debrief.title")}><Spinner label={t("debrief.loading")} /></Page>;
+  if (session.loading && !record) return (
+    <Page title={t("debrief.title")}>
+      {/* Ghost of the debrief: summary card, then a feedback card (3.5). */}
+      <Skeleton variant="card" lines={3} label={t("debrief.loading")} />
+      <Skeleton variant="card" lines={2} label={t("debrief.loading")} />
+    </Page>
+  );
   if (session.error || !record) {
     return (
       <Page title={t("debrief.title")}>
@@ -147,7 +153,10 @@ export function DebriefScreen() {
             ) : null}
           </Card>
         ) : waiting ? (
-          <Spinner label={t("debrief.pending")} />
+          <Card className={s.block}>
+            <p className="shimmer-text" role="status">{t("debrief.pending")}</p>
+            <Skeleton lines={3} label={t("debrief.pending")} />
+          </Card>
         ) : record.feedback.length ? (
           <Button variant="secondary" icon="refresh" loading={rerunning} onClick={rerun}>{t("debrief.rerun")}</Button>
         ) : (

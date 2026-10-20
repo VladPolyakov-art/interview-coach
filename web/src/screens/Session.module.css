@@ -150,3 +150,60 @@
   .line { max-width: 92%; }
   .modeSwitch { order: 3; width: 100%; }
 }
+
+/* ---------- motion (docs/motion.md 3.3) ---------- */
+.meta { display: flex; align-items: center; gap: var(--space-3); }
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-tertiary);
+  flex: none;
+  transition: background-color var(--duration-base) var(--ease-standard);
+}
+/* Blue only while the mic is open for the user (P6); static — no pulse while they talk (rule 3). */
+.dotLive { background: var(--color-mic-live); }
+/* Mike thinking / connecting: a slow grey pulse. */
+.dotPulse { animation: global(pulse-dot) calc(var(--duration-loop-dots) * 0.75) ease-in-out infinite; }
+.statusLabel { animation: global(fade-in) var(--duration-base) var(--ease-standard) backwards; }
+
+/* Connecting (D2): the pill holds the dock's place until the session is live. */
+.dockSlot { display: flex; justify-content: center; }
+.connecting {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-h-md);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  border: var(--border-width) solid var(--color-border-subtle);
+  background: var(--color-raised);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.thinkingLine { padding: var(--space-2) 0; }
+
+/* Feedback panel slides in from the right (D4), from below when it stacks under the stage. */
+.panelInner {
+  animation:
+    global(panel-in-x) var(--duration-slower) var(--ease-standard) backwards,
+    global(fade-in) var(--duration-slow) var(--ease-standard) calc(var(--duration-stagger) * 1.5) backwards;
+}
+@media (max-width: 1023px) {
+  .panelInner { animation-name: global(panel-in-y), global(fade-in); }
+}
+@media (max-width: 767px) {
+  .meta { order: 2; }
+}

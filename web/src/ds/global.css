@@ -103,20 +103,122 @@ kbd {
   border: 0;
 }
 
+/* ===================================================================================================
+ * Motion (docs/motion.md). One copy of every shared keyframe; durations and curves come from tokens only.
+ * Rules: monochrome, transform + opacity only, exits faster than entrances, loops pause while the user
+ * speaks ([data-motion-quiet]), and reduced motion is total (see the block at the end of this file).
+ * =================================================================================================== */
+
+@keyframes rise-in { from { opacity: 0; transform: translateY(var(--space-2)); } }
+@keyframes row-in { from { opacity: 0; transform: translateX(-6px); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes soft-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes row-out { to { opacity: 0; transform: translateX(-12px); } }
+@keyframes card-in { from { opacity: 0; transform: translateY(calc(-1 * var(--space-2))) scale(0.98); } }
+@keyframes menu-in { from { opacity: 0; transform: translateY(-6px) scale(0.97); } }
+@keyframes dock-in { from { opacity: 0; transform: translateY(var(--space-4)) scale(0.98); } }
+@keyframes meta-in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } }
+@keyframes dialog-out { to { opacity: 0; transform: translateY(var(--space-2)) scale(0.97); } }
+@keyframes panel-in-x { from { transform: translateX(var(--space-8)); } }
+@keyframes panel-in-y { from { transform: translateY(var(--space-4)); } }
+@keyframes orb-in { from { opacity: 0; transform: scale(0.6); } }
+@keyframes word-in { from { opacity: 0; filter: blur(3px); } }
+@keyframes skeleton { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes shimmer-text { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@keyframes dots { 30% { opacity: 1; transform: translateY(-4px); } 60% { opacity: 0.35; transform: none; } }
+@keyframes pulse-dot { 50% { opacity: 0.3; transform: scale(0.65); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Utility classes. Entrances use fill-mode "backwards" so nothing is left transformed afterwards
+ * (a leftover transform would break position: sticky and the focus ring offset). */
+.motion-rise { animation: rise-in var(--duration-slow) var(--ease-enter) backwards; }
+.motion-page-in { animation: rise-in var(--duration-slow) var(--ease-enter) var(--duration-stagger) backwards; }
+/* A page that runs its own build-up (Home) does not also rise as a whole. */
+.motion-page-in:has(.motion-stagger) { animation: none; }
+.motion-rise-base { animation: rise-in var(--duration-base) var(--ease-enter) backwards; }
+.motion-fade { animation: fade-in var(--duration-base) var(--ease-enter) backwards; }
+.motion-card { animation: card-in var(--duration-slow) var(--ease-enter) backwards; }
+.motion-row { animation: row-in var(--duration-slow) var(--ease-enter) backwards; }
+.motion-menu { animation: menu-in var(--duration-base) var(--ease-enter) backwards; transform-origin: top left; }
+.motion-dock { animation: dock-in var(--duration-slower) var(--ease-enter) backwards; }
+.motion-meta { animation: meta-in var(--duration-slow) var(--ease-enter) backwards; }
+.motion-word { animation: word-in var(--duration-slow) var(--ease-enter) backwards; }
+.motion-soft-out { animation: soft-out var(--duration-exit) var(--ease-exit) forwards; pointer-events: none; }
+.motion-fade-out { animation: fade-out var(--duration-exit) var(--ease-exit) forwards; pointer-events: none; }
+.motion-row-out { animation: row-out var(--duration-exit) var(--ease-exit) forwards; pointer-events: none; }
+
+/* Stagger: children rise one after another (Home build-up, list rows). The index comes from nth-child,
+ * or from an inline --stagger-i when the children are not direct siblings. --stagger-base offsets a nested group. */
+.motion-stagger > * {
+  --stagger-i: 0;
+  animation: rise-in var(--duration-slow) var(--ease-enter) backwards;
+  animation-delay: calc((var(--stagger-base, 0) + var(--stagger-i)) * var(--duration-stagger));
+}
+.motion-stagger > :nth-child(2) { --stagger-i: 1; }
+.motion-stagger > :nth-child(3) { --stagger-i: 2; }
+.motion-stagger > :nth-child(4) { --stagger-i: 3; }
+.motion-stagger > :nth-child(5) { --stagger-i: 4; }
+.motion-stagger > :nth-child(6) { --stagger-i: 5; }
+.motion-stagger > :nth-child(7) { --stagger-i: 6; }
+.motion-stagger > :nth-child(n + 8) { --stagger-i: 7; }
+.motion-stagger-nested { --stagger-base: 0; }
+
+/* Text shimmer for "preparing…" lines: a grey gradient clipped to the text. */
+.shimmer-text {
+  color: transparent;
+  background: linear-gradient(90deg, var(--color-text-tertiary) 30%, var(--color-text-primary) 50%, var(--color-text-tertiary) 70%) 0 0 / 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer-text var(--duration-loop-shimmer) linear infinite;
+}
+
+/* Rule 3: nothing loops while the user is speaking. The session screen sets data-motion-quiet while the mic
+ * records an answer; every looping element carries .motion-loop (skeletons, shimmer, dots, pulse). */
+[data-motion-quiet="true"] .motion-loop,
+[data-motion-quiet="true"] .motion-loop *,
+[data-motion-quiet="true"] .shimmer-text {
+  animation-play-state: paused !important;
+}
+
+/* Rule 4: reduced motion is total. Every duration token and every delay is 0, loops stop on a static frame,
+ * smooth scroll is off and the dialog scrim appears without a fade. The mic level keeps following the voice
+ * (it is information), without its transition. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duration-fast: 0ms;
     --duration-base: 0ms;
     --duration-slow: 0ms;
+    --duration-slower: 0ms;
+    --duration-exit: 0ms;
+    --duration-stagger: 0ms;
+    --duration-loop-dots: 0ms;
+    --duration-loop-skeleton: 0ms;
+    --duration-loop-shimmer: 0ms;
     --duration-orb: 0ms;
   }
 
+  html { scroll-behavior: auto; }
+
   *,
   *::before,
-  *::after {
+  *::after,
+  ::backdrop {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Static frames for loops. */
+  .motion-loop,
+  .motion-loop * { animation-name: none !important; }
+  .shimmer-text {
+    animation: none !important;
+    background: none;
+    color: var(--color-text-secondary);
   }
 }

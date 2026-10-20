@@ -13,3 +13,19 @@
 .title { font-size: var(--text-lg); }
 .body { color: var(--color-text-secondary); font-size: var(--text-sm); display: flex; flex-direction: column; gap: var(--space-3); }
 .actions { display: flex; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+
+/* Enter: dialog-in + scrim fade (no blur, direction §7). */
+.dialog[open] { animation: global(dialog-in) var(--duration-slow) var(--ease-enter) backwards; }
+.dialog[open]::backdrop { animation: global(fade-in) var(--duration-base) var(--ease-standard) backwards; }
+/* Exit: the dialog is already closed (out of the top layer, focus returned); this class keeps its box painted,
+ * fixed and non-interactive, with the scrim drawn as a spread shadow, while dialog-out plays. */
+.dialog.closing {
+  display: block;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: var(--z-dialog);
+  pointer-events: none;
+  box-shadow: var(--shadow-overlay), 0 0 0 100vmax var(--color-scrim);
+  animation: global(dialog-out) var(--duration-exit) var(--ease-exit) forwards;
+}

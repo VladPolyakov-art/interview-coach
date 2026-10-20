@@ -1,4 +1,4 @@
-import { useId, useRef, type KeyboardEvent } from "react";
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { Icon, type IconName } from "./icons";
 import s from "./Segmented.module.css";
 
@@ -19,10 +19,39 @@ export interface SegmentedProps<T extends string> {
   fullWidth?: boolean;
 }
 
-/** Radio group styled as a segmented control. Arrow keys move and select. */
+interface Thumb { x: number; y: number; w: number; h: number; animate: boolean }
+
+/** Radio group styled as a segmented control. Arrow keys move and select.
+ * A raised pill thumb slides under the selected option (docs/motion.md 3.2): it is measured from the option's
+ * box (offsetLeft/Top — correct in RTL too) and moved with transform. It snaps without a slide on first paint
+ * and when the move crosses a wrapped row (a diagonal slide reads as a glitch). */
 export function Segmented<T extends string>({ label, hideLabel, options, value, onChange, fullWidth }: SegmentedProps<T>) {
   const id = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const groupRef = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState<Thumb | null>(null);
+  const selectedIndex = options.findIndex((o) => o.value === value);
+  useLayoutEffect(() => {
+    const group = groupRef.current;
+    if (!group) return;
+    const measure = (animate: boolean) => {
+      const el = refs.current[selectedIndex];
+      if (!el || !el.offsetWidth) {
+        setThumb(null);
+        return;
+      }
+      const next = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
+      setThumb((prev) => {
+        if (prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h) return prev;
+        return { ...next, animate: animate && Boolean(prev) && prev?.y === next.y };
+      });
+    };
+    measure(true);
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => measure(false));
+    ro.observe(group);
+    return () => ro.disconnect();
+  }, [selectedIndex, options.length]);
   const enabled = options.map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0);
   const onKey = (event: KeyboardEvent, index: number) => {
     const forward = event.key === "ArrowRight" || event.key === "ArrowDown";
@@ -42,7 +71,15 @@ export function Segmented<T extends string>({ label, hideLabel, options, value, 
   return (
     <div className={s.wrap}>
       <span id={`${id}-l`} className={hideLabel ? "visually-hidden" : s.legend}>{label}</span>
-      <div role="radiogroup" aria-labelledby={`${id}-l`} className={`${s.group} ${fullWidth ? s.full : ""}`}>
+      <div ref={groupRef} role="radiogroup" aria-labelledby={`${id}-l`}
+        className={`${s.group} ${fullWidth ? s.full : ""} ${thumb ? s.hasThumb : ""}`}>
+        {thumb ? (
+          <span
+            aria-hidden="true"
+            className={`${s.thumb} ${thumb.animate ? s.slide : ""}`}
+            style={{ "--thumb-x": `${thumb.x}px`, "--thumb-y": `${thumb.y}px`, "--thumb-w": `${thumb.w}px`, "--thumb-h": `${thumb.h}px` } as CSSProperties}
+          />
+        ) : null}
         {options.map((o, i) => {
           const checked = o.value === value;
           return (

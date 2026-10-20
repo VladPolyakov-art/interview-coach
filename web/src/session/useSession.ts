@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { MAX_BUFFERED_BYTES } from "../audio/framing";
 import { BrowserStt, browserSttSupported } from "../audio/browserStt";
 import { captureErrorCode, VoiceCapture, type CaptureError } from "../audio/capture";
+import { micLevel } from "../audio/level";
 import { Playback } from "../audio/playback";
 import type { ClientMessage, ServerMessage, StartMessage } from "../lib/types";
 import { t } from "../i18n";
@@ -35,6 +36,8 @@ export function useSession(config: SessionConfig) {
   const capture = useRef<VoiceCapture | null>(null);
   const stt = useRef<BrowserStt | null>(null);
   const turnId = useRef(0);
+  /** Latest mic level 0..1 for the live mic indicator; written per audio frame, read per animation frame (no re-render). */
+  const level = useRef(0);
   const stateRef = useRef(state);
   stateRef.current = state;
   const configRef = useRef(config);
@@ -58,6 +61,7 @@ export function useSession(config: SessionConfig) {
   }, []);
 
   const stopMic = useCallback(() => {
+    level.current = 0;
     capture.current?.stop();
     capture.current = null;
     stt.current?.stop();
@@ -109,6 +113,7 @@ export function useSession(config: SessionConfig) {
           }
         }, configRef.current.pauseSec ? 250 : 700);
       },
+      onLevel: (rms) => { level.current = micLevel(rms); },
       onMutedSpeech: () => dispatch({ type: "notice", code: "muted_speech", message: t("session.notice.mutedSpeech") }),
       echoRisk: () => playback.current?.echoRisk ?? false,
     }, configRef.current.pauseSec * 1000);
@@ -273,5 +278,7 @@ export function useSession(config: SessionConfig) {
     end,
   }), [send, stopMic, end, muted]);
 
-  return { state, playing, muted, micError, actions };
+  const getLevel = useCallback(() => level.current, []);
+
+  return { state, playing, muted, micError, actions, getLevel };
 }

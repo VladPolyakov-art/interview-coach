@@ -14,8 +14,12 @@
   cursor: pointer;
   text-decoration: none;
   transition: background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+    border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
+/* Press feedback (v1 B1). */
+.button:not(:disabled):not([aria-disabled="true"]):active { transform: scale(0.97); }
+.link:not(:disabled):active { transform: none; }
 
 .button:disabled,
 .button[aria-disabled="true"] {
@@ -71,10 +75,8 @@
   border: var(--border-width-strong) solid currentColor;
   border-right-color: transparent;
   border-radius: var(--radius-pill);
-  animation: spin 900ms linear infinite;
+  animation: global(spin) var(--duration-loop-dots) linear infinite;
 }
-
-@keyframes spin { to { transform: rotate(360deg); } }
 
 .iconButton {
   display: inline-flex;
@@ -88,7 +90,10 @@
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
+.iconButton:not(:disabled):active { transform: scale(0.94); }
 .iconButton:not(:disabled):hover { background: var(--color-hover); color: var(--color-text-primary); }
 .iconButton:disabled { opacity: 0.5; cursor: not-allowed; }
 .iconButton.sm { width: var(--control-h-sm); height: var(--control-h-sm); min-height: 0; padding: 0; }

@@ -1,8 +1,9 @@
 /* Live interview / English session: Mike's stage on the left, one feedback panel per question thread on the right. */
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Badge, Button, Callout, Card, EmptyState, Icon, IconButton, Orb, Segmented, Spinner, Textarea, Toggle, type OrbState,
+  Badge, Button, Callout, Card, Dots, EmptyState, Icon, MicButton, motionMemory, Orb, scrollBehavior, Segmented,
+  Textarea, Toggle, useFreshOnce, type OrbState,
 } from "../ds";
 import { t, tMaybe } from "../i18n";
 import { ThreadFeedback } from "../components/Feedback";
@@ -17,6 +18,8 @@ interface LocationState { config?: SessionConfig; title?: string }
 
 export function SessionScreen() {
   const location = useLocation();
+  // Coming back Home after a session replays the Home build-up (docs/motion.md 3.1).
+  useEffect(() => () => { motionMemory.returnFromSession = true; }, []);
   const st = (location.state ?? {}) as LocationState;
   if (!st.config) {
     return (
@@ -35,6 +38,28 @@ const ORB_STATE: Record<OrbView, OrbState> = {
 
 const ENGINE_CODES = new Set(["not_installed", "not_running", "no_model", "not_configured", "unreachable", "unauthorized", "billing_required"]);
 
+/** Waiting lines shimmer (D3, C5); the user's own turn never does (rule 3). */
+const SHIMMER_VIEWS = new Set<OrbView>(["connecting", "preparing", "thinking"]);
+
+function OrbLabel({ view, input }: { view: OrbView; input: SessionState["input"] }) {
+  const text = orbLabel(view, input);
+  return SHIMMER_VIEWS.has(view) ? <span className="shimmer-text">{text}</span> : <>{text}</>;
+}
+
+/** Status pill (P6/P7 adapted): 6px dot, blue only while the mic is open for the user; grey pulse while Mike thinks
+ * or connects; static otherwise. The label cross-fades, except when the user starts talking (rule 3). */
+function StatusPill({ view, micOpen }: { view: OrbView; micOpen: boolean }) {
+  const label = view === "your_turn" ? t("session.status.yourTurn") : t(`session.status.${view}`);
+  const tone = (view === "listening" || view === "your_turn") && micOpen ? s.dotLive
+    : view === "thinking" || view === "connecting" || view === "preparing" ? `${s.dotPulse} motion-loop` : "";
+  return (
+    <span className={s.statusPill}>
+      <span className={`${s.statusDot} ${tone}`} aria-hidden="true" />
+      <span key={view} className={view === "listening" ? undefined : s.statusLabel}>{label}</span>
+    </span>
+  );
+}
+
 function orbLabel(view: OrbView, input: SessionState["input"]) {
   switch (view) {
     case "connecting": return t("session.orb.connecting");
@@ -51,7 +76,7 @@ function orbLabel(view: OrbView, input: SessionState["input"]) {
 function LiveSession({ config, title }: { config: SessionConfig; title: string }) {
   const navigate = useNavigate();
   const { settings } = useApp();
-  const { state, playing, muted, micError, actions } = useSession(config);
+  const { state, playing, muted, micError, actions, getLevel } = useSession(config);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [readyMsg, setReadyMsg] = useState("");
@@ -148,7 +173,9 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   if (state.phase === "ending" || state.phase === "saving" || state.phase === "debrief_pending" || state.phase === "done") {
     return (
       <main className={s.center} id="main">
-        <Spinner size="lg" label={state.phase === "debrief_pending" || state.phase === "done" ? t("session.debriefPending") : t("session.saving")} />
+        <p className="shimmer-text" role="status" aria-busy="true">
+          {state.phase === "debrief_pending" || state.phase === "done" ? t("session.debriefPending") : t("session.saving")}
+        </p>
         {state.saveError ? <Callout tone="error">{t("session.errors.saveFailed")} {state.saveError}</Callout> : null}
       </main>
     );
@@ -161,16 +188,23 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   const showSuggester = state.mode === "interview" && state.suggesterAvailable && settings?.answer_suggester !== false;
 
   return (
-    <div className={s.screen}>
+    // Rule 3: while the user records an answer, every loop on the screen pauses (global.css [data-motion-quiet]).
+    <div className={s.screen} data-motion-quiet={state.recording ? "true" : undefined}>
       <header className={s.topbar}>
         <div className={s.titleBlock}>
           <span className={s.title}>{title}</span>
           {progress ? <span className={s.progress}>{progress}</span> : null}
         </div>
-        <span className={s.timer} aria-label={`${t("session.elapsed")}: ${formatClock(elapsed)}`} role="timer">
-          <Icon name="clock" size="sm" />
-          <span aria-hidden="true">{formatClock(elapsed)}</span>
-        </span>
+        {live ? (
+          /* Meta pill drops in when the session goes live (N7). */
+          <div className={`${s.meta} motion-meta`}>
+            <span className={s.timer} aria-label={`${t("session.elapsed")}: ${formatClock(elapsed)}`} role="timer">
+              <Icon name="clock" size="sm" />
+              <span aria-hidden="true">{formatClock(elapsed)}</span>
+            </span>
+            <StatusPill view={view} micOpen={voice && !muted} />
+          </div>
+        ) : null}
         <div className={s.modeSwitch}>
           <Segmented
             label={t("session.modeSwitch")}
@@ -196,7 +230,8 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
             <Orb
               state={ORB_STATE[view]}
               size={voice ? "md" : "sm"}
-              label={orbLabel(view, state.input)}
+              entering
+              label={<OrbLabel view={view} input={state.input} />}
               sub={muted && voice ? <Badge tone="warning" icon="micOff">{t("session.controls.unmute")} · M</Badge> : undefined}
             />
             {state.currentQuestionText ? (
@@ -224,10 +259,19 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
 
           {userTurns === 0 && !state.closing ? <FirstTime voice={voice} /> : null}
 
-          <Transcript state={state} />
+          <Transcript state={state} thinking={view === "thinking"} />
 
-          {!state.closing ? (
+          {state.phase === "connecting" ? (
+            /* Start → connecting (D2): a 3-dot pill holds the dock's place until the session is live. */
+            <div className={s.dockSlot}>
+              <span className={`${s.connecting} motion-fade`} role="status">
+                <Dots />
+                {t("session.status.connecting")}
+              </span>
+            </div>
+          ) : !state.closing ? (
             voice ? (
+              <div key="voice" className="motion-dock">
               <VoiceControls
                 state={state}
                 muted={muted}
@@ -238,9 +282,12 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
                 onSendNow={actions.sendNow}
                 onInterrupt={actions.interrupt}
                 onTypeInstead={actions.switchToText}
+                live={live}
+                getLevel={getLevel}
               />
+              </div>
             ) : (
-              <div className={s.composer}>
+              <div key="text" className={`${s.composer} motion-dock`}>
                 <div className={s.composerRow}>
                   <Textarea
                     label={t("session.input.label")}
@@ -326,14 +373,36 @@ function FirstTime({ voice }: { voice: boolean }) {
   );
 }
 
-function Transcript({ state }: { state: SessionState }) {
+/** Mike's streamed reply (D5): each new chunk fades in from a light blur; the text already on screen never replays.
+ * Chunks are cut at the length the text had on the previous render; only chunks that arrive while the line is live
+ * animate, so a reload or a finished line renders flat. */
+interface Chunk { end: number; anim: boolean }
+function StreamedText({ text, live }: { text: string; live: boolean }) {
+  const [chunks, setChunks] = useState<Chunk[]>(() => (live ? [] : [{ end: text.length, anim: false }]));
+  const last = chunks.at(-1)?.end ?? 0;
+  if (text.length < last) setChunks([{ end: text.length, anim: false }]);
+  else if (text.length > last) setChunks([...chunks, { end: text.length, anim: live }]);
+  let start = 0;
+  const parts: ReactNode[] = [];
+  for (const [i, c] of chunks.entries()) {
+    if (c.end > text.length) break;
+    const piece = text.slice(start, c.end);
+    parts.push(c.anim ? <span key={i} className="motion-word">{piece}</span> : <span key={i}>{piece}</span>);
+    start = c.end;
+  }
+  if (start < text.length) parts.push(<span key="tail">{text.slice(start)}</span>);
+  return <>{parts}</>;
+}
+
+function Transcript({ state, thinking }: { state: SessionState; thinking: boolean }) {
   const ref = useRef<HTMLOListElement>(null);
   const count = state.transcript.length;
   const last = state.transcript.at(-1)?.text.length ?? 0;
+  /* Auto-scroll to the newest turn: smooth (C11), instant under reduced motion and while the user talks (rule 3). */
   useEffect(() => {
     const el = ref.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [count, last, state.preview]);
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: state.recording ? "auto" : scrollBehavior() });
+  }, [count, last, state.preview, state.recording, thinking]);
   const hasLines = count > 0;
   // Keep the newest line in view when the layout reflows (rotation, window resize).
   useEffect(() => {
@@ -343,19 +412,21 @@ function Transcript({ state }: { state: SessionState }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, [hasLines]);
-  if (!count && !state.preview) return null;
+  if (!count && !state.preview && !thinking) return null;
+  const streamingKey = state.mikeTurnOpen ? state.transcript.findLast((x) => x.speaker !== "user")?.key : undefined;
   return (
     <section aria-labelledby="transcript-title">
       <h2 id="transcript-title" className="visually-hidden">{t("session.transcript")}</h2>
       <ol className={s.log} ref={ref}>
         {state.transcript.map((x) => (
-          <li key={x.key} className={`${s.line} ${x.speaker === "user" ? s.lineUser : s.lineModel}`}>
+          /* A new line rises in once (C1); stable keys keep it from replaying on re-render. */
+          <li key={x.key} className={`${s.line} ${x.speaker === "user" ? s.lineUser : s.lineModel} motion-rise`}>
             <span className={s.speaker}>
               {x.speaker === "user" ? t("session.you") : t("session.interviewer")}
               {x.kind === "follow_up" ? <Badge tone="outline">{t("session.followUp")}</Badge> : null}
             </span>
             <span className={s.bubble}>
-              {x.text}
+              {x.speaker === "user" ? x.text : <StreamedText text={x.text} live={x.key === streamingKey} />}
               {x.interrupted ? <span className={s.cut}> {t("session.cutOff")}</span> : null}
             </span>
           </li>
@@ -367,33 +438,42 @@ function Transcript({ state }: { state: SessionState }) {
             <span className={s.previewHint}>{t("session.heard")}</span>
           </li>
         ) : null}
+        {thinking ? (
+          /* Mike is thinking (C4): grey dots where his reply will appear. The orb label announces it. */
+          <li className={`${s.line} ${s.lineModel} ${s.thinkingLine} motion-fade`} aria-hidden="true">
+            <Dots />
+          </li>
+        ) : null}
       </ol>
     </section>
   );
 }
 
-function VoiceControls({ state, muted, playing, pauseSec, onMute, onRedo, onSendNow, onInterrupt, onTypeInstead }: {
+function VoiceControls({ state, muted, playing, pauseSec, onMute, onRedo, onSendNow, onInterrupt, onTypeInstead, live, getLevel }: {
   state: SessionState; muted: boolean; playing: boolean; pauseSec: number;
   onMute: () => void; onRedo: () => void; onSendNow: () => void; onInterrupt: () => void; onTypeInstead: () => void;
+  live: boolean; getLevel: () => number;
 }) {
   const mikeTalking = playing || state.mikeTurnOpen;
   const answered = state.transcript.some((x) => x.speaker === "user");
+  // The main action swaps with a short rise (D6), except into "Send now": the user has just started talking (rule 3).
+  const swapIn = state.recording ? undefined : "motion-rise-base";
   return (
     <div className={s.controls} role="group" aria-label={t("session.controls.label")}>
       <div className={s.controlRow}>
-        <IconButton
-          icon={muted ? "micOff" : "mic"}
+        <MicButton
           label={muted ? t("session.controls.unmute") : t("session.controls.mute")}
-          pressed={muted}
-          outlined
+          muted={muted}
+          live={live}
+          getLevel={getLevel}
           onClick={onMute}
         />
         {mikeTalking ? (
-          <Button variant="secondary" icon="hand" onClick={onInterrupt}>{t("session.controls.interrupt")}</Button>
+          <Button key="interrupt" className={swapIn} variant="secondary" icon="hand" onClick={onInterrupt}>{t("session.controls.interrupt")}</Button>
         ) : state.recording ? (
-          <Button variant="primary" icon="send" onClick={onSendNow}>{t("session.controls.sendNow")}</Button>
+          <Button key="send" variant="primary" icon="send" onClick={onSendNow}>{t("session.controls.sendNow")}</Button>
         ) : (
-          <Button variant="secondary" icon="mic" onClick={onInterrupt} disabled={muted}>{t("session.controls.talk")}</Button>
+          <Button key="talk" className={swapIn} variant="secondary" icon="mic" onClick={onInterrupt} disabled={muted}>{t("session.controls.talk")}</Button>
         )}
         <Button variant="ghost" icon="redo" onClick={onRedo} disabled={!answered && !state.recording}>{t("session.controls.redo")}</Button>
         <Button variant="ghost" icon="keyboard" onClick={onTypeInstead}>{t("session.controls.typeInstead")}</Button>
@@ -413,7 +493,7 @@ function Suggester({ state, onToggle }: { state: SessionState; onToggle: (on: bo
       {state.suggestOn && sug ? (
         <div className={s.suggestBody} aria-live="polite">
           <strong>{t("session.suggest.title")}</strong>
-          {sug.status === "pending" ? <Spinner size="sm" label={t("session.suggest.pending")} /> : null}
+          {sug.status === "pending" ? <span className="shimmer-text" role="status">{t("session.suggest.pending")}</span> : null}
           {sug.status === "unavailable" ? <span>{sug.message}</span> : null}
           {sug.status === "ready" ? (
             <>
@@ -440,6 +520,8 @@ function FeedbackPanel({ state, threads, layerOrder, onFlag, onStronger }: {
   onFlag: (feedbackId: string, flagId: string, action: "confirm" | "dismiss" | "restore") => void;
   onStronger: (feedbackId: string) => void;
 }) {
+  // Cards that already played their entrance (survives the recording gap below, so nothing replays).
+  const seen = useRef(new Set<string>()).current;
   // Calm rule: nothing new appears while the user is speaking.
   if (state.recording) return <p className={s.panelEmpty} role="status">{t("feedback.p1")}</p>;
   if (!threads.length) {
@@ -449,8 +531,10 @@ function FeedbackPanel({ state, threads, layerOrder, onFlag, onStronger }: {
   const earlier = threads.slice(0, -1).reverse();
   return (
     <>
-      <ThreadFeedback thread={current} mode={state.mode} layerOrder={layerOrder} live
-        onFlag={onFlag} onStronger={onStronger} stronger={state.stronger} headingLevel={3} />
+      <FreshCard key={cardKey(current)} registry={seen} id={cardKey(current)}>
+        <ThreadFeedback thread={current} mode={state.mode} layerOrder={layerOrder} live
+          onFlag={onFlag} onStronger={onStronger} stronger={state.stronger} headingLevel={3} />
+      </FreshCard>
       {earlier.length ? (
         <details className={s.earlier}>
           <summary>{state.mode === "english" ? t("feedback.earlierEnglish") : t("feedback.earlier")} ({earlier.length})</summary>
@@ -464,4 +548,15 @@ function FeedbackPanel({ state, threads, layerOrder, onFlag, onStronger }: {
       ) : null}
     </>
   );
+}
+
+/** One card per thread state: pending ("p") and ready ("r") each enter once. */
+function cardKey(th: ReturnType<typeof selectThreads>[number]) {
+  return `${th.key}:${th.records.length ? "r" : "p"}`;
+}
+
+/** Feedback card entrance (C2 card-in), once per key; held back while the user speaks by FeedbackPanel. */
+function FreshCard({ registry, id, children }: { registry: Set<string>; id: string; children: ReactNode }) {
+  const fresh = useFreshOnce(registry, id);
+  return <div className={fresh ? "motion-card" : undefined}>{children}</div>;
 }

@@ -1,7 +1,7 @@
 /* AI engine chooser: first-run step 1 and Settings → AI engine. Status comes from GET /api/engines;
  * every not-ready state has a concrete way forward (download link, a command to copy, a form). */
 import { useEffect, useState } from "react";
-import { Badge, Button, Callout, Card, Chip, CopyField, Icon, IconButton, Input, Select, Spinner, type IconName } from "../ds";
+import { Badge, Button, Callout, Card, Chip, CopyField, Icon, IconButton, Input, Select, Skeleton, type IconName } from "../ds";
 import { t, tMaybe } from "../i18n";
 import { api } from "../lib/api";
 import { formatBytes } from "../lib/format";
@@ -57,7 +57,7 @@ export function EnginePanel({ onReadyChange }: { onReadyChange?: (ready: boolean
   };
 
   if (!engines) {
-    return enginesLoading ? <Spinner label={t("common.checking")} /> : (
+    return enginesLoading ? <Skeleton variant="row" rows={3} label={t("common.checking")} /> : (
       <Callout tone="error" title={t("errors.server_unreachable")} actions={<Button size="sm" onClick={() => void refreshEngines()}>{t("common.tryAgain")}</Button>} />
     );
   }

@@ -32,3 +32,5 @@
 .levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: var(--space-3); }
 .levelCode { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
 .qSelect { max-width: 10rem; }
+/* Build-up: the track's sections continue the page's stagger (header, tabs, then sections). */
+.nestedStagger { --stagger-base: 3; }

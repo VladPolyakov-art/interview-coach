@@ -362,6 +362,17 @@
       "yourTurnText": "Your turn. Type your answer",
       "ended": "Session ended"
     },
+    "status": {
+      "label": "Status",
+      "connecting": "Connecting",
+      "preparing": "Getting ready",
+      "listening": "Listening",
+      "thinking": "Thinking",
+      "speaking": "Speaking",
+      "yourTurn": "Your turn",
+      "muted": "Muted",
+      "ended": "Ended"
+    },
     "heard": "What we heard. A wrong word? Fix it after you answer.",
     "firstTime": {
       "title": "First time here",

@@ -1,0 +1,51 @@
+/* The disc sits behind the button face, so the icon is always on a raised surface (contrast stays the
+ * face's, whatever the disc does). --mic is written by the rAF loop in MicButton.tsx. */
+.mic {
+  --mic: 0;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-h-lg);
+  height: var(--control-h-lg);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.disc {
+  position: absolute;
+  inset: calc(-1 * var(--space-2));
+  border-radius: var(--radius-pill);
+  background: var(--color-mic-live);
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  /* 120ms linear (v1 D8). */
+  transition: opacity calc(var(--duration-stagger) * 1.5) linear, transform calc(var(--duration-stagger) * 1.5) linear;
+}
+.live .disc {
+  opacity: calc(0.35 + var(--mic) * 0.65);
+  transform: scale(calc(0.8 + var(--mic) * 0.35));
+}
+.face {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-pill);
+  background: var(--color-raised);
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.mic:not(:disabled):hover .face { background: var(--color-hover); }
+/* Muted: no disc, grey slashed icon, pressed fill (the "on" variant, design-system 4.4). */
+.mic[aria-pressed="true"] .face { background: var(--color-selected); color: var(--color-text-secondary); }
+/* Round dock button press (v1 D9). */
+.mic:not(:disabled):active { transform: scale(0.92); }
+.mic:disabled { opacity: 0.5; cursor: not-allowed; }
+/* The focus ring stays outside the disc at its largest (64px × 1.15), so blue never sits on blue. */
+.mic:focus-visible { outline-offset: calc(var(--space-3) + var(--space-1)); }

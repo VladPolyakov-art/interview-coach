@@ -11,6 +11,7 @@
   text-decoration: none;
   font-weight: var(--weight-regular);
   font-size: var(--text-sm);
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
 }
 .navLink:hover { background: var(--color-hover); color: var(--color-text-primary); }
 /* Selected row: grey fill + weight 500 + aria-current. */

@@ -1,4 +1,6 @@
 .group {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--space-1);
@@ -32,6 +34,7 @@
   font-weight: var(--weight-medium);
   cursor: pointer;
   white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 .option:hover { color: var(--color-text-primary); }
 .option[aria-checked="true"] {
@@ -42,3 +45,33 @@
 }
 .option:disabled { opacity: 0.5; cursor: not-allowed; }
 .wrap { display: flex; flex-direction: column; min-width: 0; }
+
+/* Sliding thumb. Without JS measurement (first paint, hidden parent) the selected option paints its own fill. */
+.thumb {
+  --thumb-x: 0px;
+  --thumb-y: 0px;
+  --thumb-w: 0px;
+  --thumb-h: 0px;
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: var(--thumb-w);
+  height: var(--thumb-h);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--color-raised);
+  box-shadow: var(--shadow-raised);
+  transform: translate(var(--thumb-x), var(--thumb-y));
+  pointer-events: none;
+}
+/* Position moves by transform. The width also eases: the thumb is absolutely positioned, so this repaints only
+ * the thumb (no sibling reflow); scaleX would squash the pill ends. */
+.slide {
+  transition: transform var(--duration-base) var(--ease-standard), width var(--duration-base) var(--ease-standard);
+}
+.hasThumb .option[aria-checked="true"] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}

@@ -18,3 +18,12 @@ export { CopyField } from "./CopyField";
 export { Kbd } from "./Kbd";
 export { Icon } from "./icons";
 export type { IconName } from "./icons";
+export { Skeleton } from "./Skeleton";
+export type { SkeletonProps } from "./Skeleton";
+export { Dots } from "./Dots";
+export { MicButton } from "./MicButton";
+export { Swap } from "./Swap";
+export {
+  durationMs, motionMemory, prefersReducedMotion, runExit, scrollBehavior, shouldBuildUp, useFreshOnce, usePresence,
+  useReducedMotion,
+} from "./motion";

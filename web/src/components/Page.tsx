@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import s from "./Page.module.css";
 
-export function Page({ title, sub, actions, narrow, children }: {
-  title: ReactNode; sub?: ReactNode; actions?: ReactNode; narrow?: boolean; children?: ReactNode;
+export function Page({ title, sub, actions, narrow, className, children }: {
+  title: ReactNode; sub?: ReactNode; actions?: ReactNode; narrow?: boolean; className?: string; children?: ReactNode;
 }) {
   return (
-    <div className={`${s.page} ${narrow ? s.narrow : ""}`}>
+    <div className={`${s.page} ${narrow ? s.narrow : ""} ${className ?? ""}`}>
       <div className={s.headerRow}>
         <div className={s.header}>
           <h1>{title}</h1>

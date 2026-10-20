@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Spinner } from "./ds";
+import { Swap } from "./ds";
 import { t } from "./i18n";
 import { AppShell } from "./components/AppShell";
 import { api } from "./lib/api";
@@ -31,7 +31,9 @@ export function App() {
   }, []);
   useEffect(() => { void check(); }, [check]);
 
-  if (health === "checking") return <div className={s.center}><Spinner label={t("common.loading")} /></div>;
+  if (health === "checking") {
+    return <div className={s.center} aria-busy="true"><p className="shimmer-text" role="status">{t("common.loading")}</p></div>;
+  }
   if (health === "down") return <ServerUnavailable onRetry={() => void check()} />;
   return (
     <AppProvider>
@@ -46,8 +48,36 @@ function FirstRunGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+/** Route change (docs/motion.md 3.1, New): the outgoing page fades out (`exit`), the incoming page content rises in
+ * (`slow`, `--ease-enter`). The rail stays put: AppShell is shared by every shell route, only <main>'s content swaps.
+ * Settings sections and query changes (Home track) are not page changes. Focus left inside the old page moves to <main>. */
+function routeKey(pathname: string) {
+  if (pathname.startsWith("/settings")) return "/settings";
+  return pathname;
+}
+
+function ShellRoutes() {
+  const location = useLocation();
+  return (
+    <AppShell>
+      <Swap
+        swapKey={routeKey(location.pathname)}
+        enterClass="motion-page-in"
+        exitClass="motion-fade-out"
+        focusTarget={() => document.getElementById("main")}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<FirstRunGate><HomeScreen /></FirstRunGate>} />
+          <Route path="/history" element={<HistoryScreen />} />
+          <Route path="/history/trash" element={<TrashScreen />} />
+          <Route path="/sessions/:id" element={<DebriefScreen />} />
+          <Route path="/settings" element={<Navigate to="/settings/engine" replace />} />
+          <Route path="/settings/:section" element={<SettingsScreen />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Swap>
+    </AppShell>
+  );
 }
 
 function AppRoutes() {
@@ -55,13 +85,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/setup" element={<SetupWizard />} />
       <Route path="/session" element={<SessionScreen />} />
-      <Route path="/" element={<FirstRunGate><Shell><HomeScreen /></Shell></FirstRunGate>} />
-      <Route path="/history" element={<Shell><HistoryScreen /></Shell>} />
-      <Route path="/history/trash" element={<Shell><TrashScreen /></Shell>} />
-      <Route path="/sessions/:id" element={<Shell><DebriefScreen /></Shell>} />
-      <Route path="/settings" element={<Navigate to="/settings/engine" replace />} />
-      <Route path="/settings/:section" element={<Shell><SettingsScreen /></Shell>} />
-      <Route path="*" element={<Shell><NotFound /></Shell>} />
+      <Route path="*" element={<ShellRoutes />} />
     </Routes>
   );
 }

@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Badge, Button, Callout, Card, Chip, Icon, IconButton, Segmented, Select, SelectableCard, Spinner, TabPanel, Tabs,
+  Badge, Button, Callout, Card, Chip, durationMs, Icon, IconButton, motionMemory, Segmented, Select, SelectableCard,
+  shouldBuildUp, Skeleton, Swap, TabPanel, Tabs,
 } from "../ds";
 import { t, tMaybe, tp } from "../i18n";
 import { Page, Section } from "../components/Page";
@@ -21,13 +22,34 @@ function greeting() {
   return h < 12 ? t("home.greeting.morning") : h < 18 ? t("home.greeting.afternoon") : t("home.greeting.evening");
 }
 
+type Leave = (go: () => void) => void;
+
 export function HomeScreen() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("track") === "english" ? "english" : "interview";
   const { selectedEngine } = useApp();
   const engineReady = Boolean(selectedEngine?.status.ready);
+  // Build-up (docs/motion.md 3.1, N3): first visit and return from a session only, never on a re-render.
+  const [buildUp] = useState(() => shouldBuildUp(motionMemory));
+  const [tabChanged, setTabChanged] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    motionMemory.homeSeen = true;
+    motionMemory.returnFromSession = false;
+  }, []);
+  /* Start: Home content soft-outs (`exit`), then the session opens. Instant under reduced motion. */
+  const leave: Leave = (go) => {
+    if (leaving) return;
+    const ms = durationMs("--duration-exit");
+    if (ms <= 0) {
+      go();
+      return;
+    }
+    setLeaving(true);
+    window.setTimeout(go, ms);
+  };
   return (
-    <Page title={greeting()}>
+    <Page title={greeting()} className={leaving ? "motion-soft-out" : buildUp ? "motion-stagger" : ""}>
       {selectedEngine && !engineReady ? (
         <Callout
           tone="warning"
@@ -42,16 +64,21 @@ export function HomeScreen() {
           idBase="track"
           label={t("home.tabs")}
           value={tab}
-          onChange={(v) => setParams(v === "english" ? { track: "english" } : {}, { replace: true })}
+          onChange={(v) => { setTabChanged(true); setParams(v === "english" ? { track: "english" } : {}, { replace: true }); }}
           items={[
             { id: "interview", label: t("home.tabInterview"), icon: "briefcase" },
             { id: "english", label: t("home.tabEnglish"), icon: "chat", hint: t("home.tabEnglishHint") },
           ]}
         />
         <TabPanel idBase="track" id={tab}>
-          <div className={s.tabsPanel}>
-            {tab === "interview" ? <InterviewTab engineReady={engineReady} /> : <EnglishTab engineReady={engineReady} />}
-          </div>
+          {/* Mode switch (N11): the outgoing track soft-outs (`exit`), the incoming one rises in (`base`). */}
+          <Swap swapKey={tab}>
+            <div
+              className={`${s.tabsPanel} ${buildUp && !tabChanged ? `motion-stagger ${s.nestedStagger}` : ""}`}
+            >
+              {tab === "interview" ? <InterviewTab engineReady={engineReady} leave={leave} /> : <EnglishTab engineReady={engineReady} leave={leave} />}
+            </div>
+          </Swap>
         </TabPanel>
       </div>
     </Page>
@@ -69,7 +96,7 @@ function AnswerMode({ value, onChange }: { value: "voice" | "text"; onChange: (v
   );
 }
 
-function InterviewTab({ engineReady }: { engineReady: boolean }) {
+function InterviewTab({ engineReady, leave }: { engineReady: boolean; leave: Leave }) {
   const navigate = useNavigate();
   const { settings } = useApp();
   const vacancies = useLoad(() => api.vacancies());
@@ -126,11 +153,19 @@ function InterviewTab({ engineReady }: { engineReady: boolean }) {
     const config = buildSessionConfig({
       mode: "interview", answer, roundType, strictness: Number(strictness), questions: n, vacancyId: selected?.id,
     }, settings, stt.data);
-    navigate("/session", { state: { config, title: selected?.title ?? "", roundType } });
+    leave(() => navigate("/session", { state: { config, title: selected?.title ?? "", roundType } }));
   };
+
+  // Skeleton for the weak-spots card only when there are past sessions to learn from (no empty flash for new users).
+  const weakLoading = memory.loading && !memory.data && Boolean(sessions.data?.sessions.length);
 
   return (
     <>
+      {weakLoading ? (
+        <Section title={t("home.workOn.title")} id="work-on">
+          <Skeleton variant="card" lines={3} />
+        </Section>
+      ) : null}
       {memory.data && memory.data.weak_spots.length ? (
         <Section title={t("home.workOn.title")} id="work-on">
           <Card className={s.example}>
@@ -152,9 +187,9 @@ function InterviewTab({ engineReady }: { engineReady: boolean }) {
       ) : null}
 
       <Section title={t("home.vacancies.title")} id="vacancies">
-        {vacancies.loading && !vacancies.data ? <Spinner label={t("common.loading")} /> : null}
         {!list.length && !vacancies.loading ? <p className={s.helper}>{t("home.vacancies.empty")}</p> : null}
-        <div className={s.cards}>
+        <div className={s.cards} aria-busy={vacancies.loading && !vacancies.data ? true : undefined}>
+          {vacancies.loading && !vacancies.data ? <Skeleton variant="card" lines={2} /> : null}
           <SelectableCard selected={!selected} onSelect={() => choose("")}>
             <span className={s.cardInner}>
               <span className={s.cardTitle}>{t("home.vacancies.general")}{!selected ? <Icon name="check" size="sm" /> : null}</span>
@@ -168,7 +203,9 @@ function InterviewTab({ engineReady }: { engineReady: boolean }) {
                   <span className={s.cardTitle}>{v.title}{selected?.id === v.id ? <Icon name="check" size="sm" /> : null}</span>
                   <span className={s.cardMeta}>{t("home.vacancies.added", { date: formatDate(v.created_at) })}</span>
                   <span className={s.cardMeta}>
-                    {preparing[v.id] ? t("home.vacancies.preparing") : v.questions ? tp("home.vacancies.questionsReady", v.questions) : ""}
+                    {preparing[v.id]
+                      ? <span className="shimmer-text">{t("home.vacancies.preparing")}</span>
+                      : v.questions ? tp("home.vacancies.questionsReady", v.questions) : ""}
                   </span>
                 </span>
               </SelectableCard>
@@ -276,7 +313,7 @@ function ExampleFeedback() {
 const LEVELS: Level[] = ["A2", "B1", "B2", "C1"];
 type Topic = "free" | "work" | "small";
 
-function EnglishTab({ engineReady }: { engineReady: boolean }) {
+function EnglishTab({ engineReady, leave }: { engineReady: boolean; leave: Leave }) {
   const navigate = useNavigate();
   const { settings, updateSettings } = useApp();
   const stt = useLoad(() => api.stt());
@@ -290,7 +327,7 @@ function EnglishTab({ engineReady }: { engineReady: boolean }) {
     if (!level) return;
     if (settings && settings.level !== level) void updateSettings({ level });
     const config = buildSessionConfig({ mode: "english", answer, level, topic: t(`english.topicValue.${topic}`) }, settings, stt.data);
-    navigate("/session", { state: { config, title: t("home.tabEnglish") } });
+    leave(() => navigate("/session", { state: { config, title: t("home.tabEnglish") } }));
   };
 
   return (

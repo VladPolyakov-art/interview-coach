@@ -12,7 +12,7 @@
   background: var(--color-subtle);
   cursor: pointer;
   padding: 0;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--duration-base) var(--ease-standard), border-color var(--duration-base) var(--ease-standard);
 }
 .switch::after {
   content: "";
@@ -24,7 +24,9 @@
   height: calc(var(--toggle-h) - var(--space-1) - var(--border-width) * 2);
   border-radius: var(--radius-pill);
   background: var(--color-text-secondary);
-  transition: transform var(--duration-fast) var(--ease-standard);
+  /* Knob trails the track by 40ms (v1 P9: 260ms vs 220ms). */
+  transition: transform calc(var(--duration-base) + var(--duration-stagger) / 2) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard);
 }
 .switch[aria-checked="true"] { background: var(--color-checked); border-color: var(--color-checked); }
 .switch[aria-checked="true"]::after {

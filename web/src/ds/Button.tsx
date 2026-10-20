@@ -24,7 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     .join(" ");
   return (
     <button ref={ref} type={type ?? "button"} className={cls} disabled={disabled || loading} aria-busy={loading || undefined} {...rest}>
-      {loading ? <span className={s.spin} aria-hidden /> : icon ? <Icon name={icon} size="sm" /> : null}
+      {loading ? <span className={`${s.spin} motion-loop`} aria-hidden /> : icon ? <Icon name={icon} size="sm" /> : null}
       {children}
       {iconRight ? <Icon name={iconRight} size="sm" /> : null}
     </button>

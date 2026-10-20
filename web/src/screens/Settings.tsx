@@ -1,7 +1,7 @@
 /* Settings: engine (same panel as the setup wizard), voice and speech, practice, CV, appearance, privacy and data. */
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { Button, Callout, Card, CopyField, Icon, Segmented, Select, Spinner, Textarea, Toggle, Input, type IconName } from "../ds";
+import { Button, Callout, Card, CopyField, Icon, Segmented, Select, Skeleton, Textarea, Toggle, Input, type IconName } from "../ds";
 import { t, tp } from "../i18n";
 import { EnginePanel } from "../components/EnginePanel";
 import { Page, Section } from "../components/Page";
@@ -29,6 +29,12 @@ export function SettingsScreen() {
   const { section = "engine" } = useParams();
   if (!SECTIONS.some((x) => x.id === section)) return <Navigate to="/settings/engine" replace />;
   const id = section as SectionId;
+  return <SettingsLayout id={id} />;
+}
+
+function SettingsLayout({ id }: { id: SectionId }) {
+  // Switching sections swaps the content with a short rise; the first section arrives with the page itself.
+  const firstId = useRef(id);
   return (
     <Page title={t("settings.title")}>
       <div className={s.layout}>
@@ -43,7 +49,7 @@ export function SettingsScreen() {
             ))}
           </ul>
         </nav>
-        <div className={s.content}>
+        <div key={id} className={`${s.content} ${id !== firstId.current ? "motion-rise-base" : ""}`}>
           {id === "engine" ? <EnginePanel /> : null}
           {id === "voice" ? <VoiceSection /> : null}
           {id === "practice" ? <PracticeSection /> : null}
@@ -87,7 +93,7 @@ function VoiceSection() {
   const [pause, setPause] = useState<PausePref>(prefs.pause());
   const audio = useRef<HTMLAudioElement | null>(null);
   useEffect(() => () => audio.current?.pause(), []);
-  if (!settings) return <Spinner />;
+  if (!settings) return <Skeleton lines={4} />;
   const ttsOk = voices.data?.tts.available !== false;
   const voice = settings.voice || voices.data?.default || "";
   const play = () => {
@@ -163,7 +169,7 @@ function VoiceSection() {
 function PracticeSection() {
   const { settings } = useApp();
   const { save, view } = useSave();
-  if (!settings) return <Spinner />;
+  if (!settings) return <Skeleton lines={4} />;
   return (
     <Section title={t("settings.practice.title")} id="practice-title">
       <Card className={s.stack}>

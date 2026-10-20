@@ -33,3 +33,26 @@ function Theme() {
   );
 }
 export const ThemePicker: StoryObj = { render: () => <Theme /> };
+
+/** The thumb slides between options (base, ease-standard) and follows the width of long labels. */
+function Thumb() {
+  const [v, setV] = useState<"a" | "b" | "c">("a");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", maxWidth: "36rem" }}>
+      <Segmented
+        label="Length"
+        value={v}
+        onChange={setV}
+        options={[
+          { value: "a", label: "Short" },
+          { value: "b", label: "A much longer label" },
+          { value: "c", label: "Mid size" },
+        ]}
+      />
+      <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-sm)" }}>
+        Arrow keys move the selection. Under reduced motion the thumb jumps.
+      </p>
+    </div>
+  );
+}
+export const SlidingThumb: StoryObj = { render: () => <Thumb /> };

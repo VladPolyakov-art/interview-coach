@@ -1,4 +1,5 @@
 .list {
+  position: relative;
   display: flex;
   gap: var(--space-1);
   border-bottom: var(--border-width) solid var(--color-border-subtle);
@@ -17,6 +18,7 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 .tab:hover { color: var(--color-text-primary); }
 .tab[aria-selected="true"] {
@@ -30,3 +32,20 @@
 @media (max-width: 767px) {
   .hint { display: none; }
 }
+
+/* Sliding indicator (replaces each tab's own underline once measured). */
+.bar {
+  --bar-x: 0px;
+  --bar-w: 0;
+  position: absolute;
+  left: 0;
+  bottom: calc(-1 * var(--border-width));
+  width: 1px; /* unit bar: scaleX(--bar-w) stretches it to the tab width in px */
+  height: var(--border-width-strong);
+  background: var(--color-border-selected);
+  transform-origin: left center;
+  transform: translateX(var(--bar-x)) scaleX(var(--bar-w));
+  pointer-events: none;
+}
+.slide { transition: transform var(--duration-base) var(--ease-standard); }
+.hasBar .tab[aria-selected="true"] { border-bottom-color: transparent; }

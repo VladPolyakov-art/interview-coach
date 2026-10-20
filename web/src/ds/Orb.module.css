@@ -33,3 +33,5 @@
   min-height: calc(var(--text-md) * var(--leading-normal));
 }
 .sub { font-size: var(--text-sm); color: var(--color-text-secondary); text-align: center; }
+/* Session entrance: a wrapper scales, so the orb's own state animation (breathe) is never cut. */
+.enter { animation: global(orb-in) var(--duration-slower) var(--ease-standard) backwards; }

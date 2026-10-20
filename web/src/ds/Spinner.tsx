@@ -8,7 +8,7 @@ export interface SpinnerProps {
 }
 
 export function Spinner({ size = "md", label, srLabel }: SpinnerProps) {
-  const ring = <span className={`${s.spinner} ${size !== "md" ? s[size] : ""}`} aria-hidden="true" />;
+  const ring = <span className={`${s.spinner} ${size !== "md" ? s[size] : ""} motion-loop`} aria-hidden="true" />;
   if (label) {
     return (
       <span className={s.row} role="status">
