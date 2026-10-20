@@ -1261,8 +1261,6 @@
       }
     },
     "quick": {
-      "label": "Start now",
-      "aria": "Start now: {detail}",
       "voiceButton": "Start now — voice practice",
       "textButton": "Start now — typed practice",
       "questions_one": "{n} question",

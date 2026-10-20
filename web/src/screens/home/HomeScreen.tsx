@@ -4,7 +4,7 @@
  * user's note (UI only, B3), no questions status (we track the prepare call, B5), the last interview's job and round
  * are not in SessionSummary (remembered job + remembered round, B8), Drill = a 3-question mixed session (B7), no
  * recurring-phrases data (English phrases empty), no profile name (h1 without the name, US-08 AC3).
- * Quick start (D51 item 1, quickStart.ts): "Start now" opens the session straight away with the last settings. */
+ * Quick start (D51 item 1, quickStart.ts): the round mic at the composer's end (D53) opens the session straight away with the last settings. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { durationMs, motionMemory, shouldBuildUp } from "../../ds";
@@ -43,9 +43,6 @@ export function HomeScreen() {
   const location = useLocation();
   const navigate = useNavigate();
   const track: Track = params.get("track") === "english" ? "english" : "interview";
-  /* D52: two start layouts to compare; `?layout=gemini|current` switches and is remembered (homePrefs). Not in Settings. */
-  const layoutParam = params.get("layout");
-  const startLayout = useMemo(() => homePrefs.startLayout(layoutParam), [layoutParam]);
   const { settings, selectedEngine, refreshEngines, updateSettings } = useApp();
   const engineReady = Boolean(selectedEngine?.status.ready);
   const vacancies = useLoad(() => api.vacancies());
@@ -236,7 +233,6 @@ export function HomeScreen() {
         storageError={Boolean(sessions.error)}
         suggestions={loading ? [] : suggestionsFor(ctx)}
         quickStart={quick ? { detail: quick.detail, answer: quick.answer } : loading && track === "interview" ? { detail: "" } : null}
-        startLayout={startLayout}
         onQuickStart={quickStart}
         composer={composer}
         setup={shown}

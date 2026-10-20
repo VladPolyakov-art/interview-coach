@@ -140,11 +140,8 @@ export interface HomeViewProps {
   /** US-23: saved sessions can't be read. */
   storageError?: boolean;
   suggestions: Suggestion[];
-  /** Quick start (D51 item 1): what one click starts, as the quiet line next to "Start now". None: not offered (English). */
+  /** Quick start (D51 item 1): what the round mic at the composer's end starts (its tooltip). None: not offered (English). */
   quickStart?: { detail: string; answer?: "voice" | "text" } | null;
-  /** D52: where the fast path lives. `current` (default) = the "Start now" pill under the composer; `gemini` = a
-   * round mic (or keyboard, typing) at the composer's end that turns into Send once there is text or a file. */
-  startLayout?: "current" | "gemini";
   composer: { text: string; file?: { name: string; size: string } };
   setup?: SetupModel;
   /** Saved jobs, for the plan's Change job listbox. */

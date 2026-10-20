@@ -99,17 +99,7 @@ export const SCENES = {
   },
   overflowStart: { ...ret, ctx: CTX_OVERFLOW, label: "Overflow, text +30%", props: { name: LONG_NAME }, recent: RECENT_LONG },
   quickTextMode: { ...ret, label: "Quick start, answering by typing", props: { name: "Alex", textMode: true } },
-  quickStarting: { ...ret, label: "Quick start pressed", props: { name: "Alex", starting: true } },
-  /* D52: the Gemini start layout (mic at the composer's end = Start now; "+" and the mode chip on the left). */
-  layoutGemini: { ...ret, label: "Gemini layout", props: { name: "Alex", startLayout: "gemini" } },
-  layoutGeminiFirst: { ...first, label: "Gemini layout, first visit", props: { name: "Alex", startLayout: "gemini" } },
-  layoutGeminiTyped: { ...ret, label: "Gemini layout, typed a message", props: { name: "Alex", startLayout: "gemini", composer: { text: "I have an HR screen with Lumen tomorrow" } } },
-  layoutGeminiFile: { ...ret, label: "Gemini layout, job file attached", props: { name: "Alex", startLayout: "gemini", composer: { text: "", file: JOB_FILE } } },
-  layoutGeminiTextMode: { ...ret, label: "Gemini layout, answering by typing", props: { name: "Alex", startLayout: "gemini", textMode: true } },
-  layoutGeminiEngineDown: { ...ret, label: "Gemini layout, engine not running", props: { name: "Alex", startLayout: "gemini", ...engineDown }, engine: ENGINE_DOWN },
-  layoutGeminiLoading: { ...ret, label: "Gemini layout, loading", props: { name: "Alex", startLayout: "gemini", loading: true, suggestions: [] }, recent: { status: "loading" }, engine: { name: "Ollama · qwen3:4b", status: "checking" } },
-  layoutGeminiStarting: { ...ret, label: "Gemini layout, mic pressed", props: { name: "Alex", startLayout: "gemini", starting: true } },
-  layoutGeminiEnglish: { ...ret, ctx: CTX_ENGLISH, label: "Gemini layout, English (no quick start)", props: { startLayout: "gemini" } },
+  quickStarting: { ...ret, label: "Start mic pressed", props: { name: "Alex", starting: true } },
 
   /* ---------- setup chat ---------- */
   jobReading: { ...ret, label: "Reading a pasted job", inputs: [{ do: "begin", input: { kind: "text", text: PASTED_TEXT } }], hold: true },

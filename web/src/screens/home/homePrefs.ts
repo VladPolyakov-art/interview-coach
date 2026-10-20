@@ -3,22 +3,7 @@
 import type { RoundType } from "./types";
 
 const KEY = "ic.roundType";
-const LAYOUT_KEY = "ic.startLayout";
 
-/** D52: two Home start layouts to compare in the live prototype. `current` = the "Start now" pill under the composer
- * (D51); `gemini` = the composer carries the fast path ("+" and the mode chip on the left, a round mic on the right). */
-export type StartLayout = "current" | "gemini";
-
-/** `?layout=gemini` / `?layout=current` (any case); anything else = not set. */
-export function parseStartLayout(v: string | null | undefined): StartLayout | null {
-  const x = v?.trim().toLowerCase();
-  return x === "gemini" || x === "current" ? x : null;
-}
-
-/** The URL wins over the remembered choice; nothing valid = `current` until the owner picks (D52). */
-export function resolveStartLayout(param: string | null | undefined, stored: string | null | undefined): StartLayout {
-  return parseStartLayout(param) ?? parseStartLayout(stored) ?? "current";
-}
 const ROUNDS: RoundType[] = ["hr", "behavioural", "technical", "mix"];
 
 export const homePrefs = {
@@ -36,24 +21,6 @@ export const homePrefs = {
     } catch {
       /* ignore */
     }
-  },
-  /** The start layout for this visit: `?layout=` if valid (and remembered for next time), else the remembered one. */
-  startLayout(param: string | null): StartLayout {
-    let stored: string | null = null;
-    try {
-      stored = window.localStorage.getItem(LAYOUT_KEY);
-    } catch {
-      /* ignore */
-    }
-    const layout = resolveStartLayout(param, stored);
-    if (parseStartLayout(param) && layout !== stored) {
-      try {
-        window.localStorage.setItem(LAYOUT_KEY, layout);
-      } catch {
-        /* ignore */
-      }
-    }
-    return layout;
   },
 };
 
