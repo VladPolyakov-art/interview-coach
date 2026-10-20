@@ -1,167 +1,122 @@
-/* Home (ds/screens/home.md): the start screen. A pure view: every state of the map is a set of props, nothing here
- * reads the store or the network (the live container is HomeScreen.tsx). Order, top to bottom: banners, orb, greeting,
- * track switch, then the Interview panel (What to work on, round type, job composer, Start, example) or the English
- * panel (level, topic, Start, phrases). The orb and the banners are drawn before the H1 with `order` (Page has no slot
- * for them), so the reading order of the DOM differs from the visual order — see the report. */
-import { useState } from "react";
-import { Orb, Segmented, Swap } from "../../ds";
+/* Home v2 (ds/screens/home.md v2, D47a/b): a start screen that turns into a short setup chat with Mike.
+ * A pure view: every state of the map is a set of props (the live container is HomeScreen.tsx, the review harness is
+ * frames.tsx; both run the same script). Home owns a definite-height column inside <main> (absolute, inset 0), so the
+ * setup header and the bottom composer stay put while only the chat scrolls — no sticky inside a scaled review frame.
+ * - start: banners · greeting · composer · suggestions, centred a little above the middle; footer line at the bottom.
+ * - setup: header row · chat (scrolls) · composer + footer at the bottom. The composer moves from the middle to the
+ *   bottom by FLIP (motion "Home → setup chat"); under reduced motion it simply appears there. */
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { Composer } from "../../ds";
+import { durationMs } from "../../ds/motion";
 import { t } from "../../i18n";
-import { Page } from "../../components/Page";
-import { basisText } from "./helpers";
 import { Banners } from "./parts/Banners";
-import { EnglishPanel, PhrasesBlock } from "./parts/EnglishPanel";
-import { ExamplePanel } from "./parts/ExamplePanel";
-import { JobComposer } from "./parts/JobComposer";
-import { RoundType } from "./parts/RoundType";
-import { Basis, Disclaimer, StartBlock, StartButton, StickyStart, useOutOfView } from "./parts/StartBlock";
-import { WorkOn } from "./parts/WorkOn";
-import type { HomeViewProps, Track } from "./types";
+import { SetupChat, SetupHeader } from "./parts/SetupChat";
+import { Footer, StartScreen } from "./parts/StartScreen";
+import type { HomeViewProps } from "./types";
 import s from "./HomeView.module.css";
 
+/** The `page` container is < 560 (placeholders get shorter). Measured on Home's own box (same width as <main>). */
+function useNarrow(ref: RefObject<HTMLElement | null>) {
+  const [narrow, setNarrow] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setNarrow(el.clientWidth < 560));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return narrow;
+}
+
 export function HomeView(props: HomeViewProps) {
-  const {
-    track, greeting, name, loading, engineReady, engineBanner, browserBanner, textMode, storageError, starting, buildUp, leaving,
-    interview, english, overlay,
-  } = props;
-  const [switched, setSwitched] = useState(false);
-  const { ref: startRef, out } = useOutOfView();
-  const title = name ? t("home.greetingName", { greeting, name }) : greeting;
-  const isInterview = track === "interview";
-  const firstVisit = isInterview ? interview.firstVisit : english.firstVisit;
+  const { step, track, setup, composer, leaving, overlay } = props;
+  const root = useRef<HTMLDivElement>(null);
+  const startComposer = useRef<HTMLDivElement>(null);
+  const dock = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const startTop = useRef<number | null>(null);
+  const narrow = useNarrow(root);
 
-  const startLabel = isInterview ? t("home.start") : t("english.start");
-  const startDisabled = !engineReady || Boolean(loading) || (!isInterview && !english.level);
-  const reason = !engineReady
-    ? { text: t("home.engine.reason") }
-    : loading
-      ? { text: t("home.reason.loading"), shimmer: true }
-      : !isInterview && !english.level
-        ? { text: t("english.startReason") }
-        : null;
-  const typedLine = textMode ? (isInterview ? t("home.browser.typing") : t("english.typing")) : undefined;
-  const changeTrack = (next: Track) => { setSwitched(true); props.onTrackChange?.(next); };
+  // "Adjusting state on a prop change": the chat is entering only when this view saw the start step first.
+  const [prevStep, setPrevStep] = useState(step);
+  const [entering, setEntering] = useState(false);
+  if (prevStep !== step) {
+    setPrevStep(step);
+    setEntering(prevStep === "start" && step === "setup");
+  }
 
-  const pageClass = [s.home, leaving ? "motion-soft-out" : buildUp ? "motion-stagger" : ""].filter(Boolean).join(" ");
-  const panelClass = [s.panel, buildUp && !switched ? `motion-stagger ${s.nested}` : ""].filter(Boolean).join(" ");
+  // Remember where the start composer is, for the FLIP when the chat opens.
+  useLayoutEffect(() => {
+    if (step === "start" && startComposer.current) startTop.current = startComposer.current.getBoundingClientRect().top;
+  });
+
+  useLayoutEffect(() => {
+    if (step !== "setup" || !entering || startTop.current === null || !dock.current) return;
+    const el = dock.current;
+    const ms = durationMs("--duration-slower");
+    const dy = startTop.current - el.getBoundingClientRect().top;
+    startTop.current = null;
+    if (!ms || !dy || typeof el.animate !== "function") return;
+    const ease = getComputedStyle(el).getPropertyValue("--ease-standard").trim() || "ease";
+    el.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: ms, easing: ease });
+  }, [step, entering]);
+
+  const banners = (
+    <Banners
+      engine={props.engineBanner}
+      browser={props.browserBanner}
+      storage={props.storageError}
+      onRetryEngine={props.onRetryEngine}
+      onUseTextMode={props.onUseTextMode}
+      onDismissBrowser={props.onDismissBrowser}
+    />
+  );
+  const placeholder = setup?.stage === "plan"
+    ? t("chat.setup.placeholderPlan")
+    : setup?.stage === "job" ? t("chat.setup.placeholderJob") : t("chat.setup.placeholderReply");
+  const rootClass = [s.home, leaving ? "motion-soft-out" : ""].filter(Boolean).join(" ");
 
   return (
-    <Page
-      layout="start"
-      title={title}
-      sub={isInterview && firstVisit ? t("home.vacancies.empty") : undefined}
-      className={pageClass}
-    >
-      <Banners
-        engine={engineBanner}
-        browser={browserBanner}
-        storage={storageError}
-        onRetryEngine={props.onRetryEngine}
-        onUseTextMode={props.onUseTextMode}
-        onDismissBrowser={props.onDismissBrowser}
-      />
-      <div className={s.orb} data-review-id="Home/Orb">
-        <Orb
-          state={engineReady ? "idle" : "offline"}
-          size="sm"
-          hideLabel
-          label={engineReady ? t("home.orbIdle") : t("home.orbOffline")}
-        />
-      </div>
-
-      <div className={s.track} data-review-id="Home/TrackSwitch" data-review-section="Home · Track switch" data-comment-target>
-        <div className={s.trackSwitch}>
-          <Segmented<Track>
-            label={t("home.tabs")}
-            hideLabel
-            value={track}
-            onChange={changeTrack}
-            options={[
-              { value: "interview", label: t("home.tabInterview"), icon: "briefcase" },
-              { value: "english", label: t("home.tabEnglish"), icon: "chat" },
-            ]}
-          />
+    <div ref={root} className={rootClass} data-review-id={step === "start" ? "Home/Start" : "Home/Setup"} aria-busy={props.loading || undefined}>
+      {step === "start" ? (
+        <div className={s.startPage}>
+          <div className={s.column}>
+            {banners}
+            <div className={s.startCenter}>
+              <StartScreen {...props} narrow={narrow} composerRef={startComposer} />
+            </div>
+            <div className={s.startFooter}><Footer track={track} /></div>
+          </div>
         </div>
-        {isInterview ? <p className={s.trackHint}>{t("home.trackHint")}</p> : null}
-      </div>
-
-      <Swap swapKey={track}>
-        <div className={panelClass} aria-busy={loading || undefined}>
-          {isInterview ? (
-            <>
-              {!interview.firstVisit && !storageError ? (
-                <div className={s.workOn}>
-                  <WorkOn model={interview} engineReady={engineReady} onFocusChange={props.onFocusChange} onDrill={props.onDrill} />
-                </div>
-              ) : null}
-              <div className={s.compose}>
-                <RoundType value={interview.round} disabled={loading} onChange={props.onRoundChange} />
-                <JobComposer
-                  model={interview}
-                  loading={loading}
-                  onSelectJob={props.onSelectJob}
-                  onEditJob={props.onEditJob}
-                  onDeleteJob={props.onDeleteJob}
-                  onAddJob={props.onAddJob}
-                  onPickFile={props.onPickFile}
-                  onPastedChange={props.onPastedChange}
-                  onAddPasted={props.onAddPasted}
-                  onStrictnessChange={props.onStrictnessChange}
-                />
-                <Basis text={basisText(interview)} showCvNudge={!interview.hasCv} />
-              </div>
-              <StartBlock
-                startRef={startRef}
-                label={startLabel}
-                textMode={textMode}
-                disabled={startDisabled}
-                starting={starting}
-                reason={reason}
-                line={typedLine}
-                typeInstead={!textMode}
-                onStart={props.onStart}
-                onTypeInstead={props.onTypeInstead}
+      ) : (
+        <>
+          <div className={s.top}>
+            <div className={s.column}><SetupHeader setup={setup} onSkip={props.onSkip} /></div>
+          </div>
+          <div ref={scroller} className={s.scroller}>
+            <div className={`${s.column} ${s.chat}`}>
+              {banners}
+              <SetupChat {...props} entering={entering} scroller={scroller} />
+            </div>
+          </div>
+          <div ref={dock} className={s.dock} data-review-id="Home/Setup/Composer" data-review-section="Home · Setup composer" data-comment-target>
+            <div className={s.column}>
+              <Composer
+                label={t("chat.setup.label")}
+                placeholder={placeholder}
+                value={composer.text}
+                minRows={1}
+                maxRows={6}
+                submitOnEnter
+                onChange={(e) => props.onComposerChange?.(e.target.value)}
+                send={{ label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !composer.text.trim(), onSend: props.onSend }}
               />
-              <Disclaimer />
-              {interview.firstVisit ? <ExamplePanel order={interview.layerOrder} /> : null}
-            </>
-          ) : (
-            <>
-              <EnglishPanel
-                model={english}
-                loading={loading}
-                onLevelChange={props.onLevelChange}
-                onTopicChange={props.onTopicChange}
-              />
-              <StartBlock
-                startRef={startRef}
-                label={startLabel}
-                textMode={textMode}
-                disabled={startDisabled}
-                starting={starting}
-                reason={reason}
-                line={typedLine ?? t("english.after")}
-                typeInstead={!textMode}
-                onStart={props.onStart}
-                onTypeInstead={props.onTypeInstead}
-              />
-              <PhrasesBlock model={english} engineReady={engineReady} onPractisePhrases={props.onPractisePhrases} />
-              <Disclaimer english />
-            </>
-          )}
-        </div>
-      </Swap>
-
-      <StickyStart show={out}>
-        <StartButton
-          label={startLabel}
-          textMode={textMode}
-          disabled={startDisabled}
-          starting={starting}
-          onStart={props.onStart}
-          describedBy={reason ? "home-start-reason" : undefined}
-        />
-      </StickyStart>
+              <Footer track={track} />
+            </div>
+          </div>
+        </>
+      )}
       {overlay}
-    </Page>
+    </div>
   );
 }

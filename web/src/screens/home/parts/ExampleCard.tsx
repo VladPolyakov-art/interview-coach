@@ -1,17 +1,13 @@
-/* First-visit example (US-29): what you get after each question, with Sam Rivera's debrief. No marketing. */
-import { useNavigate } from "react-router-dom";
-import { Badge, Button, Card, InlineMark } from "../../../ds";
+/* First-visit example (US-29), now inside Mike's message (home.md v2 §4 "Example"): what you get after each question,
+ * from Sam Rivera's debrief — clearly not the user's. */
+import { Link } from "react-router-dom";
+import { Badge, Card, InlineMark } from "../../../ds";
 import { t } from "../../../i18n";
-import type { InterviewModel } from "../types";
 import s from "./parts.module.css";
 
-export function ExamplePanel({ order = "content-first" }: { order?: InterviewModel["layerOrder"] }) {
-  const navigate = useNavigate();
+export function ExampleCard({ order = "content-first" }: { order?: "content-first" | "delivery-first" }) {
   const rows = [
-    {
-      layer: "content" as const,
-      body: <>{t("home.example.content")}</>,
-    },
+    { layer: "content" as const, body: <>{t("home.example.content")}</> },
     {
       layer: "language" as const,
       body: (
@@ -26,9 +22,8 @@ export function ExamplePanel({ order = "content-first" }: { order?: InterviewMod
   ];
   if (order === "delivery-first") rows.reverse();
   return (
-    <section className={s.example} aria-labelledby="home-example" data-review-id="Home/Example" data-review-section="Home · Example" data-comment-target>
-      <h2 id="home-example" className={s.exampleTitle}>{t("home.example.title")}</h2>
-      <Card tone="subtle" padding="md" className={s.exampleCard}>
+    <Card tone="subtle" padding="md">
+      <div data-review-id="Home/Example" data-review-section="Home · Example" data-comment-target className={s.exampleCard}>
         <Badge tone="outline">{t("home.example.label")} · {t("feedback.example.name")}</Badge>
         <ul className={s.exampleRows}>
           {rows.map((r) => (
@@ -38,11 +33,8 @@ export function ExamplePanel({ order = "content-first" }: { order?: InterviewMod
             </li>
           ))}
         </ul>
-      </Card>
-      <div className={s.exampleFoot}>
-        <Button variant="secondary" onClick={() => navigate("/sessions/example")}>{t("home.example.open")}</Button>
-        <p className={s.helperTertiary}>{t("home.example.helper")}</p>
+        <Link to="/sessions/example" className={s.link}>{t("home.example.open")}</Link>
       </div>
-    </section>
+    </Card>
   );
 }

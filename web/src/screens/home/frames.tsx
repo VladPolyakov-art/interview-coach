@@ -1,14 +1,20 @@
-/* Stage and harnesses for stories and the review page. The harness keeps the choices in local state so a state is
- * playable (switch the track, pick a round, open the picker); nothing here reaches the network. */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+/* Stage and harnesses for stories and the review page. A scene replays its inputs through the setup script and stays
+ * playable (send, pick a reply, change a plan row, start); pending reads resolve after a pause. No network. */
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AppShellView } from "../../components/AppShell";
-import { DeleteJobDialog, VacancyEditorView, type FileState, type LinkState, type VacancySource } from "../../components/VacancyEditor";
+import { VacancyEditorView, type FileState, type LinkState, type VacancySource } from "../../components/VacancyEditor";
 import { OverlayRoot } from "../../ds/OverlayRoot";
 import type { EditorSeed } from "./editorSeeds";
 import { HomeView } from "./HomeView";
-import { SCENES, type HomeScene, type HomeSceneId } from "./states";
-import type { InterviewModel } from "./types";
+import { t } from "../../i18n";
+import { JOB_FILE, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
+import {
+  begin, change, pick, removeNote, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
+  type JobResult, type ScriptContext, type SetupState,
+} from "./script";
+import { SCENES, type HomeScene, type HomeSceneId, type SceneInput } from "./states";
+import type { SetupModel } from "./types";
 
 /** A frame of a real width, scaled down to fit, with its own OverlayRoot (menus and dialogs open inside it). */
 export function ScaledStage({ width, height, children }: { width: number; height: number; children: ReactNode }) {
@@ -69,59 +75,102 @@ export function EditorHarness({ seed, open, inline, onClose }: { seed: EditorSee
   );
 }
 
+/** Replays a scene's inputs through the script. `pick` answers the last open question. */
+export function replay(ctx: ScriptContext, inputs: SceneInput[]): SetupState | null {
+  let st: SetupState | null = null;
+  for (const step of inputs) {
+    if (step.do === "begin") { st = begin(ctx, step.input); continue; }
+    if (!st) continue;
+    if (step.do === "pick") {
+      const open = [...st.turns].reverse().find((x) => x.replies?.some((r) => r.id === step.reply) && !x.answered);
+      if (open) st = pick(ctx, st, open.id, step.reply);
+    } else if (step.do === "say") st = say(ctx, st, step.text);
+    else if (step.do === "resolve") st = resolveJob(ctx, st, step.result);
+    else if (step.do === "update") st = updateJob(st, step.job);
+    else if (step.do === "skip") st = skip(ctx, st);
+    else if (step.do === "change") st = change(ctx, st, step.row, step.value);
+  }
+  return st;
+}
+
+const PENDING_MS = 1600;
+const PREP_MS = 2400;
+
+/** A scene, playable: the script runs on every send / reply / change; pending reads resolve after a pause. */
 export function HomeHarness({ scene }: { scene: HomeScene }) {
-  const p = scene.props;
-  const [track, setTrack] = useState(p.track);
-  const [interview, setInterview] = useState<InterviewModel>(p.interview);
-  const [english, setEnglish] = useState(p.english);
+  const p = scene.props ?? {};
+  const [track, setTrack] = useState(scene.ctx.track);
+  const ctx = useMemo<ScriptContext>(() => ({ ...scene.ctx, track }), [scene.ctx, track]);
+  const [setup, setSetup] = useState<SetupState | null>(() => (scene.inputs ? replay(scene.ctx, scene.inputs) : null));
+  const [composer, setComposer] = useState(p.composer ?? { text: "" });
   const [textMode, setTextMode] = useState(Boolean(p.textMode));
   const [starting, setStarting] = useState(Boolean(p.starting));
-  const [editor, setEditor] = useState({ open: scene.dialog === "editor", seed: (scene.editor ?? {}) as EditorSeed, n: 0 });
-  const openEditor = (seed: EditorSeed) => setEditor((e) => ({ open: true, seed, n: e.n + 1 }));
-  const [deleting, setDeleting] = useState(scene.dialog === "delete");
-  const timer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-  const patch = (next: Partial<InterviewModel>) => setInterview((m) => ({ ...m, ...next }));
-  const job = interview.jobs.find((j) => j.id === interview.selectedJobId);
-  const start = () => {
-    setStarting(true);
-    timer.current = window.setTimeout(() => setStarting(false), 2400);
+  const [editor, setEditor] = useState({ open: false, seed: {} as EditorSeed, n: 0 });
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
+  const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
+
+  // A pending read resolves after a pause (unless the scene holds it); a job that is preparing gets ready later.
+  const pending = setup?.pending;
+  const [held] = useState(() => Boolean(scene.hold));
+  useEffect(() => {
+    if (!pending || held) return;
+    const result: JobResult = scene.resolveWith ?? (pending.kind === "link" ? { ok: false } : { ok: true, job: KESTREL_PASTED });
+    const id = window.setTimeout(() => {
+      setSetup((st) => (st ? resolveJob(ctx, st, result) : st));
+      if (result.ok && result.job.state === "preparing") {
+        later(() => setSetup((st) => (st ? updateJob(st, { ...result.job, state: "ready", questions: 12 }) : st)), PREP_MS);
+      }
+    }, PENDING_MS);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending?.turnId]);
+
+  const view: SetupModel | undefined = setup ? setupModel(ctx, setup) : undefined;
+  const send = () => {
+    const text = composer.text.trim();
+    if (!setup) {
+      if (!text && !composer.file) return;
+      setSetup(begin(ctx, composer.file ? { kind: "file", ...composer.file } : { kind: "text", text }));
+    } else if (text) {
+      setSetup(say(ctx, setup, text));
+    }
+    setComposer({ text: "" });
   };
+  const run = (fn: (st: SetupState) => SetupState) => setSetup((st) => (st ? fn(st) : st));
 
   return (
     <HomeView
       {...p}
-      track={track}
-      interview={interview}
-      english={english}
+      step={setup ? "setup" : "start"}
+      track={setup?.track ?? track}
+      name={p.name}
+      engineReady={p.engineReady ?? true}
+      suggestions={p.suggestions ?? suggestionsFor(ctx)}
+      composer={composer}
+      setup={view}
+      jobs={setup ? [...setup.jobs, ...ctx.jobs.filter((j) => !setup.jobs.some((x) => x.id === j.id))] : ctx.jobs}
       textMode={textMode}
       starting={starting}
-      onTrackChange={setTrack}
-      onRoundChange={(round) => patch({ round })}
-      onStrictnessChange={(strictness) => patch({ strictness })}
-      onSelectJob={(id) => patch({ selectedJobId: id })}
-      onEditJob={(id) => {
-        const j = interview.jobs.find((x) => x.id === id);
-        openEditor({ mode: "edit", source: "paste", text: j?.preview ?? "", company: j?.company ?? "", role: j?.role ?? "" });
+      onComposerChange={(text) => setComposer((c) => ({ ...c, text }))}
+      onAddFile={() => setComposer((c) => ({ ...c, file: JOB_FILE }))}
+      onRemoveFile={() => setComposer((c) => ({ text: c.text }))}
+      onSend={send}
+      onSuggestion={(id) => setSetup(begin(ctx, { kind: "suggestion", id }))}
+      onReply={(turnId, replyId) => run((st) => pick(ctx, st, turnId, replyId))}
+      onTurnAction={(_turnId, action) => {
+        if (action === "use-general") run((st) => say(ctx, st, t("chat.suggest.general")));
+        else setEditor((e) => ({ open: true, seed: { mode: "edit", source: "paste", text: PASTED_TEXT, company: "Kestrel Pay", role: "Senior Product Designer" }, n: e.n + 1 }));
       }}
-      onDeleteJob={() => setDeleting(true)}
-      onAddJob={() => openEditor({ source: "paste" })}
-      onPickFile={() => openEditor({ source: "file" })}
-      onPastedChange={(pasted) => patch({ pasted })}
-      onAddPasted={() => openEditor({ source: "paste", text: interview.pasted })}
-      onFocusChange={(focus) => interview.weak && patch({ weak: { ...interview.weak, focus } })}
-      onStart={start}
+      onSkip={() => run((st) => skip(ctx, st))}
+      onChange={(row, value) => run((st) => change(ctx, st, row, value))}
+      onRemoveNote={() => run(removeNote)}
+      onRetryPrep={() => run((st) => updateJob(st, { ...KESTREL_PASTED, state: "ready", questions: 12 }))}
+      onStart={() => { setStarting(true); later(() => setStarting(false), PREP_MS); }}
       onTypeInstead={() => setTextMode(true)}
       onUseTextMode={() => setTextMode(true)}
-      onDismissBrowser={() => {}}
-      onLevelChange={(level) => setEnglish((e) => ({ ...e, level }))}
-      onTopicChange={(topic) => setEnglish((e) => ({ ...e, topic }))}
-      overlay={(
-        <>
-          <EditorHarness key={editor.n} seed={editor.seed} open={editor.open} onClose={() => setEditor((e) => ({ ...e, open: false }))} />
-          <DeleteJobDialog open={deleting} name={job?.company ?? "Kestrel Pay"} onCancel={() => setDeleting(false)} onConfirm={() => setDeleting(false)} />
-        </>
-      )}
+      onModeChange={setTrack}
+      overlay={<EditorHarness key={editor.n} seed={editor.seed} open={editor.open} onClose={() => setEditor((e) => ({ ...e, open: false }))} />}
     />
   );
 }

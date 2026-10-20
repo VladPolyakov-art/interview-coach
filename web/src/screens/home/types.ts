@@ -1,136 +1,176 @@
-/* Home screen model (ds/screens/home.md). The pure `HomeView` takes all of this by props; the live `HomeScreen`
- * container feeds it from the store and the API. Nothing here knows about the network. */
+/* Home screen model, v2 (ds/screens/home.md v2, review v1 → D47a/b). Home is a start screen (greeting, one composer,
+ * up to 3 suggestions) that turns into a short scripted setup chat with Mike and ends in a plan card with the one
+ * primary button. The pure `HomeView` takes all of this by props; the live `HomeScreen` feeds it from the API and
+ * runs the script (`script.ts`). Nothing here knows about the network. */
 import type { ReactNode } from "react";
-import type { WeakSpotLayer } from "../../ds";
+import type { IconName, WeakSpotLayer } from "../../ds";
 import type { Level } from "../../lib/types";
 
 export type Track = "interview" | "english";
-/** Round type chips (US-12 AC1: four). */
+/** Round types (US-12 AC1: four). */
 export type RoundType = "hr" | "behavioural" | "technical" | "mix";
 export type Strictness = 1 | 2 | 3;
 export type EnglishTopic = "free" | "work" | "small";
 export type { Level };
 
-/** A saved job (vacancy) as the picker and the attachment show it. Dates arrive formatted ("Oct 18"). */
+/** A saved job (vacancy). Dates arrive formatted ("Oct 18"). */
 export interface JobItem {
   id: string;
   company: string;
   role: string;
   /** "Oct 18" */
   added: string;
-  /** First line of the description, shown (clamped) in the attachment. */
   preview?: string;
   questions: number;
-  /** `ready`: "N questions from this job" · `preparing`: shimmer · `short`: too little text · `link`: added from a link. */
-  state: "ready" | "preparing" | "short" | "link";
+  /** `ready` · `preparing` (questions are being written) · `error` (couldn't prepare) · `short` (too little text). */
+  state: "ready" | "preparing" | "error" | "short";
 }
 
 export interface WeakItem {
   id: string;
   layer: WeakSpotLayer;
   title: string;
-  /** Short form for the "+ N more" line and the Drill scope line ("No result"). */
+  /** Short form for lists ("No result"). */
   short?: string;
-  /** "4 answers in 2 sessions" */
+  /** In a sentence: "no result in 4 answers". */
+  phrase?: string;
+  /** What to do about it: "End each story with what changed." (the plan's Watch for row). */
+  tip?: string;
   count: string;
-}
-
-export interface WeakSpotsModel {
-  items: WeakItem[];
-  /** Interviews the memory looked at ("From your last 2 interviews"). */
-  sessions: number;
-  last?: { id: string; title: string; date: string };
-  loading?: boolean;
-  focus: "all" | WeakSpotLayer;
-  /** Start the strip with every row visible (review state). */
-  expanded?: boolean;
 }
 
 export interface Phrase { id: string; from: string; to: string; wrong: string; right: string; times: number }
 
-export interface InterviewModel {
-  /** No sessions yet: example panel, no strip, "Saved jobs" hidden while the library is empty. */
-  firstVisit: boolean;
-  round: RoundType;
-  strictness: Strictness;
-  jobs: JobItem[];
-  jobsLoading?: boolean;
-  selectedJobId: string | null;
-  /** Text typed or pasted into the composer. */
-  pasted: string;
-  hasCv: boolean;
-  /** Questions in a session (fixed, O-4). */
-  questions: number;
-  weak: WeakSpotsModel | null;
-  /** Settings: the order of the three layers in the example panel (GR8). */
-  layerOrder?: "content-first" | "delivery-first";
-  /** Review states: open the picker or the Strictness menu at first render. */
-  initialOverlay?: "picker" | "strictness";
-}
-
-export interface EnglishModel {
-  firstVisit: boolean;
-  level: Level | null;
-  /** The level was chosen in an earlier session (returning). */
-  levelRemembered?: boolean;
-  topic: EnglishTopic;
-  phrases: Phrase[];
-  /** Phrases list starts with every row shown (review state). */
-  phrasesExpanded?: boolean;
-}
-
 export interface EngineBannerModel {
   body: string;
-  /** Command to copy (CopyField). */
   command?: string;
 }
 
+/** A start-screen suggestion chip (max 3, home.md §3.3). */
+export type SuggestionId =
+  | "again" | "drill" | "english" | "another" | "general" | "example"
+  | "en-free" | "en-work" | "en-small" | "en-phrases";
+export interface Suggestion { id: SuggestionId; icon: IconName; label: string }
+
+export interface SetupReply { id: string; label: string; icon?: IconName }
+
+/** What the user's message carries: a pasted job (3 lines + "Show all"), a link or a file. */
+export interface SetupAttachment {
+  kind: "job" | "link" | "file";
+  label: string;
+  /** "Job description · 1,240 characters", "184 KB". */
+  meta?: string;
+}
+
+export type TurnActionId = "edit-job" | "use-general";
+
+/** One message of the setup chat. */
+export interface SetupTurn {
+  id: string;
+  speaker: "mike" | "user";
+  state: "final" | "pending" | "error";
+  /** Plain text; `**x**` marks bold (a company name). */
+  text?: string;
+  /** A second line in tertiary text ("Words you marked as misheard aren't counted."). */
+  aside?: string;
+  pendingLabel?: string;
+  attachment?: SetupAttachment;
+  /** Quick replies (max 4); the view drops them once the turn is answered. */
+  replies?: SetupReply[];
+  /** Set once a quick reply (or a typed answer) answered this turn: the replies leave. */
+  answered?: boolean;
+  /** A text action under the message ("Edit details", "Use general questions"). */
+  action?: { id: TurnActionId; label: string; icon?: IconName; button?: boolean };
+  /** The example card follows this message (first-visit "Show me an example"). */
+  example?: boolean;
+  /** The plan card follows this message. */
+  plan?: boolean;
+}
+
+export type PlanRow = "job" | "round" | "strictness" | "level" | "topic" | "focus";
+
+export interface PlanModel {
+  kind: "interview" | "drill" | "english";
+  job: { id: string; company: string; role: string } | null;
+  jobStatus: "ready" | "preparing" | "error";
+  /** Questions written from the job ("12 questions ready"). */
+  questionsReady?: number;
+  round: RoundType;
+  strictness: Strictness;
+  questions: number;
+  minutes: number;
+  basis: "cv+job" | "job" | "cv" | "general";
+  note?: string;
+  /** "No result in 4 answers. End each story with what changed." */
+  watch?: string;
+  hasCv: boolean;
+  /** Drill: what the questions aim at. */
+  focus?: { id: "all" | WeakSpotLayer; label: string };
+  /** Drill: the Change focus menu ("All 4", "Content 2", …). */
+  focusOptions?: { id: "all" | WeakSpotLayer; label: string }[];
+  /** English. */
+  level?: Level;
+  topic?: string;
+  phrases?: string[];
+}
+
+export interface SetupModel {
+  turns: SetupTurn[];
+  /** "Step 2 of 3"; none once the plan is shown, or for Again / Drill. */
+  step?: { n: number; of: number };
+  canSkip: boolean;
+  /** The bottom composer's placeholder follows the chat: job → "Paste a job or a link", reply, plan. */
+  stage: "job" | "reply" | "plan";
+  plan?: PlanModel;
+}
+
 export interface HomeViewProps {
+  step: "start" | "setup";
   track: Track;
-  /** "Good evening" (the container picks it by time of day). */
-  greeting: string;
-  /** Profile name: the H1 becomes "Good evening, Alex" (US-08 AC3). */
+  /** Profile name: "What are we practising today, Alex?" (US-08 AC3). */
   name?: string;
   loading?: boolean;
-  /** Mike's engine can start. false: banner, offline orb, disabled Start and Drill. */
+  /** Mike's engine can start. false: banner, Start disabled with the reason. */
   engineReady: boolean;
   engineBanner?: EngineBannerModel | null;
   /** US-06: the browser can't recognise speech. */
   browserBanner?: boolean;
-  /** The user chose to answer by typing: Start shows the keyboard icon, "Type instead" goes away. */
+  /** The user answers by typing: Start shows the keyboard icon. */
   textMode?: boolean;
   /** US-23: saved sessions can't be read. */
   storageError?: boolean;
+  suggestions: Suggestion[];
+  composer: { text: string; file?: { name: string; size: string } };
+  setup?: SetupModel;
+  /** Saved jobs, for the plan's Change job listbox. */
+  jobs: JobItem[];
   /** Start was pressed: the button turns into the connecting pill. */
   starting?: boolean;
-  /** Motion: build-up on first load, soft-out while leaving to the session. */
+  /** Motion: build-up on first load and on return from a session; soft-out while leaving. */
   buildUp?: boolean;
   leaving?: boolean;
-  interview: InterviewModel;
-  english: EnglishModel;
+  /** Settings: the order of the three layers in the example (GR8). */
+  layerOrder?: "content-first" | "delivery-first";
+  /** Review states: a menu open on first render. */
+  initialOverlay?: "mode" | "change-job" | "change-round" | "change-strictness";
   /** Rendered after the column (VacancyEditor dialog). */
   overlay?: ReactNode;
-  onTrackChange?: (track: Track) => void;
-  onRoundChange?: (round: RoundType) => void;
-  onStrictnessChange?: (s: Strictness) => void;
-  onSelectJob?: (id: string | null) => void;
-  onEditJob?: (id: string) => void;
-  onDeleteJob?: (id: string) => void;
-  /** "Add a job" (empty editor) and "File" (editor on the File tab). */
-  onAddJob?: () => void;
-  onPickFile?: () => void;
-  onPastedChange?: (text: string) => void;
-  /** Pasted text or a link goes to the editor (O-3). */
-  onAddPasted?: () => void;
-  onFocusChange?: (focus: "all" | WeakSpotLayer) => void;
-  onDrill?: () => void;
+  onComposerChange?: (text: string) => void;
+  onAddFile?: () => void;
+  onRemoveFile?: () => void;
+  onSend?: () => void;
+  onSuggestion?: (id: SuggestionId) => void;
+  onReply?: (turnId: string, replyId: string) => void;
+  onTurnAction?: (turnId: string, actionId: TurnActionId) => void;
+  onSkip?: () => void;
+  onChange?: (row: PlanRow, value: string) => void;
+  onRemoveNote?: () => void;
+  onRetryPrep?: () => void;
+  onAddCv?: () => void;
   onStart?: () => void;
   onTypeInstead?: () => void;
+  onModeChange?: (track: Track) => void;
+  onRetryEngine?: () => void;
   onUseTextMode?: () => void;
   onDismissBrowser?: () => void;
-  onRetryEngine?: () => void;
-  onLevelChange?: (level: Level) => void;
-  onTopicChange?: (topic: EnglishTopic) => void;
-  onStartEnglish?: () => void;
-  onPractisePhrases?: () => void;
 }

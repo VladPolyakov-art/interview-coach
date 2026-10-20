@@ -345,7 +345,13 @@ function ListboxPopup({
 
   useEffect(() => {
     if (!active) return;
-    document.getElementById(optionId(active.id))?.scrollIntoView({ block: "nearest" });
+    // Scroll the list only (scrollIntoView would also scroll every ancestor: the page, the review frame).
+    const list = listRef.current;
+    const el = document.getElementById(optionId(active.id));
+    if (!list || !el) return;
+    const top = el.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+    if (top < list.scrollTop) list.scrollTop = top;
+    else if (top + el.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top + el.offsetHeight - list.clientHeight;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 

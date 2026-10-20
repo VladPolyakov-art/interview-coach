@@ -1,22 +1,38 @@
-/* Home layout. Container names: `shell` (AppShell root) and `page` (<main>); widths are listed in docs/frontend.md.
- * `.home.home` beats Page's own single-class rules (gap, narrow padding) without !important. */
-.home.home { gap: var(--space-6); }
-.orb { order: -1; display: flex; justify-content: center; }
+/* Home v2 layout. Home fills <main> (absolute, inset 0: <main> is position: relative) and lays out its own column, so
+ * only the part that should scroll does. Container names: `shell` (AppShell root), `page` (<main>); widths in
+ * docs/frontend.md. No vh / dvh. */
+.home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-canvas);
+}
+.column {
+  width: 100%;
+  max-width: calc(var(--layout-narrow) + var(--layout-gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--layout-gutter);
+  min-width: 0;
+}
 
-/* Track switch: centred pill, full width on phones. Targets the radiogroup by role (the DS pill hugs its options). */
-.track { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; }
-.trackSwitch { display: flex; justify-content: center; width: 100%; }
-.trackHint { color: var(--color-text-tertiary); font-size: var(--text-sm); max-width: var(--layout-narrow); }
+/* ---- start ---- */
+.startPage { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; }
+.startPage > .column { display: flex; flex-direction: column; gap: var(--space-6); padding-top: var(--space-6); }
+/* The group sits a little above the middle (Gemini R4, Ollama R6): centred with a bottom spacer. */
+.startCenter { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; padding-bottom: var(--space-16); }
+.startFooter { padding-bottom: var(--space-6); }
 
-.panel { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
-/* The panel continues the page's stagger (header, orb, switch come first). */
-.nested { --stagger-base: 4; }
-.workOn { margin-bottom: var(--space-2); }
-.compose { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+/* ---- setup ---- */
+.top { flex: none; background: var(--color-canvas); }
+.scroller { position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.chat { display: flex; flex-direction: column; gap: var(--space-6); padding-top: var(--space-4); padding-bottom: var(--space-6); }
+.dock { flex: none; background: var(--color-canvas); padding-bottom: var(--space-4); }
+.dock > .column { display: flex; flex-direction: column; gap: var(--space-3); }
 
 @container page (width < 560px) {
-  .home.home { padding-top: var(--space-8); }
-  .trackSwitch > * { width: 100%; }
-  .trackSwitch [role="radiogroup"] { display: flex; width: 100%; }
-  .trackSwitch [role="radio"] { flex: 1 1 0; }
+  /* The phone keyboard covers the lower half: the group starts near the top instead of the middle. */
+  .startCenter { justify-content: flex-start; padding-top: var(--space-12); padding-bottom: var(--space-8); }
+  .startPage > .column { padding-top: var(--space-4); }
 }

@@ -1,37 +1,44 @@
-/* Home, live: feeds HomeView from the store and the API. Every choice that starts a session ends in navigate("/session").
- * Gaps the server has today (reported in the stage-11 notes): no "technical" round (mapped to the mixed round), no job
- * update call (Edit = create the new copy + move the old one to Trash), no link preview (Save fetches the page),
- * no recurring-phrases data (the English phrases list is empty), Drill = a 3-question mixed session. */
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+/* Home v2, live: runs the scripted setup (script.ts) on real data and feeds HomeView. Real work behind a pending Mike
+ * message: a pasted job / link / file is saved with api.createVacancy, then questions are prepared from it.
+ * Gaps the server has today (🟡, home.md §9): no "technical" round (runs as the mixed round, B2), no field for the
+ * user's note (UI only, B3), no questions status (we track the prepare call, B5), the last interview's job and round
+ * are not in SessionSummary (remembered job + remembered round, B8), Drill = a 3-question mixed session (B7), no
+ * recurring-phrases data (English phrases empty), no profile name (h1 without the name, US-08 AC3). */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { durationMs, motionMemory, shouldBuildUp } from "../../ds";
 import { t, tMaybe, tp } from "../../i18n";
-import { DeleteJobDialog, VacancyEditor, type VacancySource } from "../../components/VacancyEditor";
+import { VacancyEditor } from "../../components/VacancyEditor";
 import { splitTitle } from "../../components/vacancyTitle";
 import { browserSttSupported } from "../../audio/browserStt";
-import { api } from "../../lib/api";
+import { api, fileToBase64 } from "../../lib/api";
 import { useInterval, useLoad } from "../../lib/hooks";
 import { prefs } from "../../lib/prefs";
 import { useApp } from "../../lib/store";
-import type { Level, VacancySummary } from "../../lib/types";
+import type { Vacancy } from "../../lib/types";
 import { buildSessionConfig } from "../../session/startConfig";
 import { homePrefs, shortDate } from "./homePrefs";
-import { DRILL_QUESTIONS, looksLikeJob } from "./helpers";
 import { HomeView } from "./HomeView";
-import type { EnglishTopic, InterviewModel, JobItem, RoundType, Strictness, Track, WeakItem } from "./types";
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? t("home.greeting.morning") : h < 18 ? t("home.greeting.afternoon") : t("home.greeting.evening");
-}
+import {
+  begin, change, pick, planFor, removeNote, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
+  type ScriptContext, type SetupState,
+} from "./script";
+import type { EnglishTopic, JobItem, PlanModel, Track, WeakItem } from "./types";
 
 let browserBannerDismissed = false;
+const TOPICS: EnglishTopic[] = ["free", "work", "small"];
 
-interface EditorState { open: boolean; initial?: { source?: VacancySource; text?: string; url?: string }; editId: string | null; startAfter: boolean }
-const CLOSED: EditorState = { open: false, editId: null, startAfter: false };
+function toJob(v: { id: string; title: string; created_at: string; questions: number | unknown[] }, state: JobItem["state"]): JobItem {
+  const parts = splitTitle(v.title);
+  const questions = Array.isArray(v.questions) ? v.questions.length : v.questions;
+  return { id: v.id, company: parts.company, role: parts.role, added: shortDate(v.created_at), questions, state };
+}
+
+interface EditorState { open: boolean; editId: string | null }
 
 export function HomeScreen() {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const track: Track = params.get("track") === "english" ? "english" : "interview";
   const { settings, selectedEngine, refreshEngines, updateSettings } = useApp();
@@ -50,79 +57,116 @@ export function HomeScreen() {
     motionMemory.returnFromSession = false;
   }, []);
 
-  const [round, setRound] = useState<RoundType>(() => homePrefs.round());
-  const [strictness, setStrictness] = useState<Strictness>(2);
-  const [vacancyId, setVacancyId] = useState(prefs.vacancy());
-  const [pasted, setPasted] = useState("");
-  const [focus, setFocus] = useState<"all" | WeakItem["layer"]>("all");
+  const [setup, setSetup] = useState<SetupState | null>(null);
+  const [composer, setComposer] = useState<{ text: string; file?: { name: string; size: string } }>({ text: "" });
+  const fileRef = useRef<File | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const [prep, setPrep] = useState<Record<string, "preparing" | "error">>({});
   const [textMode, setTextMode] = useState(prefs.input() === "text");
   const [browserDismissed, setBrowserDismissed] = useState(browserBannerDismissed);
-  const [editor, setEditor] = useState<EditorState>(CLOSED);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [preparing, setPreparing] = useState<Record<string, boolean>>({});
-  const [level, setLevel] = useState<Level | null>(null);
-  const [topic, setTopic] = useState<EnglishTopic>("free");
+  const [editor, setEditor] = useState<EditorState>({ open: false, editId: null });
 
-  useEffect(() => { if (settings) setStrictness(settings.strictness); }, [settings]);
-  // Engine check every 5 seconds while it is not ready (home.md §4 EngineNotRunning).
+  // "Start over" (home.md §4.1): the Practice nav row (a new location on "/") returns to the start screen.
+  useEffect(() => { setSetup(null); }, [location.key]);
+  // Engine check every 5 seconds while it is not ready.
   useInterval(() => { void refreshEngines(); }, 5000, Boolean(selectedEngine) && !engineReady);
 
   const list = useMemo(
     () => [...(vacancies.data?.vacancies ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at)),
     [vacancies.data],
   );
-  const jobs: JobItem[] = list.map((v) => {
-    const parts = splitTitle(v.title);
-    return {
-      id: v.id,
-      company: parts.company,
-      role: parts.role,
-      added: shortDate(v.created_at),
-      questions: v.questions,
-      state: preparing[v.id] ? "preparing" : "ready",
-    };
-  });
-  // A remembered job that was deleted falls back to general questions.
-  const selected = list.find((v) => v.id === vacancyId) ?? null;
-  const jobsLoading = vacancies.loading && !vacancies.data;
-  const hasCv = Boolean(profile.data?.text);
   const sessionList = sessions.data?.sessions;
-  const storageError = Boolean(sessions.error);
-  const interviewFirst = sessionList ? !sessionList.some((x) => x.mode !== "english") : false;
-  const englishFirst = sessionList ? !sessionList.some((x) => x.mode === "english") : false;
-  const last = sessionList?.[0];
+  const memoryData = memory.data;
+  const hasCv = Boolean(profile.data?.text);
 
-  const weakItems: WeakItem[] = (memory.data?.weak_spots ?? []).slice(0, 6).map((w) => {
-    const title = tMaybe(`feedback.tag.${w.tag}`, w.text || w.tag.replace(/_/g, " "));
-    return { id: `${w.layer}-${w.tag}`, layer: w.layer, title, short: title, count: tp("home.workOn.count", w.sessions) };
-  });
-  // Skeleton for the strip only when there are past sessions to learn from (no empty flash for new users).
-  const weakLoading = memory.loading && !memory.data && Boolean(sessionList?.length);
-  const interview: InterviewModel = {
-    firstVisit: interviewFirst,
-    round,
-    strictness,
-    jobs,
-    jobsLoading,
-    selectedJobId: selected?.id ?? null,
-    pasted,
-    hasCv,
-    questions: settings?.questions_per_session ?? 5,
-    layerOrder: settings?.layer_order,
-    weak: weakLoading || weakItems.length
-      ? {
-        items: weakItems,
-        sessions: memory.data?.sessions_considered ?? 0,
-        last: last ? { id: last.id, title: last.title, date: shortDate(last.started_at) } : undefined,
-        loading: weakLoading,
-        focus,
-      }
-      : null,
+  const ctx = useMemo<ScriptContext>(() => {
+    const jobs = list.map((v) => toJob(v, prep[v.id] ?? "ready"));
+    const interviews = (sessionList ?? []).filter((x) => x.mode !== "english");
+    const lastInterview = interviews[0];
+    const remembered = prefs.vacancy();
+    const weak: WeakItem[] = (memoryData?.weak_spots ?? []).slice(0, 6).map((w) => {
+      const title = tMaybe(`feedback.tag.${w.tag}`, w.text || w.tag.replace(/_/g, " "));
+      const count = tp("home.workOn.count", w.sessions);
+      return { id: `${w.layer}-${w.tag}`, layer: w.layer, title, short: title.toLowerCase(), phrase: `${title.toLowerCase()} (${count})`, count };
+    });
+    return {
+      track,
+      firstVisit: interviews.length === 0,
+      hasCv,
+      jobs,
+      last: lastInterview
+        ? {
+          date: shortDate(lastInterview.started_at),
+          jobId: jobs.some((j) => j.id === remembered) ? remembered : null,
+          round: homePrefs.round(),
+          strictness: settings?.strictness ?? 2,
+        }
+        : undefined,
+      strictness: settings?.strictness ?? 2,
+      questions: settings?.questions_per_session ?? 5,
+      weak,
+      weakSessions: memoryData?.sessions_considered ?? 0,
+      level: (sessionList ?? []).some((x) => x.mode === "english") ? settings?.level ?? null : null,
+      phrases: [],
+    };
+  }, [list, prep, sessionList, memoryData, hasCv, settings, track]);
+
+  /* Questions from a job: the plan's Job row shows "Preparing questions…" until the call returns. */
+  const prepareQuestions = useCallback((job: JobItem) => {
+    setPrep((p) => ({ ...p, [job.id]: "preparing" }));
+    setSetup((st) => (st ? updateJob(st, { ...job, state: "preparing" }) : st));
+    api.vacancyQuestions(job.id)
+      .then((r) => {
+        setPrep((p) => { const rest = { ...p }; delete rest[job.id]; return rest; });
+        setSetup((st) => (st ? updateJob(st, { ...job, questions: r.questions.length, state: "ready" }) : st));
+        vacancies.reload();
+      })
+      .catch(() => {
+        setPrep((p) => ({ ...p, [job.id]: "error" }));
+        setSetup((st) => (st ? updateJob(st, { ...job, state: "error" }) : st));
+      });
+  }, [vacancies]);
+
+  /* A pending read (pasted job, link, file): save it as a job, then let Mike name it. */
+  const pendingId = setup?.pending?.turnId;
+  useEffect(() => {
+    const p = setup?.pending;
+    if (!p) return;
+    let cancelled = false;
+    (async () => {
+      const body: Parameters<typeof api.createVacancy>[0] = {};
+      if (p.kind === "link") body.url = p.url;
+      else if (p.kind === "job") body.text = p.text;
+      else if (fileRef.current) body.file = { name: fileRef.current.name, data: await fileToBase64(fileRef.current) };
+      const v: Vacancy = await api.createVacancy(body);
+      return toJob(v, "preparing");
+    })()
+      .then((job) => {
+        if (cancelled) return;
+        setSetup((st) => (st ? resolveJob(ctx, st, { ok: true, job }) : st));
+        vacancies.reload();
+        prepareQuestions(job);
+      })
+      .catch(() => { if (!cancelled) setSetup((st) => (st ? resolveJob(ctx, st, { ok: false }) : st)); });
+    return () => { cancelled = true; };
+    // Runs once per pending message; ctx is read at resolve time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingId]);
+
+  const run = (fn: (st: SetupState) => SetupState) => setSetup((st) => (st ? fn(st) : st));
+
+  const onSend = () => {
+    const text = composer.text.trim();
+    if (!setup) {
+      if (!text && !composer.file) return;
+      setSetup(begin(ctx, composer.file ? { kind: "file", ...composer.file } : { kind: "text", text }));
+    } else if (text) {
+      run((st) => say(ctx, st, text));
+    }
+    setComposer({ text: "" });
   };
 
-  const choose = (id: string) => { setVacancyId(id); prefs.setVacancy(id); };
-
-  /* Start: Home content soft-outs (`exit`), then the session opens. Instant under reduced motion. */
+  /* Start: Home soft-outs (`exit`), then the session opens. Instant under reduced motion. */
   const leave = (go: () => void) => {
     if (leaving) return;
     const ms = durationMs("--duration-exit");
@@ -131,141 +175,109 @@ export function HomeScreen() {
     window.setTimeout(go, ms);
   };
 
-  const startInterview = (opts: { answer?: "voice" | "text"; vacancyId?: string; questions?: number; drill?: boolean } = {}) => {
-    homePrefs.setRound(round);
-    // The server knows three round types; "technical" runs as the mixed round until it learns the fourth.
-    const roundType = round === "technical" ? "mix" : round;
-    const vid = opts.vacancyId ?? selected?.id;
+  const start = (plan: PlanModel, answer: "voice" | "text") => {
+    if (plan.kind === "english") {
+      const level = plan.level ?? settings?.level ?? "B1";
+      if (settings && settings.level !== level) void updateSettings({ level });
+      const key = TOPICS.find((x) => t(`english.topics.${x}`) === plan.topic);
+      const topic = key ? t(`english.topicValue.${key}`) : plan.topic ?? "";
+      const config = buildSessionConfig({ mode: "english", answer, level, topic }, settings, stt.data);
+      leave(() => navigate("/session", { state: { config, title: t("home.tabEnglish") } }));
+      return;
+    }
+    homePrefs.setRound(plan.round);
+    prefs.setVacancy(plan.job?.id ?? "");
+    // The server knows three round types; "technical" runs as the mixed round until it learns the fourth (B2).
+    const roundType = plan.kind === "drill" || plan.round === "technical" ? "mix" : plan.round;
     const config = buildSessionConfig({
-      mode: "interview",
-      answer: opts.answer ?? (textMode ? "text" : "voice"),
-      roundType: opts.drill ? "mix" : roundType,
-      strictness,
-      questions: opts.questions ?? interview.questions,
-      vacancyId: vid,
+      mode: "interview", answer, roundType, strictness: plan.strictness, questions: plan.questions, vacancyId: plan.job?.id,
     }, settings, stt.data);
-    const title = opts.vacancyId ? "" : selected ? selected.title : "";
+    const title = list.find((v) => v.id === plan.job?.id)?.title ?? "";
     leave(() => navigate("/session", { state: { config, title, roundType: config.start.round_type } }));
   };
-
-  const startEnglish = (answer?: "voice" | "text") => {
-    if (!level) return;
-    if (settings && settings.level !== level) void updateSettings({ level });
-    const config = buildSessionConfig({
-      mode: "english", answer: answer ?? (textMode ? "text" : "voice"), level, topic: t(`english.topicValue.${topic}`),
-    }, settings, stt.data);
-    leave(() => navigate("/session", { state: { config, title: t("home.tabEnglish") } }));
-  };
-
-  const prepareQuestions = (v: { id: string }) => {
-    setPreparing((p) => ({ ...p, [v.id]: true }));
-    api.vacancyQuestions(v.id)
-      .then(() => vacancies.reload())
-      .catch(() => {})
-      .finally(() => setPreparing((p) => ({ ...p, [v.id]: false })));
-  };
-
-  const openEditor = (next: Partial<EditorState> = {}) => setEditor({ ...CLOSED, open: true, ...next });
-  const addPasted = (startAfter = false) => {
-    const v = pasted.trim();
-    openEditor({
-      initial: /^https?:\/\/\S+$/i.test(v) ? { source: "link", url: v } : { source: "paste", text: v },
-      startAfter,
-    });
-  };
-
-  const onStart = () => {
-    if (track === "english") { startEnglish(); return; }
-    if (pasted.trim() && looksLikeJob(pasted)) { addPasted(true); return; }
-    startInterview();
-  };
-  const onTypeInstead = () => {
-    if (track === "english") { startEnglish("text"); return; }
-    if (pasted.trim() && looksLikeJob(pasted)) { addPasted(true); return; }
-    startInterview({ answer: "text" });
-  };
-
-  const deleting = list.find((v: VacancySummary) => v.id === deleteId) ?? null;
+  const plan = setup ? planFor(ctx, setup) : null;
   const unsupportedSpeech = stt.data?.available === false && !browserSttSupported();
+  const loading = (vacancies.loading && !vacancies.data) || (sessions.loading && !sessions.data);
+  const shown = setup ? setupModel(ctx, setup) : undefined;
 
   return (
-    <HomeView
-      track={track}
-      greeting={greeting()}
-      loading={jobsLoading}
-      engineReady={engineReady}
-      engineBanner={selectedEngine && !engineReady
-        ? {
-          body: [selectedEngine.status.message, selectedEngine.status.hint].filter(Boolean).join(" "),
-          command: selectedEngine.status.hint_command || undefined,
-        }
-        : null}
-      browserBanner={unsupportedSpeech && !browserDismissed && !textMode}
-      textMode={textMode}
-      storageError={storageError}
-      starting={leaving}
-      buildUp={buildUp}
-      leaving={leaving}
-      interview={interview}
-      english={{
-        firstVisit: englishFirst,
-        level: level ?? (englishFirst ? null : settings?.level ?? null),
-        levelRemembered: !englishFirst,
-        topic,
-        phrases: [],
-      }}
-      onTrackChange={(next) => setParams(next === "english" ? { track: "english" } : {}, { replace: true })}
-      onRoundChange={setRound}
-      onStrictnessChange={setStrictness}
-      onSelectJob={(id) => choose(id ?? "")}
-      onEditJob={(id) => openEditor({ editId: id })}
-      onDeleteJob={setDeleteId}
-      onAddJob={() => openEditor()}
-      onPickFile={() => openEditor({ initial: { source: "file" } })}
-      onPastedChange={setPasted}
-      onAddPasted={() => addPasted()}
-      onFocusChange={setFocus}
-      onDrill={() => startInterview({ questions: DRILL_QUESTIONS, drill: true })}
-      onStart={onStart}
-      onTypeInstead={onTypeInstead}
-      onUseTextMode={() => { prefs.setInput("text"); setTextMode(true); }}
-      onDismissBrowser={() => { browserBannerDismissed = true; setBrowserDismissed(true); }}
-      onRetryEngine={() => { void refreshEngines(); }}
-      onLevelChange={setLevel}
-      onTopicChange={setTopic}
-      onStartEnglish={() => startEnglish()}
-      overlay={(
-        <>
+    <>
+      <HomeView
+        step={setup ? "setup" : "start"}
+        track={setup?.track ?? track}
+        loading={loading}
+        engineReady={engineReady}
+        engineBanner={selectedEngine && !engineReady
+          ? {
+            body: [selectedEngine.status.message, selectedEngine.status.hint].filter(Boolean).join(" "),
+            command: selectedEngine.status.hint_command || undefined,
+          }
+          : null}
+        browserBanner={unsupportedSpeech && !browserDismissed && !textMode}
+        textMode={textMode}
+        storageError={Boolean(sessions.error)}
+        suggestions={loading ? [] : suggestionsFor(ctx)}
+        composer={composer}
+        setup={shown}
+        jobs={setup ? [...setup.jobs, ...ctx.jobs.filter((j) => !setup.jobs.some((x) => x.id === j.id))] : ctx.jobs}
+        starting={leaving}
+        buildUp={buildUp}
+        leaving={leaving}
+        layerOrder={settings?.layer_order}
+        onComposerChange={(text) => setComposer((c) => ({ ...c, text }))}
+        onAddFile={() => picker.current?.click()}
+        onRemoveFile={() => { fileRef.current = null; setComposer((c) => ({ text: c.text })); }}
+        onSend={onSend}
+        onSuggestion={(id) => setSetup(begin(ctx, { kind: "suggestion", id }))}
+        onReply={(turnId, replyId) => run((st) => pick(ctx, st, turnId, replyId))}
+        onTurnAction={(_turnId, action) => {
+          if (action === "use-general") run((st) => say(ctx, st, t("chat.suggest.general")));
+          else setEditor({ open: true, editId: setup?.draft.jobId ?? null });
+        }}
+        onSkip={() => run((st) => skip(ctx, st))}
+        onChange={(row, value) => run((st) => change(ctx, st, row, value))}
+        onRemoveNote={() => run(removeNote)}
+        onRetryPrep={() => {
+          const job = shown?.plan?.job ? (setup?.jobs ?? []).concat(ctx.jobs).find((j) => j.id === shown.plan!.job!.id) : undefined;
+          if (job) prepareQuestions(job);
+        }}
+        onAddCv={() => navigate("/settings/profile")}
+        onStart={() => { if (plan) start(plan, textMode ? "text" : "voice"); }}
+        onTypeInstead={() => { if (plan) start(plan, "text"); }}
+        onModeChange={(next) => setParams(next === "english" ? { track: "english" } : {}, { replace: true })}
+        onUseTextMode={() => { prefs.setInput("text"); setTextMode(true); }}
+        onDismissBrowser={() => { browserBannerDismissed = true; setBrowserDismissed(true); }}
+        onRetryEngine={() => { void refreshEngines(); }}
+        overlay={(
           <VacancyEditor
             open={editor.open}
-            initial={editor.initial}
             editId={editor.editId}
-            saveLabel={editor.startAfter ? t("vacancy.saveAndStart") : undefined}
-            onClose={() => setEditor(CLOSED)}
-            onDeleted={(id) => { if (vacancyId === id) choose(""); vacancies.reload(); }}
+            onClose={() => setEditor({ open: false, editId: null })}
+            onDeleted={() => { vacancies.reload(); run((st) => change(ctx, st, "job", "general")); }}
             onSaved={(v) => {
-              setEditor(CLOSED);
-              setPasted("");
-              choose(v.id);
+              setEditor({ open: false, editId: null });
+              const job = toJob(v, "preparing");
+              // An edit saves a new copy: the plan follows it (Mike's earlier line is not rewritten).
+              run((st) => change(ctx, updateJob(st, job), "job", job.id));
               vacancies.reload();
-              prepareQuestions(v);
-              if (editor.startAfter) startInterview({ vacancyId: v.id });
+              prepareQuestions(job);
             }}
           />
-          <DeleteJobDialog
-            open={Boolean(deleting)}
-            name={deleting ? splitTitle(deleting.title).company : ""}
-            onCancel={() => setDeleteId(null)}
-            onConfirm={() => {
-              const id = deleteId;
-              setDeleteId(null);
-              if (!id) return;
-              void api.deleteVacancy(id).then(() => { if (vacancyId === id) choose(""); vacancies.reload(); });
-            }}
-          />
-        </>
-      )}
-    />
+        )}
+      />
+      <input
+        ref={picker}
+        type="file"
+        hidden
+        accept=".pdf,.docx,.txt,.md,.html,application/pdf,text/plain,text/markdown,text/html"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          fileRef.current = f;
+          setComposer((c) => ({ ...c, file: { name: f.name, size: `${Math.max(1, Math.round(f.size / 1024))} KB` } }));
+        }}
+      />
+    </>
   );
 }
-
