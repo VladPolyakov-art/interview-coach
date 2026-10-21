@@ -8,7 +8,7 @@
   min-width: calc(var(--layout-rail) - var(--space-10));
   max-width: var(--layout-panel);
   padding: var(--space-1);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--color-raised);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-overlay);
@@ -39,7 +39,7 @@
   min-height: var(--control-h-md);
   padding: var(--space-2) var(--space-3);
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-primary);
   font-size: var(--text-sm);
@@ -106,3 +106,29 @@
   .item,
   .option { min-height: var(--control-h-touch); }
 }
+
+/* Select (D78): the popup is as wide as its longest option (at least the trigger), options in regular weight. */
+.picker.fit { min-width: 0; max-width: var(--layout-panel); }
+.inline.picker.fit { min-width: 0; }
+.fit .optionLabel { font-weight: var(--weight-regular); }
+.fit .option[aria-selected="true"] .optionLabel { font-weight: var(--weight-medium); }
+.fit .option { align-items: center; white-space: nowrap; }
+
+/* Choice row (D78, the account menu's Theme): label left, small round icon choices right; the chosen one is filled. */
+.choiceRow { display: flex; align-items: center; gap: var(--space-2); min-height: var(--control-h-md); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.choiceLabel { flex: 1 1 auto; font-weight: var(--weight-medium); }
+.choices { display: inline-flex; gap: var(--space-1); padding: var(--space-1); border-radius: var(--radius-pill); background: var(--color-surface-chip); }
+.choice {
+  display: inline-grid;
+  place-items: center;
+  width: calc(var(--control-h-sm) - var(--space-1));
+  height: calc(var(--control-h-sm) - var(--space-1));
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.choice:hover { color: var(--color-text-primary); }
+.choice[aria-checked="true"] { background: var(--color-surface-chip-selected); color: var(--color-text-on-checked); }

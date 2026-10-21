@@ -24,6 +24,12 @@ describe("place (anchored popovers)", () => {
     const p = place({ left: 100, top: 100, width: 480, height: 40 }, space, { ...base, placement: "bottom-start", matchWidth: true });
     expect(p.width).toBe(480);
   });
+  it("is at least the anchor width and grows to its content for a select (D78)", () => {
+    const small = place({ left: 100, top: 100, width: 64, height: 40 }, space, { ...base, placement: "bottom-start", matchWidth: "min" });
+    expect(small.width).toBe(200);
+    const wide = place({ left: 100, top: 100, width: 480, height: 40 }, space, { ...base, placement: "bottom-start", matchWidth: "min" });
+    expect(wide.width).toBe(480);
+  });
   it("becomes a full-width sheet in a narrow container, at most 60% high", () => {
     const narrow = { width: 375, height: 800 };
     const p = place({ left: 300, top: 100, width: 32, height: 32 }, narrow, {

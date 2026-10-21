@@ -38,7 +38,7 @@ const state = (id: string, label: string, render: () => ReactNode, extra: Partia
 export const engineReview: ReviewScreen = {
   id: "engine",
   title: "AI engine",
-  note: "D54: сначала выбор, потом подключение. Было: четыре движка развёрнуты целиком (около 2500 px). Стало: A — короткий список из четырёх вариантов с одним словом статуса; B — только подключение выбранного; C — в Settings один компактный блок «движок в работе». Выбор сам по себе движок не переключает.",
+  note: "D54: сначала выбор, потом подключение. Было: четыре движка развёрнуты целиком (около 2500 px). Стало: A — короткий список из четырёх вариантов с одним словом статуса; B — только подключение выбранного; D78: в Settings — один экран без внутренних шагов: сверху движок в работе, ниже остальные, каждый подключается на месте; кнопки «Change engine» и «Test» убраны. Выбор в Setup сам по себе движок не переключает.",
   states: [
     state("choose-none", "A · Setup, ничего не готово", () => <SetupScene engines={NONE_READY} props={{ mode: "setup" }} />, {
       note: "Заголовок «Choose how Mike runs» и одна строка. Четыре варианта без радио-кружков (D59): значок, название, одна простая строка, под ней «Needs setup» / «Ready»; у выбранного — обводка и метка «Selected» справа. У Ollama — «Recommended» и он выбран заранее. Кнопка Continue ведёт к подключению.",
@@ -56,23 +56,23 @@ export const engineReview: ReviewScreen = {
       <SetupScene engines={makeEngines()} props={{ mode: "setup", initialStep: "connect", initialPick: "ollama" }} settings={withModel} />
     ), {
       dark: true,
-      note: "Два выбора модели (для набранных ответов и для голоса) и «Test the engine». Continue переключает движок и ведёт к шагу «Test».",
+      note: "Два выбора модели (для набранных ответов и для голоса). Continue переключает движок и ведёт к шагу «Test» — проверка движка теперь только там (D78).",
     }),
     state("connect-gemini", "B · Gemini: нужен ключ", () => (
       <SetupScene engines={makeEngines()} props={{ mode: "setup", initialStep: "connect", initialPick: "gemini_live" }} />
     ), {
       note: "Только ключ и «Get a free key»; плашка о данных (голос уходит в Google) остаётся, цена и данные — в свёрнутом блоке.",
     }),
-    state("settings-summary", "C · Settings: движок в работе", () => (
+    state("settings-ollama", "Settings · Ollama в работе", () => (
       <SettingsScene engines={makeEngines()} props={{ mode: "settings" }} settings={withModel} />
     ), {
       dark: true,
-      note: "Один компактный блок: «Ollama · qwen3:8b», статус Ready, «Test the engine» и «Change engine»; «Check again» — тихая иконка; выбор моделей — в раскрывашке «Models».",
+      note: "D78: один экран. Блок «In use»: Ollama · qwen3:8b, статус Ready, выбор моделей — в раскрывашке «Models», «Check again» — тихая иконка у заголовка. Ниже «Other engines»: OpenAI-compatible, Gemini Live, Claude CLI — у готового кнопка «Use», у остальных «Set up». Ни «Change engine», ни «Test».",
     }),
-    state("settings-change", "A · Settings: Change engine", () => (
-      <SettingsScene engines={makeEngines({ gemini_live: "ready" }, "gemini_live")} props={{ mode: "settings", initialStep: "choose" }} />
+    state("settings-setup-openai", "Settings · подключить OpenAI-compatible на месте", () => (
+      <SettingsScene engines={makeEngines({ gemini_live: "ready" }, "gemini_live")} props={{ mode: "settings", initialPick: "openai_compatible" }} />
     ), {
-      note: "«Change engine» открывает тот же список; выбран движок, который в работе (Gemini). Кнопка Connect ведёт к B, Cancel возвращает к блоку C.",
+      note: "«Set up» раскрывает подключение прямо в строке: пресеты, адрес, ключ, модель, цена и данные. «Use OpenAI-compatible» активна, когда статус станет Ready; после переключения — короткий тост «Mike now uses …», движок поднимается наверх.",
     }),
   ],
 };

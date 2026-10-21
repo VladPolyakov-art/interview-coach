@@ -1,4 +1,5 @@
-/* Step B: only the chosen engine's connection (its form or install steps, its model choice, Test).
+/* Step B: only the chosen engine's connection (its form or install steps, its model choice); the engine is tested
+ * on the Setup check step, not here (D78).
  * Cost and data sit in a closed "Cost and your data" disclosure. The primary action appears once the engine is ready. */
 import { EngineLogo } from "./EngineLogo";
 import { Button, Callout, Card, Disclosure, IconButton } from "../../ds";
@@ -6,7 +7,6 @@ import { t } from "../../i18n";
 import type { EngineInfo } from "../../lib/types";
 import { ClaudeBody, GeminiBody, OllamaBody, OpenAiBody } from "./bodies";
 import { EngineStatus } from "./EngineStatus";
-import { EngineTest } from "./EngineTest";
 import { engineName } from "./meta";
 import s from "./engine.module.css";
 
@@ -42,7 +42,6 @@ export function EngineConnect({ engine, mode, switching, checking, onRecheck, on
           {engine.id === "claude_cli" ? <ClaudeBody engine={engine} /> : null}
           {engine.id === "gemini_live" ? <GeminiBody engine={engine} /> : null}
           {warnings.length ? <Callout tone="warning">{warnings.map((w) => <p key={w}>{w}</p>)}</Callout> : null}
-          {ready ? <EngineTest id={engine.id} /> : null}
         </div>
         {!ready && engine.status.code !== "not_configured" ? <span className={s.note} aria-live="polite">{t("engines.recheckNote")}</span> : null}
       </Card>

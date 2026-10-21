@@ -17,9 +17,10 @@ import { t } from "../i18n";
 import { api } from "../lib/api";
 import { pendingSave } from "../lib/pendingSave";
 import { prefs } from "../lib/prefs";
+import { useTheme } from "../lib/theme";
 import { errorMessage, useApp } from "../lib/store";
 import { railSessions, type RailSession } from "./railItems";
-import { Wordmark } from "./Wordmark";
+import { LogoMark, Wordmark } from "./Wordmark";
 import s from "./AppShell.module.css";
 
 /** react-router adapter for DS rows (NavRow, ListRow): `href` → `to`. */
@@ -175,7 +176,13 @@ interface RailProps {
 /** The sidebar, expanded or collapsed. The body keeps a fixed width per state, so the rail's width animation only reveals it. */
 function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, onToggle, onNavigate, initialMenu, onTrashSession }: RailProps) {
   const toggleLabel = drawer || !collapsed ? t("rail.toggleClose") : t("rail.toggleOpen");
-  const toggle = <IconButton icon="sidebar" size={collapsed ? "md" : "sm"} label={toggleLabel} onClick={onToggle} title={undefined} data-review-id="AppShell/toggle" />;
+  // D78: collapsed, the toggle is the app mark; pointing at it (or focusing it) turns it into the "open sidebar" icon.
+  const toggle = collapsed && !drawer ? (
+    <button type="button" className={s.markToggle} aria-label={toggleLabel} onClick={onToggle} data-review-id="AppShell/toggle">
+      <LogoMark className={s.markGlyph} />
+      <span className={s.markOpen} aria-hidden="true"><Icon name="sidebar" /></span>
+    </button>
+  ) : <IconButton icon="sidebar" size="sm" label={toggleLabel} onClick={onToggle} title={undefined} data-review-id="AppShell/toggle" />;
   return (
     <div className={s.railBody} data-collapsed={collapsed || undefined}>
       <div className={s.top}>
@@ -298,15 +305,25 @@ function ChatRow({ item, current, menuOpen, onTrash, onNavigate }: {
   );
 }
 
-/** The account row (avatar, "You" over "Local", a chevron; D59): one button that opens a menu upward, whose header still says
- * "Saved on this computer". Collapsed: the avatar alone. */
+/** The account row (avatar, "You" over "Local", a chevron; D59): one pill button (D78) that opens a menu upward, whose
+ * header still says "Saved on this computer"; the menu has Settings, the theme switch (D78), Privacy, Help.
+ * Collapsed: the avatar alone. */
 function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; defaultOpen: boolean; onNavigate?: () => void }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(defaultOpen);
+  const [theme, setTheme] = useTheme();
   const go = (to: string) => () => { navigate(to); onNavigate?.(); };
   const items: MenuEntry[] = [
     { id: "settings", label: t("settings.title"), icon: "settings", onSelect: go("/settings") },
-    { id: "appearance", label: t("settings.section.appearance"), icon: "sun", onSelect: go("/settings/appearance") },
+    // D78: the theme is switched right here, no trip to Settings.
+    {
+      id: "theme",
+      label: t("rail.theme"),
+      choices: (["system", "light", "dark"] as const).map((v) => ({
+        id: v, label: t(`theme.${v}`), icon: v === "system" ? "monitor" : v === "light" ? "sun" : "moon", checked: theme === v,
+        onSelect: () => setTheme(v),
+      })),
+    },
     { id: "sep", separator: true },
     { id: "privacy", label: t("settings.section.privacy"), icon: "lock", onSelect: go("/settings/privacy") },
     { id: "help", label: t("rail.help"), icon: "info", onSelect: go("/settings/about#free") },

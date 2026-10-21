@@ -11,7 +11,7 @@
   gap: var(--space-2);
   min-height: var(--control-h-md);
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   color: var(--color-text-secondary);
   text-decoration: none;
   font-weight: var(--weight-regular);
@@ -32,10 +32,22 @@
   margin-inline: calc(var(--space-3) * -1);
   container-type: inline-size;
 }
-/* A section's rows: one list, split by hairlines (SettingRow). */
-.rows { display: flex; flex-direction: column; }
+/* D78: the search icon sits inside the pill with the same room as the text on the left. */
+.searchIcon { display: inline-flex; padding-right: var(--space-2); color: var(--color-text-secondary); }
+/* The section's name on top of its groups (the groups are h3). */
+.pageTitle { margin-bottom: calc(var(--space-3) * -1); font-size: var(--text-xl); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); color: var(--color-text-primary); }
 .hint { font-size: var(--text-sm); color: var(--color-text-secondary); }
-.status { font-size: var(--text-sm); color: var(--color-text-success); display: inline-flex; gap: var(--space-1); align-items: center; }
+.note { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--color-text-secondary); }
+/* "Saved" toast content (D78). */
+.saved { display: inline-flex; align-items: center; gap: var(--space-2); }
+.saved svg { color: var(--color-text-success); }
+/* A line under a fixed description that only appears when an option is missing (never on switching). */
+.descNote { display: block; margin-top: var(--space-1); color: var(--color-text-tertiary); }
+/* Your CV (D78): the file, then the text under a disclosure, split by a hairline like rows. */
+.cvFile { scroll-margin-block: var(--space-6); }
+.cvText { margin: 0 !important; padding-block: var(--space-2); border-top: var(--border-width) solid var(--color-border-subtle); }
+.cvTextBody { display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-2); }
+.cvActions { display: flex; justify-content: flex-end; gap: var(--space-2); }
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-1); }
 .optional { font-weight: var(--weight-regular); color: var(--color-text-tertiary); }
 .inputRow { display: flex; gap: var(--space-2); align-items: center; width: 100%; }
@@ -62,9 +74,9 @@
   flex-direction: column;
   gap: var(--space-1);
   width: 100%;
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--color-text-primary);
   text-align: left;
@@ -84,7 +96,7 @@
 /* About and what's free (D58): the US-30 table. Rows are hairline-separated; the feature column takes the slack. */
 .anchor { scroll-margin-top: var(--space-6); }
 .lead { margin: 0; font-size: var(--text-md); color: var(--color-text-primary); }
-.tableCard { padding: 0; overflow-x: auto; }
+.tableWrap { overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .table th, .table td { padding: var(--space-3) var(--space-4); text-align: left; vertical-align: middle; border-bottom: 1px solid var(--color-border-subtle); }
 .table tbody tr:last-child th, .table tbody tr:last-child td { border-bottom: 0; }

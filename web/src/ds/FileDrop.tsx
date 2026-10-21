@@ -2,6 +2,7 @@
  * The privacy line comes first, above the zone (GR7, US-09 AC5): "The file stays on this computer."
  * States: empty · drag-over (border + fill, fast) · reading (text shimmer) · chosen (file row + Remove) ·
  * error (Callout error, role="alert", with the caller's next action, e.g. "Switch to Paste").
+ * D78: a chosen file can be replaced — a "Replace" button (with `replaceLabel`) or a new file dropped on its row.
  * The zone itself is not a button (no nested controls): "browse" is a link-style Button that opens the native
  * picker, so keyboard and screen-reader users get the same path. Validation (type, size) is the caller's. */
 import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
@@ -30,6 +31,8 @@ export interface FileDropProps {
   readingLabel?: string;
   /** "Remove file" (the Remove button shows only with both `removeLabel` and `onRemove`). */
   removeLabel?: string;
+  /** "Replace": a button on the chosen file's row that picks another file (D78). */
+  replaceLabel?: string;
   error?: { title?: string; body: ReactNode; action?: ReactNode };
   onFile?: (file: File) => void;
   onRemove?: () => void;
@@ -38,7 +41,7 @@ export interface FileDropProps {
 }
 
 export function FileDrop({
-  label, privacy, prompt, browseLabel, hint, accept, state = "empty", file, readingLabel, removeLabel,
+  label, privacy, prompt, browseLabel, hint, accept, state = "empty", file, readingLabel, removeLabel, replaceLabel,
   error, onFile, onRemove, disabled, className,
 }: FileDropProps) {
   const input = useRef<HTMLInputElement>(null);
@@ -83,22 +86,15 @@ export function FileDrop({
             <Button variant="link" onClick={() => input.current?.click()} disabled={disabled}>{browseLabel}</Button>
           </p>
           {hint ? <p id={`${id}h`} className={s.hint}>{hint}</p> : null}
-          <input
-            ref={input}
-            type="file"
-            accept={accept}
-            className="visually-hidden"
-            tabIndex={-1}
-            aria-hidden="true"
-            disabled={disabled}
-            onChange={(e) => {
-              take(e.currentTarget.files);
-              e.currentTarget.value = "";
-            }}
-          />
         </div>
       ) : (
-        <div className={`${s.file} motion-fade`}>
+        <div
+          className={`${s.file} ${over ? s.over : ""} motion-fade`}
+          onDragEnter={state === "chosen" ? onDragOver : undefined}
+          onDragOver={state === "chosen" ? onDragOver : undefined}
+          onDragLeave={() => setOver(false)}
+          onDrop={state === "chosen" ? onDrop : undefined}
+        >
           <span className={s.fileIcon}><Icon name="file" /></span>
           <span className={s.fileText}>
             <span className={s.fileName} title={file?.name}>{file?.name}</span>
@@ -106,9 +102,25 @@ export function FileDrop({
               ? <TextShimmer status>{readingLabel}</TextShimmer>
               : file?.size ? <span className={s.fileSize}>{file.size}</span> : null}
           </span>
-          {state === "chosen" && onRemove && removeLabel ? <IconButton icon="x" size="sm" label={removeLabel} onClick={onRemove} /> : null}
+          {state === "chosen" && replaceLabel ? (
+            <Button size="sm" onClick={() => input.current?.click()} disabled={disabled}>{replaceLabel}</Button>
+          ) : null}
+          {state === "chosen" && onRemove && removeLabel ? <IconButton icon="trash" size="sm" label={removeLabel} onClick={onRemove} disabled={disabled} /> : null}
         </div>
       )}
+      <input
+        ref={input}
+        type="file"
+        accept={accept}
+        className="visually-hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+        disabled={disabled}
+        onChange={(e) => {
+          take(e.currentTarget.files);
+          e.currentTarget.value = "";
+        }}
+      />
       {state === "error" && error ? (
         <div className="motion-fade">
           <Callout tone="error" live="alert" title={error.title} actions={error.action}>{error.body}</Callout>

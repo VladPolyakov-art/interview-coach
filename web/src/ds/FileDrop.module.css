@@ -6,8 +6,8 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-8) var(--space-4);
-  border: var(--border-width) dashed transparent;
-  border-radius: var(--radius-md);
+  border: var(--border-width) dashed var(--color-border-control);
+  border-radius: var(--radius-lg);
   background: var(--color-surface-card);
   text-align: center;
   transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
@@ -25,9 +25,11 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius-md);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-lg);
   background: var(--color-surface-card);
   min-width: 0;
+  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
 .fileIcon {
   flex: none;
@@ -35,7 +37,7 @@
   place-items: center;
   width: var(--control-h-md);
   height: var(--control-h-md);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   background: var(--color-raised);
   color: var(--color-text-secondary);
 }

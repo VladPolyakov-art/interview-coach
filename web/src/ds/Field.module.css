@@ -7,9 +7,10 @@
 .control {
   width: 100%;
   min-height: var(--control-h-md);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border: var(--border-width) solid transparent;
-  border-radius: var(--radius-md);
+  /* D78: a rounded interface: one-line fields are pills, a text area a rounded box. */
+  border-radius: var(--radius-pill);
   background: var(--color-surface-field);
   color: var(--color-text-primary);
   font-size: var(--text-md);
@@ -23,20 +24,10 @@
 /* D51: no stroke; a field is a fill with a visible label / placeholder. Hover steps the fill. Invalid keeps the error stroke. */
 .control:not(:disabled):not(:focus):hover { background: var(--color-surface-chip-hover); }
 
-.textarea { resize: vertical; min-height: calc(var(--control-h-lg) * 2.5); }
-
-.selectWrap { position: relative; display: flex; align-items: center; }
-.select { appearance: none; padding-right: var(--space-10); cursor: pointer; }
-.chev {
-  position: absolute;
-  right: var(--space-3);
-  pointer-events: none;
-  color: var(--color-text-secondary);
-  display: inline-flex;
-}
+.textarea { resize: vertical; min-height: calc(var(--control-h-lg) * 2.5); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); }
 
 .inputWrap { position: relative; display: flex; align-items: center; }
 .inputWrap .control { padding-right: var(--space-12); }
-.adorn { position: absolute; right: var(--space-1); display: inline-flex; }
+.adorn { position: absolute; right: var(--space-2); display: inline-flex; }
 
 .counter { font-size: var(--text-sm); color: var(--color-text-tertiary); text-align: right; }

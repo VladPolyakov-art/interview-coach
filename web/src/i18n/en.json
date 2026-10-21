@@ -63,7 +63,8 @@
     "rowOpen": "Open",
     "engineWarning": "AI engine",
     "help": "Help & what's free",
-    "local": "Local"
+    "local": "Local",
+    "theme": "Theme"
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -205,6 +206,16 @@
       "costData": "Cost and your data",
       "finish": "Finish setup",
       "selected": "Selected"
+    },
+    "settings": {
+      "inUse": "In use",
+      "others": "Other engines",
+      "othersHint": "Switch any time. Your sessions stay as they are.",
+      "use": "Use",
+      "setUp": "Set up",
+      "hide": "Hide",
+      "connection": "Connection",
+      "switched": "Mike now uses {name}."
     }
   },
   "setup": {
@@ -471,6 +482,12 @@
       "empty": "Phrases you often get wrong will appear here after your first session.",
       "showAll": "Show all ({n})",
       "showLess": "Show less"
+    },
+    "short": {
+      "A2": "Everyday topics",
+      "B1": "Familiar topics",
+      "B2": "Work topics",
+      "C1": "Complex topics"
     }
   },
   "vacancy": {
@@ -1203,11 +1220,10 @@
     "title": "Settings",
     "sections": "Settings sections",
     "section": {
+      "general": "General",
       "engine": "AI engine",
       "voice": "Voice and speech",
       "practice": "Practice",
-      "profile": "Your CV",
-      "appearance": "Appearance",
       "privacy": "Privacy and data",
       "about": "About and what's free"
     },
@@ -1224,14 +1240,13 @@
       "sttWhere": "Recognise my speech",
       "sttServer": "On this computer",
       "sttBrowser": "In the browser",
-      "sttServerHint": "Local recognition ({backend}). Audio stays on this computer.",
       "sttServerMissing": "Local recognition isn't installed. Use the browser or the keyboard.",
-      "sttBrowserHint": "Uses the browser's speech recognition (Chrome, Edge). The browser may send audio to its own service.",
       "sttBrowserUnsupported": "This browser has no speech recognition.",
       "pause": "Send my voice answer after",
       "pauseValue": "{n} s of quiet",
       "pauseManual": "Only when I press Send",
-      "pauseHint": "Longer pauses give you more time to think."
+      "pauseHint": "Longer pauses give you more time to think.",
+      "sttHint": "On this computer, audio stays here. In the browser, Chrome or Edge may send it to their own service."
     },
     "practice": {
       "title": "Practice",
@@ -1243,17 +1258,27 @@
       "layerOrderHint": "The order of the three feedback blocks after each question.",
       "level": "Default English level",
       "strictness": "Default strictness",
-      "questions": "Questions per interview"
+      "questions": "Questions per interview",
+      "defaults": "Interview defaults",
+      "levelHint": "How Mike speaks to you and how much he corrects."
     },
     "profile": {
       "title": "Your CV",
       "hint": "Mike uses it to ask about your own experience. It stays on this computer.",
       "updated": "Updated {date}",
-      "source": "Source: {source}",
       "remove": "Remove CV",
       "removed": "CV removed.",
       "empty": "No CV yet.",
-      "cv": "CV text"
+      "cv": "CV text",
+      "drop": "Drop your CV here, or",
+      "browse": "choose a file",
+      "fileHint": "PDF, DOCX, TXT or MD",
+      "replace": "Replace",
+      "fileLabel": "CV file",
+      "asText": "Paste the text instead",
+      "text": "Text Mike reads",
+      "textHint": "Mike reads this text, not the file. Fix it here if something came out wrong.",
+      "pasted": "Pasted text"
     },
     "appearance": {
       "title": "Appearance",
@@ -1273,7 +1298,9 @@
       "obsidianSave": "Save folder",
       "trash": "Trash",
       "trashHint": "Sessions you moved to Trash stay here until you delete them for good.",
-      "trashOpen": "Open Trash"
+      "trashOpen": "Open Trash",
+      "sharing": "Sharing",
+      "files": "Your files"
     },
     "saved": "Saved",
     "saveError": "Couldn't save: {message}",

@@ -21,7 +21,7 @@
 
 /* ---- Rail (≥ 1024): the claude.ai sidebar (D57) ---- */
 /* Brand + toggle · New practice · Recents (the middle scrolls) · engine warning + account at the bottom. Set off from the
- * content by its fill only (--color-sidebar next to --color-canvas), no line. Rows are --radius-md: hover fill, current = selected fill. */
+ * content by its fill only (--color-sidebar next to --color-canvas), no line. Rows are pills (D78): hover fill, current = selected fill. */
 .rail {
   min-width: 0;
   min-height: 0;
@@ -52,6 +52,26 @@
   min-height: var(--control-h-md);
 }
 .railBody[data-collapsed] .top { justify-content: center; }
+/* D78: the collapsed rail's toggle is the app mark; on hover or keyboard focus it shows the "open sidebar" icon. */
+.markToggle {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-h-md);
+  height: var(--control-h-md);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.markToggle > * { grid-area: 1 / 1; transition: opacity var(--duration-fast) var(--ease-standard); }
+.markOpen { display: inline-flex; opacity: 0; }
+.markToggle:hover, .markToggle:focus-visible { background: var(--color-hover); color: var(--color-text-primary); }
+.markToggle:hover .markGlyph, .markToggle:focus-visible .markGlyph { opacity: 0; }
+.markToggle:hover .markOpen, .markToggle:focus-visible .markOpen { opacity: 1; }
 .brand {
   display: flex;
   flex: 1 1 auto;
@@ -60,7 +80,7 @@
   gap: var(--space-2);
   min-height: var(--control-h-md);
   padding: 0 var(--space-2);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   color: var(--color-text-primary);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
@@ -76,7 +96,7 @@
   gap: var(--space-2);
   min-height: calc(var(--control-h-md) - var(--space-1));
   padding: 0 var(--space-2);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -181,9 +201,10 @@
   gap: var(--space-2);
   width: 100%;
   min-height: var(--control-h-lg);
-  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
   border: 0;
-  border-radius: var(--radius-md);
+  /* D78: a pill, like the rest of the rounded interface. */
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-text-primary);
   font: inherit;
@@ -264,7 +285,7 @@
   left: var(--space-4);
   z-index: var(--z-toast);
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   background: var(--color-action);
   color: var(--color-text-on-action);
 }

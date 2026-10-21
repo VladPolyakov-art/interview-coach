@@ -20,6 +20,8 @@ export interface DialogProps {
   inline?: boolean;
   /** `md` (default): a decision. `lg` (D76): a tall panel with its own layout in the body, e.g. Settings; full screen on a phone. */
   size?: "md" | "lg";
+  /** A press outside the box closes it (D78: Settings). Off for decisions, where a stray click must not cancel. */
+  closeOnBackdrop?: boolean;
 }
 
 /** Modal decision. Three render modes, one look:
@@ -98,15 +100,19 @@ function ContainedDialog(props: DialogProps) {
   return (
     <OverlayPortal>
       <div className={s.containedRoot}>
-        <div className={`${s.scrim} ${leaving ? s.scrimOut : ""}`} aria-hidden="true" />
+        <div className={`${s.scrim} ${leaving ? s.scrimOut : ""}`} aria-hidden="true"
+          onClick={props.closeOnBackdrop && open ? props.onClose : undefined} />
         <DialogBox {...props} open={open && !leaving} mode="contained" ref={box} className={leaving ? s.leaving : undefined} />
       </div>
     </OverlayPortal>
   );
 }
 
-function ModalDialog({ open, title, children, actions, actionsStart, onClose, closeLabel, size }: DialogProps) {
+function ModalDialog({ open, title, children, actions, actionsStart, onClose, closeLabel, size, closeOnBackdrop }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  // A backdrop press is a press on the <dialog> itself, outside its inner box. It must start there too, so a text
+  // selection dragged out of the box does not close it.
+  const downOnBackdrop = useRef(false);
   const opener = useRef<HTMLElement | null>(null);
   const cancelExit = useRef<(() => void) | null>(null);
   const id = useId();
@@ -145,8 +151,19 @@ function ModalDialog({ open, title, children, actions, actionsStart, onClose, cl
       aria-labelledby={`${id}-t`}
       onClose={() => { if (open) onClose(); }}
       onCancel={(e) => { e.preventDefault(); onClose(); }}
+      onPointerDown={closeOnBackdrop ? (e) => { downOnBackdrop.current = e.target === e.currentTarget; } : undefined}
+      onClick={closeOnBackdrop ? (e) => {
+        if (open && downOnBackdrop.current && e.target === e.currentTarget && outsideBox(e.currentTarget, e.clientX, e.clientY)) onClose();
+        downOnBackdrop.current = false;
+      } : undefined}
     >
       <Inner id={id} title={title} actions={actions} actionsStart={actionsStart} onClose={onClose} closeLabel={closeLabel}>{children}</Inner>
     </dialog>
   );
+}
+
+/** The click lies outside the dialog's box (its border box; a click on the dialog's own padding is inside). */
+function outsideBox(el: HTMLElement, x: number, y: number) {
+  const r = el.getBoundingClientRect();
+  return x < r.left || x > r.right || y < r.top || y > r.bottom;
 }

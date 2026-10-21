@@ -3,7 +3,6 @@ import {
   useId,
   type InputHTMLAttributes,
   type ReactNode,
-  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 import { Icon } from "./icons";
@@ -20,11 +19,11 @@ interface FieldShellProps {
   footer?: ReactNode;
 }
 
-/** Label + control + hint/error, wired with aria-describedby by the caller via ids. */
-function FieldShell({ id, label, hideLabel, hint, error, optionalText, children, footer }: FieldShellProps) {
+/** Label + control + hint/error, wired with aria-describedby by the caller via ids. The label's id is `<id>-label`. */
+export function FieldShell({ id, label, hideLabel, hint, error, optionalText, children, footer }: FieldShellProps) {
   return (
     <div className={s.field}>
-      <label htmlFor={id} className={hideLabel ? "visually-hidden" : s.label}>
+      <label id={`${id}-label`} htmlFor={id} className={hideLabel ? "visually-hidden" : s.label}>
         {label}
         {optionalText ? <span className={s.optional}> · {optionalText}</span> : null}
       </label>
@@ -41,13 +40,13 @@ function FieldShell({ id, label, hideLabel, hint, error, optionalText, children,
   );
 }
 
-function describedBy(id: string, hint: ReactNode, error: ReactNode) {
+export function describedBy(id: string, hint: ReactNode, error: ReactNode) {
   if (error) return `${id}-error`;
   if (hint) return `${id}-hint`;
   return undefined;
 }
 
-type Common = { label: string; hideLabel?: boolean; hint?: ReactNode; error?: ReactNode; optionalText?: string };
+export type Common = { label: string; hideLabel?: boolean; hint?: ReactNode; error?: ReactNode; optionalText?: string };
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">, Common {
   /** Element rendered inside the right edge of the field (e.g. show/hide key). */
@@ -107,38 +106,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         aria-describedby={describedBy(id, hint, error)}
         {...rest}
       />
-    </FieldShell>
-  );
-});
-
-export interface SelectOption { value: string; label: string; disabled?: boolean }
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement>, Common {
-  options: SelectOption[];
-}
-
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, hideLabel, hint, error, optionalText, id: idProp, options, className, ...rest },
-  ref,
-) {
-  const auto = useId();
-  const id = idProp ?? auto;
-  return (
-    <FieldShell id={id} label={label} hideLabel={hideLabel} hint={hint} error={error} optionalText={optionalText}>
-      <div className={s.selectWrap}>
-        <select
-          ref={ref}
-          id={id}
-          className={`${s.control} ${s.select} ${className ?? ""}`}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={describedBy(id, hint, error)}
-          {...rest}
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>
-          ))}
-        </select>
-        <span className={s.chev}><Icon name="chevronDown" size="sm" /></span>
-      </div>
     </FieldShell>
   );
 });

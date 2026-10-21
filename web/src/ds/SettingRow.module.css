@@ -14,8 +14,7 @@
 .label { font-size: var(--text-md); font-weight: var(--weight-medium); color: var(--color-text-primary); }
 .desc { font-size: var(--text-sm); color: var(--color-text-secondary); }
 .control { flex: 0 0 auto; min-width: 0; max-width: 65%; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
-/* A field in the control column has one width for all rows, so selects line up. */
-.control > [data-field] { width: 15rem; max-width: 100%; }
+/* D78: controls are as wide as their content (a "5" select is small, a voice name fits); a field in a stacked row fills it. */
 .stack { flex-direction: column; align-items: stretch; gap: var(--space-3); }
 .stack .control { max-width: none; justify-content: flex-start; }
 .stack .control > [data-field] { width: 100%; }
@@ -26,6 +25,30 @@
   .row:not(:has(> .control [role="switch"])) .control { max-width: none; justify-content: flex-start; flex-wrap: nowrap; }
   .control > [data-field] { flex: 1 1 auto; width: auto; }
 }
+
+/* SettingGroup (D78): the title, then one rounded box; rows inside run edge to edge with the box's side padding. */
+.groupSection { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.groupHead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
+.groupHeadText { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.groupTitle { font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--color-text-primary); }
+.groupDesc { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-inline: var(--space-4);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  container-type: inline-size;
+}
+.group > .row { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); }
+.group > .row[data-found] { border-radius: 0; }
+/* Non-row content (a Callout, a list) gets the rows' vertical rhythm. */
+.group > :not(.row) { margin-block: var(--space-4); }
+.group.flush { padding-inline: 0; }
+.group.flush > :not(.row) { margin-block: 0; }
+.group > :not(.row) + .row { border-top: var(--border-width) solid var(--color-border-subtle); }
 /* Found from settings search or a deep link: a soft tint that fades, so the eye lands on the row. */
 .row[data-found] { border-radius: var(--radius-md); animation: found calc(var(--duration-slow) * 6) var(--ease-standard); }
 @keyframes found {

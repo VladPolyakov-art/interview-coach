@@ -37,7 +37,15 @@ export interface MenuItem {
   onSelect?: () => void;
 }
 export interface MenuSeparator { id: string; separator: true }
-export type MenuEntry = MenuItem | MenuSeparator;
+/** A row with a label and a few icon choices side by side (D78: the account menu's Theme). Each choice is a
+ * menuitemradio; choosing keeps the menu open, so the change is seen at once. */
+export interface MenuChoiceRow {
+  id: string;
+  label: string;
+  icon?: IconName;
+  choices: { id: string; label: string; icon: IconName; checked: boolean; onSelect: () => void }[];
+}
+export type MenuEntry = MenuItem | MenuSeparator | MenuChoiceRow;
 
 export interface ListboxOption {
   id: string;
@@ -91,8 +99,10 @@ export interface ListboxMenuProps extends CommonProps {
   search?: { label: string; placeholder?: string };
   /** Under the list, e.g. Button ghost sm "Add a job". */
   footer?: ReactNode;
-  /** Popup as wide as the anchor (default true for a listbox). */
-  matchWidth?: boolean;
+  /** Popup as wide as the anchor (default true for a listbox); `"min"`: at least as wide. */
+  matchWidth?: boolean | "min";
+  /** `panel` (default): the picker's panel width. `fit`: as wide as its options (Select, D78). */
+  fit?: boolean;
   /** Shown when the search matches nothing. */
   emptyText?: string;
 }
@@ -224,46 +234,45 @@ function popupClass(base: string | undefined, p: { side: "top" | "bottom"; leavi
 }
 
 function isItem(e: MenuEntry): e is MenuItem {
-  return !("separator" in e);
+  return !("separator" in e) && !("choices" in e);
 }
+
+const FOCUSABLE = '[role^="menuitem"]:not(:disabled)';
 
 function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, side, align, style, ready, leaving, inline, label }: PopupBase & {
   items: MenuEntry[]; header?: ReactNode; triggerId: string; align: "start" | "end";
 }) {
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const enabled = items.map((e, i) => (isItem(e) && !e.disabled ? i : -1)).filter((i) => i >= 0);
+  // Keyboard moves over every enabled item in DOM order, choice buttons included.
+  const focusables = () => Array.from(floatingRef.current?.querySelectorAll<HTMLButtonElement>(FOCUSABLE) ?? []);
 
   useLayoutEffect(() => {
     const intent = focusIntent.current;
     if (!intent || leaving || !ready) return;
     focusIntent.current = null;
-    const checked = items.findIndex((e) => isItem(e) && e.checked && !e.disabled);
-    const index = intent === "last" ? enabled[enabled.length - 1] : intent === "current" && checked >= 0 ? checked : enabled[0];
-    if (index !== undefined) itemRefs.current[index]?.focus({ preventScroll: true });
+    const all = focusables();
+    const checked = all.find((el) => el.getAttribute("aria-checked") === "true" && el.dataset.choice === undefined);
+    const target = intent === "last" ? all[all.length - 1] : intent === "current" && checked ? checked : all[0];
+    target?.focus({ preventScroll: true });
   });
 
-  const move = (from: number, delta: number) => {
-    if (!enabled.length) return;
-    const pos = enabled.indexOf(from);
-    const next = enabled[(pos + delta + enabled.length) % enabled.length];
-    if (next !== undefined) itemRefs.current[next]?.focus();
-  };
-
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const current = itemRefs.current.findIndex((el) => el === document.activeElement);
-    if (e.key === "ArrowDown") { e.preventDefault(); move(current < 0 ? enabled[enabled.length - 1] ?? 0 : current, 1); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); move(current < 0 ? enabled[0] ?? 0 : current, -1); }
-    else if (e.key === "Home") { e.preventDefault(); itemRefs.current[enabled[0] ?? 0]?.focus(); }
-    else if (e.key === "End") { e.preventDefault(); itemRefs.current[enabled[enabled.length - 1] ?? 0]?.focus(); }
+    const all = focusables();
+    if (!all.length) return;
+    const current = all.findIndex((el) => el === document.activeElement);
+    const go = (i: number) => all[(i + all.length) % all.length]?.focus();
+    if (e.key === "ArrowDown" || (e.key === "ArrowRight" && current >= 0 && all[current]?.dataset.choice !== undefined)) {
+      e.preventDefault(); go(current < 0 ? 0 : current + 1);
+    } else if (e.key === "ArrowUp" || (e.key === "ArrowLeft" && current >= 0 && all[current]?.dataset.choice !== undefined)) {
+      e.preventDefault(); go(current < 0 ? all.length - 1 : current - 1);
+    }
+    else if (e.key === "Home") { e.preventDefault(); go(0); }
+    else if (e.key === "End") { e.preventDefault(); go(all.length - 1); }
     else if (e.key === "Escape" || e.key === "Tab") { e.preventDefault(); e.stopPropagation(); onClose(true); }
     else if (e.key.length === 1 && /\S/.test(e.key)) {
       const ch = e.key.toLowerCase();
-      const order = [...enabled.filter((i) => i > current), ...enabled.filter((i) => i <= current)];
-      const hit = order.find((i) => {
-        const entry = items[i];
-        return entry && isItem(entry) && entry.label.toLowerCase().startsWith(ch);
-      });
-      if (hit !== undefined) itemRefs.current[hit]?.focus();
+      const order = [...all.slice(current + 1), ...all.slice(0, current + 1)];
+      const hit = order.find((el) => (el.getAttribute("aria-label") ?? el.textContent ?? "").trim().toLowerCase().startsWith(ch));
+      hit?.focus();
     }
   };
 
@@ -280,13 +289,39 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
     >
       {header ? <div className={s.header}>{header}</div> : null}
       {header ? <div role="separator" className={s.separator} /> : null}
-      {items.map((entry, i) => {
-        if (!isItem(entry)) return <div key={entry.id} role="separator" className={s.separator} />;
+      {items.map((entry) => {
+        if ("separator" in entry) return <div key={entry.id} role="separator" className={s.separator} />;
+        if ("choices" in entry) {
+          return (
+            <div key={entry.id} role="group" aria-label={entry.label} className={s.choiceRow}>
+              {hasChecks ? <span className={s.check} aria-hidden="true" /> : null}
+              {entry.icon ? <span className={s.itemIcon}><Icon name={entry.icon} size="sm" /></span> : null}
+              <span className={s.choiceLabel} aria-hidden="true">{entry.label}</span>
+              <span className={s.choices}>
+                {entry.choices.map((ch) => (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={ch.checked}
+                    aria-label={ch.label}
+                    title={ch.label}
+                    data-choice=""
+                    tabIndex={-1}
+                    className={s.choice}
+                    onClick={ch.onSelect}
+                  >
+                    <Icon name={ch.icon} size="sm" />
+                  </button>
+                ))}
+              </span>
+            </div>
+          );
+        }
         const checkable = entry.checked !== undefined || entry.checkbox;
         return (
           <button
             key={entry.id}
-            ref={(el) => { itemRefs.current[i] = el; }}
             type="button"
             role={entry.checkbox ? "menuitemcheckbox" : checkable ? "menuitemradio" : "menuitem"}
             aria-checked={checkable ? Boolean(entry.checked) : undefined}
@@ -319,7 +354,7 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
 }
 
 function ListboxPopup({
-  options, value, onChange, search, footer, emptyText, popupId, floatingRef, focusIntent, onClose, side, style, ready, leaving, inline, label,
+  options, value, onChange, search, footer, emptyText, fit, popupId, floatingRef, focusIntent, onClose, side, style, ready, leaving, inline, label,
 }: PopupBase & ListboxMenuProps) {
   const [query, setQuery] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
@@ -380,7 +415,7 @@ function ListboxPopup({
     <div
       ref={floatingRef}
       id={popupId}
-      className={popupClass(s.picker, { side, leaving, inline })}
+      className={popupClass(`${s.picker} ${fit ? s.fit : ""}`, { side, leaving, inline })}
       style={style}
       onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(true); } }}
     >

@@ -145,8 +145,10 @@ export function ToastProvider({ children, paused = false, max = 3 }: ToastProvid
 }
 
 function ToastRegion({ items, onDismiss }: { items: Item[]; onDismiss: (id: number) => void }) {
+  // D78: a modal dialog (Settings) sits in the browser's top layer, above anything in the page; a toast shown while it
+  // is open goes inside it, so it is seen ("Saved") and is not inert.
   return (
-    <OverlayPortal>
+    <OverlayPortal host={items.length ? openModal() : null}>
       <div className={s.region} role="region" aria-label={t("overlay.notifications")} aria-live="polite">
         {items.map((item) => <TimedToast key={item.id} item={item} onDismiss={onDismiss} />)}
       </div>
@@ -174,4 +176,13 @@ function TimedToast({ item, onDismiss }: { item: Item; onDismiss: (id: number) =
       <Toast message={item.message} action={item.action} tone={item.tone} leaving={item.leaving} onDismiss={() => onDismiss(item.id)} />
     </div>
   );
+}
+
+function openModal(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  try {
+    return document.querySelector<HTMLElement>("dialog:modal");
+  } catch {
+    return null;
+  }
 }

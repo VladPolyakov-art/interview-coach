@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Input, Select, Textarea } from "./Field";
+import { Input, Textarea } from "./Field";
 import { IconButton } from "./Button";
 
 const meta: Meta = { title: "DS/Field" };
@@ -31,13 +31,6 @@ export const TextArea: StoryObj = {
   render: () => (
     <div style={{ maxWidth: "32rem" }}>
       <Textarea label="Your CV" optionalText="optional" showCount value="Alex Morgan — product designer, 6 years in fintech." onChange={() => {}} />
-    </div>
-  ),
-};
-export const SelectBox: StoryObj = {
-  render: () => (
-    <div style={{ maxWidth: "20rem" }}>
-      <Select label="Model" options={[{ value: "qwen3:4b-instruct", label: "qwen3:4b-instruct · 2.5 GB" }, { value: "qwen3:8b", label: "qwen3:8b · 5.2 GB" }]} />
     </div>
   ),
 };

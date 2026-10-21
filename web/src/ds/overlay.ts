@@ -92,7 +92,8 @@ export interface PlaceOptions {
   pad: number;
   /** Gap between trigger and floating element (the floating CSS adds it as a margin). */
   gap: number;
-  matchWidth?: boolean;
+  /** `true`: as wide as the anchor. `"min"`: at least as wide as the anchor (a Select's options may be longer). */
+  matchWidth?: boolean | "min";
   /** Full-width sheet under the trigger when the container is narrow (menus on phones, home.md §3.6). */
   sheetWhenNarrow?: boolean;
 }
@@ -123,7 +124,7 @@ export function place(anchor: AnchorBox, space: Space, o: PlaceOptions): Placed 
   if (narrow) {
     return { side, align: "start", left: o.pad, top, width: Math.max(0, space.width - o.pad * 2), maxHeight };
   }
-  const width = o.matchWidth ? anchor.width : o.floating.width;
+  const width = o.matchWidth === "min" ? Math.max(anchor.width, o.floating.width) : o.matchWidth ? anchor.width : o.floating.width;
   let left = align === "end" ? anchor.left + anchor.width - width : anchor.left;
   left = Math.min(left, space.width - o.pad - width);
   left = Math.max(o.pad, left);
@@ -140,7 +141,7 @@ export function useAnchoredPosition(opts: {
   floating: RefObject<HTMLElement | null>;
   container: HTMLElement | null;
   placement: Placement;
-  matchWidth?: boolean;
+  matchWidth?: boolean | "min";
   sheetWhenNarrow?: boolean;
 }) {
   const { active, anchor, floating, container, placement, matchWidth, sheetWhenNarrow } = opts;
