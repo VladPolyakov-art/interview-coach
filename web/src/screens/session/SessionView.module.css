@@ -124,3 +124,5 @@
 @keyframes panel-out { to { opacity: 0; transform: translateX(var(--space-6)); } }
 .floatIn { animation: panel-in var(--duration-slower) var(--ease-enter) backwards; }
 .floatOut { animation: panel-out var(--duration-exit) var(--ease-exit) forwards; pointer-events: none; }
+/* D72: the muted-speech tooltip over the mic says the same thing; the status keeps its place but steps back. */
+.statusQuiet { visibility: hidden; }

@@ -73,6 +73,8 @@ export interface SessionData {
   notices?: { id: string; tone: "info" | "warning" | "error"; text: string; title?: string; onDismiss?: () => void; action?: { label: string; onClick: () => void } }[];
   /** The round is over: Mike said goodbye. */
   closing?: boolean;
+  /** D72: a short alert shown as a tooltip over the mic ("You're talking, but the microphone is muted…"). */
+  micTip?: string;
 }
 
 export interface SessionHandlers {

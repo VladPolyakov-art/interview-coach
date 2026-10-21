@@ -81,6 +81,17 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     }
   }, [threads, state.recording, english]);
 
+  /* D72: the muted-speech tooltip over the mic goes away once the mic is on again or after a few seconds; screen
+   * readers hear it through the polite live region (a tooltip is not announced). */
+  const mutedTalk = state.notice?.code === "muted_speech";
+  useEffect(() => {
+    if (!mutedTalk) return;
+    if (!muted) { actions.dismissNotice(); return; }
+    setReadyMsg(t("session.notice.mutedSpeech"));
+    const id = window.setTimeout(actions.dismissNotice, 6000);
+    return () => window.clearTimeout(id);
+  }, [mutedTalk, muted, actions]);
+
   /* The tab says where you are (session.md §V2.3: the title left the screen for the More menu). */
   useEffect(() => {
     if (!live) return;
@@ -172,7 +183,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   const notices: NonNullable<SessionData["notices"]> = [];
   if (!state.recording) {
     if (micError) notices.push({ id: "mic", tone: "warning", text: tMaybe(`session.mic.${micError}`, t("session.mic.failed")) });
-    if (state.notice) notices.push({ id: "notice", tone: "info", text: state.notice.message, onDismiss: actions.dismissNotice });
+    if (state.notice && state.notice.code !== "muted_speech") notices.push({ id: "notice", tone: "info", text: state.notice.message, onDismiss: actions.dismissNotice });
     if (state.error) notices.push({ id: "error", tone: "error", text: [state.error.message, state.error.hint].filter(Boolean).join(" "), onDismiss: actions.dismissError });
     if (state.closing) notices.push({ id: "closing", tone: "info", title: t("session.closing.title"), text: t("session.closing.body"), action: { label: t("session.closing.debrief"), onClick: actions.end } });
   }
@@ -182,6 +193,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     : undefined;
 
   const data: SessionData = {
+    micTip: state.notice?.code === "muted_speech" && !state.recording ? state.notice.message : undefined,
     title,
     sub,
     badges: english && start.level ? [{ label: start.level, tone: "outline", icon: "language" }] : undefined,

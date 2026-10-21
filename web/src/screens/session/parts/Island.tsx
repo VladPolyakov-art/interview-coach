@@ -236,7 +236,7 @@ export function SessionIsland(p: SessionIslandProps) {
   }
 
   const micDisabled = interrupted || p.noSpeech;
-  const mic = voice ? (
+  const micButton = voice ? (
     <MicButton
       label={p.muted ? t("session.controls.unmute") : t("session.controls.mute")}
       title={p.noSpeech ? t("session.island.voiceUnavailable") : interrupted ? t("session.island.micDisabled") : undefined}
@@ -248,6 +248,10 @@ export function SessionIsland(p: SessionIslandProps) {
       onClick={h?.onToggleMute}
     />
   ) : null;
+  // D72: "you're talking while muted" points at the mic itself instead of a banner over the stage.
+  const mic = micButton && p.data.micTip && p.muted
+    ? <Tooltip content={p.data.micTip} open placement="top-start">{micButton}</Tooltip>
+    : micButton;
 
   const redo = (
     <IconButton

@@ -3,6 +3,7 @@
  * Home and Debrief. Used by the stories and the review page only; the live app never imports this file. */
 import type { FeedbackRecord, LanguageItem } from "../../lib/types";
 import type { Thread } from "../../session/reducer";
+import { t } from "../../i18n";
 import type { SessionData, SessionHandlers, SessionViewProps, TopBadge, TranscriptTurn } from "./types";
 
 const noop = () => undefined;
@@ -140,7 +141,7 @@ const typed = (turns: TranscriptTurn[]) => turns.map((x) => (x.speaker === "user
 export type FixtureScene =
   | "q1-start" | "follow-up" | "listening" | "thinking" | "feedback" | "that-not-said" | "edit" | "text" | "drill" | "english"
   | "connecting" | "interrupted-engine" | "interrupted-voice" | "mic-help" | "storage" | "browser" | "overflow"
-  | "preparing" | "unavailable" | "muted" | "suggester";
+  | "preparing" | "unavailable" | "muted" | "muted-talking" | "suggester";
 
 export interface FixtureOptions {
   scene: FixtureScene;
@@ -261,6 +262,10 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
     case "muted":
       return withThread({
         transcript: [...Q1_TURNS, Q2_ASK, Q2_ANSWER, Q2_FOLLOW], followUp: FOLLOW_UP,
+      }, { phase: "your-turn", muted: true });
+    case "muted-talking":
+      return withThread({
+        transcript: [...Q1_TURNS, Q2_ASK, Q2_ANSWER, Q2_FOLLOW], followUp: FOLLOW_UP, micTip: t("session.notice.mutedSpeech"),
       }, { phase: "your-turn", muted: true });
     case "suggester":
       return withThread({

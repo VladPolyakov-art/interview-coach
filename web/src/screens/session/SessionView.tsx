@@ -296,7 +296,7 @@ export function SessionView(props: SessionViewProps) {
             <div ref={islandRef} className={s.dock}>
               <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
               <div className={s.status} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
-                <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} />
+                <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} className={data.micTip && muted ? s.statusQuiet : undefined} />
               </div>
               {showIsland ? (
                 <div className={s.islandBox} data-input={input} data-stacked={(props.island ?? (narrowIsland ? "stacked" : "inline")) === "stacked" || undefined}>
