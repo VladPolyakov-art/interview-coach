@@ -8,41 +8,68 @@
   background: var(--color-canvas);
   container: shell / inline-size;
 }
-/* The root can't query itself: the grid lives one level down. */
+/* The root can't query itself: the grid lives one level down. The rail column animates between the two widths (D57):
+ * layout does reflow here on purpose (the content takes the room), the one exception to "transform and opacity only". */
 .frame {
   display: grid;
   grid-template-columns: var(--layout-rail) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   height: 100%;
+  transition: grid-template-columns var(--duration-slow) var(--ease-standard);
 }
+.frame[data-collapsed] { grid-template-columns: var(--layout-rail-collapsed) minmax(0, 1fr); }
 
-/* ---- Rail (≥ 1024): Gemini sidebar (D51 item 6, R4) ---- */
-/* Brand · nav · chats (the middle scrolls) · engine warning + account at the bottom. Set off from the content by
- * its fill only (--color-sidebar next to --color-canvas), no line. Rows are pills: hover fill, current = selected fill. */
+/* ---- Rail (≥ 1024): the claude.ai sidebar (D57) ---- */
+/* Brand + toggle · New practice · Recents (the middle scrolls) · engine warning + account at the bottom. Set off from the
+ * content by its fill only (--color-sidebar next to --color-canvas), no line. Rows are --radius-md: hover fill, current = selected fill. */
 .rail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  min-width: 0;
   min-height: 0;
-  /* Tight rail (D47d): the selected pill sits 8px from the rail edges. */
+  /* Tight rail (D47d): the selected row sits 8px from the rail edges. */
   padding: var(--space-3) var(--space-2);
   overflow: hidden;
   background: var(--color-sidebar);
 }
-.brand {
+/* A fixed width per state: while the rail animates, the body is revealed, never squeezed. */
+.railBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: calc(var(--layout-rail) - 2 * var(--space-2));
+  height: 100%;
+  min-height: 0;
+}
+.railBody[data-collapsed] {
+  align-items: center;
+  width: calc(var(--layout-rail-collapsed) - 2 * var(--space-2));
+}
+.top {
   display: flex;
   flex: none;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
   min-height: var(--control-h-md);
-  padding: 0 var(--space-2);
+}
+.railBody[data-collapsed] .top { justify-content: center; }
+.brand {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-md);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   text-decoration: none;
 }
+.brandName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mark {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   width: var(--control-h-sm);
@@ -53,13 +80,42 @@
   transition: transform var(--duration-slow) var(--ease-standard);
 }
 .brand:hover .mark { transform: rotate(-8deg) scale(1.04); }
-.nav { display: flex; flex: none; flex-direction: column; gap: var(--space-0); }
-/* Gemini rows are full pills (nav, chats, the engine row, the account row). */
-.nav > a,
-.chats a,
-.foot > a { border-radius: var(--radius-pill); }
 
-/* The chats: the one part of the rail that scrolls. */
+.nav { display: flex; flex: none; flex-direction: column; gap: var(--space-0); }
+.railBody[data-collapsed] .nav { align-items: center; }
+/* New practice: a small round filled plus (the primary fill) and the label, like Claude's "New chat". */
+.newRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(var(--control-h-md) - var(--space-1));
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.newRow:hover { background: var(--color-hover); }
+.newRow[aria-current="page"] { background: var(--color-selected); }
+.plus {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--icon-lg) + var(--space-1));
+  height: calc(var(--icon-lg) + var(--space-1));
+  border-radius: var(--radius-pill);
+  background: var(--color-action);
+  color: var(--color-text-on-action);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.newRow:hover .plus { background: var(--color-action-hover); }
+.newLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.railBody[data-collapsed] .newRow { justify-content: center; width: var(--control-h-md); height: var(--control-h-md); padding: 0; }
+
+/* Recents: the one part of the rail that scrolls. */
 .recent {
   display: flex;
   flex: 1 1 auto;
@@ -72,43 +128,90 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.recentSpacer { flex: 1 1 auto; min-height: 0; }
 .recentLabel {
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-2);
   color: var(--color-text-tertiary);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
 }
-.recentSkeleton { padding: var(--space-1) var(--space-3); }
-.recentEmpty { padding: 0 var(--space-3); color: var(--color-text-tertiary); font-size: var(--text-sm); }
+.recentSkeleton { padding: var(--space-1) var(--space-2); }
+.recentEmpty { padding: 0 var(--space-2); color: var(--color-text-tertiary); font-size: var(--text-sm); }
 .chats { display: flex; flex-direction: column; gap: var(--space-0); margin: 0; padding: 0; list-style: none; }
-/* A chat row: title in secondary text, the time quiet at the end. */
-.chats .chat { gap: var(--space-3); }
-/* English sessions: a quiet "EN" before the time (tertiary text, no fill). */
-.track { margin-right: var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.chatItem { position: relative; }
+/* A chat row: one line, the title cut with an ellipsis; no date or time (D57). */
+.chatItem .chat { gap: var(--space-2); padding: 0 var(--space-2); }
+/* English sessions: a quiet "EN" after the title (tertiary text, no fill). */
+.track { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+/* The "…" menu sits over the end of the row on hover, keyboard focus or while its menu is open (always on touch screens). */
+.chatItem .chatActions {
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.chatItem:hover .chatActions,
+.chatItem:focus-within .chatActions,
+.chatItem .chatActions:has([aria-expanded="true"]) { opacity: 1; }
+.chatItem:hover .chat,
+.chatItem:focus-within .chat,
+.chatItem:has([aria-expanded="true"]) .chat { padding-right: calc(var(--control-h-sm) + var(--space-1)); }
+.chatItem:hover .track,
+.chatItem:focus-within .track,
+.chatItem:has([aria-expanded="true"]) .track { display: none; }
+@media (hover: none) {
+  .chatItem .chatActions { opacity: 1; }
+  .chatItem .chat { padding-right: calc(var(--control-h-sm) + var(--space-1)); }
+  .chatItem .track { display: none; }
+}
 
 /* ---- Bottom: engine warning (only when not ready) + account ---- */
 .foot { display: flex; flex: none; flex-direction: column; gap: var(--space-1); }
+.railBody[data-collapsed] .foot { align-items: center; }
 /* The engine row: the Not ready badge carries the warning (tone + icon + words). */
 .foot .engineWarn { gap: var(--space-2); }
-/* Avatar | You + gear on one line, the sub-line runs under both (fits the 240px rail without cutting). */
-.account {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: "avatar name gear" "avatar sub sub";
+/* Collapsed: a warning icon (its words are the tooltip and the accessible name). */
+.engineIcon {
+  display: inline-flex;
   align-items: center;
-  column-gap: var(--space-2);
-  min-height: var(--control-h-lg);
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
-  color: var(--color-text-primary);
-  line-height: var(--leading-tight);
-  text-decoration: none;
+  justify-content: center;
+  width: var(--control-h-md);
+  height: var(--control-h-md);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-tint);
+  color: var(--color-text-warning);
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
-.account:hover { background: var(--color-hover); }
-.account[aria-current="page"] { background: var(--color-selected); }
+.engineIcon:hover { background: var(--color-hover); }
+/* The account row is one button: avatar | name over "Saved on this computer". It opens the menu upward. */
+.foot .accountWrap { display: flex; width: 100%; }
+.railBody[data-collapsed] .foot .accountWrap { width: auto; }
+.account {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-h-lg);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  line-height: var(--leading-tight);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.account:hover,
+.account[aria-expanded="true"] { background: var(--color-hover); }
+.railBody[data-collapsed] .account { width: auto; padding: var(--space-1); }
 .avatar {
-  grid-area: avatar;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   width: var(--control-h-sm);
@@ -117,14 +220,16 @@
   background: var(--color-selected);
   color: var(--color-text-secondary);
 }
-.account[aria-current="page"] .avatar { background: var(--color-canvas); }
-.accountText { display: contents; }
-.accountName { grid-area: name; font-size: var(--text-sm); font-weight: var(--weight-medium); }
-.accountSub { grid-area: sub; color: var(--color-text-tertiary); font-size: var(--text-sm); overflow-wrap: anywhere; }
-.accountGear { grid-area: gear; color: var(--color-text-secondary); }
+.accountText { display: flex; flex-direction: column; gap: var(--space-0); min-width: 0; }
+.accountName { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.accountSub { color: var(--color-text-tertiary); font-size: var(--text-sm); overflow-wrap: anywhere; }
+/* The menu's header: the same two lines. */
+.menuName { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.menuSub { color: var(--color-text-secondary); font-size: var(--text-sm); }
 
 @media (pointer: coarse) {
   .account { min-height: var(--control-h-touch); }
+  .newRow { min-height: var(--control-h-touch); }
 }
 
 /* ---- Top bar (< 1024) ---- */
@@ -138,9 +243,14 @@
 }
 .topbarEngine { display: inline-flex; align-items: center; margin-left: auto; border-radius: var(--radius-pill); text-decoration: none; }
 
-/* The rail inside the drawer (its header carries the app name and the close button). */
-.drawerRail { display: flex; flex-direction: column; gap: var(--space-4); min-height: 100%; }
-.drawerRail .recent { flex: 1 1 auto; overflow: visible; }
+/* The sidebar inside the drawer: the same rail body at the drawer's width, its own toggle closes the drawer. The Drawer
+ * body's padding is taken back, so the rows sit like in the rail; Recents scrolls, the top and the bottom stay. */
+.drawerRail {
+  height: calc(100% + 2 * var(--space-4));
+  margin: calc(-1 * var(--space-4));
+  padding: var(--space-3) var(--space-2);
+}
+.drawerRail .railBody { width: 100%; }
 
 /* ---- Main: the page container and the scroll container ---- */
 .main {

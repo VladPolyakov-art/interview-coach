@@ -48,7 +48,7 @@
     "checking": "Checking…",
     "storage": "Saved on this computer",
     "unknownEngine": "No engine chosen",
-    "recent": "Recent",
+    "recents": "Recents",
     "allHistory": "All history",
     "noSessions": "Your practice sessions will appear here.",
     "english": "English practice",
@@ -56,7 +56,11 @@
     "menu": "Menu",
     "untitled": "Untitled session",
     "you": "You",
-    "account": "You, saved on this computer. Settings",
+    "accountMenu": "Account menu",
+    "toggleClose": "Close sidebar",
+    "toggleOpen": "Open sidebar",
+    "rowActions": "Actions for {title}",
+    "rowOpen": "Open",
     "engineWarning": "AI engine"
   },
   "overlay": {

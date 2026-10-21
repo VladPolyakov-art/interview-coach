@@ -16,6 +16,7 @@ const KEYS = {
   speak: "ic.speak",
   roundType: "ic.roundType",
   vacancy: "ic.vacancyId",
+  railCollapsed: "ic.railCollapsed",
 } as const;
 
 function read(key: string): string | null {
@@ -35,6 +36,13 @@ function write(key: string, value: string | null) {
 }
 
 export const prefs = {
+  /** D57: the sidebar is collapsed to the icon rail (≥ 1024). */
+  railCollapsed(): boolean {
+    return read(KEYS.railCollapsed) === "1";
+  },
+  setRailCollapsed(v: boolean) {
+    write(KEYS.railCollapsed, v ? "1" : null);
+  },
   theme(): ThemePref {
     const v = read(KEYS.theme);
     return v === "light" || v === "dark" ? v : "system";

@@ -22,6 +22,8 @@ export interface TooltipProps {
   open?: boolean;
   inline?: boolean;
   className?: string;
+  /** Never show (and hide at once): the rail's collapsed account button while its menu is open. */
+  disabled?: boolean;
 }
 
 function isTruncated(anchor: HTMLElement): boolean {
@@ -29,7 +31,7 @@ function isTruncated(anchor: HTMLElement): boolean {
   return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
 }
 
-export function Tooltip({ content, children, onlyWhenTruncated, placement = "top-start", block, open: forced, inline, className }: TooltipProps) {
+export function Tooltip({ content, children, onlyWhenTruncated, placement = "top-start", block, open: forced, inline, className, disabled }: TooltipProps) {
   const [shown, setShown] = useState(false);
   const anchorRef = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
@@ -37,7 +39,7 @@ export function Tooltip({ content, children, onlyWhenTruncated, placement = "top
   const [host, setHost] = useState<HTMLElement | null>(null);
   const { container } = useOverlayRoot();
   const id = useId();
-  const visible = forced ?? shown;
+  const visible = (forced ?? shown) && !disabled;
 
   const clear = () => {
     if (timer.current !== null) window.clearTimeout(timer.current);
@@ -45,7 +47,7 @@ export function Tooltip({ content, children, onlyWhenTruncated, placement = "top
   };
   const show = useCallback((delayed: boolean) => {
     const anchor = anchorRef.current;
-    if (!anchor || (onlyWhenTruncated && !isTruncated(anchor))) return;
+    if (!anchor || disabled || (onlyWhenTruncated && !isTruncated(anchor))) return;
     clear();
     const go = () => {
       setHost(dialogHost(anchor));
@@ -54,7 +56,7 @@ export function Tooltip({ content, children, onlyWhenTruncated, placement = "top
     const delay = delayed ? durationMs("--duration-slow") : 0;
     if (delay > 0) timer.current = window.setTimeout(go, delay);
     else go();
-  }, [onlyWhenTruncated]);
+  }, [onlyWhenTruncated, disabled]);
   const hide = useCallback(() => {
     clear();
     setShown(false);

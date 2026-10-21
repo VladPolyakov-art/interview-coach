@@ -4,6 +4,7 @@ import { homeReview } from "../screens/home/review";
 import { historyReview } from "../screens/history/review";
 import { debriefReview } from "../screens/debrief/review";
 import { engineReview } from "../screens/engine/review";
+import { shellReview } from "../screens/shell/review";
 
 /*
  * Screens on the review page. Each screen agent adds its own entry file (screens/<name>/review.tsx) and registers it here.
@@ -31,4 +32,4 @@ export interface ReviewScreen {
   states: ReviewState[];
 }
 
-export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, engineReview];
+export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, engineReview, shellReview];
