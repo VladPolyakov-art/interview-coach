@@ -64,9 +64,10 @@ def create_app() -> FastAPI:
             if path.startswith(("api/", "ws/")):
                 return JSONResponse({"detail": {"code": "not_found", "message": "Not found."}}, status_code=404)
             target = (dist / path).resolve()
-            if path and target.is_file() and dist.resolve() in target.parents:
+            if path and target.is_file() and dist.resolve() in target.parents and target.name != "index.html":
                 return FileResponse(target)
-            return FileResponse(dist / "index.html")
+            # Revalidate the shell on every load, so a rebuilt UI shows up without a hard reload.
+            return FileResponse(dist / "index.html", headers={"Cache-Control": "no-cache"})
     else:
         @app.get("/", include_in_schema=False)
         async def root():
