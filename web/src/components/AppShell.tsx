@@ -23,6 +23,7 @@ import { errorMessage, useApp } from "../lib/store";
 import { railSessions, type RailSession } from "./railItems";
 import { SESSIONS_CHANGED, TITLE_MAX } from "../screens/debrief/rename";
 import { LogoMark, Wordmark } from "./Wordmark";
+import { engineShort } from "./engine/meta";
 import s from "./AppShell.module.css";
 
 /** react-router adapter for DS rows (NavRow, ListRow): `href` → `to`. */
@@ -61,9 +62,9 @@ export function EngineBadge({ status }: { status: EngineStatus }) {
 
 function useEngine(): ShellEngine {
   const { selectedEngine, enginesLoading, engines } = useApp();
-  if (!engines && enginesLoading) return { name: selectedEngine?.name, status: "checking" };
+  if (!engines && enginesLoading) return { name: selectedEngine ? engineShort(selectedEngine) : undefined, status: "checking" };
   if (!selectedEngine) return { status: "notReady" };
-  return { name: selectedEngine.name, status: selectedEngine.status.ready ? "ready" : "notReady" };
+  return { name: engineShort(selectedEngine), status: selectedEngine.status.ready ? "ready" : "notReady" };
 }
 
 /** Live badge for screens that show the engine state outside the shell (kept for existing imports). */

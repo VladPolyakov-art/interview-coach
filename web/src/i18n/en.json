@@ -170,6 +170,7 @@
     },
     "ollama": {
       "name": "Ollama",
+      "short": "Ollama",
       "tagline": "Runs the AI model on this computer.",
       "notInstalled": "Ollama wasn't found on this computer.",
       "download": "Download Ollama",
@@ -207,6 +208,7 @@
     },
     "openai": {
       "name": "Other AI (OpenAI-compatible)",
+      "short": "Other AI",
       "tagline": "LM Studio, Jan, OpenRouter, OpenAI or any server that speaks the OpenAI API.",
       "presets": "Presets",
       "baseUrl": "Base URL",
@@ -232,6 +234,7 @@
     },
     "claude": {
       "name": "Claude Code CLI",
+      "short": "Claude (CLI)",
       "tagline": "Uses the Claude Code app you already have, signed in with your own account.",
       "notFound": "Claude Code wasn't found on this computer.",
       "install": "Install Claude Code",
@@ -248,6 +251,7 @@
     },
     "codex": {
       "name": "Codex CLI",
+      "short": "Codex (CLI)",
       "tagline": "Uses the Codex CLI you already have, signed in with your ChatGPT account.",
       "notFound": "Codex wasn't found on this computer.",
       "install": "About Codex CLI",
@@ -264,6 +268,7 @@
     },
     "antigravity": {
       "name": "Antigravity CLI",
+      "short": "Antigravity (CLI)",
       "tagline": "Uses the Antigravity CLI you already have, signed in with your Google account.",
       "notFound": "Antigravity wasn't found on this computer.",
       "install": "About Antigravity CLI",
@@ -280,6 +285,7 @@
     },
     "gemini": {
       "name": "Gemini Live",
+      "short": "Gemini Live",
       "tagline": "Google's live voice model, with your own free API key.",
       "apiKey": "Gemini API key",
       "apiKeyHint": "Create a free key in Google AI Studio. Stored only on this computer.",

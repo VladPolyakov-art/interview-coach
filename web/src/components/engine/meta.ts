@@ -20,6 +20,8 @@ export function engineKey(id: EngineId) {
 }
 
 export const engineName = (e: Pick<EngineInfo, "id" | "name">) => tMaybe(`engines.${engineKey(e.id)}.name`, e.name);
+/** Compact, for the sidebar's account row: "Antigravity (CLI)". */
+export const engineShort = (e: Pick<EngineInfo, "id" | "name">) => tMaybe(`engines.${engineKey(e.id)}.short`, engineName(e));
 export const engineLine = (id: EngineId) => t(`engines.${engineKey(id)}.pick`);
 
 /** Engines that run a CLI the user signed in to themselves (D85, D86, D87): signed in, not a key. */

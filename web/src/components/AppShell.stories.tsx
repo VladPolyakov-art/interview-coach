@@ -123,3 +123,7 @@ export const Empty: StoryObj = {
 export const DebriefCurrent: StoryObj = {
   render: () => <Shell width={1440} height={900} path="/sessions/s3" current={null} currentSessionId="s3" />,
 };
+/** The account row names the engine compactly: "Antigravity (CLI)", not the server's long name. */
+export const EngineCli: StoryObj = {
+  render: () => <Shell width={1440} height={900} engine={{ name: "Antigravity (CLI)", status: "ready" }} />,
+};
