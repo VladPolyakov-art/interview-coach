@@ -18,7 +18,7 @@ import { Icon, type IconName } from "./icons";
 import { Kbd } from "./Kbd";
 import { usePresence } from "./motion";
 import { OverlayPortal, useOverlayRoot } from "./OverlayRoot";
-import { dialogHost, useAnchoredPosition, useOutsidePress, type Placement } from "./overlay";
+import { dialogHost, useAnchoredPosition, useOutsidePress, type Placed, type Placement } from "./overlay";
 import s from "./Menu.module.css";
 
 export interface MenuItem {
@@ -43,6 +43,8 @@ export interface MenuChoiceRow {
   id: string;
   label: string;
   icon?: IconName;
+  /** D79: no visible label; the choices fill the row (the label stays the group's accessible name). */
+  hideLabel?: boolean;
   choices: { id: string; label: string; icon: IconName; checked: boolean; onSelect: () => void }[];
 }
 export type MenuEntry = MenuItem | MenuSeparator | MenuChoiceRow;
@@ -216,7 +218,7 @@ interface PopupBase {
   floatingRef: RefObject<HTMLDivElement | null>;
   focusIntent: RefObject<FocusIntent>;
   onClose: (returnFocus: boolean) => void;
-  side: "top" | "bottom";
+  side: Placed["side"];
   style: React.CSSProperties | undefined;
   /** Positioned and visible: focus can move in. */
   ready: boolean;
@@ -225,10 +227,10 @@ interface PopupBase {
   label: string;
 }
 
-function popupClass(base: string | undefined, p: { side: "top" | "bottom"; leaving: boolean; inline: boolean }, align: "start" | "end" = "start") {
+function popupClass(base: string | undefined, p: { side: Placed["side"]; leaving: boolean; inline: boolean }, align: "start" | "end" = "start") {
   return [
     s.popover, base, p.inline ? s.inline : s.floating,
-    p.side === "top" ? s.top : s.bottom, align === "end" ? s.alignEnd : "",
+    p.side === "top" ? s.top : p.side === "right" ? s.right : s.bottom, align === "end" ? s.alignEnd : "",
     p.leaving ? "motion-soft-out" : "motion-menu",
   ].filter(Boolean).join(" ");
 }
@@ -293,10 +295,10 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
         if ("separator" in entry) return <div key={entry.id} role="separator" className={s.separator} />;
         if ("choices" in entry) {
           return (
-            <div key={entry.id} role="group" aria-label={entry.label} className={s.choiceRow}>
-              {hasChecks ? <span className={s.check} aria-hidden="true" /> : null}
-              {entry.icon ? <span className={s.itemIcon}><Icon name={entry.icon} size="sm" /></span> : null}
-              <span className={s.choiceLabel} aria-hidden="true">{entry.label}</span>
+            <div key={entry.id} role="group" aria-label={entry.label} className={`${s.choiceRow} ${entry.hideLabel ? s.choiceFill : ""}`}>
+              {hasChecks && !entry.hideLabel ? <span className={s.check} aria-hidden="true" /> : null}
+              {entry.icon && !entry.hideLabel ? <span className={s.itemIcon}><Icon name={entry.icon} size="sm" /></span> : null}
+              {entry.hideLabel ? null : <span className={s.choiceLabel} aria-hidden="true">{entry.label}</span>}
               <span className={s.choices}>
                 {entry.choices.map((ch) => (
                   <button

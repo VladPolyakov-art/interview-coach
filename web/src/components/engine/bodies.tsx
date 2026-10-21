@@ -1,7 +1,7 @@
 /* The connection UI of each engine (step B, and the "Models" disclosure in the summary card).
  * Moved as is from the old EnginePanel: same forms, same calls, same copy. */
 import { useEffect, useState } from "react";
-import { Button, Callout, Chip, CopyField, Icon, IconButton, Input, Select, useToast } from "../../ds";
+import { Button, Callout, Chip, CopyField, Icon, IconButton, Input, Select, SettingRow } from "../../ds";
 import { t } from "../../i18n";
 import { api } from "../../lib/api";
 import { formatBytes } from "../../lib/format";
@@ -59,7 +59,6 @@ export function OllamaBody({ engine }: { engine: EngineInfo }) {
 export function OllamaModelPicker() {
   const { settings, updateSettings } = useApp();
   const { data } = useLoad(() => api.ollamaModels());
-  const toast = useToast();
   if (!data) return null;
   if (!data.models.length) return <p className={s.note}>{t("engines.ollama.noModels")}</p>;
   const options = (auto: string) => [
@@ -72,24 +71,19 @@ export function OllamaModelPicker() {
   ];
   const save = async (patch: { model?: string; voice_model?: string }) => {
     await updateSettings({ ollama: patch });
-    toast.show({ message: <span className={s.toast}><Icon name="check" size="sm" />{t("engines.ollama.modelSaved")}</span>, duration: 1600 });
   };
+  // D79: one row per model choice — name and hint left, the dropdown right (like every other setting).
   return (
-    <div className={s.form}>
-      <Select
-        label={t("engines.ollama.modelLabel")}
-        value={settings?.ollama.model ?? ""}
-        options={options(data.recommended)}
-        hint={[t("engines.ollama.modelHint", { model: data.recommended }), data.ram_gb ? t("engines.ollama.ram", { gb: data.ram_gb }) : ""].filter(Boolean).join(" ")}
-        onChange={(v) => void save({ model: v })}
-      />
-      <Select
-        label={t("engines.ollama.voiceModelLabel")}
-        value={settings?.ollama.voice_model ?? ""}
-        options={options(data.recommended_voice)}
-        hint={t("engines.ollama.voiceModelHint", { model: data.recommended_voice })}
-        onChange={(v) => void save({ voice_model: v })}
-      />
+    <div className={s.modelRows}>
+      <SettingRow label={t("engines.ollama.modelLabel")}
+        description={[t("engines.ollama.modelHint", { model: data.recommended }), data.ram_gb ? t("engines.ollama.ram", { gb: data.ram_gb }) : ""].filter(Boolean).join(" ")}>
+        <Select label={t("engines.ollama.modelLabel")} hideLabel width="content" value={settings?.ollama.model ?? ""}
+          options={options(data.recommended)} onChange={(v) => void save({ model: v })} />
+      </SettingRow>
+      <SettingRow label={t("engines.ollama.voiceModelLabel")} description={t("engines.ollama.voiceModelHint", { model: data.recommended_voice })}>
+        <Select label={t("engines.ollama.voiceModelLabel")} hideLabel width="content" value={settings?.ollama.voice_model ?? ""}
+          options={options(data.recommended_voice)} onChange={(v) => void save({ voice_model: v })} />
+      </SettingRow>
     </div>
   );
 }

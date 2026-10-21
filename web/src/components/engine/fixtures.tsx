@@ -112,10 +112,14 @@ function installStub() {
     if (url.endsWith("/api/telemetry")) return json({ opt_in: false, events: 0, file: "", remote: false, what: "" });
     if (url.endsWith("/api/sessions/trash")) return json({ items: [] });
     if (url.endsWith("/api/health")) return json({ ok: true, data_dir: "~/Library/Application Support/Vukoli" });
-    // A fictional CV (D78 General frames); never the owner's.
+    // A fictional profile (D78/D79 General frames): two files and no note; never the owner's.
     if (url.endsWith("/api/profile") && (!init?.method || init.method === "GET")) return json({
-      text: "Alex Morgan, product designer. 6 years in B2B SaaS: onboarding, billing, design systems. Led a checkout redesign that cut drop-off.",
-      source: "file:alex-morgan-cv.pdf", updated: "2026-10-14T10:20:00Z",
+      text: "## alex-morgan-cv.pdf\nAlex Morgan, product designer. 6 years in B2B SaaS: onboarding, billing, design systems.\n\n## portfolio-notes.md\nCheckout redesign that cut drop-off; design system for three product teams.",
+      source: "files", updated: "2026-10-14T10:20:00Z", note: "",
+      files: [
+        { id: "f1", name: "alex-morgan-cv.pdf", chars: 4820, added: "2026-10-14T10:20:00Z" },
+        { id: "f2", name: "portfolio-notes.md", chars: 1260, added: "2026-10-15T09:05:00Z" },
+      ],
     });
     return real(input, init);
   };

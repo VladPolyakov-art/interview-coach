@@ -172,7 +172,8 @@ function AboutStep({ headingRef, onNext, onBack }: { headingRef: Ref; onNext: ()
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const value = cv ?? profile.data?.text ?? "";
+  // The textarea is the pasted note; uploaded files stay separate (D79).
+  const value = cv ?? profile.data?.note ?? "";
 
   const saveAndNext = async () => {
     if (cv !== null && cv.trim()) {

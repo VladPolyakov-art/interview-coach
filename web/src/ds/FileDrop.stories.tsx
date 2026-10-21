@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "./Button";
-import { FileDrop } from "./FileDrop";
+import { FileDrop, FileRow } from "./FileDrop";
 
 /** File drop zone (G9): dashed zone + "browse" link, reading / chosen / error states. */
 const meta: Meta<typeof FileDrop> = {
@@ -44,4 +44,18 @@ export const Overflow: Story = {
     onRemove: () => {},
   },
   render: (args) => <div style={{ width: "21.4375rem" }}><FileDrop {...args} /></div>,
+};
+/** Several files (D79, Settings → General): a row per file with Replace and Remove, the zone below takes more. */
+export const Multiple: Story = {
+  render: (args) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", width: "32rem" }}>
+      <FileRow name="alex-morgan-cv.pdf" meta="Added Oct 14" accept={args.accept} replaceLabel="Replace" replaceName="Replace alex-morgan-cv.pdf"
+        onReplace={() => {}} removeLabel="Remove alex-morgan-cv.pdf" onRemove={() => {}} />
+      <FileRow name="portfolio-notes.md" meta="Added Oct 15" accept={args.accept} replaceLabel="Replace" replaceName="Replace portfolio-notes.md"
+        onReplace={() => {}} removeLabel="Remove portfolio-notes.md" onRemove={() => {}} />
+      <FileRow name="case-study-billing.docx" reading readingLabel="Reading the file…" />
+      <FileDrop {...args} multiple onFiles={() => {}} label="CV and other files" prompt="Drop more files here, or" browseLabel="choose files"
+        hint="PDF, DOCX, TXT or MD · up to 10 files" accept=".pdf,.docx,.txt,.md" privacy={undefined} />
+    </div>
+  ),
 };

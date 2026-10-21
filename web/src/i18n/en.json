@@ -145,7 +145,6 @@
       "thinkingOnly": "thinking model, slower",
       "recommended": "recommended",
       "auto": "Automatic ({model})",
-      "modelSaved": "Model saved.",
       "noModels": "No models installed yet.",
       "pick": "Free, runs on this computer"
     },
@@ -214,8 +213,7 @@
       "use": "Use",
       "setUp": "Set up",
       "hide": "Hide",
-      "connection": "Connection",
-      "switched": "Mike now uses {name}."
+      "connection": "Connection"
     }
   },
   "setup": {
@@ -1263,22 +1261,22 @@
       "levelHint": "How Mike speaks to you and how much he corrects."
     },
     "profile": {
-      "title": "Your CV",
+      "title": "Your CV and files",
       "hint": "Mike uses it to ask about your own experience. It stays on this computer.",
-      "updated": "Updated {date}",
-      "remove": "Remove CV",
-      "removed": "CV removed.",
-      "empty": "No CV yet.",
-      "cv": "CV text",
-      "drop": "Drop your CV here, or",
-      "browse": "choose a file",
-      "fileHint": "PDF, DOCX, TXT or MD",
+      "remove": "Remove {name}",
+      "drop": "Drop your CV and other files here, or",
+      "browse": "choose files",
+      "fileHint": "PDF, DOCX, TXT or MD · up to {n} files",
       "replace": "Replace",
-      "fileLabel": "CV file",
-      "asText": "Paste the text instead",
-      "text": "Text Mike reads",
-      "textHint": "Mike reads this text, not the file. Fix it here if something came out wrong.",
-      "pasted": "Pasted text"
+      "fileLabel": "CV and other files",
+      "asText": "Add text instead",
+      "text": "Your text",
+      "textHint": "Anything the files don't say. Mike reads it together with the files.",
+      "dropMore": "Drop more files here, or",
+      "full": "That's {n} files, the most Mike takes. Remove one to add another.",
+      "added": "Added {date}",
+      "replaceName": "Replace {name}",
+      "moreText": "Add text about yourself"
     },
     "appearance": {
       "title": "Appearance",
@@ -1302,7 +1300,6 @@
       "sharing": "Sharing",
       "files": "Your files"
     },
-    "saved": "Saved",
     "saveError": "Couldn't save: {message}",
     "about": {
       "freeTitle": "What's free",

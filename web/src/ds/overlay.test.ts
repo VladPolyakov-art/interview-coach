@@ -30,6 +30,14 @@ describe("place (anchored popovers)", () => {
     const wide = place({ left: 100, top: 100, width: 480, height: 40 }, space, { ...base, placement: "bottom-start", matchWidth: "min" });
     expect(wide.width).toBe(480);
   });
+  it("opens beside the anchor, bottom edges aligned, and falls back above when there is no room right (D79)", () => {
+    const right = place({ left: 16, top: 700, width: 240, height: 48 }, space, { ...base, placement: "right-end" });
+    expect(right).toMatchObject({ side: "right", align: "end", left: 16 + 240 + 4, top: 748 - 150 });
+    const start = place({ left: 16, top: 100, width: 240, height: 48 }, space, { ...base, placement: "right-start" });
+    expect(start).toMatchObject({ side: "right", top: 100 });
+    const edge = place({ left: 700, top: 700, width: 240, height: 48 }, space, { ...base, placement: "right-end" });
+    expect(edge.side).toBe("top");
+  });
   it("becomes a full-width sheet in a narrow container, at most 60% high", () => {
     const narrow = { width: 375, height: 800 };
     const p = place({ left: 300, top: 100, width: 32, height: 32 }, narrow, {

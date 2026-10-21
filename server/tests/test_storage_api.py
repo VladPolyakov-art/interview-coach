@@ -127,6 +127,33 @@ def test_profile_and_vacancy_endpoints(client):
     assert client.delete(f"/api/vacancies/{vid}", headers=SAME).status_code == 200
 
 
+def test_profile_holds_several_files_and_a_note(client):
+    import base64
+    up = lambda name, text, **kw: client.post("/api/profile/upload", headers=SAME, json={
+        "name": name, "data": base64.b64encode((text + " More about my work. " * 8).encode()).decode(), **kw})
+    first = up("cv.txt", "Product designer, 6 years in fintech.").json()
+    assert [f["name"] for f in first["files"]] == ["cv.txt"]
+    both = up("portfolio.md", "Case: checkout redesign.").json()
+    assert [f["name"] for f in both["files"]] == ["cv.txt", "portfolio.md"]
+    assert "fintech" in both["text"] and "checkout" in both["text"]
+    swapped = up("cv-2026.txt", "Lead designer now.", replace=both["files"][0]["id"]).json()
+    assert [f["name"] for f in swapped["files"]] == ["cv-2026.txt", "portfolio.md"] and "fintech" not in swapped["text"]
+    noted = client.put("/api/profile", headers=SAME, json={"text": "I also mentor juniors.", "source": "paste"}).json()
+    assert noted["note"] == "I also mentor juniors." and len(noted["files"]) == 2 and noted["text"].startswith("I also mentor")
+    left = client.delete(f"/api/profile/files/{swapped['files'][1]['id']}", headers=SAME).json()
+    assert [f["name"] for f in left["files"]] == ["cv-2026.txt"]
+    assert client.delete("/api/profile", headers=SAME).status_code == 200
+    assert client.get("/api/profile").json()["files"] == []
+
+
+def test_profile_v1_reads_as_one_file():
+    storage.write_json(storage.profile_path(), {"v": 1, "text": "Old CV", "source": "file:old.pdf", "updated": "2026-01-01T00:00:00Z"})
+    view = storage.read_profile()
+    assert view["text"] == "## old.pdf\nOld CV" and view["files"][0]["name"] == "old.pdf" and view["note"] == ""
+    added = storage.add_profile_file("new.txt", "New CV")
+    assert [f["name"] for f in added["files"]] == ["old.pdf", "new.txt"]
+
+
 def test_known_terms():
     terms = documents.known_terms("Built dashboards in Figma and JavaScript for HubSpot. The team grew.")
     assert {"Figma", "HubSpot"} <= set(terms) and "The" not in terms

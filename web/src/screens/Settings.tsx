@@ -1,16 +1,17 @@
 /* Settings (D76: a popup like Claude's, over the page you were on): a search field and the sections on the left, the
  * section on the right. Every setting is one row — name and description left, the control right (SettingRow); rows
  * sit in titled groups, one rounded box each (SettingGroup, D78), so a section's parts are easy to tell apart.
- * Sections (D78): general (your CV: a file to drop or replace, its text under a disclosure; the theme), AI engine (the
+ * Sections (D78): general (your CV: files to drop, replace or remove — several, D79 — and your own text under a
+ * disclosure; the theme), AI engine (the
  * engine in use on top, the others under it, each set up in place), voice and speech, practice, privacy and data,
  * about and what's free (D58: the free-vs-premium table of US-30, practice-only statement, licence; `#free` anchor).
  * Deep links stay: /settings/<section>[#<row>] opens the popup at that row; old sections redirect (profile → general).
- * A change that is saved shows a short "Saved" toast. */
+ * A change saves at once and says nothing (D79): the control shows the new value; only an error shows. */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useNavigationType, type Location } from "react-router-dom";
 import {
-  Badge, Button, Callout, CopyField, Dialog, Disclosure, FileDrop, Icon, IconButton, Input, Segmented, Select, SettingGroup,
-  SettingRow, Skeleton, Textarea, Toggle, scrollBehavior, useToast, type IconName,
+  Badge, Button, Callout, CopyField, Dialog, Disclosure, FileDrop, FileRow, Icon, IconButton, Input, Segmented, Select, SettingGroup,
+  SettingRow, Skeleton, Textarea, Toggle, scrollBehavior, type IconName,
 } from "../ds";
 import { t, tp, type MessageKey } from "../i18n";
 import { EnginePanel } from "../components/EnginePanel";
@@ -21,14 +22,14 @@ import { useLoad } from "../lib/hooks";
 import { prefs, type PausePref } from "../lib/prefs";
 import { errorMessage, useApp } from "../lib/store";
 import { useTheme } from "../lib/theme";
-import type { Level, SettingsPatch } from "../lib/types";
+import type { Level, Profile, SettingsPatch } from "../lib/types";
 import s from "./Settings.module.css";
 
 const SECTIONS: { id: SectionId; icon: IconName }[] = [
   { id: "general", icon: "settings" },
   { id: "engine", icon: "sparkle" },
   { id: "voice", icon: "mic" },
-  { id: "practice", icon: "practice" },
+  { id: "practice", icon: "target" },
   { id: "privacy", icon: "lock" },
   { id: "about", icon: "info" },
 ];
@@ -41,7 +42,8 @@ const ALIASES: Record<string, { section: SectionId; hash?: string }> = {
   appearance: { section: "general", hash: "general-theme" },
 };
 /** How long the "Saved" toast stays (D78): long enough to read one word. */
-const SAVED_MS = 1600;
+const PROFILE_MAX_FILES = 10;
+const CV_ACCEPT = ".pdf,.docx,.txt,.md";
 
 /* ---------- search ---------- */
 
@@ -262,29 +264,21 @@ function SectionContent({ id }: { id: SectionId }) {
   return <AboutSection />;
 }
 
-/** Saves a settings patch: a short "Saved" toast on success (D78), an error callout where the row is. */
+/** Saves a settings patch. D79: no "Saved" message — the control already shows the new value; only an error shows,
+ * as a callout where the rows are. */
 function useSave() {
   const { updateSettings } = useApp();
-  const saved = useSavedToast();
   const [error, setError] = useState("");
   const save = async (patch: SettingsPatch) => {
     setError("");
     try {
       await updateSettings(patch);
-      saved();
     } catch (e) {
       setError(errorMessage(e));
     }
   };
   const view = error ? <Callout tone="error" live="alert">{t("settings.saveError", { message: error })}</Callout> : null;
   return { save, view };
-}
-
-function useSavedToast() {
-  const toast = useToast();
-  return (message = t("settings.saved")) => {
-    toast.show({ message: <span className={s.saved}><Icon name="check" size="sm" />{message}</span>, duration: SAVED_MS });
-  };
 }
 
 function GeneralSection() {
@@ -311,70 +305,83 @@ function GeneralSection() {
   );
 }
 
-/** Your CV (D78): the file itself — drop one, replace it, remove it — and the text Mike reads, under a disclosure
- * (open it to paste a CV as text, or to fix what came out of the file). */
+/** Your CV (D78, D79): the files themselves — drop several, replace or remove each — and, under a disclosure, text
+ * about yourself the files don't say. Mike reads the text and every file together. No "Saved" toast: the list shows it. */
 function CvGroup() {
   const profile = useLoad(() => api.profile());
-  const saved = useSavedToast();
-  const [text, setText] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"file" | "text" | "remove" | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [reading, setReading] = useState<string[]>([]);
   const [error, setError] = useState("");
-  const [reading, setReading] = useState<string | null>(null);
   const data = profile.data;
-  const has = Boolean(data?.text);
-  const value = text ?? data?.text ?? "";
-  const fileName = data?.source.startsWith("file:") ? data.source.slice(5) : null;
-  const run = async (kind: "file" | "text" | "remove", fn: () => Promise<unknown>, ok: string) => {
-    setBusy(kind);
+  if (!data) return profile.error ? <Callout tone="error">{errorMessage(profile.error)}</Callout> : <Skeleton lines={3} />;
+  const files = data.files;
+  const room = PROFILE_MAX_FILES - files.length;
+  const value = note ?? data.note;
+  const run = async (key: string, fn: () => Promise<Profile>) => {
+    setBusy(key);
     setError("");
     try {
-      await fn();
-      saved(ok);
-      setText(null);
-      profile.reload();
+      profile.setData(await fn());
+      return true;
     } catch (e) {
       setError(errorMessage(e));
+      return false;
     } finally {
       setBusy(null);
-      setReading(null);
     }
   };
-  const upload = (file: File) => {
-    setReading(file.name);
-    void run("file", () => api.uploadProfile(file), t("setup.about.cvSaved"));
+  // Several files go up one after another; each shows as "reading" until the server has its text.
+  const add = async (picked: File[]) => {
+    const take = picked.slice(0, Math.max(room, 0));
+    setReading(take.map((f) => f.name));
+    setError(picked.length > take.length ? t("settings.profile.full", { n: PROFILE_MAX_FILES }) : "");
+    for (const f of take) {
+      setBusy("add");
+      try {
+        profile.setData(await api.uploadProfile(f));
+      } catch (e) {
+        setError(`${f.name}: ${errorMessage(e)}`);
+      }
+      setReading((names) => names.filter((n) => n !== f.name));
+    }
+    setBusy(null);
   };
-  if (!data) return profile.error ? <Callout tone="error">{errorMessage(profile.error)}</Callout> : <Skeleton lines={3} />;
-  const state = reading ? "reading" : error && busy === null && !has ? "error" : has ? "chosen" : "empty";
   return (
     <SettingGroup title={t("settings.profile.title")} id="profile-title" description={t("settings.profile.hint")}>
-      <div id="profile-cv" className={s.cvFile}>
-        <FileDrop
-          label={t("settings.profile.fileLabel")}
-          prompt={t("settings.profile.drop")}
-          browseLabel={t("settings.profile.browse")}
-          hint={t("settings.profile.fileHint")}
-          accept=".pdf,.docx,.txt,.md"
-          state={state}
-          file={reading ? { name: reading } : { name: fileName ?? t("settings.profile.pasted"), size: t("settings.profile.updated", { date: formatDateTime(data.updated) }) }}
-          readingLabel={t("common.checking")}
-          replaceLabel={t("settings.profile.replace")}
-          removeLabel={t("settings.profile.remove")}
-          error={error ? { body: error } : undefined}
-          onFile={upload}
-          onRemove={() => void run("remove", () => api.deleteProfile(), t("settings.profile.removed"))}
-          disabled={busy !== null}
-        />
+      <div id="profile-cv" className={s.cvFiles}>
+        {files.map((f) => (
+          <FileRow key={f.id} name={f.name} meta={t("settings.profile.added", { date: formatDateTime(f.added) })}
+            accept={CV_ACCEPT} replaceLabel={t("settings.profile.replace")} replaceName={t("settings.profile.replaceName", { name: f.name })}
+            onReplace={(file) => void run(f.id, () => api.uploadProfile(file, f.id))}
+            removeLabel={t("settings.profile.remove", { name: f.name })} onRemove={() => void run(f.id, () => api.deleteProfileFile(f.id))}
+            reading={busy === f.id} readingLabel={t("common.checking")} disabled={busy !== null} />
+        ))}
+        {reading.map((name) => <FileRow key={`r-${name}`} name={name} reading readingLabel={t("common.checking")} />)}
+        {room > 0 ? (
+          <FileDrop
+            label={t("settings.profile.fileLabel")}
+            prompt={files.length ? t("settings.profile.dropMore") : t("settings.profile.drop")}
+            browseLabel={t("settings.profile.browse")}
+            hint={t("settings.profile.fileHint", { n: PROFILE_MAX_FILES })}
+            accept={CV_ACCEPT}
+            multiple
+            onFiles={(picked) => void add(picked)}
+            disabled={busy !== null}
+          />
+        ) : <p className={s.note}>{t("settings.profile.full", { n: PROFILE_MAX_FILES })}</p>}
+        {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
       </div>
-      {error && state !== "error" ? <Callout tone="error" live="alert">{error}</Callout> : null}
       <div className={s.cvText}>
-        <Disclosure surface="plain" title={has ? t("settings.profile.text") : t("settings.profile.asText")}>
+        <Disclosure surface="plain" defaultOpen={Boolean(data.note) && !files.length}
+          title={data.note ? t("settings.profile.text") : files.length ? t("settings.profile.moreText") : t("settings.profile.asText")}>
           <div className={s.cvTextBody}>
-            {has ? <p className={s.hint}>{t("settings.profile.textHint")}</p> : null}
-            <Textarea label={t("settings.profile.text")} hideLabel placeholder={t("setup.about.cvPlaceholder")} rows={10} value={value}
-              onChange={(e) => setText(e.target.value)} showCount />
+            <p className={s.hint}>{t("settings.profile.textHint")}</p>
+            <Textarea label={t("settings.profile.text")} hideLabel placeholder={t("setup.about.cvPlaceholder")} rows={8} value={value}
+              onChange={(e) => setNote(e.target.value)} showCount />
             <div className={s.cvActions}>
-              <Button variant="primary" loading={busy === "text"} disabled={text === null || !value.trim() || busy !== null}
-                onClick={() => void run("text", () => api.saveProfile(value, "paste"), t("setup.about.cvSaved"))}>{t("common.save")}</Button>
+              <Button variant="primary" loading={busy === "note"} disabled={note === null || note === data.note || busy !== null}
+                onClick={() => void run("note", () => api.saveProfile(value, "paste")).then((ok) => { if (ok) setNote(null); })}>{t("common.save")}</Button>
             </div>
           </div>
         </Disclosure>

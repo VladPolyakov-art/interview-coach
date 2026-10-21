@@ -43,8 +43,8 @@
 .item { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
 .item + .item { border-top: var(--border-width) solid var(--color-border-subtle); }
 .itemHead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-3); }
+.modelRows { display: flex; flex-direction: column; container-type: inline-size; }
 .itemBody { display: flex; flex-direction: column; gap: var(--space-4); padding-top: var(--space-2); }
-.toast { display: inline-flex; align-items: center; gap: var(--space-2); }
 
 /* B: one engine card. */
 .card { display: flex; flex-direction: column; gap: var(--space-4); }

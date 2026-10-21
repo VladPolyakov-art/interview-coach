@@ -67,12 +67,12 @@ export const engineReview: ReviewScreen = {
       <SettingsScene engines={makeEngines()} props={{ mode: "settings" }} settings={withModel} />
     ), {
       dark: true,
-      note: "D78: один экран. Блок «In use»: Ollama · qwen3:8b, статус Ready, выбор моделей — в раскрывашке «Models», «Check again» — тихая иконка у заголовка. Ниже «Other engines»: OpenAI-compatible, Gemini Live, Claude CLI — у готового кнопка «Use», у остальных «Set up». Ни «Change engine», ни «Test».",
+      note: "D78: один экран. Блок «In use»: Ollama · qwen3:8b, статус Ready, выбор моделей — в раскрывашке «Models», «Check again» — тихая иконка у заголовка. Ниже «Other engines»: OpenAI-compatible, Gemini Live, Claude CLI — у готового кнопка «Use», у остальных «Set up». Ни «Change engine», ни «Test». D79: модели Ollama — строками «Model for typed answers» / «Model for voice», выпадающий список справа от названия; тоста «Model saved» нет.",
     }),
     state("settings-setup-openai", "Settings · подключить OpenAI-compatible на месте", () => (
       <SettingsScene engines={makeEngines({ gemini_live: "ready" }, "gemini_live")} props={{ mode: "settings", initialPick: "openai_compatible" }} />
     ), {
-      note: "«Set up» раскрывает подключение прямо в строке: пресеты, адрес, ключ, модель, цена и данные. «Use OpenAI-compatible» активна, когда статус станет Ready; после переключения — короткий тост «Mike now uses …», движок поднимается наверх.",
+      note: "«Set up» раскрывает подключение прямо в строке: пресеты, адрес, ключ, модель, цена и данные. «Use OpenAI-compatible» активна, когда статус станет Ready; после переключения движок поднимается наверх (D79: без тоста — смена видна сама).",
     }),
   ],
 };

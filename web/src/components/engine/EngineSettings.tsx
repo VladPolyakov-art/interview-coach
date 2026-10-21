@@ -4,7 +4,7 @@
  * appears once it is ready. No "Test" button: the status is the check, and it re-checks every 5 s while not ready. */
 import { useEffect, useState } from "react";
 import { EngineLogo } from "./EngineLogo";
-import { Badge, Button, Callout, Disclosure, Icon, IconButton, SettingGroup, Skeleton, useToast } from "../../ds";
+import { Badge, Button, Callout, Disclosure, Icon, IconButton, SettingGroup, Skeleton } from "../../ds";
 import { t } from "../../i18n";
 import { useInterval } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
@@ -21,7 +21,6 @@ export interface EngineSettingsProps {
 
 export function EngineSettings({ initialOpen }: EngineSettingsProps) {
   const { engines, settings, refreshEngines, enginesLoading, updateSettings } = useApp();
-  const toast = useToast();
   const [open, setOpen] = useState<EngineId | null>(initialOpen ?? null);
   const [switching, setSwitching] = useState<EngineId | null>(null);
   const [error, setError] = useState("");
@@ -44,7 +43,6 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
     try {
       await updateSettings({ engine: engine.id });
       setOpen(null);
-      toast.show({ message: <span className={s.toast}><Icon name="check" size="sm" />{t("engines.settings.switched", { name: engineName(engine) })}</span>, duration: 2400 });
     } catch (e) {
       setError(errorMessage(e));
     } finally {

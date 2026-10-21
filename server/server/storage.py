@@ -3,7 +3,7 @@
 Layout inside the data dir:
   meta.json                     data_version marker
   settings.json                 settings (see config.py)
-  profile.json                  the user's CV / about text
+  profile.json                  the user's CV: uploaded files (their text) and a pasted note (v2, D79)
   vacancies/<id>.json           job postings and cached generated questions
   sessions/<id>.json            canonical session record
   sessions/<id>.md              readable Markdown rendered from the JSON
@@ -144,20 +144,92 @@ def profile_path() -> Path:
     return data_dir() / "profile.json"
 
 
-def read_profile() -> dict:
+PROFILE_MAX_FILES = 10
+PROFILE_MAX_CHARS = 40000
+
+
+def _profile_view(raw: dict) -> dict:
+    """v2 shape for the API; `text` joins the note and every file (what Mike reads). v1 (one text) reads as one file
+    or as the note, so a CV saved before D79 keeps working."""
+    if raw.get("v") == 2:
+        files, note = list(raw.get("files") or []), str(raw.get("note") or "")
+    else:
+        text, source = str(raw.get("text") or ""), str(raw.get("source") or "")
+        if text and source.startswith("file:"):
+            files = [{"id": "f1", "name": source[5:], "text": text, "added": raw.get("updated", "")}]
+            note = ""
+        else:
+            files, note = [], text
+    parts = [note.strip()] if note.strip() else []
+    parts += [f"## {f['name']}\n{f['text'].strip()}" for f in files if f.get("text", "").strip()]
+    updated = max([str(raw.get("updated") or "")] + [str(f.get("added") or "") for f in files])
+    return {
+        "text": "\n\n".join(parts)[:PROFILE_MAX_CHARS],
+        "source": "files" if files else ("paste" if note else ""),
+        "updated": updated,
+        "note": note,
+        "files": [{"id": f["id"], "name": f["name"], "chars": len(f.get("text", "")), "added": f.get("added", "")} for f in files],
+    }
+
+
+def _profile_raw() -> dict:
     path = profile_path()
     if not path.is_file():
-        return {"text": "", "source": "", "updated": ""}
+        return {}
     try:
         return read_json(path)
     except (OSError, ValueError):
-        return {"text": "", "source": "", "updated": ""}
+        return {}
+
+
+def _profile_v2() -> dict:
+    raw = _profile_raw()
+    if raw.get("v") == 2:
+        return {"v": 2, "note": raw.get("note", ""), "files": list(raw.get("files") or []), "updated": raw.get("updated", "")}
+    view = _profile_view(raw)
+    files = [{"id": f["id"], "name": f["name"], "text": raw.get("text", ""), "added": f["added"]} for f in view["files"]]
+    return {"v": 2, "note": view["note"], "files": files, "updated": raw.get("updated", "")}
+
+
+def read_profile() -> dict:
+    return _profile_view(_profile_raw())
 
 
 def save_profile(text: str, source: str = "") -> dict:
+    """The pasted note (the text a person typed, not a file's)."""
     with _lock:
-        return write_json(profile_path(), {"v": 1, "text": text.strip()[:40000], "source": source[:300],
-                                           "updated": now_iso()})
+        data = _profile_v2()
+        data.update(note=text.strip()[:PROFILE_MAX_CHARS], updated=now_iso())
+        return _profile_view(write_json(profile_path(), data))
+
+
+class ProfileFull(ValueError):
+    pass
+
+
+def add_profile_file(name: str, text: str, replace: str | None = None) -> dict:
+    """Adds a file's text; `replace` (a file id) swaps that file in place. A file with the same name is replaced too."""
+    with _lock:
+        data = _profile_v2()
+        entry = {"id": new_id("f"), "name": name[:300], "text": text.strip()[:PROFILE_MAX_CHARS], "added": now_iso()}
+        files = data["files"]
+        at = next((i for i, f in enumerate(files) if f["id"] == replace or (not replace and f["name"] == entry["name"])), None)
+        if at is not None:
+            files[at] = entry
+        elif len(files) >= PROFILE_MAX_FILES:
+            raise ProfileFull(f"Up to {PROFILE_MAX_FILES} files.")
+        else:
+            files.append(entry)
+        data["updated"] = entry["added"]
+        return _profile_view(write_json(profile_path(), data))
+
+
+def delete_profile_file(file_id: str) -> dict:
+    with _lock:
+        data = _profile_v2()
+        data["files"] = [f for f in data["files"] if f["id"] != file_id]
+        data["updated"] = now_iso()
+        return _profile_view(write_json(profile_path(), data))
 
 
 def delete_profile() -> None:

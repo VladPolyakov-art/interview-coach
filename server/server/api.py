@@ -175,6 +175,7 @@ class ProfileBody(BaseModel):
 class UploadBody(BaseModel):
     name: str = Field(max_length=300)
     data: str = Field(max_length=12_000_000)        # base64
+    replace: Optional[str] = Field(default=None, max_length=64)   # profile: the file id to swap (D79)
 
 
 @router.get("/profile")
@@ -195,7 +196,16 @@ async def upload_profile(body: UploadBody, request: Request) -> dict:
         text = await asyncio.to_thread(read_file, body.name, body.data)
     except DocumentError as exc:
         raise fail(422, exc.code, exc.message)
-    return storage.save_profile(text, f"file:{body.name}")
+    try:
+        return storage.add_profile_file(body.name, text, body.replace)
+    except storage.ProfileFull as exc:
+        raise fail(422, "too_many_files", str(exc))
+
+
+@router.delete("/profile/files/{file_id}")
+async def delete_profile_file(file_id: str, request: Request) -> dict:
+    check_origin(request)
+    return storage.delete_profile_file(file_id)
 
 
 @router.delete("/profile")

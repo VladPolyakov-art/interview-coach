@@ -154,3 +154,28 @@ function MoreDemo({ open }: { open?: boolean }) {
 export const HeaderCheckboxShortcut: StoryObj = { render: () => <div style={{ paddingTop: "var(--space-16)" }}><MoreDemo /></div> };
 /** v2 More menu, open and static. */
 export const HeaderCheckboxShortcutOpen: StoryObj = { render: () => <MoreDemo open /> };
+
+function AccountDemo() {
+  const [open, setOpen] = useState(true);
+  const [theme, setTheme] = useState<"system" | "light" | "dark">("system");
+  const items: MenuEntry[] = [
+    { id: "settings", label: "Settings", icon: "settings" },
+    {
+      id: "theme", label: "Theme", hideLabel: true,
+      choices: (["system", "light", "dark"] as const).map((v) => ({
+        id: v, label: v[0]!.toUpperCase() + v.slice(1), icon: v === "system" ? "monitor" : v === "light" ? "sun" : "moon", checked: theme === v, onSelect: () => setTheme(v),
+      })),
+    },
+    { id: "sep", separator: true },
+    { id: "privacy", label: "Privacy and data", icon: "lock" },
+  ];
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", minHeight: "22rem" }}>
+      <Menu label="Account" placement="right-end" open={open} onOpenChange={setOpen} items={items}
+        trigger={(p) => <Button {...p} variant="secondary">You · Local</Button>} />
+    </div>
+  );
+}
+
+/** D79: opens beside its trigger, bottom edges aligned (the account menu opens into the work area); the theme row has no label. */
+export const RightOfTrigger: StoryObj = { render: () => <AccountDemo /> };

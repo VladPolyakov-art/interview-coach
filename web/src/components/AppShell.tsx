@@ -305,7 +305,7 @@ function ChatRow({ item, current, menuOpen, onTrash, onNavigate }: {
   );
 }
 
-/** The account row (avatar, "You" over "Local", a chevron; D59): one pill button (D78) that opens a menu upward, whose
+/** The account row (avatar, "You" over "Local", a chevron; D59): one pill button (D78) that opens a menu to its right, into the work area (D79), whose
  * header still says "Saved on this computer"; the menu has Settings, the theme switch (D78), Privacy, Help.
  * Collapsed: the avatar alone. */
 function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; defaultOpen: boolean; onNavigate?: () => void }) {
@@ -315,10 +315,11 @@ function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; d
   const go = (to: string) => () => { navigate(to); onNavigate?.(); };
   const items: MenuEntry[] = [
     { id: "settings", label: t("settings.title"), icon: "settings", onSelect: go("/settings") },
-    // D78: the theme is switched right here, no trip to Settings.
+    // D78: the theme is switched right here, no trip to Settings. D79: no visible "Theme" label, just the three choices.
     {
       id: "theme",
       label: t("rail.theme"),
+      hideLabel: true,
       choices: (["system", "light", "dark"] as const).map((v) => ({
         id: v, label: t(`theme.${v}`), icon: v === "system" ? "monitor" : v === "light" ? "sun" : "moon", checked: theme === v,
         onSelect: () => setTheme(v),
@@ -331,7 +332,7 @@ function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; d
   return (
     <Menu
       label={t("rail.accountMenu")}
-      placement="top-start"
+      placement="right-end"
       open={open}
       onOpenChange={setOpen}
       className={s.accountWrap}
@@ -347,8 +348,8 @@ function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; d
                   <span className={s.accountName}>{t("rail.you")}</span>
                   <span className={s.accountSub}>{t("rail.local")}</span>
                 </span>
-                {/* D59: the chevron says the row opens a menu (up while closed, since the menu opens upward). */}
-                <span className={s.accountChevron} aria-hidden="true"><Icon name="chevronDown" size="sm" /></span>
+                {/* D59: the chevron says the row opens a menu; D79: it points right, where the menu opens. */}
+                <span className={s.accountChevron} aria-hidden="true"><Icon name="chevronRight" size="sm" /></span>
               </>
             )}
           </button>

@@ -98,7 +98,9 @@ export interface Voice { id: string; label: string; locale: string; gender: stri
 export interface VoicesResponse { voices: Voice[]; default: string; tts: { available: boolean; [k: string]: unknown } }
 export interface SttInfo { available: boolean; backend: string; word_confidence?: boolean; model?: string }
 
-export interface Profile { text: string; source: string; updated: string }
+/** D79: the CV is several files plus a pasted note; `text` joins them (what Mike reads). */
+export interface ProfileFile { id: string; name: string; chars: number; added: string }
+export interface Profile { text: string; source: string; updated: string; note: string; files: ProfileFile[] }
 
 export interface VacancySummary { id: string; title: string; created_at: string; source: string; questions: number }
 export interface Question {

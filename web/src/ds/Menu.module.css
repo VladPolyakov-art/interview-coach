@@ -24,6 +24,9 @@
 .floating.top { margin-top: calc(-1 * var(--space-1)); transform-origin: bottom left; }
 .floating.bottom.alignEnd { transform-origin: top right; }
 .floating.top.alignEnd { transform-origin: bottom right; }
+/* D79: beside the trigger (the account menu opens into the work area); the gap is already in the position. */
+.floating.right { transform-origin: top left; }
+.floating.right.alignEnd { transform-origin: bottom left; }
 .inline { position: relative; }
 
 .picker { padding: 0; min-width: var(--layout-panel); max-width: none; overflow: hidden; }
@@ -131,4 +134,8 @@
   transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
 }
 .choice:hover { color: var(--color-text-primary); }
+/* D79: label hidden, the three choices share the row as one segmented control. */
+.choiceFill { padding-inline: var(--space-1); }
+.choiceFill .choices { flex: 1 1 auto; }
+.choiceFill .choice { flex: 1 1 0; width: auto; }
 .choice[aria-checked="true"] { background: var(--color-surface-chip-selected); color: var(--color-text-on-checked); }

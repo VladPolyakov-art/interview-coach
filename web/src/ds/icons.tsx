@@ -7,7 +7,7 @@ export type IconName =
   | "sun" | "moon" | "monitor" | "trash" | "edit" | "content" | "language" | "delivery" | "alert" | "info"
   | "sparkle" | "user" | "briefcase" | "upload" | "link" | "file" | "clock" | "plus" | "download" | "lock"
   | "hand" | "chat" | "cpu" | "globe" | "terminal" | "key" | "folder" | "eye"
-  | "menu" | "more" | "search" | "panel" | "sidebar" | "bulb" | "help";
+  | "menu" | "more" | "search" | "panel" | "sidebar" | "bulb" | "help" | "target";
 
 const paths: Record<IconName, ReactNode> = {
   menu: (<path d="M4 7h16M4 12h16M4 17h16" />),
@@ -50,7 +50,10 @@ const paths: Record<IconName, ReactNode> = {
   delivery: (<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0" />),
   alert: (<><path d="M12 3.5 2.5 20h19L12 3.5Z" /><path d="M12 10v4.5M12 17.5h.01" /></>),
   info: (<><circle cx="12" cy="12" r="9" /><path d="M12 11v5.5M12 7.5h.01" /></>),
-  sparkle: (<path d="M12 3.5l1.8 5.2 5.2 1.8-5.2 1.8L12 17.5l-1.8-5.2-5.2-1.8 5.2-1.8L12 3.5ZM18.5 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z" />),
+  /* D79: one four-point star (AI engine), larger and easier to see than the old star pair. */
+  sparkle: (<path d="M12 3c.7 4.7 3.6 7.6 8.5 9-4.9 1.4-7.8 4.3-8.5 9-.7-4.7-3.6-7.6-8.5-9 4.9-1.4 7.8-4.3 8.5-9Z" />),
+  /* D79: Settings → Practice (aiming at a goal; the house was a leftover of the old Home tab). */
+  target: (<><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><path d="M12 12h.01" strokeWidth={2.75} /></>),
   user: (<><circle cx="12" cy="8" r="4" /><path d="M4 20.5a8 8 0 0 1 16 0" /></>),
   briefcase: (<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12.5h18" /></>),
   upload: (<><path d="M12 15V4M7 8.5 12 4l5 4.5" /><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" /></>),

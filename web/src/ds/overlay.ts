@@ -79,7 +79,8 @@ export function cssPx(el: Element, name: string, fallback = 0): number {
   return n;
 }
 
-export type Placement = "bottom-start" | "bottom-end" | "top-start" | "top-end";
+/** "right-*" (D79): beside the trigger, edges aligned at the top (start) or bottom (end); above or below when no room. */
+export type Placement = "bottom-start" | "bottom-end" | "top-start" | "top-end" | "right-start" | "right-end";
 
 export interface AnchorBox { left: number; top: number; width: number; height: number }
 export interface Space { width: number; height: number }
@@ -99,7 +100,7 @@ export interface PlaceOptions {
 }
 
 export interface Placed {
-  side: "top" | "bottom";
+  side: "top" | "bottom" | "right";
   align: "start" | "end";
   left: number;
   top: number;
@@ -110,6 +111,19 @@ export interface Placed {
 /** Pure placement: anchor and container in the same CSS-pixel space. Flips above when there is more room there. */
 export function place(anchor: AnchorBox, space: Space, o: PlaceOptions): Placed {
   const narrow = Boolean(o.sheetWhenNarrow) && space.width < OVERLAY_NARROW_MAX;
+  if (o.placement.startsWith("right")) {
+    const end = o.placement.endsWith("end");
+    const left = anchor.left + anchor.width + o.gap;
+    if (!narrow && left + o.floating.width <= space.width - o.pad) {
+      const maxHeight = Math.max(0, space.height - o.pad * 2);
+      const height = Math.min(o.floating.height, maxHeight);
+      let top = end ? anchor.top + anchor.height - height : anchor.top;
+      top = Math.max(o.pad, Math.min(top, space.height - o.pad - height));
+      // The gap is in `left` here; the right-side CSS adds no margin.
+      return { side: "right", align: end ? "end" : "start", left, top, maxHeight };
+    }
+    return place(anchor, space, { ...o, placement: end ? "top-start" : "bottom-start" });
+  }
   const below = space.height - (anchor.top + anchor.height) - o.gap - o.pad;
   const above = anchor.top - o.gap - o.pad;
   const wantTop = o.placement.startsWith("top");

@@ -35,7 +35,7 @@ export { SelectableCardGroup } from "./Card";
 export { Composer, ComposerAttachment } from "./Composer";
 export type { ComposerSend } from "./Composer";
 export { Checkbox } from "./Checkbox";
-export { FileDrop } from "./FileDrop";
+export { FileDrop, FileRow } from "./FileDrop";
 export { StatusPill } from "./StatusPill";
 export type { StatusPillState } from "./StatusPill";
 export { TextShimmer } from "./TextShimmer";

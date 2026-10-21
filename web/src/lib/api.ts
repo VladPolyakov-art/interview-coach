@@ -75,7 +75,10 @@ export const api = {
   profile: () => request<Profile>("/profile"),
   saveProfile: (text: string, source = "pasted") =>
     request<Profile>("/profile", { method: "PUT", body: JSON.stringify({ text, source }) }),
-  uploadProfile: async (file: File) => post<Profile>("/profile/upload", { name: file.name, data: await fileToBase64(file) }),
+  /** Adds a CV file (D79: up to 10); `replace` swaps the file with that id. */
+  uploadProfile: async (file: File, replace?: string) =>
+    post<Profile>("/profile/upload", { name: file.name, data: await fileToBase64(file), ...(replace ? { replace } : {}) }),
+  deleteProfileFile: (id: string) => request<Profile>(`/profile/files/${encodeURIComponent(id)}`, { method: "DELETE" }),
   deleteProfile: () => request<{ ok: boolean }>("/profile", { method: "DELETE" }),
   vacancies: () => request<{ vacancies: VacancySummary[] }>("/vacancies"),
   vacancy: (id: string) => request<Vacancy>(`/vacancies/${encodeURIComponent(id)}`),

@@ -232,10 +232,7 @@
   display: inline-flex;
   flex: none;
   color: var(--color-text-tertiary);
-  transform: rotate(180deg);
-  transition: transform var(--duration-fast) var(--ease-standard);
 }
-.account[aria-expanded="true"] .accountChevron { transform: none; }
 .accountName { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .accountSub { color: var(--color-text-tertiary); font-size: var(--text-sm); overflow-wrap: anywhere; }
 /* The menu's header: the same two lines. */
