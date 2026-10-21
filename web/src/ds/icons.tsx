@@ -7,7 +7,7 @@ export type IconName =
   | "sun" | "moon" | "monitor" | "trash" | "edit" | "content" | "language" | "delivery" | "alert" | "info"
   | "sparkle" | "user" | "briefcase" | "upload" | "link" | "file" | "clock" | "plus" | "download" | "lock"
   | "hand" | "chat" | "cpu" | "globe" | "terminal" | "key" | "folder" | "eye"
-  | "menu" | "more" | "search" | "panel" | "sidebar";
+  | "menu" | "more" | "search" | "panel" | "sidebar" | "bulb" | "help";
 
 const paths: Record<IconName, ReactNode> = {
   menu: (<path d="M4 7h16M4 12h16M4 17h16" />),
@@ -16,6 +16,9 @@ const paths: Record<IconName, ReactNode> = {
   panel: (<><rect x="3" y="4.5" width="18" height="15" rx="2" /><path d="M14.5 4.5v15" /></>),
   /* D57: the sidebar toggle (a window with a left-hand panel), like claude.ai. */
   sidebar: (<><rect x="3" y="4.5" width="18" height="15" rx="2" /><path d="M9.5 4.5v15" /></>),
+  /* D62: the sample-answer toggle (US-58) and the session help (shortcuts + mic help). */
+  bulb: (<path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z" />),
+  help: (<><circle cx="12" cy="12" r="9" /><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.3-.9.8-.9 1.4v.3M12 16.6h.01" /></>),
   search: (<><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></>),
   mic: (<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
   micOff: (<><path d="M15 9.5V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 4.6 2.5M5 11a7 7 0 0 0 11.2 5.6M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18" /></>),

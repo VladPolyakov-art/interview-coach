@@ -140,6 +140,9 @@ export interface SessionViewProps {
   initialFollow?: "latest" | "reading";
   /** Force reduced motion for the Presence glow (review, stories); otherwise the OS setting. */
   reducedMotion?: boolean;
+  /** D62: the island's tools — "open" (default: nothing behind More on wide) or "menu" (shortcuts, mic help, context
+   * in More). */
+  tools?: "open" | "menu";
   /** Force the island layout (review); otherwise from the container width (< 560 = stacked). */
   island?: "inline" | "stacked";
   /** Listen to the keyboard shortcuts on the window (the live app). Otherwise only while focus is inside the view. */

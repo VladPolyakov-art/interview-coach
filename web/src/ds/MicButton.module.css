@@ -3,6 +3,7 @@
 .mic {
   --mic: 0;
   position: relative;
+  flex: none;
   display: inline-grid;
   place-items: center;
   width: var(--control-h-lg);

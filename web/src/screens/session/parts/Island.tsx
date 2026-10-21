@@ -5,7 +5,10 @@
  * - `stacked` (<560, phones, V2.7): two rows; Redo moves into More.
  * - Connecting (S9): a Dots pill fills groups 1-3, only End stays.
  * - Nothing in the island changes while the user speaks except the mic ring (GR6): the main action becomes Send now
- *   at the moment listening starts, and the toggles keep their state. */
+ *   at the moment listening starts, and the toggles keep their state.
+ * - D62 `tools`: "open" (default) = nothing behind More on wide: the sample-answer toggle, Feedback and a help button
+ *   (shortcuts + mic help) are icons, the context is the status tooltip; "menu" = the same icons, but shortcuts, mic
+ *   help and the context stay in More. Phones (stacked) always keep More. */
 import { useState, type Ref } from "react";
 import { Badge, Button, Composer, Dots, Island, IconButton, Menu, MicButton, Tooltip, type IconName, type IslandGroup, type MenuEntry } from "../../../ds";
 import { t } from "../../../i18n";
@@ -64,11 +67,9 @@ export function islandModel(p: {
   const canRedo = data.answered && redoPhase && Boolean(h?.onRedo);
   const redoReason = canRedo ? undefined : !data.answered ? t("session.island.redoNone") : t("session.island.redoLater");
 
-  const feedback = !p.hasFeedback
-    ? { enabled: false, reason: t("session.island.feedbackFirst") }
-    : phase === "listening" || phase === "thinking"
-      ? { enabled: false, reason: t("session.island.feedbackListening") }
-      : { enabled: true };
+  // D62: the panel opens any time (before the first answer it says what is coming / that it is still in progress).
+  void p.hasFeedback;
+  const feedback = { enabled: true };
   return { main, canRedo, redoReason, feedback };
 }
 
@@ -96,6 +97,8 @@ export interface SessionIslandProps {
   showSuggester: boolean;
   suggestOn: boolean;
   onSuggest: (on: boolean) => void;
+  /** D62: "open" = no More menu on wide; "menu" = shortcuts, mic help and context stay in More. */
+  tools: "open" | "menu";
   onShortcuts: () => void;
   onMicHelp: () => void;
   /** Text mode: the send stays disabled while the panel waits for Next question. */
@@ -106,16 +109,21 @@ export interface SessionIslandProps {
   morph?: boolean;
 }
 
-function Status({ data, variant, entering }: Pick<SessionIslandProps, "data" | "variant" | "entering">) {
+function Status({ data, variant, entering, context, full }: Pick<SessionIslandProps, "data" | "variant" | "entering"> & { context?: boolean; full?: boolean }) {
   const total = Math.max(0, Math.floor(data.elapsed));
   const aria = t("session.elapsedAria", { m: Math.floor(total / 60), s: total % 60 });
-  const short = variant === "english" || !data.step ? data.progress : t("session.island.step", { n: data.step.n, of: data.step.of });
-  return (
+  // D62: "2 of 5" alone didn't read as the question number: wide says "Question 2 of 5", phones "Q2 of 5".
+  const short = variant === "english" || !data.step || full ? data.progress : t("session.island.step", { n: data.step.n, of: data.step.of });
+  const status = (
     <span className={`${s.status} ${entering ? "motion-meta" : ""}`}>
       {short ? <span className={s.progress} aria-label={data.progress}>{short}</span> : null}
       <span className={s.timer} role="timer" aria-label={aria}><span aria-hidden="true">{clock(data.elapsed)}</span></span>
     </span>
   );
+  // D62 tools "open": the context that lived in the More header is the status tooltip (🟡 hover only).
+  if (!context) return status;
+  const tip = [data.title, variant === "interview" ? data.sub : null, ...(data.badges ?? []).map((b) => b.label)].filter(Boolean).join(" · ");
+  return <Tooltip content={tip} placement="top-start">{status}</Tooltip>;
 }
 
 /** The slot keeps the width of its longest label (V2.1: the island never changes width). Ghost copies of every label
@@ -261,6 +269,17 @@ export function SessionIsland(p: SessionIslandProps) {
     // The backend can't switch a running session back to voice (v1 Segmented had the same lock): disabled, with why.
     <IconButton icon="mic" label={t("session.island.toVoice")} title={t("session.voiceNeedsNew")} disabled />
   );
+  const suggest = p.showSuggester ? (
+    <IconButton
+      icon="bulb"
+      label={p.suggestOn ? t("session.island.suggestHide") : t("session.island.suggestShow")}
+      pressed={p.suggestOn}
+      onClick={() => p.onSuggest(!p.suggestOn)}
+    />
+  ) : null;
+  const help = (
+    <IconButton icon="help" label={t("session.island.help")} onClick={p.onShortcuts} />
+  );
   const feedback = (
     <IconButton
       ref={p.feedbackRef}
@@ -275,7 +294,6 @@ export function SessionIsland(p: SessionIslandProps) {
 
   const items: MenuEntry[] = [];
   if (stacked) items.push({ id: "redo", label: t("session.controls.redo"), icon: "redo", shortcut: "R", disabled: !model.canRedo, onSelect: h?.onRedo });
-  if (p.showSuggester) items.push({ id: "suggest", label: t("session.suggest.toggle"), description: t("session.suggest.practiceOnly"), checkbox: true, checked: p.suggestOn, onSelect: () => p.onSuggest(!p.suggestOn) });
   items.push({ id: "shortcuts", label: t("session.island.shortcuts"), icon: "keyboard", shortcut: "?", onSelect: p.onShortcuts });
   if (voice) items.push({ id: "mic-help", label: t("session.island.micHelp"), icon: "mic", onSelect: p.onMicHelp });
   if (p.noSpeech) items.push({ id: "voice", label: t("session.island.switchToVoice"), description: t("session.island.voiceUnavailable"), icon: "mic", disabled: true });
@@ -293,7 +311,9 @@ export function SessionIsland(p: SessionIslandProps) {
 
   // Text mode: the box is full width anyway, so the slot isn't sized; it takes the free space instead.
   const main = <MainSlot main={model.main} variant={variant} stacked={stacked} sized={voice} />;
-  const status = <Status data={data} variant={variant} entering={p.entering} />;
+  const open = p.tools === "open" && !stacked;
+  const status = <Status data={data} variant={variant} entering={p.entering} context={open} full={!stacked} />;
+  const exit = open ? <>{help}{end}</> : <>{more}{end}</>;
 
   const statusGroup = (row: 1 | 2, grow: boolean): IslandGroup => ({ id: "status", row, grow, label: t("session.island.status"), reviewId: "Session/Island/Status", children: status });
   let groups: IslandGroup[];
@@ -303,13 +323,13 @@ export function SessionIsland(p: SessionIslandProps) {
           statusGroup(1, true),
           { id: "exit", row: 1, label: t("session.island.exit"), reviewId: "Session/Island/More", children: <>{feedback}{end}</> },
           { id: "voice", row: 2, grow: true, label: t("session.island.voice"), reviewId: "Session/Island/Controls", children: <>{mic}{main}</> },
-          { id: "tools", row: 2, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{more}</> },
+          { id: "tools", row: 2, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{suggest}{more}</> },
         ]
       : [
           statusGroup(1, false),
           { id: "voice", label: t("session.island.voice"), reviewId: "Session/Island/Controls", children: <>{mic}{main}</> },
-          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{feedback}</> },
-          { id: "exit", label: t("session.island.exit"), reviewId: "Session/Island/More", children: <>{more}{end}</> },
+          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{suggest}{feedback}</> },
+          { id: "exit", label: t("session.island.exit"), reviewId: "Session/Island/More", children: exit },
         ];
   } else {
     // Text mode: no mic, the send lives in the composer. The main slot (Next question / Dots) shows only when there is
@@ -320,15 +340,15 @@ export function SessionIsland(p: SessionIslandProps) {
     groups = stacked
       ? [
           statusGroup(1, true),
-          { id: "tools", row: 1, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{feedback}{more}</> },
+          { id: "tools", row: 1, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{suggest}{feedback}{more}</> },
           { id: "exit", row: 1, label: t("session.island.exit"), reviewId: "Session/Island/More", children: end },
           ...(mainGroup ? [mainGroup] : []),
         ]
       : [
           statusGroup(1, !mainGroup),
           ...(mainGroup ? [mainGroup] : []),
-          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{feedback}</> },
-          { id: "exit", label: t("session.island.exit"), reviewId: "Session/Island/More", children: <>{more}{end}</> },
+          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{suggest}{feedback}</> },
+          { id: "exit", label: t("session.island.exit"), reviewId: "Session/Island/More", children: exit },
         ];
   }
 

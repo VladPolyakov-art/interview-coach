@@ -77,15 +77,17 @@
   pointer-events: none;
 }
 /* The dock: the one state text (O5) right above the island. */
-.dock { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; max-width: var(--layout-narrow); min-width: 0; }
+/* D62: the voice pill hugs its content and may run wider than the text column (it squeezed the mic at 704px); the
+ * text-mode box and the notices keep the column width. */
+.dock { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; max-width: 100%; min-width: 0; }
 .status { display: flex; justify-content: center; max-width: 100%; pointer-events: auto; }
-.islandBox { display: flex; justify-content: center; width: 100%; max-width: var(--layout-narrow); min-width: 0; }
+.islandBox { display: flex; justify-content: center; width: 100%; max-width: 100%; min-width: 0; }
+.islandBox[data-input="text"] { max-width: var(--layout-narrow); }
 .islandBox > * { pointer-events: auto; }
 
 /* Stage shift (docs/motion.md "Stage shift"): transform only, `slower`, instant under reduced motion (tokens = 0). */
 .shift { transition: transform var(--duration-slower) var(--ease-standard); }
 .root[data-panel="open"] .shift { transform: translateX(var(--stage-shift)); }
-/* Floating notices (D59) follow the stage when the panel opens. */
 /* Shifted content must still fit left of the panel on a 1024-1280 window. */
 .root[data-panel="open"] .flow,
 .root[data-panel="open"] .dock {

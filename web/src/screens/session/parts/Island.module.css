@@ -6,8 +6,8 @@
 /* Status: "2 of 5 · 07:12". Static text, tabular digits, no pulse, no colour (D37). */
 .status { display: inline-flex; align-items: baseline; gap: var(--space-2); padding-inline: var(--space-1); white-space: nowrap; font-size: var(--text-sm); }
 .progress { font-weight: var(--weight-medium); }
-/* "1:02:14" (S13) is 7 characters: the slot is sized for it, so the island keeps its width past the hour. */
-.timer { min-inline-size: 7ch; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+/* D62: no 7ch reserve for "1:02:14" (it left a gap before the mic); past the hour the island widens once. */
+.timer { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
 
 /* Main action slot: every label this variant can show is stacked in one grid cell (the visible one on top), so the
  * slot is as wide as the longest label and the island never changes width (V2.1). */

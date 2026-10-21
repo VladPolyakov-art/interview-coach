@@ -318,6 +318,7 @@ export function SessionView(props: SessionViewProps) {
                     showSuggester={showSuggester}
                     suggestOn={suggestOn}
                     onSuggest={(on) => { setSuggestOn(on); handlers?.onSetSuggest?.(on); }}
+                    tools={props.tools ?? "open"}
                     onShortcuts={() => setShortcuts(true)}
                     onMicHelp={() => setMicHelp(true)}
                     sendLocked={sendLocked}
@@ -365,7 +366,13 @@ export function SessionView(props: SessionViewProps) {
         </Drawer>
       ) : null}
       <MicHelpDialog open={overlay === "mic-help" || micHelp} handlers={{ ...handlers, onCloseMicHelp: () => { setMicHelp(false); handlers?.onCloseMicHelp?.(); } }} />
-      <ShortcutsDialog open={shortcuts} onClose={() => setShortcuts(false)} input={input} variant={variant} />
+      <ShortcutsDialog
+        open={shortcuts}
+        onClose={() => setShortcuts(false)}
+        input={input}
+        variant={variant}
+        onMicHelp={voice ? () => { setShortcuts(false); setMicHelp(true); } : undefined}
+      />
     </div>
   );
 }

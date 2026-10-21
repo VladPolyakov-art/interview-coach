@@ -15,9 +15,19 @@ const states: ReviewState[] = [
     render: show({ scene: "q1-start" }),
   },
   {
-    id: "s1-more", label: "S1 · Меню More: контекст и настройки",
-    note: "Сюда ушло то, что было в верхней панели: название вакансии и «Behavioural · Standard» в шапке меню. Дальше — «Keyboard shortcuts» (?), «Microphone help».",
-    render: show({ scene: "q1-start" }, { initialOverlay: "more" }), mobile: false,
+    id: "s1-open", label: "D62 · Вариант A (по умолчанию): ничего не спрятано",
+    note: "Меню «…» на широком экране нет. Инструменты — иконками: Redo, Type, лампочка «пример ответа» (подсказчик), Feedback; у End — «?»: горячие клавиши и помощь с микрофоном. Вакансия и раунд — в подсказке при наведении на «Question 1 of 5». На телефоне меню «…» остаётся (места нет).",
+    render: show({ scene: "q1-start" }, { suggester: "on" }),
+  },
+  {
+    id: "s1-more", label: "D62 · Вариант B: те же иконки, остальное в More",
+    note: "Лампочка и Feedback — иконками, как в A; горячие клавиши, помощь с микрофоном и контекст (вакансия, раунд) — в меню «…».",
+    render: show({ scene: "q1-start" }, { suggester: "on", tools: "menu", initialOverlay: "more" }), mobile: false,
+  },
+  {
+    id: "s1-panel", label: "D62 · Разбор открыт до первого ответа",
+    note: "Кнопка Feedback работает всегда. Пока разбора нет, панель говорит, что появится здесь; во время ответа — «Still in progress…».",
+    render: show({ scene: "q1-start" }, { panelOpen: true }),
   },
   {
     id: "s2", label: "S2 · Майк задаёт уточняющий вопрос", dark: true,
@@ -83,10 +93,10 @@ const states: ReviewState[] = [
     note: "При «уменьшить движение» — один неподвижный кадр на состояние: говорит — волны подняты; слушает — центр и бока чуть приподняты; думает — гребень стоит у левого края.",
     render: show({ scene: "thinking" }, { reducedMotion: true }),
   },
-  { id: "s7", label: "S7 · Drill: вопрос 1 из 3", note: "«1 of 3»; фокус дрилла (бейджи) — в шапке меню More.", render: show({ scene: "drill" }) },
+  { id: "s7", label: "S7 · Drill: вопрос 1 из 3", note: "«Question 1 of 3»; фокус дрилла (бейджи) — в подсказке у «Question 1 of 3».", render: show({ scene: "drill" }) },
   {
     id: "s8", label: "S8 · English: ход 4",
-    note: "«Turn 4» вместо «2 of 5», после хода — снова «Talk now»: Next question нет, разговор идёт дальше. End practice. Уровень B2 — в шапке More.",
+    note: "«Turn 4» вместо «2 of 5», после хода — снова «Talk now»: Next question нет, разговор идёт дальше. End practice. Уровень B2 — в подсказке у статуса.",
     render: show({ scene: "english", withChecks: false }),
   },
   { id: "s9", label: "S9 · Подключение", note: "Пилюля «Connecting to Mike…» занимает весь островок, остаётся только End.", render: show({ scene: "connecting" }) },
@@ -101,7 +111,7 @@ const states: ReviewState[] = [
   { id: "s12b", label: "S12b · Браузер не распознаёт речь", note: "Микрофон неактивен с причиной; в More — «Switch to voice» неактивная с пояснением.", render: show({ scene: "browser" }) },
   {
     id: "s13", label: "S13 · Переполнение +30%: длинный заголовок, вопрос, таймер больше часа",
-    note: "Таймер «1:02:14» помещается в свой слот, островок не расширяется. Длинное название — только в шапке More (2 строки + подсказка).",
+    note: "Таймер «1:02:14» помещается в свой слот, островок не расширяется. Длинное название — в подсказке у статуса.",
     render: show({ scene: "overflow" }),
   },
   { id: "s14a", label: "S14a · Готовим разбор (P2)", note: "В слоте — «Preparing feedback», панель открыта и показывает ожидание.", render: show({ scene: "preparing" }) },
@@ -109,8 +119,8 @@ const states: ReviewState[] = [
   { id: "s14c", label: "S14c · Микрофон выключен", note: "Кнопка микрофона перечёркнута, «Talk now» неактивна до включения (M).", render: show({ scene: "muted" }) },
   {
     id: "s14d", label: "S14d · Подсказчик ответа включён (US-58)",
-    note: "Карточка с примером ответа — на сцене; переключатель «Show a sample answer» перенесён в меню More (чекбокс).",
-    render: show({ scene: "suggester" }, { initialOverlay: "more" }),
+    note: "D62: переключатель — лампочка в островке (нажата = пример показан), не в меню «…». Карточка с примером — на сцене.",
+    render: show({ scene: "suggester" }),
   },
   {
     id: "shortcuts", label: "Горячие клавиши",
