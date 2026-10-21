@@ -144,6 +144,7 @@ export function SessionView(props: SessionViewProps) {
   const [shortcuts, setShortcuts] = useState(props.initialOverlay === "shortcuts");
   const [micHelp, setMicHelp] = useState(false);
   const [suggestOn, setSuggestOn] = useState(data.suggestOn ?? true);
+  const [chatHidden, setChatHidden] = useState(props.initialChatHidden ?? false);
   const showSuggester = props.suggester === "on" && variant === "interview";
 
   /* Text mode morph: the island turns from pill into box once, when the input switches during the session. */
@@ -179,6 +180,7 @@ export function SessionView(props: SessionViewProps) {
     const run = (fn?: () => void) => { if (fn) { e.preventDefault(); fn(); } };
     if (key === "?") run(() => setShortcuts(true));
     else if (key === "f" && model.feedback.enabled) run(() => setPanel(!panelOpen));
+    else if (key === "h") run(() => setChatHidden(!chatHidden));
     else if (key === "n" && model.main?.kind === "button" && (model.main.id === "next" || model.main.id === "debrief") && !model.main.disabled) run(model.main.onClick);
     else if (!live || !voice) {
       if (key === "r" && model.canRedo) run(handlers?.onRedo);
@@ -240,8 +242,12 @@ export function SessionView(props: SessionViewProps) {
   const sendLocked = Boolean(handlers?.onNext) && (phase === "between" || phase === "feedback" || phase === "editing" || phase === "rechecking" || phase === "preparing" || phase === "unavailable");
   /* The whole dialogue, every phase (D49); "What we heard" under the user's latest voice answer. */
   const showTranscript = data.transcript.length > 0 || thinking;
+  
   const showTips = props.firstTime && !interrupted && phase !== "saving";
-  const showHeard = voice && !interrupted && lastTurn?.speaker === "user";
+  /* D63: "hide the conversation" keeps only Mike's current question on the stage (you still know what was asked; in
+   * text mode it is the only way to read it). 🟡 */
+  const turns = chatHidden ? data.transcript.filter((tt) => tt.speaker !== "user").slice(-1) : data.transcript;
+  const showHeard = voice && !interrupted && lastTurn?.speaker === "user" && !chatHidden;
   const showIsland = phase !== "saving" && !data.closing;
   const shifted = wide && panelOpen;
 
@@ -270,10 +276,10 @@ export function SessionView(props: SessionViewProps) {
             <div className={`${s.flow} ${s.shift}`}>
               {showTranscript ? (
                 <Transcript
-                  turns={data.transcript}
+                  turns={turns}
                   label={variant === "english" ? t("session.captions.transcriptEnglish") : t("session.transcript")}
                   recording={phase === "listening"}
-                  footer={showHeard ? t("session.heard") : undefined}
+                  footer={chatHidden ? t("session.chat.hiddenNote") : showHeard ? t("session.heard") : undefined}
                 />
               ) : null}
               {interrupted ? <Interrupted kind={overlay === "interrupted-voice" ? "voice" : "engine"} handlers={handlers} /> : null}
@@ -319,6 +325,8 @@ export function SessionView(props: SessionViewProps) {
                     suggestOn={suggestOn}
                     onSuggest={(on) => { setSuggestOn(on); handlers?.onSetSuggest?.(on); }}
                     tools={props.tools ?? "open"}
+                    chatHidden={chatHidden}
+                    onToggleChat={() => setChatHidden(!chatHidden)}
                     onShortcuts={() => setShortcuts(true)}
                     onMicHelp={() => setMicHelp(true)}
                     sendLocked={sendLocked}

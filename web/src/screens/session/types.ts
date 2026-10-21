@@ -143,6 +143,8 @@ export interface SessionViewProps {
   /** D62: the island's tools — "open" (default: nothing behind More on wide) or "menu" (shortcuts, mic help, context
    * in More). */
   tools?: "open" | "menu";
+  /** D63, review states: the conversation starts hidden (only Mike's current question shows). */
+  initialChatHidden?: boolean;
   /** Force the island layout (review); otherwise from the container width (< 560 = stacked). */
   island?: "inline" | "stacked";
   /** Listen to the keyboard shortcuts on the window (the live app). Otherwise only while focus is inside the view. */

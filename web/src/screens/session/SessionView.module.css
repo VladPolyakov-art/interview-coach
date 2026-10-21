@@ -88,10 +88,11 @@
 /* Stage shift (docs/motion.md "Stage shift"): transform only, `slower`, instant under reduced motion (tokens = 0). */
 .shift { transition: transform var(--duration-slower) var(--ease-standard); }
 .root[data-panel="open"] .shift { transform: translateX(var(--stage-shift)); }
-/* Shifted content must still fit left of the panel on a 1024-1280 window. */
+/* Shifted content must still fit left of the panel on a 1024-1280 window. D63: with a wider margin on both sides
+ * (space-12, was space-8), so the text doesn't run up to the left edge. */
 .root[data-panel="open"] .flow,
 .root[data-panel="open"] .dock {
-  max-width: min(var(--layout-narrow), calc(100cqw - var(--layout-panel) - var(--space-4) * 3 - var(--space-8) * 2));
+  max-width: min(var(--layout-narrow), calc(100cqw - var(--layout-panel) - var(--space-4) * 3 - var(--space-12) * 2));
 }
 
 @container session (width < 768px) {

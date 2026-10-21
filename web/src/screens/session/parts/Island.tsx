@@ -99,6 +99,9 @@ export interface SessionIslandProps {
   onSuggest: (on: boolean) => void;
   /** D62: "open" = no More menu on wide; "menu" = shortcuts, mic help and context stay in More. */
   tools: "open" | "menu";
+  /** D63: the conversation on the stage is hidden (only Mike's current question). */
+  chatHidden: boolean;
+  onToggleChat: () => void;
   onShortcuts: () => void;
   onMicHelp: () => void;
   /** Text mode: the send stays disabled while the panel waits for Next question. */
@@ -269,6 +272,14 @@ export function SessionIsland(p: SessionIslandProps) {
     // The backend can't switch a running session back to voice (v1 Segmented had the same lock): disabled, with why.
     <IconButton icon="mic" label={t("session.island.toVoice")} title={t("session.voiceNeedsNew")} disabled />
   );
+  const chat = (
+    <IconButton
+      icon="chat"
+      label={p.chatHidden ? t("session.chat.show") : t("session.chat.hide")}
+      pressed={p.chatHidden}
+      onClick={p.onToggleChat}
+    />
+  );
   const suggest = p.showSuggester ? (
     <IconButton
       icon="bulb"
@@ -323,12 +334,12 @@ export function SessionIsland(p: SessionIslandProps) {
           statusGroup(1, true),
           { id: "exit", row: 1, label: t("session.island.exit"), reviewId: "Session/Island/More", children: <>{feedback}{end}</> },
           { id: "voice", row: 2, grow: true, label: t("session.island.voice"), reviewId: "Session/Island/Controls", children: <>{mic}{main}</> },
-          { id: "tools", row: 2, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{suggest}{more}</> },
+          { id: "tools", row: 2, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{chat}{suggest}{more}</> },
         ]
       : [
           statusGroup(1, false),
           { id: "voice", label: t("session.island.voice"), reviewId: "Session/Island/Controls", children: <>{mic}{main}</> },
-          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{suggest}{feedback}</> },
+          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{chat}{suggest}{feedback}</> },
           { id: "exit", label: t("session.island.exit"), reviewId: "Session/Island/More", children: exit },
         ];
   } else {
@@ -340,14 +351,14 @@ export function SessionIsland(p: SessionIslandProps) {
     groups = stacked
       ? [
           statusGroup(1, true),
-          { id: "tools", row: 1, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{suggest}{feedback}{more}</> },
+          { id: "tools", row: 1, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{chat}{suggest}{feedback}{more}</> },
           { id: "exit", row: 1, label: t("session.island.exit"), reviewId: "Session/Island/More", children: end },
           ...(mainGroup ? [mainGroup] : []),
         ]
       : [
           statusGroup(1, !mainGroup),
           ...(mainGroup ? [mainGroup] : []),
-          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{suggest}{feedback}</> },
+          { id: "tools", label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{redo}{type}{chat}{suggest}{feedback}</> },
           { id: "exit", label: t("session.island.exit"), reviewId: "Session/Island/More", children: exit },
         ];
   }
