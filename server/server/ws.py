@@ -371,6 +371,12 @@ async def session_socket(websocket: WebSocket) -> None:
                     emit("flag_updated", feedback_id=record["id"], flag=flag, language=record["layers"]["language"])
                 except (KeyError, ValueError):
                     error("flag_not_found", "That correction was not found.", retryable=False)
+            elif kind == "input_mode":
+                wanted = data.get("input")
+                if wanted not in ("voice", "browser_stt", "text"):
+                    raise ValueError("invalid_input_mode")
+                if wanted == "voice" and isinstance(driver, TextDriver):
+                    driver.enable_stt(stt.get_stt(settings))
             elif kind == "silence":
                 if isinstance(driver, TextDriver):
                     await driver.say_silence()

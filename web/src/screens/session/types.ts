@@ -82,6 +82,8 @@ export interface SessionHandlers {
   onSendNow?: () => void;
   onRedo?: () => void;
   onTypeInstead?: () => void;
+  /** D64: a text answer goes back to voice in the same session (T, the island mic). */
+  onUseVoice?: () => void;
   /** Returns true when the text was accepted (the composer then clears). */
   onSendText?: (text: string) => boolean;
   onNext?: () => void;

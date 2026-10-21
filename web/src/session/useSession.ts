@@ -7,6 +7,7 @@ import { BrowserStt, browserSttSupported } from "../audio/browserStt";
 import { captureErrorCode, VoiceCapture, type CaptureError } from "../audio/capture";
 import { micLevel } from "../audio/level";
 import { Playback } from "../audio/playback";
+import { prefs } from "../lib/prefs";
 import type { ClientMessage, ServerMessage, StartMessage } from "../lib/types";
 import { t } from "../i18n";
 import { initialState, sessionReducer } from "./reducer";
@@ -41,6 +42,8 @@ export function useSession(config: SessionConfig) {
   const stateRef = useRef(state);
   stateRef.current = state;
   const configRef = useRef(config);
+  /** Browser speech recognition for voice answers; set at start, re-decided when a text session switches to voice. */
+  const browserRef = useRef(config.browserStt);
 
   const send = useCallback((msg: ClientMessage) => {
     const socket = ws.current;
@@ -72,7 +75,7 @@ export function useSession(config: SessionConfig) {
   const startMic = useCallback(async () => {
     const context = ctx.current;
     if (!context || capture.current) return;
-    const useBrowser = configRef.current.browserStt;
+    const useBrowser = browserRef.current;
     if (useBrowser && !browserSttSupported()) {
       setMicError("stt_unsupported");
       dispatch({ type: "local/input_changed", input: "text" });
@@ -143,21 +146,23 @@ export function useSession(config: SessionConfig) {
     }
   }, [send, sendPcm, stopMic]);
 
+  /** Audio context + Mike's playback; made at start for voice or spoken sessions, or on the switch to voice. */
+  const ensureAudio = useCallback(() => {
+    if (ctx.current) return;
+    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return;
+    const context = new Ctor();
+    void context.resume().catch(() => {});
+    ctx.current = context;
+    const pb = new Playback(context);
+    pb.onChange = setPlaying;
+    playback.current = pb;
+  }, []);
+
   /* ---------- socket lifecycle ---------- */
   useEffect(() => {
     const start = configRef.current.start;
-    const needsAudio = start.speak || start.input !== "text";
-    if (needsAudio) {
-      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (Ctor) {
-        const context = new Ctor();
-        void context.resume().catch(() => {});
-        ctx.current = context;
-        const pb = new Playback(context);
-        pb.onChange = setPlaying;
-        playback.current = pb;
-      }
-    }
+    if (start.speak || start.input !== "text") ensureAudio();
     const socket = new WebSocket(socketUrl());
     socket.binaryType = "arraybuffer";
     ws.current = socket;
@@ -194,7 +199,7 @@ export function useSession(config: SessionConfig) {
       ctx.current = null;
       if (context && context.state !== "closed") void context.close().catch(() => {});
     };
-  }, [stopMic]);
+  }, [stopMic, ensureAudio]);
 
   /* Start the mic once the session is live (voice input only). */
   useEffect(() => {
@@ -267,7 +272,18 @@ export function useSession(config: SessionConfig) {
     },
     switchToText() {
       stopMic();
+      send({ type: "input_mode", input: "text" });
       dispatch({ type: "local/input_changed", input: "text" });
+    },
+    /** D64: back to voice in the same session; the mic starts from the live-phase effect, and a failure falls back to
+     * text with the reason, as at start. */
+    switchToVoice() {
+      ensureAudio();
+      if (configRef.current.start.input === "text") browserRef.current = prefs.stt() === "browser" && browserSttSupported();
+      const input = browserRef.current ? "browser_stt" : "voice";
+      setMicError(null);
+      send({ type: "input_mode", input });
+      dispatch({ type: "local/input_changed", input });
     },
     dismissNotice() {
       dispatch({ type: "local/dismiss_notice" });
@@ -276,7 +292,7 @@ export function useSession(config: SessionConfig) {
       dispatch({ type: "local/dismiss_error" });
     },
     end,
-  }), [send, stopMic, end, muted]);
+  }), [send, stopMic, ensureAudio, end, muted]);
 
   const getLevel = useCallback(() => level.current, []);
 

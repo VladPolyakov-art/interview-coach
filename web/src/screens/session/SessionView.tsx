@@ -192,7 +192,7 @@ export function SessionView(props: SessionViewProps) {
       if (key === "r" && model.canRedo) run(handlers?.onRedo);
     } else if (key === "m") run(handlers?.onToggleMute);
     else if (key === "r" && model.canRedo) run(handlers?.onRedo);
-    else if (key === "t") run(handlers?.onTypeInstead);
+    else if (key === "t") run(voice ? handlers?.onTypeInstead : handlers?.onUseVoice);
     else if (key === " " && !onButton && (phase === "mike-speaking" || phase === "your-turn")) run(handlers?.onInterrupt);
     else if (key === "Enter" && !onButton && phase === "listening") run(handlers?.onSendNow);
   };

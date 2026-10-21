@@ -136,3 +136,23 @@ def test_redo_answer_removes_feedback(client, monkeypatch, fake_llm):
         s.send_json({"type": "end_session"})
         receive_until(s, "session_ended")
     assert storage.list_records("sessions") == []              # no answers left: nothing saved
+
+
+def test_text_session_switches_to_voice(client, monkeypatch, fake_llm):
+    llm = fake_llm({"p1": {"gap": "none", "action": "next_question", "say": "Okay."}})
+    attached = []
+
+    async def ready(settings, engine_id, voice=False):
+        return EngineStatus(code="ready", ready=True, model="fake-model")
+    monkeypatch.setattr(ws, "check_engine", ready)
+    monkeypatch.setattr(ws, "get_llm", lambda settings, engine_id, voice=False: llm)
+    monkeypatch.setattr(ws.TextDriver, "enable_stt", lambda self, recogniser: attached.append(recogniser))
+    with client.websocket_connect("/ws/session") as s:
+        s.send_json({"type": "start", "mode": "interview", "input": "text", "questions": 2})
+        receive_until(s, "turn_complete")
+        s.send_json({"type": "input_mode", "input": "voice"})
+        s.send_json({"type": "ping", "t": 1})
+        receive_until(s, "pong")                               # the switch was accepted, the session goes on
+        s.send_json({"type": "end_session"})
+        receive_until(s, "session_ended")
+    assert len(attached) == 1

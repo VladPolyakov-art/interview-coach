@@ -217,6 +217,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     onSendNow: actions.sendNow,
     onRedo: actions.redo,
     onTypeInstead: actions.switchToText,
+    onUseVoice: actions.switchToVoice,
     onSendText: actions.sendText,
     onFlag: actions.flag,
     onStronger: actions.stronger,

@@ -82,6 +82,7 @@ cut-off line). `turn_id` is a non-negative integer chosen by the client; it is e
 ```json
 {"type": "redo_answer"}
 {"type": "suggest", "on": true}
+{"type": "input_mode", "input": "voice"}
 {"type": "request_stronger", "feedback_id": "fb-1a2b3c4d"}
 {"type": "flag_action", "feedback_id": "fb-1a2b3c4d", "flag_id": "f9e8d7c6", "action": "confirm"}
 {"type": "silence"}
@@ -93,6 +94,8 @@ cut-off line). `turn_id` is a non-negative integer chosen by the client; it is e
   is open again. Feedback for the dropped answer is removed.
 - `flag_action` `action`: `confirm` (I did say that: the item now counts), `dismiss` (not an error, or misheard:
   never counted, and the same phrase is not flagged again this session), `restore`.
+- `input_mode`: the user switched how they answer mid-session (`voice`, `browser_stt` or `text`). A session that
+  started with `text` gets server speech recognition on `voice`; Mike's speech stays as the session started.
 - `silence`: the user has been quiet for a long time; Mike says only "Take your time." (local engines).
 - `end_session`: finish normally; the server saves and debriefs.
 

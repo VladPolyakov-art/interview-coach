@@ -270,6 +270,7 @@ export type ClientMessage =
   | { type: "suggest"; on: boolean }
   | { type: "request_stronger"; feedback_id: string }
   | { type: "flag_action"; feedback_id: string; flag_id: string; action: "confirm" | "dismiss" | "restore" }
+  | { type: "input_mode"; input: InputMode }
   | { type: "silence" }
   | { type: "ping"; t: number }
   | { type: "end_session" };

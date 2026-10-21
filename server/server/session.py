@@ -163,6 +163,16 @@ class TextDriver:
         self._metrics = {"turn_id": turn_id, "t0": time.perf_counter(), "stt_ms": stt_ms}
         self._reply_task = self._spawn(self._respond(clean, transcript))
 
+    def enable_stt(self, recogniser: STT) -> None:
+        """The user switched a text session to voice: attach the recogniser and warm it up in the background."""
+        if self.stt is not None:
+            return
+        self.stt = recogniser
+        if recogniser.available:
+            task = asyncio.ensure_future(asyncio.to_thread(recogniser.warm_up))
+            self._word_tasks.add(task)
+            task.add_done_callback(self._word_tasks.discard)
+
     async def begin_audio_turn(self) -> None:
         await self._cancel_reply(interrupted=True)
         self._buffer = bytearray()

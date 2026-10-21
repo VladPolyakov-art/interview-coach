@@ -269,8 +269,14 @@ export function SessionIsland(p: SessionIslandProps) {
       onClick={p.voiceDown ? h?.onUseText ?? h?.onTypeInstead : h?.onTypeInstead}
     />
   ) : (
-    // The backend can't switch a running session back to voice (v1 Segmented had the same lock): disabled, with why.
-    <IconButton icon="mic" label={t("session.island.toVoice")} title={t("session.voiceNeedsNew")} disabled />
+    // D64: back to voice in the same session (the server attaches speech recognition on the switch).
+    <IconButton
+      icon="mic"
+      label={t("session.island.toVoice")}
+      title={p.noSpeech ? t("session.island.voiceUnavailable") : undefined}
+      disabled={p.noSpeech || !h?.onUseVoice}
+      onClick={h?.onUseVoice}
+    />
   );
   const chat = (
     <IconButton

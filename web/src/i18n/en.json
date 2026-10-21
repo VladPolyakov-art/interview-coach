@@ -524,7 +524,6 @@
     "modeSwitch": "Answer mode",
     "voice": "Voice",
     "text": "Text",
-    "voiceNeedsNew": "Voice needs a new session: this one started in text mode.",
     "interviewer": "Mike",
     "interviewerRole": "Interviewer",
     "coachRole": "Coach",

@@ -9,7 +9,7 @@ const noop = () => undefined;
 
 /** Every action present, none doing anything: the review frames show each button. */
 export const noopHandlers: SessionHandlers = {
-  onEnd: noop, onToggleMute: noop, onInterrupt: noop, onSendNow: noop, onRedo: noop, onTypeInstead: noop,
+  onEnd: noop, onToggleMute: noop, onInterrupt: noop, onSendNow: noop, onRedo: noop, onTypeInstead: noop, onUseVoice: noop,
   onSendText: () => true, onNext: noop, onSeeDebrief: noop, onFlag: noop, onSaveHeard: noop, onStronger: noop,
   onEdit: noop, onSaveEdit: noop, onCancelEdit: noop, onSetSuggest: noop, onDismissBanner: noop, onUseText: noop,
   onFixSettings: noop, onResume: noop, onEndAndDebrief: noop, onTryAgain: noop, onCloseMicHelp: noop,
