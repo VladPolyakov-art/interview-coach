@@ -77,7 +77,7 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
               <Select label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
                 onChange={(v) => void updateSettings({ voice: v }).catch(() => {})}
                 options={(voices.data?.voices ?? []).map((v) => ({ value: v.id, label: `${v.label} · ${v.locale}` }))} />
-              <Button size="sm" variant="secondary" icon="play" onClick={playSample} disabled={!voice}>{t("setup.check.sample")}</Button>
+              <Button variant="secondary" icon="play" onClick={playSample} disabled={!voice}>{t("setup.check.sample")}</Button>
             </SettingRow>
           ) : <Callout tone="info">{t("setup.check.voiceMissing")}</Callout>}
           <div className={s.checkArea}>

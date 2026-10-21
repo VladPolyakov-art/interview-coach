@@ -6,8 +6,9 @@
 
 .control {
   width: 100%;
+  /* One line is exactly a button's height (control-h-md): no vertical padding; a text area sets its own. */
   min-height: var(--control-h-md);
-  padding: var(--space-2) var(--space-4);
+  padding: 0 var(--space-4);
   border: var(--border-width) solid transparent;
   /* D78: a rounded interface: one-line fields are pills, a text area a rounded box. */
   border-radius: var(--radius-pill);
