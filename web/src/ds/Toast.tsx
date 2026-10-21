@@ -38,7 +38,7 @@ export function Toast({ message, action, tone = "neutral", onDismiss, leaving, i
       {tone === "error" ? <span className={s.icon}><Icon name="alert" size="sm" /></span> : null}
       <span className={s.message}>{message}</span>
       {action ? (
-        <Button variant="link" size="sm" onClick={() => { action.onClick(); onDismiss?.(); }}>{action.label}</Button>
+        <Button variant="link" size="sm" className={s.action} onClick={() => { action.onClick(); onDismiss?.(); }}>{action.label}</Button>
       ) : null}
       {onDismiss ? <IconButton icon="x" size="sm" label={t("overlay.dismiss")} onClick={onDismiss} /> : null}
     </div>
