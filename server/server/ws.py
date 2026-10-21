@@ -445,6 +445,7 @@ async def session_socket(websocket: WebSocket) -> None:
             else:
                 preset = content.level_presets().get(opts["level"], "")
                 system = content.system("p5a_tutor", level=opts["level"], level_preset=preset)
+            system += content.name_line(settings.get("name", ""))
             driver = GeminiLiveDriver(api_key=block.get("api_key", ""), model_name=block.get("model", ""),
                                       voice_name=block.get("voice", "Puck"), system_instruction=system,
                                       manual_turns=True, **callbacks)

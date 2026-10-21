@@ -1,10 +1,10 @@
-/* History list (ds/screens/debrief.md §4; US-21, US-23). Pure: every state comes from props. The live container is
- * `screens/History.tsx`. Filter chips (All / Interview / English), week groups, G16 list rows with rename and
- * Move to Trash. A removed row slides out, focus has already moved on; the toast with Undo belongs to the caller. */
+/* Archive list (D80; was History, ds/screens/debrief.md §4; US-21, US-23). Pure: every state comes from props. The live
+ * container is `screens/History.tsx`. Filter chips (All / Interview / English), week groups, G16 list rows with rename,
+ * "Move back to Recents" and Delete (asks first, then to Trash). A removed row slides out, focus has already moved on; the toast with Undo belongs to the caller. */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Badge, Button, Callout, Chip, ChipGroup, durationMs, EmptyState, Icon, IconButton, ListRow, ListRows, Menu, Skeleton, Swap, Toast,
+  Badge, Button, Callout, Chip, ChipGroup, Dialog, durationMs, EmptyState, Icon, IconButton, ListRow, ListRows, Menu, Skeleton, Swap, Toast,
   type MenuEntry,
 } from "../../ds";
 import { RouterLink } from "../../components/AppShell";
@@ -58,6 +58,7 @@ export function HistoryView(props: HistoryViewProps) {
   const setTrack = (next: TrackFilter) => { setOwnTrack(next); props.onTrackChange?.(next); };
 
   const [renaming, setRenaming] = useState<string | null>(ui?.renaming ?? null);
+  const [confirming, setConfirming] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(ui?.menuOpen ?? null);
   const [shortOpen, setShortOpen] = useState<ReadonlySet<string>>(() => new Set(ui?.shortOpen ?? []));
   const toggleShort = (key: string) => setShortOpen((prev) => {
@@ -92,14 +93,16 @@ export function HistoryView(props: HistoryViewProps) {
 
   const rowEl = (id: string) => root.current?.querySelector<HTMLElement>(`a[href="/sessions/${id}"]`)?.closest("li") ?? null;
 
-  const trash = (id: string) => {
+  const trash = (id: string) => leave(id, props.onTrash);
+  const unarchive = (id: string) => leave(id, props.onUnarchive);
+  const leave = (id: string, action?: (id: string) => void | Promise<boolean | void>) => {
     focusAfter(rowEl(id));
     setLeaving((prev) => new Set(prev).add(id));
     timers.current.push(window.setTimeout(() => {
       setHidden((prev) => new Set(prev).add(id));
       setLeaving((prev) => { const n = new Set(prev); n.delete(id); return n; });
     }, durationMs("--duration-exit")));
-    const done = props.onTrash?.(id);
+    const done = action?.(id);
     if (done instanceof Promise) {
       void done.then((ok) => {
         if (ok !== false) return;
@@ -120,7 +123,7 @@ export function HistoryView(props: HistoryViewProps) {
   };
 
   const trashLink = (
-    <Link to="/history/trash" className={s.trashLink} data-review-id="History/TrashLink">
+    <Link to="/archive/trash" className={s.trashLink} data-review-id="History/TrashLink">
       <Icon name="trash" size="sm" />
       {trashCount > 0 ? t("history.trashCount", { n: trashCount }) : t("history.trash")}
     </Link>
@@ -142,7 +145,9 @@ export function HistoryView(props: HistoryViewProps) {
     const index = groups.slice(0, gi).reduce((n, x) => n + x.rows.length, 0) + ri;
     const items: MenuEntry[] = [
       { id: "rename", label: t("history.row.menuRename"), icon: "edit", onSelect: () => { setRenaming(row.id); } },
-      { id: "trash", label: t("history.row.menuTrash"), icon: "trash", onSelect: () => trash(row.id) },
+      ...(props.onUnarchive ? [{ id: "unarchive", label: t("history.row.menuUnarchive"), icon: "archive" as const, onSelect: () => unarchive(row.id) }] : []),
+      { id: "sep", separator: true },
+      { id: "trash", label: t("history.row.menuTrash"), icon: "trash", onSelect: () => setConfirming(row.id) },
     ];
     const before = rows.find((r) => r.id === row.id)?.title ?? row.title;
     return (
@@ -167,7 +172,8 @@ export function HistoryView(props: HistoryViewProps) {
         actions={(
           <>
             <IconButton icon="edit" size="sm" label={t("history.row.rename", { title: row.title })} onClick={() => setRenaming(row.id)} />
-            <IconButton icon="trash" size="sm" label={t("history.row.trash", { title: row.title })} onClick={() => trash(row.id)} />
+            {props.onUnarchive ? <IconButton icon="archive" size="sm" label={t("history.row.unarchive", { title: row.title })} onClick={() => unarchive(row.id)} /> : null}
+            <IconButton icon="trash" size="sm" label={t("history.row.trash", { title: row.title })} onClick={() => setConfirming(row.id)} />
           </>
         )}
         compactActions={(
@@ -214,7 +220,7 @@ export function HistoryView(props: HistoryViewProps) {
     body = (
       <div data-review-id="History/Empty" data-review-section="History · Empty" data-comment-target="">
         <EmptyState
-          icon="history"
+          icon="archive"
           title={t("history.emptyState.title")}
           actions={(
             <>
@@ -292,6 +298,19 @@ export function HistoryView(props: HistoryViewProps) {
       <Page title={t("history.title")} sub={t("history.sub")} actions={trashLink} className={s.inner}>
         {notice ? <Callout tone="error" live="alert">{notice}</Callout> : null}
         {body}
+        <Dialog
+          open={confirming !== null}
+          title={t("rail.deleteTitle")}
+          onClose={() => setConfirming(null)}
+          actions={(
+            <>
+              <Button onClick={() => setConfirming(null)}>{t("common.cancel")}</Button>
+              <Button variant="primary" onClick={() => { const id = confirming; setConfirming(null); if (id) trash(id); }}>{t("rail.deleteConfirm")}</Button>
+            </>
+          )}
+        >
+          <p>{t("rail.deleteBody", { title: rows.find((r) => r.id === confirming)?.title ?? "" })}</p>
+        </Dialog>
         {toast ? (
           <div className={s.toast}>
             <Toast inline message={toast.message} action={toast.undoLabel ? { label: toast.undoLabel, onClick: toast.onUndo ?? (() => {}) } : undefined} />

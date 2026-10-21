@@ -19,4 +19,10 @@ describe("rail chat rows (D57)", () => {
     expect(rows.map((r) => [r.id, r.title, r.track])).toEqual([["b", "English practice", "english"], ["a", "Interview practice", "interview"], ["c", "Untitled", "interview"]]);
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(["id", "title", "track"]);
   });
+
+  it("leaves archived chats out of Recents (D80)", () => {
+    const base = { mode: "interview" as const, duration_s: 10, engine: "ollama", answers: 1, verdict: "", title: "Lumen", started_at: new Date(2026, 9, 19).toISOString() };
+    const rows = railSessions([{ ...base, id: "a" }, { ...base, id: "b", archived: true }, { ...base, id: "c", too_short: true, answers: 1 }], "Untitled");
+    expect(rows.map((r) => r.id)).toEqual(["a", "c"]);
+  });
 });

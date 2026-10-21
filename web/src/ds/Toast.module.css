@@ -27,7 +27,7 @@
   background: var(--color-raised);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-overlay);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   line-height: var(--leading-normal);
   /* Enter: drop in (transition from @starting-style, no new keyframe), motion.md T1. */
   transform: none;

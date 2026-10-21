@@ -7,7 +7,7 @@ export type IconName =
   | "sun" | "moon" | "monitor" | "trash" | "edit" | "content" | "language" | "delivery" | "alert" | "info"
   | "sparkle" | "user" | "briefcase" | "upload" | "link" | "file" | "clock" | "plus" | "download" | "lock"
   | "hand" | "chat" | "cpu" | "globe" | "terminal" | "key" | "folder" | "eye"
-  | "menu" | "more" | "search" | "panel" | "sidebar" | "bulb" | "help" | "target";
+  | "menu" | "more" | "search" | "panel" | "sidebar" | "bulb" | "help" | "target" | "archive";
 
 const paths: Record<IconName, ReactNode> = {
   menu: (<path d="M4 7h16M4 12h16M4 17h16" />),
@@ -52,6 +52,8 @@ const paths: Record<IconName, ReactNode> = {
   info: (<><circle cx="12" cy="12" r="9" /><path d="M12 11v5.5M12 7.5h.01" /></>),
   /* D79: one four-point star (AI engine), larger and easier to see than the old star pair. */
   sparkle: (<path d="M12 3c.7 4.7 3.6 7.6 8.5 9-4.9 1.4-7.8 4.3-8.5 9-.7-4.7-3.6-7.6-8.5-9 4.9-1.4 7.8-4.3 8.5-9Z" />),
+  /* D80: the Archive (a box with a lid). */
+  archive: (<><rect x="3.5" y="4.5" width="17" height="4.5" rx="1" /><path d="M5 9v9.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" /><path d="M10 13h4" /></>),
   /* D79: Settings → Practice (aiming at a goal; the house was a leftover of the old Home tab). */
   target: (<><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><path d="M12 12h.01" strokeWidth={2.75} /></>),
   user: (<><circle cx="12" cy="8" r="4" /><path d="M4 20.5a8 8 0 0 1 16 0" /></>),

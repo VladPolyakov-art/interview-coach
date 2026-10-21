@@ -72,6 +72,8 @@ export interface Settings {
   level: Level;
   strictness: 1 | 2 | 3;
   questions_per_session: number;
+  /** D80: how Mike addresses the user; "" = no name ("You" in the app). */
+  name: string;
 }
 
 export interface SettingsPatch {
@@ -87,6 +89,7 @@ export interface SettingsPatch {
   telemetry_opt_in?: boolean;
   obsidian_dir?: string;
   layer_order?: LayerOrder;
+  name?: string;
   level?: Level;
   strictness?: number;
   questions_per_session?: number;
@@ -128,6 +131,8 @@ export interface SessionSummary {
   planned?: number;
   /** The first main question asked — tells apart sessions with the same title. */
   first_question?: string;
+  /** D80: in the Archive, not in Recents. */
+  archived?: boolean;
 }
 export interface TrashItem { trash_id: string; id: string; title: string; started_at: string; deleted_at: string }
 

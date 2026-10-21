@@ -7,7 +7,7 @@ import { api } from "./lib/api";
 import { prefs } from "./lib/prefs";
 import { AppProvider } from "./lib/store";
 import { DebriefScreen } from "./screens/Debrief";
-import { HistoryScreen, TrashScreen } from "./screens/History";
+import { ArchiveScreen, TrashScreen } from "./screens/History";
 import { HomeScreen } from "./screens/Home";
 import { NotFound } from "./screens/NotFound";
 import { ServerUnavailable } from "./screens/ServerUnavailable";
@@ -66,8 +66,11 @@ function ShellRoutes() {
       >
         <Routes location={location}>
           <Route path="/" element={<FirstRunGate off={settings.open}><HomeScreen /></FirstRunGate>} />
-          <Route path="/history" element={<HistoryScreen />} />
-          <Route path="/history/trash" element={<TrashScreen />} />
+          <Route path="/archive" element={<ArchiveScreen />} />
+          <Route path="/archive/trash" element={<TrashScreen />} />
+          {/* D80: History became Archive; old links still land. */}
+          <Route path="/history" element={<Navigate to="/archive" replace />} />
+          <Route path="/history/trash" element={<Navigate to="/archive/trash" replace />} />
           <Route path="/sessions/:id" element={<DebriefScreen />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

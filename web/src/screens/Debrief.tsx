@@ -2,7 +2,7 @@
  * this file loads the session, polls while the debrief is being written, and wires the actions to the REST API. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useFreshOnce } from "../ds";
+import { useFreshOnce, useToast } from "../ds";
 import { t } from "../i18n";
 import { api, ApiError } from "../lib/api";
 import { useInterval, useLoad } from "../lib/hooks";
@@ -12,7 +12,7 @@ import type { StrongerState } from "../session/reducer";
 import { DebriefView } from "./debrief/DebriefView";
 import { DEFAULT_OPEN, exampleSam } from "./debrief/fixtures";
 import { feedbackOfFlag, mapRecord, threadsFromRecord } from "./debrief/mapRecord";
-import { renameSession } from "./debrief/rename";
+import { renameSession, SESSIONS_CHANGED } from "./debrief/rename";
 
 export { threadsFromRecord };
 
@@ -43,6 +43,7 @@ export function DebriefScreen() {
 function LiveDebrief() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { settings } = useApp();
   const session = useLoad(() => api.session(id), [id]);
   const [stronger, setStronger] = useState<Record<string, StrongerState>>({});
@@ -110,10 +111,24 @@ function LiveDebrief() {
       .catch((e: unknown) => setNotice(errorMessage(e)))
       .finally(() => setRerunning(false));
   };
+  // D80: after Archive or Delete the chat leaves the sidebar and the user lands on New practice, with Undo in a toast.
+  const changed = () => window.dispatchEvent(new Event(SESSIONS_CHANGED));
+  const undoFailed = (e: unknown) => toast.show({ message: errorMessage(e), tone: "error" });
   const trash = async () => {
     try {
       const { trash_id } = await api.deleteSession(record.id);
-      navigate("/history", { replace: true, state: { trashed: { title: record.title, trashId: trash_id } } });
+      navigate("/", { replace: true });
+      toast.show({ message: t("rail.deleted"), action: { label: t("common.undo"), onClick: () => { api.restoreSession(trash_id).then(changed, undoFailed); } } });
+    } catch (e) {
+      setNotice(errorMessage(e));
+    }
+  };
+  const archive = async () => {
+    const sid = record.id;
+    try {
+      await api.patchSession(sid, { archived: true });
+      navigate("/", { replace: true });
+      toast.show({ message: t("rail.archived"), action: { label: t("common.undo"), onClick: () => { api.patchSession(sid, { archived: false }).then(changed, undoFailed); } } });
     } catch (e) {
       setNotice(errorMessage(e));
     }
@@ -151,6 +166,7 @@ function LiveDebrief() {
       onRename={rename}
       onRerun={rerun}
       onDownload={download}
+      onArchive={() => void archive()}
       onTrash={() => void trash()}
       onDrill={practise}
       onPractise={practise}

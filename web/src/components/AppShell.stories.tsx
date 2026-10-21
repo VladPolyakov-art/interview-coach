@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { Button, Card } from "../ds";
 import { OverlayRoot } from "../ds/OverlayRoot";
-import { AppShellView, type AppShellViewProps, type RecentState } from "./AppShell";
+import { AppShellView, NOOP_ACTIONS, type AppShellViewProps, type RecentState } from "./AppShell";
 import { Page, Section } from "./Page";
 
 /* Fixture: docs/ia.md §6 (Alex Morgan; S1–S3). Each story is a frame of a real width, scaled to fit, with its own
@@ -47,7 +47,7 @@ function SamplePage({ start }: { start?: boolean }) {
       <Card padding="md"><p>The start column: centred header, 720px column (Home builds its content here).</p></Card>
     </Page>
   ) : (
-    <Page title="History" sub="Interviews and English practice, saved on this computer." actions={<Button variant="link" size="sm" icon="trash">Trash (1)</Button>}>
+    <Page title="Archive" sub="Chats you moved out of Recents. Open any of them, or bring one back." actions={<Button variant="link" size="sm" icon="trash">Trash (1)</Button>}>
       <Section title="This week" id="sample-week">
         <Card padding="md"><p>Page rhythm: header to blocks --space-10, groups --space-4, rows --space-2.</p></Card>
       </Section>
@@ -58,11 +58,11 @@ function SamplePage({ start }: { start?: boolean }) {
   );
 }
 
-function Shell({ width, height, path = "/history", start, ...props }: Partial<AppShellViewProps> & { width: number; height: number; path?: string; start?: boolean }) {
+function Shell({ width, height, path = "/archive", start, ...props }: Partial<AppShellViewProps> & { width: number; height: number; path?: string; start?: boolean }) {
   return (
     <MemoryRouter initialEntries={[path]}>
       <Scaled width={width} height={height}>
-        <AppShellView current={start ? "practice" : "history"} recent={READY} engine={ENGINE} {...props}>
+        <AppShellView current={start ? "practice" : "archive"} recent={READY} engine={ENGINE} userName="Alex" {...props}>
           <SamplePage start={start} />
         </AppShellView>
       </Scaled>
@@ -71,7 +71,7 @@ function Shell({ width, height, path = "/history", start, ...props }: Partial<Ap
 }
 
 /** ≥ 1024, expanded (D57, claude.ai sidebar): brand + toggle, New practice (round plus), Recents (one line each, no dates),
- * the account row at the bottom. No History row; /history stays reachable by link. */
+ * Archive (D80, replaced History), the account row at the bottom (name + engine in use). */
 export const Expanded: StoryObj = { render: () => <Shell width={1440} height={900} /> };
 
 /** ≥ 1024, collapsed to the icon rail: the toggle, the round plus and the avatar, each with a tooltip (hover or focus one). */
@@ -82,7 +82,7 @@ export const AccountMenuOpen: StoryObj = { render: () => <Shell width={1440} hei
 export const AccountMenuOpenCollapsed: StoryObj = { render: () => <Shell width={1440} height={900} collapsed initialMenu="account" /> };
 
 /** The "…" menu of a chat row (shown on hover or focus): Open, Move to Trash. */
-export const RowMenuOpen: StoryObj = { render: () => <Shell width={1440} height={900} initialMenu="row" onTrashSession={() => {}} /> };
+export const RowMenuOpen: StoryObj = { render: () => <Shell width={1440} height={900} initialMenu="row" actions={NOOP_ACTIONS} /> };
 
 /** Home start layout (Page layout="start"). */
 export const DesktopStart: StoryObj = { render: () => <Shell width={1440} height={900} path="/" start /> };

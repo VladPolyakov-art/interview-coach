@@ -174,3 +174,26 @@ def test_posting_title_skips_board_headers():
     from server.api import posting_title
     assert posting_title("About the job\n\nSenior Product Designer at Kestrel Pay\nWe build...") == "Senior Product Designer at Kestrel Pay"
     assert posting_title("Job description:\n") == "Job posting"
+
+
+def test_session_rename_and_archive(client):
+    record = storage.save_session(session_record())
+    sid = record["id"]
+    assert client.patch(f"/api/sessions/{sid}", json={"title": "x"}, headers=OTHER).status_code == 403
+    renamed = client.patch(f"/api/sessions/{sid}", json={"title": "  Kestrel   Pay · round 2 "}, headers=SAME).json()
+    assert renamed["title"] == "Kestrel Pay · round 2"
+    assert client.patch(f"/api/sessions/{sid}", json={"title": "   "}, headers=SAME).status_code == 422
+    assert client.patch(f"/api/sessions/{sid}", json={"archived": True}, headers=SAME).json()["archived"] is True
+    assert client.get("/api/sessions").json()["sessions"][0]["archived"] is True
+    client.patch(f"/api/sessions/{sid}", json={"archived": False}, headers=SAME)
+    assert client.get("/api/sessions").json()["sessions"][0]["archived"] is False
+    assert client.patch("/api/sessions/s-missing", json={"archived": True}, headers=SAME).status_code == 404
+
+
+def test_name_setting_and_greeting(client):
+    from server import content
+    saved = client.post("/api/settings", json={"name": "  Alex \n Morgan  "}, headers=SAME).json()
+    assert saved["name"] == "Alex Morgan"
+    assert content.copy("english_opening", name="Alex").startswith("Hi Alex, I'm Mike")
+    assert content.copy("english_opening").startswith("Hi, I'm Mike")
+    assert "Alex" in content.name_line("Alex") and content.name_line("") == ""

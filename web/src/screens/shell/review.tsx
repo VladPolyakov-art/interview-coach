@@ -2,7 +2,7 @@
  * Each state is a 1440 frame (the rail) and, for the drawer, a 375 frame. Fixture: docs/ia.md §6 (Alex Morgan). */
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { AppShellView, type AppShellViewProps, type RecentState } from "../../components/AppShell";
+import { AppShellView, NOOP_ACTIONS, type AppShellViewProps, type RecentState } from "../../components/AppShell";
 import { Page } from "../../components/Page";
 import { SettingsScreen } from "../Settings";
 import { Card } from "../../ds";
@@ -29,7 +29,8 @@ function Scene({ at = "/sessions/s1", page, ...props }: Partial<AppShellViewProp
         currentSessionId="s1"
         recent={RECENT}
         engine={{ name: "Ollama · qwen3:4b", status: "ready" }}
-        onTrashSession={() => {}}
+        actions={NOOP_ACTIONS}
+        userName="Alex"
         {...props}
       >
         {page ?? (
@@ -50,7 +51,7 @@ const DOWN = { name: "Ollama · qwen3:4b", status: "notReady" as const };
 export const shellReview: ReviewScreen = {
   id: "sidebar",
   title: "Sidebar",
-  note: "D57: меню как у Claude (claude.ai). Сверху — знак и название, справа кнопка «Close sidebar»; ниже «New practice» (серый круг с плюсом, как у Claude, D59); «Recents» — чаты в одну строку, без дат, у английских тихое «EN»; снизу строка аккаунта «You · Local» с шевроном открывает меню (Settings, тема, Privacy and data, Help & what's free; D79 — вправо, в рабочую область). D78: интерфейс скруглённый — строка аккаунта и строки меню капсулами; в свёрнутой полосе вместо кнопки «развернуть» — знак Vukoli, при наведении он меняется на значок «Open sidebar». От 1024 сайдбар сворачивается в узкую полосу значков (запоминается), ниже 1024 он в выезжающей панели. Строки — заливка без линий. D59: сайдбар на шаг светлее рабочей области (тёмная тема: #141414 и #0A0A0A); чаты появляются без анимации.",
+  note: "D57: меню как у Claude (claude.ai). Сверху — знак и название, справа кнопка «Close sidebar»; ниже «New practice» (серый круг с плюсом, как у Claude, D59); «Recents» — чаты в одну строку, без дат, у английских тихое «EN»; снизу строка аккаунта с шевроном открывает меню (Settings, Privacy and data, Help & what's free; D79 — вправо, в рабочую область). D80: в строке аккаунта — имя из Settings → General (или «You») и под ним движок, на котором идёт практика («Ollama · qwen3:4b»); в аватаре первая буква имени. Под «New practice» — «Archive» вместо History: все чаты живут в «Recents», в архиве — только убранные туда. D78: интерфейс скруглённый — строка аккаунта и строки меню капсулами; в свёрнутой полосе вместо кнопки «развернуть» — знак Vukoli, при наведении он меняется на значок «Open sidebar». От 1024 сайдбар сворачивается в узкую полосу значков (запоминается), ниже 1024 он в выезжающей панели. Строки — заливка без линий. D59: сайдбар на шаг светлее рабочей области (тёмная тема: #141414 и #0A0A0A); чаты появляются без анимации.",
   states: [
     state("expanded", "Развёрнут", () => <Scene />, {
       dark: true,
@@ -62,7 +63,7 @@ export const shellReview: ReviewScreen = {
     }),
     state("account-menu", "Меню аккаунта", () => <Scene initialMenu="account" />, {
       dark: true,
-      note: "Вся строка «You · Local» с шевроном (D59) — одна кнопка; D79: меню открывается справа от неё, в рабочую область, а не поверх сайдбара (шеврон смотрит вправо; в мобильной панели — листом снизу). В шапке меню — «Saved on this computer»: имя, Settings, три кнопки темы System / Light / Dark одной полосой без подписи «Theme» (D78/D79: тема переключается прямо в меню, меню не закрывается), Privacy and data, Help & what's free (D58). Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
+      note: "Вся строка «Alex · Ollama» с шевроном (D59) — одна кнопка; D79: меню открывается справа от неё, в рабочую область, а не поверх сайдбара (шеврон смотрит вправо; в мобильной панели — листом снизу). Пункты: Settings, Privacy and data, Help & what's free (D58). D80: переключателя темы в меню больше нет — тема только в Settings → General. Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
     }),
     state("about", "Help & what's free → Settings · About", () => (
       <Scene at="/settings/about" current="settings" currentSessionId={undefined}
@@ -87,7 +88,7 @@ export const shellReview: ReviewScreen = {
       </EngineFixture>
     ), {
       dark: true, mobile: true,
-      note: "D78/D79: раздел General как у Claude. «Your CV and files» — до 10 файлов (CV, портфолио, заметки): у каждого имя и дата, «Replace» и корзина; можно бросить несколько файлов сразу, на строку — заменить её файл. Свой текст — под раскрывашкой «Add text instead», Mike читает его вместе с файлами. Ниже — Appearance с темой. Группы — каждая в своей скруглённой рамке. D79: тоста «Saved» нет — настройка сохраняется сразу и видна сама. Пример выдуманный.",
+      note: "D78/D79: раздел General как у Claude. «Your CV and files» — до 10 файлов (CV, портфолио, заметки): у каждого имя и дата, «Replace» и корзина; можно бросить несколько файлов сразу, на строку — заменить её файл. Свой текст — под раскрывашкой «Add text instead», Mike читает его вместе с файлами. Ниже — Appearance с темой. D80: сверху группа «Your name» — Mike обращается по имени, оно же в строке аккаунта; когда файл уже добавлен, зона «Drop more files» — одна строка, а не высокий блок с иконкой по центру. Группы — каждая в своей скруглённой рамке. D79: тоста «Saved» нет — настройка сохраняется сразу и видна сама. Пример выдуманный.",
     }),
     state("settings-search", "Settings · поиск", () => (
       <EngineFixture engines={makeEngines()}>
@@ -101,7 +102,7 @@ export const shellReview: ReviewScreen = {
       note: "То же меню от аватара, пока полоса свёрнута.",
     }),
     state("row-menu", "Меню «…» у чата", () => <Scene initialMenu="row" />, {
-      note: "На наведении или фокусе у строки появляется «…» (на сенсорных экранах всегда). Пункты — то, что в приложении уже есть: Open и Move to Trash (с Undo в тосте, как в History). Rename не добавлен: сервер пока не принимает переименование.",
+      note: "На наведении или фокусе у строки появляется «…» (на сенсорных экранах всегда). D80: Rename (поле прямо в строке, Enter сохраняет, Esc отменяет), Download as Markdown, Archive (чат уходит в Archive, в тосте Undo), и после разделителя Delete — сначала окно «Delete this chat?» с Cancel и Delete (кнопка нейтральная, не красная: удаление обратимо, правило ds-danger); удалённое лежит в Trash (Settings → Privacy and data), в тосте Undo.",
     }),
     state("engine-down", "Движок не готов", () => <Scene engine={DOWN} />, {
       note: "Строка «AI engine · Not ready» осталась над аккаунтом и показывается только пока движок не готов (ведёт в Settings → AI engine).",

@@ -9,6 +9,7 @@ export const STATIC_ACTIONS: Required<DebriefActions> = {
   onRerun: noop,
   onDownload: noop,
   onExport: noop,
+  onArchive: noop,
   onTrash: noop,
   onDrill: noop,
   onPractise: noop,

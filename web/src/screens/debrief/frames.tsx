@@ -58,6 +58,8 @@ const base = { variant: "interview", state: "ready" } as const;
 export const DEBRIEF_SCENES = {
   /** §3.1–3.5: Q2 open, its stronger answer open. */
   interviewFull: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, strongerOpen: [2] } },
+  /** D80: the folded verdict bar, opened (summary, scale, what to fix first, next step). */
+  interviewVerdictOpen: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, verdictOpen: true } },
   interviewDeliveryFirst: { ...base, model: interviewS2, layerOrder: "delivery-first", ui: { open: DEFAULT_OPEN.s2, strongerOpen: [2] } },
   interviewRename: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, renaming: true } },
   interviewRecheck: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, editing: { question: 2, correction: "q2-led" } } },

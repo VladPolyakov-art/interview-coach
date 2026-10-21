@@ -39,8 +39,17 @@ def copy_text() -> dict:
     return json.loads(_read("copy.json"))
 
 
-def copy(key: str, **values) -> str:
-    return copy_text()[key].format(**values)
+def copy(key: str, name: str = "", **values) -> str:
+    """Fixed copy. `{hi}` is the greeting: "Hi Alex," with the user's name (D80), else "Hi,"."""
+    return copy_text()[key].format(hi=f"Hi {name}," if name else "Hi,", **values)
+
+
+def name_line(name: str) -> str:
+    """D80: appended to Mike's system prompts when the user gave their name in Settings → General."""
+    if not name:
+        return ""
+    return (f"\n\nThe user's name is {name}. Address them by name now and then, the way a person would "
+            "(in the greeting and once in a while, not in every turn).")
 
 
 @functools.lru_cache(maxsize=None)

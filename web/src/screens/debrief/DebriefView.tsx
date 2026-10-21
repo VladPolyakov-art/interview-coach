@@ -3,6 +3,7 @@
  * Structure after Otter's summary (R5): Verdict (overview) → What to work on (key points + actions) → Question by
  * question (outline with quotes). Layer tints live only here (CONTRACT §2.6); fixes are marked inside the user's own
  * sentence, never red / green (P8). Container queries on `page`, no viewport media queries.
+ * D80: a saved interview opens on the conversation; the verdict is a folded bar above it (VerdictBar).
  * D71: "Question by question" is two columns: the whole conversation as a chat on the left, the breakdown of the picked
  * answer on the right (sticky). A narrow page stacks them, and picking an answer scrolls to its breakdown. */
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
@@ -10,12 +11,12 @@ import { Callout, Segmented, durationMs, scrollBehavior } from "../../ds";
 import { t } from "../../i18n";
 import { pageStyles } from "../../components/Page";
 import { layerSequence, type DebriefViewProps } from "./types";
-import { BackLink, Header } from "./parts/Header";
+import { Header } from "./parts/Header";
 import { Conversation, conversationFromQuestions } from "./parts/Conversation";
 import { EnglishBody } from "./parts/English";
 import type { RowContext } from "./parts/Layers";
 import { QuestionCard } from "./parts/QuestionCard";
-import { Actions, SectionHead, TemplateNote, Verdict, VerdictNotice, WeakSpots } from "./parts/Sections";
+import { Actions, SectionHead, TemplateNote, Verdict, VerdictBar, VerdictNotice, WeakSpots } from "./parts/Sections";
 import { ErrorBody, ExampleBanner, LoadingBody, NotFoundBody, PartialBanner, StorageBanner } from "./parts/States";
 import s from "./DebriefView.module.css";
 
@@ -39,6 +40,7 @@ export function DebriefView(props: DebriefViewProps) {
     ui?.editing ? { q: ui.editing.question, target: ui.editing.correction } : null,
   );
   const [rechecking, setRechecking] = useState<number | null>(ui?.rechecking ?? null);
+  const [verdictOpen, setVerdictOpen] = useState(ui?.verdictOpen ?? false);
   const [dismissed, setDismissed] = useState<Readonly<Record<string, boolean>>>({});
   const [leaving, setLeaving] = useState<ReadonlySet<string>>(() => new Set());
   /** Focus moves into a field only after the user opened it, never when a review state starts open. */
@@ -63,13 +65,12 @@ export function DebriefView(props: DebriefViewProps) {
     return (
       <div className={root} aria-busy="true">
         {heading}
-        <BackLink />
         <LoadingBody preparing={state === "preparing"} />
       </div>
     );
   }
   if (state === "notFound") return <div className={root}>{heading}<NotFoundBody /></div>;
-  if (state === "error" || !model) return <div className={root}>{heading}<BackLink /><ErrorBody onRetry={props.onRetry} /></div>;
+  if (state === "error" || !model) return <div className={root}>{heading}<ErrorBody onRetry={props.onRetry} /></div>;
 
   const canEdit = Boolean(props.onRecheck);
   const title = titleOverride ?? model.title;
@@ -134,6 +135,26 @@ export function DebriefView(props: DebriefViewProps) {
   const partial = Boolean(model.partial);
   const ids = { verdict: `${uid}-verdict`, spots: `${uid}-spots`, actions: `${uid}-actions`, questions: `${uid}-questions` };
 
+  // D80: a saved interview opens on the conversation; the verdict, what to fix first and the next step fold into a bar.
+  const folded = variant === "interview" && Boolean(model.verdict) && !partial;
+  const verdictBlock = model.verdict && !partial ? (
+    <Verdict verdict={model.verdict} id={folded ? `${ids.verdict}-body` : ids.verdict} bare={folded} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} />
+  ) : null;
+  const spotsBlock = !partial && !english && model.weakSpots.length ? <WeakSpots model={model} order={layerOrder} onJump={jump} id={ids.spots} /> : null;
+  const actionsBlock = (
+    <Actions
+      variant={variant}
+      model={model}
+      english={english}
+      partial={partial}
+      storageError={storageError}
+      onDrill={props.onDrill}
+      onPractise={props.onPractise}
+      onStartFirst={props.onStartFirst}
+      id={ids.actions}
+    />
+  );
+
   return (
     <div className={root} data-review-id="Debrief/Page" data-variant={variant}>
       {storageError ? <StorageBanner onDownload={props.onDownload} /> : null}
@@ -156,28 +177,29 @@ export function DebriefView(props: DebriefViewProps) {
         onRenameCancel={() => setRenaming(false)}
         onExport={props.onExport}
         onDownload={props.onDownload}
+        onArchive={props.onArchive}
         onTrash={props.onTrash}
       />
 
       {props.notice ? <Callout tone="error" live="alert">{props.notice}</Callout> : null}
       {partial ? <PartialBanner answered={model.partial!.answered} total={model.partial!.total} /> : null}
       {model.verdictNotice && model.verdictNotice !== "template" && !partial ? <VerdictNotice kind={model.verdictNotice} id={ids.verdict} rerunning={props.rerunning} onRerun={props.onRerun} /> : null}
-      {model.verdict && !partial ? <Verdict verdict={model.verdict} id={ids.verdict} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} /> : null}
-      {!partial && !english && model.weakSpots.length ? <WeakSpots model={model} order={layerOrder} onJump={jump} id={ids.spots} /> : null}
-      {english ? (
-        <EnglishBody english={english} ctx={rowsFor(0)} ids={{ summary: `${uid}-sum`, corrections: `${uid}-cor`, phrases: `${uid}-phr` }} />
-      ) : null}
-      <Actions
-        variant={variant}
-        model={model}
-        english={english}
-        partial={partial}
-        storageError={storageError}
-        onDrill={props.onDrill}
-        onPractise={props.onPractise}
-        onStartFirst={props.onStartFirst}
-        id={ids.actions}
-      />
+      {folded ? (
+        <VerdictBar verdict={model.verdict!} id={ids.verdict} open={verdictOpen} onOpenChange={setVerdictOpen}>
+          {verdictBlock}
+          {spotsBlock}
+          {actionsBlock}
+        </VerdictBar>
+      ) : (
+        <>
+          {verdictBlock}
+          {spotsBlock}
+          {english ? (
+            <EnglishBody english={english} ctx={rowsFor(0)} ids={{ summary: `${uid}-sum`, corrections: `${uid}-cor`, phrases: `${uid}-phr` }} />
+          ) : null}
+          {actionsBlock}
+        </>
+      )}
 
       {turns.length ? (
         <section className={s.questions} aria-labelledby={ids.questions} data-review-id="Debrief/Questions" data-review-section="Debrief · Conversation" data-comment-target="">

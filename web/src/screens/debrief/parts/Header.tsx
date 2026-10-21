@@ -1,8 +1,9 @@
-/* Debrief header (debrief.md §3.1): back link, H1 with rename + "more" menu, structured meta row.
- * Rename swaps the H1 for InlineRename (Swap, `fast`). The menu: Export to Obsidian (only when a folder is set),
- * Download as Markdown, Move to Trash (neutral: reversible, CONTRACT §2.4). The example has no rename or menu. */
+/* Debrief header (debrief.md §3.1): H1 with rename + "more" menu, structured meta row. No back link since D80: every
+ * chat is in the sidebar. Rename swaps the H1 for InlineRename (Swap, `fast`). The menu: Export to Obsidian (only when a
+ * folder is set), Download as Markdown, Archive, Delete (asks first; goes to Trash). The example has no rename or menu. */
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Icon, IconButton, InlineRename, Menu, Swap, Tooltip, type MenuEntry } from "../../../ds";
+import { Badge, Button, Dialog, Icon, IconButton, InlineRename, Menu, Swap, Tooltip, type MenuEntry } from "../../../ds";
 import { t } from "../../../i18n";
 import type { MetaItem } from "../types";
 import s from "./header.module.css";
@@ -20,29 +21,22 @@ export interface HeaderProps {
   onRenameCancel: () => void;
   onExport?: () => void;
   onDownload?: () => void;
+  onArchive?: () => void;
   onTrash?: () => void;
 }
 
-export function BackLink() {
-  return (
-    <Link to="/history" className={s.back}>
-      <Icon name="chevronLeft" size="sm" />
-      {t("debrief.back")}
-    </Link>
-  );
-}
-
 export function Header(p: HeaderProps) {
+  const [confirming, setConfirming] = useState(false);
   const items: MenuEntry[] = [
     ...(p.obsidian ? [{ id: "export", label: t("debrief.menu.export"), icon: "folder" as const, onSelect: p.onExport }] : []),
     { id: "download", label: t("debrief.menu.download"), icon: "download" as const, onSelect: p.onDownload },
+    ...(p.onArchive ? [{ id: "archive", label: t("debrief.menu.archive"), icon: "archive" as const, onSelect: p.onArchive }] : []),
     { id: "sep", separator: true as const },
-    { id: "trash", label: t("debrief.menu.trash"), icon: "trash" as const, onSelect: p.onTrash },
+    { id: "trash", label: t("debrief.menu.trash"), icon: "trash" as const, onSelect: () => setConfirming(true) },
   ];
-  const showMenu = !p.example && (p.onDownload || p.onTrash || p.onExport);
+  const showMenu = !p.example && (p.onDownload || p.onTrash || p.onExport || p.onArchive);
   return (
     <header className={s.header} data-review-id="Debrief/Header" data-review-section="Debrief · Header" data-comment-target="">
-      <BackLink />
       <Swap swapKey={p.renaming ? "rename" : "title"}>
         {p.renaming ? (
           <InlineRename size="lg" value={p.title} autoFocus={p.focusRename} onSave={p.onRenameSave} onCancel={p.onRenameCancel} />
@@ -74,6 +68,19 @@ export function Header(p: HeaderProps) {
           </li>
         ))}
       </ul>
+      <Dialog
+        open={confirming}
+        title={t("rail.deleteTitle")}
+        onClose={() => setConfirming(false)}
+        actions={(
+          <>
+            <Button onClick={() => setConfirming(false)}>{t("common.cancel")}</Button>
+            <Button variant="primary" onClick={() => { setConfirming(false); p.onTrash?.(); }}>{t("rail.deleteConfirm")}</Button>
+          </>
+        )}
+      >
+        <p>{t("rail.deleteBody", { title: p.title })}</p>
+      </Dialog>
     </header>
   );
 }

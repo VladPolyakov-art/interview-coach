@@ -45,7 +45,8 @@ export const Overflow: Story = {
   },
   render: (args) => <div style={{ width: "21.4375rem" }}><FileDrop {...args} /></div>,
 };
-/** Several files (D79, Settings → General): a row per file with Replace and Remove, the zone below takes more. */
+/** Several files (D79, Settings → General): a row per file with Replace and Remove, the zone below takes more.
+ * D80: once a file is in, the zone is `compact`: one line instead of a tall box with a centred icon. */
 export const Multiple: Story = {
   render: (args) => (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", width: "32rem" }}>
@@ -54,7 +55,7 @@ export const Multiple: Story = {
       <FileRow name="portfolio-notes.md" meta="Added Oct 15" accept={args.accept} replaceLabel="Replace" replaceName="Replace portfolio-notes.md"
         onReplace={() => {}} removeLabel="Remove portfolio-notes.md" onRemove={() => {}} />
       <FileRow name="case-study-billing.docx" reading readingLabel="Reading the file…" />
-      <FileDrop {...args} multiple onFiles={() => {}} label="CV and other files" prompt="Drop more files here, or" browseLabel="choose files"
+      <FileDrop {...args} compact multiple onFiles={() => {}} label="CV and other files" prompt="Drop more files here, or" browseLabel="choose files"
         hint="PDF, DOCX, TXT or MD · up to 10 files" accept=".pdf,.docx,.txt,.md" privacy={undefined} />
     </div>
   ),

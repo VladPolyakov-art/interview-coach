@@ -263,20 +263,23 @@ class TextDriver:
 
     def _p1_system(self) -> str:
         # Static for the whole session so the engine can reuse its cache of the system prompt (latency).
-        return content.system("p1_interviewer", max_follow_ups=self.max_follow_ups, strictness=self.strictness)
+        return content.system("p1_interviewer", max_follow_ups=self.max_follow_ups, strictness=self.strictness) \
+            + content.name_line(self.settings.get("name", ""))
 
     def _tutor_system(self) -> str:
         preset = content.level_presets().get(self.level, content.level_presets().get("B1", ""))
-        return content.system("p5a_tutor", level=self.level, level_preset=preset)
+        return content.system("p5a_tutor", level=self.level, level_preset=preset) \
+            + content.name_line(self.settings.get("name", ""))
 
     async def _opening(self) -> None:
         if self.mode == "interview":
             first = self.plan[0]
-            text = content.copy("interview_opening", count=len(self.plan), question=first.text)
+            text = content.copy("interview_opening", name=self.settings.get("name", ""), count=len(self.plan),
+                                question=first.text)
             meta = {"kind": "question", "question_id": first.id, "thread_id": first.id}
         else:
-            text = (content.copy("english_opening_topic", topic=self.topic[:80]) if self.topic
-                    else content.copy("english_opening"))
+            text = (content.copy("english_opening_topic", name=self.settings.get("name", ""), topic=self.topic[:80])
+                    if self.topic else content.copy("english_opening", name=self.settings.get("name", "")))
             meta = {"kind": "turn"}
         self._metrics = {"turn_id": None, "t0": time.perf_counter(), "stt_ms": None, "opening": True}
         await self._deliver(self._from_list(_sentences(text)), lambda: meta)

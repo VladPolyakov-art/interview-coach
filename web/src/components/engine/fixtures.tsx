@@ -76,6 +76,7 @@ export const NONE_READY = makeEngines({ ollama: "not_running", claude_cli: "not_
 
 export const SETTINGS: Settings = {
   engine: "ollama",
+  name: "",
   ollama: { url: "http://localhost:11434", model: "", voice_model: "" },
   openai_compatible: { base_url: "", model: "", has_api_key: false },
   claude_cli: { model: "" },

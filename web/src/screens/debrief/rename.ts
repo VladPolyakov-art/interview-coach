@@ -1,22 +1,15 @@
-/* Rename a saved session: PATCH /api/sessions/{id} {title} (US-23 AC2). The backend route is not there yet at the time of
- * writing (see the report: "backend gaps"), so a failed call is a normal path: the caller puts the old title back. */
-import { ApiError } from "../../lib/api";
+/* Rename a saved session: PATCH /api/sessions/{id} {title} (US-23 AC2; the route exists since D80). A failed call is a
+ * normal path: the caller puts the old title back. */
+import { api } from "../../lib/api";
 
 /** Titles longer than this are cut by the server and by the field (maxLength). */
 export const TITLE_MAX = 80;
 
+/** Fired on window when a chat was renamed or moved outside the sidebar: the sidebar reloads Recents. */
+export const SESSIONS_CHANGED = "ic:sessions-changed";
+
 export async function renameSession(id: string, title: string): Promise<string> {
-  const next = title.trim().slice(0, TITLE_MAX);
-  let res: Response;
-  try {
-    res = await fetch(`/api/sessions/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: next }),
-    });
-  } catch {
-    throw new ApiError(0, "server_unreachable", "The app server is not answering.");
-  }
-  if (!res.ok) throw new ApiError(res.status, `http_${res.status}`, res.statusText);
-  return next;
+  const saved = await api.patchSession(id, { title: title.trim().slice(0, TITLE_MAX) });
+  window.dispatchEvent(new Event(SESSIONS_CHANGED));
+  return saved.title;
 }

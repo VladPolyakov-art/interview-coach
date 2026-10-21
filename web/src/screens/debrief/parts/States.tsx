@@ -31,7 +31,7 @@ export function NotFoundBody({ onHistory, onHome }: { onHistory?: () => void; on
         actions={
           <>
             {onHistory ? <Button variant="primary" onClick={onHistory}>{t("debrief.gone.openHistory")}</Button>
-              : <Link to="/history" className={s.primaryLink}>{t("debrief.gone.openHistory")}</Link>}
+              : <Link to="/archive" className={s.primaryLink}>{t("debrief.gone.openHistory")}</Link>}
             {onHome ? <Button variant="secondary" onClick={onHome}>{t("debrief.gone.goHome")}</Button> : null}
           </>
         }
@@ -52,7 +52,7 @@ export function ErrorBody({ onRetry, detail }: { onRetry?: () => void; detail?: 
         actions={
           <>
             <Button size="sm" variant="secondary" icon="refresh" onClick={onRetry}>{t("common.tryAgain")}</Button>
-            <Link to="/history" className={s.inlineLink}>{t("debrief.gone.openHistory")}</Link>
+            <Link to="/archive" className={s.inlineLink}>{t("debrief.gone.openHistory")}</Link>
           </>
         }
       >

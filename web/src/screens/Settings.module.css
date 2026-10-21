@@ -110,3 +110,6 @@
   .table td { width: auto; }
   .premiumHead { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
 }
+
+/* D80: the name field sits on the right of its row, about a first and last name wide. */
+.nameInput { width: min(16rem, 100%); }

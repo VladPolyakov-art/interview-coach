@@ -41,12 +41,14 @@ export interface FileDropProps {
   onFiles?: (files: File[]) => void;
   onRemove?: () => void;
   disabled?: boolean;
+  /** D80: one low row (icon left, prompt and hint in a line) under a list of files, instead of the tall zone. */
+  compact?: boolean;
   className?: string;
 }
 
 export function FileDrop({
   label, privacy, prompt, browseLabel, hint, accept, state = "empty", file, readingLabel, removeLabel, replaceLabel,
-  error, onFile, multiple, onFiles, onRemove, disabled, className,
+  error, onFile, multiple, onFiles, onRemove, disabled, compact, className,
 }: FileDropProps) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
@@ -78,13 +80,13 @@ export function FileDrop({
           role="group"
           aria-labelledby={`${id}p`}
           aria-describedby={hint ? `${id}h` : undefined}
-          className={`${s.zone} ${over ? s.over : ""} ${disabled ? s.disabled : ""}`}
+          className={`${s.zone} ${compact ? s.compact : ""} ${over ? s.over : ""} ${disabled ? s.disabled : ""}`}
           onDragEnter={onDragOver}
           onDragOver={onDragOver}
           onDragLeave={() => setOver(false)}
           onDrop={onDrop}
         >
-          <span className={s.icon}><Icon name="upload" size="lg" /></span>
+          <span className={s.icon}><Icon name="upload" size={compact ? "md" : "lg"} /></span>
           <p id={`${id}p`} className={s.prompt}>
             <span className="visually-hidden">{label}. </span>
             {prompt}{" "}

@@ -43,6 +43,8 @@ const ALIASES: Record<string, { section: SectionId; hash?: string }> = {
 };
 /** How long the "Saved" toast stays (D78): long enough to read one word. */
 const PROFILE_MAX_FILES = 10;
+/** The server keeps at most 60 characters of the name (D80). */
+const NAME_MAX = 60;
 const CV_ACCEPT = ".pdf,.docx,.txt,.md";
 
 /* ---------- search ---------- */
@@ -62,6 +64,7 @@ const SEARCH: SearchItem[] = [
   { id: "practice-strictness", section: "practice", label: "settings.practice.strictness", keywords: "gentle standard tough" },
   { id: "practice-questions", section: "practice", label: "settings.practice.questions", keywords: "count number length" },
   { id: "practice-level", section: "practice", label: "settings.practice.level", keywords: "english a2 b1 b2 c1" },
+  { id: "general-name", section: "general", label: "settings.name.title", description: "settings.name.hint", keywords: "name call me address first name you" },
   { id: "profile-cv", section: "general", label: "settings.profile.title", description: "settings.profile.hint", keywords: "resume cv upload pdf docx file profile" },
   { id: "general-theme", section: "general", label: "theme.label", description: "settings.appearance.themeHint", keywords: "dark light mode system appearance" },
   { id: "privacy-telemetry", section: "privacy", label: "settings.privacy.telemetry", description: "settings.privacy.telemetryHint", keywords: "analytics usage statistics" },
@@ -285,6 +288,7 @@ function GeneralSection() {
   const [theme, setTheme] = useTheme();
   return (
     <>
+      <NameGroup />
       <CvGroup />
       <SettingGroup title={t("settings.appearance.title")} id="appearance-title">
         <SettingRow id="general-theme" label={t("theme.label")} description={t("settings.appearance.themeHint")}>
@@ -302,6 +306,32 @@ function GeneralSection() {
         </SettingRow>
       </SettingGroup>
     </>
+  );
+}
+
+/** D80: the name Mike calls you by; it also replaces "You" in the sidebar. Saved when the field loses focus or on Enter. */
+function NameGroup() {
+  const { settings } = useApp();
+  const { save, view } = useSave();
+  const [draft, setDraft] = useState<string | null>(null);
+  if (!settings) return <Skeleton lines={2} />;
+  const value = draft ?? settings.name;
+  const commit = () => {
+    if (draft === null) return;
+    const next = draft.split(/\s+/).filter(Boolean).join(" ").slice(0, NAME_MAX);
+    setDraft(null);
+    if (next !== settings.name) void save({ name: next });
+  };
+  return (
+    <SettingGroup title={t("settings.name.title")} id="name-title">
+      <SettingRow id="general-name" label={t("settings.name.label")} description={t("settings.name.hint")}>
+        <Input label={t("settings.name.label")} hideLabel className={s.nameInput} value={value} maxLength={NAME_MAX}
+          placeholder={t("settings.name.placeholder")} autoComplete="given-name" spellCheck={false}
+          onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
+      </SettingRow>
+      {view}
+    </SettingGroup>
   );
 }
 
@@ -366,6 +396,7 @@ function CvGroup() {
             hint={t("settings.profile.fileHint", { n: PROFILE_MAX_FILES })}
             accept={CV_ACCEPT}
             multiple
+            compact={files.length > 0 || reading.length > 0}
             onFiles={(picked) => void add(picked)}
             disabled={busy !== null}
           />
@@ -583,7 +614,7 @@ function PrivacySection() {
           </div>
         </SettingRow>
         <SettingRow id="privacy-trash" label={t("settings.privacy.trash")} description={t("settings.privacy.trashHint")}>
-          <Link to="/history/trash" className={s.rowLink}>
+          <Link to="/archive/trash" className={s.rowLink}>
             <Icon name="trash" size="sm" />
             {trashCount ? t("history.trashCount", { n: trashCount }) : t("settings.privacy.trashOpen")}
           </Link>

@@ -118,6 +118,16 @@
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
 .newRow:hover .plus { background: var(--color-surface-chip-hover); }
+/* D80: the Archive row's icon, in the same slot as New practice's circle (no fill). */
+.navIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--icon-lg) + var(--space-1));
+  height: calc(var(--icon-lg) + var(--space-1));
+  color: var(--color-text-secondary);
+}
 .newLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .railBody[data-collapsed] .newRow { justify-content: center; width: var(--control-h-md); height: var(--control-h-md); padding: 0; }
 
@@ -233,6 +243,10 @@
   flex: none;
   color: var(--color-text-tertiary);
 }
+/* D80: with a name, the avatar shows its first letter. */
+.initial { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-primary); line-height: 1; }
+/* D80: renaming a chat in place: the field takes the row. */
+.chatRename { width: 100%; }
 .accountName { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .accountSub { color: var(--color-text-tertiary); font-size: var(--text-sm); overflow-wrap: anywhere; }
 /* The menu's header: the same two lines. */

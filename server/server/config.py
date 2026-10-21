@@ -79,6 +79,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "level": "B1",                            # A2 | B1 | B2 | C1
     "strictness": 2,                          # 1 gentle .. 3 demanding
     "questions_per_session": 5,
+    "name": "",                               # how Mike addresses the user (D80); "" = no name
 }
 SECRET_PATHS = [("openai_compatible", "api_key"), ("gemini_live", "api_key")]
 ENGINES = ("ollama", "openai_compatible", "claude_cli", "gemini_live")
@@ -126,6 +127,8 @@ def _validate(settings: dict) -> dict:
         settings["kokoro_speed"] = 1.0
     settings["answer_suggester"] = bool(settings.get("answer_suggester"))
     settings["telemetry_opt_in"] = bool(settings.get("telemetry_opt_in"))
+    # D80: one line, no control characters, at most 60 characters.
+    settings["name"] = " ".join(str(settings.get("name") or "").split())[:60]
     if settings.get("stt", {}).get("backend") not in ("auto", "mlx", "faster_whisper", "none"):
         settings["stt"]["backend"] = "auto"
     return settings

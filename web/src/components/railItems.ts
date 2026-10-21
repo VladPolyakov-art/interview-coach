@@ -13,11 +13,12 @@ export function railTitle(title: string, untitled: string): string {
   return raw.startsWith(GENERIC_PREFIX) && raw.length > GENERIC_PREFIX.length ? raw.slice(GENERIC_PREFIX.length) : raw;
 }
 
-/** Every session, newest first (D52: the rail list is the history; no cap). D69: short sessions (the debrief said
- * too short) stay in History only; a session with the bare generic title shows its first question instead. */
+/** Every session, newest first (D52: the rail list is the history; no cap). D80: there is no History page any more, so
+ * short sessions show here too; archived ones are only in the Archive. A session with the bare generic title shows its
+ * first question instead (D69). */
 export function railSessions(sessions: SessionSummary[], untitled: string): RailSession[] {
   return [...sessions]
-    .filter((x) => !x.too_short)
+    .filter((x) => !x.archived)
     .sort((a, b) => b.started_at.localeCompare(a.started_at))
     .map((x) => ({
       id: x.id,

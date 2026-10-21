@@ -1,6 +1,7 @@
-/* History of saved sessions (live container of `history/HistoryView`) and the trash (soft delete with restore). */
+/* Archive (D80; was History): archived chats, the live container of `history/HistoryView`, and the trash (soft
+ * delete with restore). Recents in the sidebar hold every other chat. */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button, Callout, durationMs, EmptyState, Skeleton, useFreshOnce, useToast } from "../ds";
 import { t, tp } from "../i18n";
 import { Page } from "../components/Page";
@@ -9,7 +10,7 @@ import { formatDate, formatDateTime } from "../lib/format";
 import { useLoad } from "../lib/hooks";
 import { errorMessage } from "../lib/store";
 import type { SessionSummary } from "../lib/types";
-import { renameSession } from "./debrief/rename";
+import { renameSession, SESSIONS_CHANGED } from "./debrief/rename";
 import { HistoryView } from "./history/HistoryView";
 import type { HistoryRowModel, TrackFilter } from "./history/types";
 import s from "./History.module.css";
@@ -81,9 +82,7 @@ const parseTrack = (v: string | null): TrackFilter => (v === "interview" || v ==
 /** Rows stagger in once per visit (motion.md N10), not on every return to the list. */
 const seen = new Set<string>();
 
-export function HistoryScreen() {
-  const location = useLocation();
-  const navigate = useNavigate();
+export function ArchiveScreen() {
   const [params, setParams] = useSearchParams();
   const toast = useToast();
   const [notice, setNotice] = useState("");
@@ -91,39 +90,42 @@ export function HistoryScreen() {
   const trashed = useLoad(() => api.trash());
   const fresh = useFreshOnce(seen, "history");
   const now = useMemo(() => new Date(), []);
-  const rows = useMemo(() => (list.data?.sessions ?? []).map(rowFromSummary), [list.data]);
+  const rows = useMemo(() => (list.data?.sessions ?? []).filter((x) => x.archived).map(rowFromSummary), [list.data]);
+  const drop = (id: string) => list.setData((d) => (d ? { ...d, sessions: d.sessions.filter((x) => x.id !== id) } : d));
+  const changed = () => window.dispatchEvent(new Event(SESSIONS_CHANGED));
 
   const undo = (trashId: string) => {
     api.restoreSession(trashId)
-      .then(() => { list.reload(); trashed.reload(); })
+      .then(() => { list.reload(); trashed.reload(); changed(); })
       .catch((e: unknown) => setNotice(errorMessage(e)));
   };
   const showTrashed = (trashId: string) => {
     toast.show({ message: t("history.toast.trashed"), action: trashId ? { label: t("common.undo"), onClick: () => undo(trashId) } : undefined });
   };
 
-  // Arrived from a debrief that was just moved to Trash: the same toast with Undo (debrief.md §4).
-  const arrival = useRef(false);
-  useEffect(() => {
-    const state = location.state as { trashed?: { title: string; trashId: string } } | null;
-    if (!state?.trashed || arrival.current) return;
-    arrival.current = true;
-    showTrashed(state.trashed.trashId);
-    trashed.reload();
-    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
-
   const onTrash = async (id: string) => {
     setNotice("");
     try {
       const { trash_id } = await api.deleteSession(id);
-      list.setData((d) => (d ? { ...d, sessions: d.sessions.filter((x) => x.id !== id) } : d));
+      drop(id);
       trashed.reload();
       showTrashed(trash_id);
       return true;
     } catch (e) {
       setNotice(`${rows.find((r) => r.id === id)?.title ?? ""}: ${errorMessage(e)}`.replace(/^: /, ""));
+      return false;
+    }
+  };
+  const onUnarchive = async (id: string) => {
+    setNotice("");
+    try {
+      await api.patchSession(id, { archived: false });
+      drop(id);
+      changed();
+      toast.show({ message: t("history.toast.unarchived"), action: { label: t("common.undo"), onClick: () => { api.patchSession(id, { archived: true }).then(() => { list.reload(); changed(); }, (e: unknown) => setNotice(errorMessage(e))); } } });
+      return true;
+    } catch (e) {
+      setNotice(errorMessage(e));
       return false;
     }
   };
@@ -150,6 +152,7 @@ export function HistoryScreen() {
       enterStagger={fresh}
       notice={notice || undefined}
       onTrash={onTrash}
+      onUnarchive={onUnarchive}
       onRename={onRename}
       onRetry={list.reload}
     />
@@ -176,7 +179,7 @@ export function TrashScreen() {
   };
 
   return (
-    <Page title={t("history.trashTitle")} actions={<Link to="/history">{t("history.backToHistory")}</Link>}>
+    <Page title={t("history.trashTitle")} actions={<Link to="/archive">{t("history.backToHistory")}</Link>}>
       {notice ? <Callout tone="success" live="status">{notice}</Callout> : null}
       {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
       {list.loading && !list.data ? <Skeleton variant="row" rows={4} /> : null}

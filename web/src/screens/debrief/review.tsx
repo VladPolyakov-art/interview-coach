@@ -15,7 +15,11 @@ export const debriefReview: ReviewScreen = {
     state("interview-full", "Interview · S2 Kestrel Pay, выбран ответ Q2", "interviewFull", {
       tall: true,
       dark: true,
-      note: "Вердикт → по одному пункту на слой → действия → разговор: слева весь чат, справа разбор выбранного ответа (D71). Клик по ответу или номер сверху меняет вопрос; в разборе Q2 — ответ, три слоя и «stronger answer».",
+      note: "D80: чат открывается сразу на разговоре. Вердикт — свёрнутая плашка сверху: «Verdict · Getting there» и маленькая шкала; по клику — итог, шкала, что подтянуть и кнопки. Ниже разговор: слева весь чат, справа разбор выбранного ответа (D71). В шапке нет «назад в History»: все чаты в сайдбаре.",
+    }),
+    state("verdict-open", "Interview · вердикт раскрыт", "interviewVerdictOpen", {
+      tall: true,
+      note: "D80: плашка вердикта раскрыта: итог одной фразой, шкала Not ready → Getting there → Ready, «What to fix first» по слоям, Drill / Practise again. Ещё клик — сворачивается.",
     }),
     state("interview-delivery-first", "Interview · delivery first", "interviewDeliveryFirst", {
       mobile: false,
@@ -45,7 +49,7 @@ export const debriefReview: ReviewScreen = {
       note: "Поле «What you actually said» под строкой Language; перепроверяется только этот вопрос.",
     }),
     state("not-found", "Not found", "notFound", { mobile: false, note: "Сессии нет (удалена из Trash или ссылка неверна)." }),
-    state("error", "Error", "error", { mobile: false, note: "Файл сессии не открылся: Try again / Open history." }),
+    state("error", "Error", "error", { mobile: false, note: "Файл сессии не открылся: Try again / Open Archive." }),
     state("overflow", "Overflow +30%", "longText", {
       tall: true,
       note: "Длинное название (2–3 строки), тексты +30%, ответ режется на 6 строках, одна карточка «Feedback wasn't available».",

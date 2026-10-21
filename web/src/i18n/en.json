@@ -64,7 +64,18 @@
     "engineWarning": "AI engine",
     "help": "Help & what's free",
     "local": "Local",
-    "theme": "Theme"
+    "archive": "Archive",
+    "rowRename": "Rename",
+    "rowDownload": "Download as Markdown",
+    "rowArchive": "Archive",
+    "rowDelete": "Delete",
+    "renameLabel": "Chat name",
+    "archived": "Moved to Archive.",
+    "renameFailed": "Couldn't rename the chat.",
+    "deleteTitle": "Delete this chat?",
+    "deleteBody": "“{title}” and its debrief leave the app. You can bring it back from Trash in Settings → Privacy and data.",
+    "deleteConfirm": "Delete",
+    "deleted": "Chat deleted."
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -982,13 +993,13 @@
     "notFound": "This session wasn't found. It may have been deleted.",
     "delete": "Move to trash",
     "deleted": "Moved to trash.",
-    "back": "History",
     "rename": "Rename session",
     "moreActions": "More actions for this session",
     "menu": {
       "export": "Export to Obsidian",
       "download": "Download as Markdown",
-      "trash": "Move to Trash"
+      "trash": "Delete",
+      "archive": "Archive"
     },
     "exampleBadge": "Example",
     "savedHere": "Saved on this computer",
@@ -1117,7 +1128,7 @@
     "gone": {
       "title": "This session no longer exists",
       "body": "It was deleted from Trash, or the link is wrong.",
-      "openHistory": "Open history",
+      "openHistory": "Open Archive",
       "goHome": "Go to home"
     },
     "error": {
@@ -1129,7 +1140,7 @@
     "drillHintPoints_other": "Focused on these {n} weak spots"
   },
   "history": {
-    "title": "History",
+    "title": "Archive",
     "subtitle": "Every practice round, saved on this computer.",
     "empty": "No rounds yet",
     "emptyBody": "Your first practice round will show up here with its debrief.",
@@ -1147,9 +1158,9 @@
       "english": "English"
     },
     "noVerdict": "No debrief yet",
-    "backToHistory": "Back to History",
+    "backToHistory": "Back to Archive",
     "loadError": "Couldn't load your sessions.",
-    "sub": "Interviews and English practice, saved on this computer.",
+    "sub": "Chats you moved out of Recents. Open any of them, or bring one back.",
     "trashCount": "Trash ({n})",
     "filter": {
       "label": "Show",
@@ -1165,10 +1176,12 @@
     },
     "row": {
       "rename": "Rename {title}",
-      "trash": "Move {title} to Trash",
+      "trash": "Delete {title}",
       "more": "More actions for {title}",
       "menuRename": "Rename",
-      "menuTrash": "Move to Trash"
+      "menuTrash": "Delete",
+      "unarchive": "Move {title} back to Recents",
+      "menuUnarchive": "Move back to Recents"
     },
     "result": {
       "corrections_one": "{n} correction",
@@ -1180,9 +1193,9 @@
     },
     "list": "Saved sessions",
     "emptyState": {
-      "title": "Your sessions will appear here",
-      "body": "Each interview and English practice is saved on this computer with its debrief.",
-      "start": "Start a session",
+      "title": "No archived chats",
+      "body": "Archive a chat from its … menu in the sidebar. It leaves Recents; nothing is deleted.",
+      "start": "Start a practice",
       "example": "See an example debrief"
     },
     "none": {
@@ -1205,7 +1218,8 @@
     },
     "toast": {
       "trashed": "Moved to Trash.",
-      "renameFailed": "Couldn't rename this session. Try again."
+      "renameFailed": "Couldn't rename this session. Try again.",
+      "unarchived": "Moved back to Recents."
     },
     "short": {
       "show_one": "{n} short session",
@@ -1259,6 +1273,12 @@
       "questions": "Questions per interview",
       "defaults": "Interview defaults",
       "levelHint": "How Mike speaks to you and how much he corrects."
+    },
+    "name": {
+      "title": "Your name",
+      "label": "Name",
+      "hint": "Mike calls you by it in practice. It also shows in the sidebar.",
+      "placeholder": "e.g. Alex"
     },
     "profile": {
       "title": "Your CV and files",

@@ -159,6 +159,8 @@ export interface DebriefUi {
   renaming?: boolean;
   editing?: { question: number; correction: string };
   rechecking?: number;
+  /** D80: the folded verdict bar starts open (review, stories). */
+  verdictOpen?: boolean;
 }
 
 export interface DebriefActions {
@@ -168,6 +170,8 @@ export interface DebriefActions {
   onRerun?: () => void;
   onDownload?: () => void;
   onExport?: () => void;
+  /** D80: move the chat out of Recents into the Archive. */
+  onArchive?: () => void;
   onTrash?: () => void;
   onDrill?: () => void;
   onPractise?: () => void;

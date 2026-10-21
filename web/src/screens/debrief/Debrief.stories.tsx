@@ -18,6 +18,8 @@ const mobile = (id: DebriefSceneId): StoryObj => ({
 /** §3.1–3.5: verdict, weak spots, actions, five cards; Q2 open with its stronger answer. */
 export const InterviewFull = desktop("interviewFull");
 export const InterviewFullMobile = mobile("interviewFull");
+/** D80: the verdict bar above the conversation, opened. */
+export const InterviewVerdictOpen = desktop("interviewVerdictOpen");
 /** The same debrief with the layer order from Settings set to delivery first (GR8). */
 export const InterviewDeliveryFirst = desktop("interviewDeliveryFirst");
 /** The title is being renamed in place (US-23 AC2). */

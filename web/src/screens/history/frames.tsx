@@ -1,4 +1,5 @@
-/* Scenes of the History list for stories and the review page: the list inside the full shell, every state from props. */
+/* Scenes of the Archive list (D80; was History) for stories and the review page: the list inside the full shell, every
+ * state from props. */
 import { MemoryRouter } from "react-router-dom";
 import { AppShellView } from "../../components/AppShell";
 import { SHELL_ENGINE, SHELL_RECENT } from "../debrief/frames";
@@ -24,12 +25,12 @@ export const HISTORY_SCENES = {
   overflow: { rows: historyOverflow, trashCount: 1, ui: { tooltipOpen: "o3" } },
   /** 375 only: the narrow "more" menu of one row, open. */
   menuOpen: { rows: historyData, trashCount: 1, ui: { menuOpen: "s3" } },
-  filteredEmpty: { rows: historyData.filter((r) => r.track === "interview"), trashCount: 1, track: "english", route: "/history?track=english" },
+  filteredEmpty: { rows: historyData.filter((r) => r.track === "interview"), trashCount: 1, track: "english", route: "/archive?track=english" },
   empty: { rows: [] },
   loading: { rows: [], state: "loading" },
   error: { rows: [], state: "error" },
-  /** After Move to Trash: the row is gone, the toast offers Undo. */
-  toast: { rows: historyData.filter((r) => r.id !== "s1"), trashCount: 2, toast: { message: "Moved to Trash.", undoLabel: "Undo" } },
+  /** After "Move back to Recents": the row is gone, the toast offers Undo. */
+  toast: { rows: historyData.filter((r) => r.id !== "s1"), trashCount: 2, toast: { message: "Moved back to Recents.", undoLabel: "Undo" } },
   failed: { rows: historyData, trashCount: 1, notice: "Couldn't rename this session. Try again." },
 } satisfies Record<string, HistorySceneSpec>;
 export type HistorySceneId = keyof typeof HISTORY_SCENES;
@@ -38,9 +39,9 @@ export function HistoryScene({ id }: { id: HistorySceneId }) {
   const spec: HistorySceneSpec = HISTORY_SCENES[id];
   const { rows, trashCount = 0, route, ...rest } = spec;
   return (
-    <MemoryRouter initialEntries={[route ?? "/history"]}>
-      <AppShellView current="history" recent={SHELL_RECENT} engine={SHELL_ENGINE}>
-        <HistoryView state="ready" now={HISTORY_NOW} rows={rows} trashCount={trashCount} {...rest} />
+    <MemoryRouter initialEntries={[route ?? "/archive"]}>
+      <AppShellView current="archive" recent={SHELL_RECENT} engine={SHELL_ENGINE}>
+        <HistoryView state="ready" now={HISTORY_NOW} rows={rows} trashCount={trashCount} onUnarchive={() => {}} {...rest} />
       </AppShellView>
     </MemoryRouter>
   );

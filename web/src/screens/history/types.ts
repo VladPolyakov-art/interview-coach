@@ -55,6 +55,8 @@ export interface HistoryViewProps {
   onRename?: (id: string, title: string) => void | Promise<boolean | void>;
   /** Resolve `false` when the trash call failed: the row comes back. */
   onTrash?: (id: string) => void | Promise<boolean | void>;
+  /** D80: "Move back to Recents"; resolve `false` when it failed (the row comes back). */
+  onUnarchive?: (id: string) => void | Promise<boolean | void>;
   onRetry?: () => void;
   className?: string;
 }

@@ -1,6 +1,8 @@
-/* Verdict, weak spots and actions (debrief.md §3.2–3.4, §3.7). Section labels are h2 (Section style). */
+/* Verdict, weak spots and actions (debrief.md §3.2–3.4, §3.7). Section labels are h2 (Section style).
+ * D80: in a saved interview the verdict is a folded bar above the conversation (VerdictBar): "Verdict · Getting there"
+ * with a small scale; a press opens the summary, the scale, what to fix first and the next step. */
 import type { ReactNode } from "react";
-import { Badge, Button, Callout, Skeleton, TextShimmer, WeakSpotStrip, type WeakSpot } from "../../../ds";
+import { Badge, Button, Callout, Disclosure, Skeleton, TextShimmer, WeakSpotStrip, type WeakSpot } from "../../../ds";
 import { t, tp } from "../../../i18n";
 import { layerSequence, type DebriefModel, type DebriefVariant, type EnglishModel, type Evidence, type Layer, type VerdictModel } from "../types";
 import type { LayerOrder } from "../../../lib/types";
@@ -24,12 +26,42 @@ export function SectionHead({ id, title, sub, action }: { id: string; title: Rea
   );
 }
 
-export function Verdict({ verdict, id, note }: { verdict: VerdictModel; id: string; note?: ReactNode }) {
+export function VerdictBar({ verdict, id, open, onOpenChange, children }: {
+  verdict: VerdictModel; id: string; open?: boolean; onOpenChange?: (open: boolean) => void; children: ReactNode;
+}) {
   const sr = verdict.step !== undefined ? t("debrief.scale.sr", { step: verdict.headline, n: verdict.step + 1 }) : null;
   return (
-    <section className={s.verdict} aria-labelledby={id} data-review-id="Debrief/Verdict" data-review-section="Debrief · Verdict" data-comment-target="">
-      <SectionHead id={id} title={t("debrief.verdict")} />
-      <p className={s.headline}>{verdict.headline}{sr ? <span className="visually-hidden">. {sr}</span> : null}</p>
+    <section className={s.verdictBar} aria-labelledby={id} data-review-id="Debrief/VerdictBar" data-review-section="Debrief · Verdict" data-comment-target="">
+      <Disclosure
+        id={id}
+        headingLevel={2}
+        open={open}
+        defaultOpen={false}
+        onOpenChange={onOpenChange}
+        title={(
+          <span className={s.barTitle}>
+            <span className={s.barLabel}>{t("debrief.verdict")}</span>
+            <span className={s.barHeadline}>{verdict.headline}{sr ? <span className="visually-hidden">. {sr}</span> : null}</span>
+            {verdict.step !== undefined ? (
+              <span className={s.miniScale} aria-hidden="true">
+                {SCALE.map(({ step }) => <span key={step} className={step <= verdict.step! ? s.miniOn : undefined} />)}
+              </span>
+            ) : null}
+          </span>
+        )}
+      >
+        <div className={s.barBody}>{children}</div>
+      </Disclosure>
+    </section>
+  );
+}
+
+export function Verdict({ verdict, id, note, bare }: { verdict: VerdictModel; id: string; note?: ReactNode; bare?: boolean }) {
+  const sr = verdict.step !== undefined ? t("debrief.scale.sr", { step: verdict.headline, n: verdict.step + 1 }) : null;
+  return (
+    <section className={s.verdict} aria-labelledby={bare ? undefined : id} aria-label={bare ? t("debrief.verdict") : undefined} data-review-id="Debrief/Verdict" data-review-section={bare ? undefined : "Debrief · Verdict"} data-comment-target={bare ? undefined : ""}>
+      {bare ? null : <SectionHead id={id} title={t("debrief.verdict")} />}
+      {bare ? null : <p className={s.headline}>{verdict.headline}{sr ? <span className="visually-hidden">. {sr}</span> : null}</p>}
       {verdict.line ? <p className={s.line}>{verdict.line}</p> : null}
       {note}
       {verdict.step !== undefined ? (

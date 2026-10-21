@@ -89,6 +89,11 @@ export const api = {
   sessions: () => request<{ sessions: SessionSummary[] }>("/sessions"),
   session: (id: string) => request<SessionRecord>(`/sessions/${encodeURIComponent(id)}`),
   sessionMarkdownUrl: (id: string) => `/api/sessions/${encodeURIComponent(id)}/markdown`,
+  /** D80: rename, or move to the Archive and back. */
+  patchSession: (id: string, patch: { title?: string; archived?: boolean }) =>
+    request<{ id: string; title: string; archived: boolean }>(`/sessions/${encodeURIComponent(id)}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch),
+    }),
   deleteSession: (id: string) => request<{ id: string; trash_id: string }>(`/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   trash: () => request<{ items: TrashItem[] }>("/sessions/trash"),
   restoreSession: (trashId: string) => post<{ ok: boolean; id: string }>(`/sessions/trash/${encodeURIComponent(trashId)}/restore`),

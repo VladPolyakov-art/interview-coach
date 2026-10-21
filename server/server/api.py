@@ -114,6 +114,7 @@ class SettingsPatch(BaseModel):
     level: Optional[str] = None
     strictness: Optional[int] = None
     questions_per_session: Optional[int] = None
+    name: Optional[str] = Field(default=None, max_length=200)
 
 
 @router.get("/settings")
@@ -324,6 +325,7 @@ async def list_sessions() -> dict:
                           "verdict": (s.get("debrief") or {}).get("verdict", ""),
                           "too_short": bool((s.get("debrief") or {}).get("too_short")),
                           "planned": len(s.get("questions") or []),
+                          "archived": bool(s.get("archived")),
                           "first_question": _first_question(s)} for s in items]}
 
 
@@ -362,6 +364,32 @@ async def get_session(session_id: str) -> dict:
 async def session_markdown(session_id: str) -> PlainTextResponse:
     return PlainTextResponse(storage.render_session_markdown(_session_or_404(session_id)),
                              media_type="text/markdown; charset=utf-8")
+
+
+class SessionPatch(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=200)
+    archived: Optional[bool] = None
+
+
+@router.patch("/sessions/{session_id}")
+async def patch_session(session_id: str, patch: SessionPatch, request: Request) -> dict:
+    """D80: rename a session (US-23 AC2) or move it to the Archive and back."""
+    check_origin(request)
+    record = _session_or_404(session_id)
+    if patch.title is not None:
+        title = " ".join(patch.title.split())[:80]
+        if not title:
+            raise fail(422, "title_empty", "The name can't be empty.")
+        record["title"] = title
+    if patch.archived is not None:
+        if patch.archived:
+            record["archived"] = True
+            record["archived_at"] = storage.now_iso()
+        else:
+            record.pop("archived", None)
+            record.pop("archived_at", None)
+    storage.save_record("sessions", record)
+    return {"id": record["id"], "title": record.get("title", ""), "archived": bool(record.get("archived"))}
 
 
 @router.delete("/sessions/{session_id}")
