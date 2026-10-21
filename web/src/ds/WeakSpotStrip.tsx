@@ -119,7 +119,7 @@ export function WeakSpotStrip({
     body = (
       <ul className={s.grid}>
         {items.map((it) => (
-          <li key={it.id} className={`${s.card} ${s[it.layer]}`}>
+          <li key={it.id} className={s.card}>
             <span className={s.cardHead}>
               <Icon name={it.layer} size="sm" />
               {it.layerLabel}

@@ -10,7 +10,7 @@ import s from "./layers.module.css";
 
 export function LayerBlock({ layer, children }: { layer: Layer; children: ReactNode }) {
   return (
-    <section className={`${s.block} ${s[layer]}`} data-review-id={`Debrief/Layer/${layer}`}>
+    <section className={s.block} data-review-id={`Debrief/Layer/${layer}`}>
       <h4 className={s.blockTitle}>
         <Icon name={layer} size="sm" />
         {t(`feedback.layer.${layer}`)}

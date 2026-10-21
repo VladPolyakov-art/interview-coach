@@ -85,6 +85,8 @@
 /* Stage shift (docs/motion.md "Stage shift"): transform only, `slower`, instant under reduced motion (tokens = 0). */
 .shift { transition: transform var(--duration-slower) var(--ease-standard); }
 .root[data-panel="open"] .shift { transform: translateX(var(--stage-shift)); }
+/* Floating notices (D59) follow the stage when the panel opens. */
+.root[data-panel="open"] .notices { transform: translateX(var(--stage-shift)); }
 /* Shifted content must still fit left of the panel on a 1024-1280 window. */
 .root[data-panel="open"] .flow,
 .root[data-panel="open"] .dock {

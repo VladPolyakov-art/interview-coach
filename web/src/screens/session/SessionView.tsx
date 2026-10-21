@@ -104,6 +104,15 @@ export function SessionView(props: SessionViewProps) {
     firstScroll.current = false;
     sendRef.current({ type: "content" }, instant ? "auto" : scrollBehavior());
   }, [contentKey, phase, islandH]);
+  /* The scroller can change height with nothing new in it (a notice, the panel, the window): if the transcript was
+   * following, it stays at the latest line instead of leaving it under the island (the D59 bug). */
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => sendRef.current({ type: "content" }, "auto"));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const onScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -247,7 +256,7 @@ export function SessionView(props: SessionViewProps) {
       style={islandH ? ({ "--island-h": `${islandH}px` } as CSSProperties) : undefined}
       onKeyDown={props.globalKeys ? undefined : onKey}
     >
-      <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
+      <Banners className={s.notices} overlay={overlay} notices={data.notices} handlers={handlers} />
       <div className={s.body}>
         <main className={s.stage} id="main" data-review-id="Session/Stage" data-review-section="Session · Stage" data-comment-target>
           <div className={s.presenceBox} data-review-id="Session/Presence" data-review-section="Session · Presence" data-comment-target>

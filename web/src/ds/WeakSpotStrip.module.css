@@ -24,7 +24,7 @@
 .moreText { font-size: var(--text-sm); color: var(--color-text-secondary); min-width: 0; overflow-wrap: anywhere; }
 .footer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding-top: var(--space-1); }
 
-/* Debrief cards on the layer tint: the only place the tints appear (P5). */
+/* Debrief cards. D59: no fill: a left rule like the Session feedback layers (told apart by label + icon). */
 .grid {
   list-style: none;
   margin: 0;
@@ -37,15 +37,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-5);
+  padding: var(--space-1) 0 var(--space-1) var(--space-4);
   border: 0;
-  border-radius: var(--radius-md);
+  border-left: var(--border-width-strong) solid var(--color-layer-session-rule);
   color: var(--color-text-primary);
   min-width: 0;
 }
-.content { background: var(--color-layer-content-tint); }
-.language { background: var(--color-layer-language-tint); }
-.delivery { background: var(--color-layer-delivery-tint); }
 .cardHead { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-secondary); }
 .cardTitle { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); line-height: var(--leading-tight); overflow-wrap: anywhere; }
 .cardLine, .cardFix, .cardAlso { font-size: var(--text-sm); line-height: var(--leading-normal); color: var(--color-text-secondary); overflow-wrap: anywhere; }
