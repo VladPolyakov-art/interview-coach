@@ -39,6 +39,8 @@
   --color-red-600: #A1362B;
   --color-red-300: #EE8B80;
   --color-red-900: #2B1A18;
+  --color-red-500: #B8443A;
+  --color-red-700: #87291F;
   --color-amber-50: #F8F0E0;
   --color-amber-700: #845A00;
   --color-amber-300: #DDB15E;
@@ -99,7 +101,7 @@
   --toggle-w: 2.5rem;
   --toggle-h: 1.5rem;
   --layout-rail: 15rem;
-  --layout-rail-collapsed: 4rem;
+  --layout-rail-collapsed: 3.25rem;
   --layout-panel: 27.5rem;
   --layout-content: 60rem;
   --layout-narrow: 45rem;
@@ -139,6 +141,8 @@
   --color-action-hover: var(--color-gray-800);
   --color-action-pressed: var(--color-gray-750);
   --color-action-disabled: var(--color-gray-100);
+  --color-danger: var(--color-red-600);
+  --color-danger-hover: var(--color-red-700);
   --color-checked: var(--color-gray-950);
   --color-toggle-on: var(--color-blue-600);
   --color-text-primary: var(--color-gray-950);
@@ -147,6 +151,7 @@
   --color-text-disabled: var(--color-gray-600);
   --color-text-link: var(--color-gray-950);
   --color-text-on-action: var(--color-gray-0);
+  --color-text-on-danger: var(--color-gray-0);
   --color-text-on-checked: var(--color-gray-0);
   --color-text-on-toggle: var(--color-gray-0);
   --color-text-error: var(--color-red-600);
@@ -193,6 +198,8 @@
   --color-action-hover: var(--color-gray-150);
   --color-action-pressed: var(--color-gray-200);
   --color-action-disabled: var(--color-gray-800);
+  --color-danger: var(--color-red-600);
+  --color-danger-hover: var(--color-red-500);
   --color-checked: var(--color-gray-100);
   --color-toggle-on: var(--color-blue-600);
   --color-text-primary: var(--color-gray-100);
@@ -201,6 +208,7 @@
   --color-text-disabled: var(--color-gray-400);
   --color-text-link: var(--color-gray-100);
   --color-text-on-action: var(--color-gray-950);
+  --color-text-on-danger: var(--color-gray-0);
   --color-text-on-checked: var(--color-gray-950);
   --color-text-on-toggle: var(--color-gray-0);
   --color-text-error: var(--color-red-300);
@@ -248,6 +256,8 @@
     --color-action-hover: var(--color-gray-150);
     --color-action-pressed: var(--color-gray-200);
     --color-action-disabled: var(--color-gray-800);
+    --color-danger: var(--color-red-600);
+    --color-danger-hover: var(--color-red-500);
     --color-checked: var(--color-gray-100);
     --color-toggle-on: var(--color-blue-600);
     --color-text-primary: var(--color-gray-100);
@@ -256,6 +266,7 @@
     --color-text-disabled: var(--color-gray-400);
     --color-text-link: var(--color-gray-100);
     --color-text-on-action: var(--color-gray-950);
+    --color-text-on-danger: var(--color-gray-0);
     --color-text-on-checked: var(--color-gray-950);
     --color-text-on-toggle: var(--color-gray-0);
     --color-text-error: var(--color-red-300);

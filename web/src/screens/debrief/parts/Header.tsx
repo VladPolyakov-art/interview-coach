@@ -75,7 +75,7 @@ export function Header(p: HeaderProps) {
         actions={(
           <>
             <Button onClick={() => setConfirming(false)}>{t("common.cancel")}</Button>
-            <Button variant="primary" onClick={() => { setConfirming(false); p.onTrash?.(); }}>{t("rail.deleteConfirm")}</Button>
+            <Button variant="danger" onClick={() => { setConfirming(false); p.onTrash?.(); }}>{t("rail.deleteConfirm")}</Button>
           </>
         )}
       >

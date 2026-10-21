@@ -305,7 +305,7 @@ export function HistoryView(props: HistoryViewProps) {
           actions={(
             <>
               <Button onClick={() => setConfirming(null)}>{t("common.cancel")}</Button>
-              <Button variant="primary" onClick={() => { const id = confirming; setConfirming(null); if (id) trash(id); }}>{t("rail.deleteConfirm")}</Button>
+              <Button variant="danger" onClick={() => { const id = confirming; setConfirming(null); if (id) trash(id); }}>{t("rail.deleteConfirm")}</Button>
             </>
           )}
         >

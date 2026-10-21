@@ -67,6 +67,15 @@ export const InlineOpen: StoryObj = {
   ),
 };
 
+/** D80: confirming a delete (sidebar "…" → Delete, Archive, debrief menu): the confirm button is red (`danger`). */
+export const DeleteConfirm: StoryObj = {
+  render: () => (
+    <Dialog inline open onClose={() => {}} title="Delete this chat?" actions={<><Button onClick={() => {}}>Cancel</Button><Button variant="danger" onClick={() => {}}>Delete</Button></>}>
+      <p>“Kestrel Pay · Senior Product Designer” and its debrief leave the app. You can bring it back from Trash in Settings → Privacy and data.</p>
+    </Dialog>
+  ),
+};
+
 /** A secondary action on the left (actionsStart). */
 export const WithStartAction: StoryObj = {
   render: () => (

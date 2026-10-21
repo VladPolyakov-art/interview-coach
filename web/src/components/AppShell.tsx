@@ -350,7 +350,7 @@ function ChatRow({ item, current, menuOpen, actions, onNavigate }: {
           actions={(
             <>
               <Button onClick={() => setConfirm(false)}>{t("common.cancel")}</Button>
-              <Button variant="primary" onClick={() => { setConfirm(false); actions.remove(item.id); }}>{t("rail.deleteConfirm")}</Button>
+              <Button variant="danger" onClick={() => { setConfirm(false); actions.remove(item.id); }}>{t("rail.deleteConfirm")}</Button>
             </>
           )}
         >

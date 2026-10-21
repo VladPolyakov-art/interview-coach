@@ -63,13 +63,14 @@
   text-underline-offset: 0.2em;
 }
 
-/* D51: the irreversible action keeps its meaning in the label colour, not in a stroke. */
+/* D80: a delete is a red fill with a white label (owner: «действие удаления должно быть красным»), in both themes.
+ * Only on the button that confirms a delete; the menu item that opens the question stays neutral. */
 .danger {
-  background: var(--color-surface-chip);
-  color: var(--color-text-error);
+  background: var(--color-danger);
+  color: var(--color-text-on-danger);
 }
 .danger:not(:disabled):not([aria-disabled="true"]):hover,
-.danger:not(:disabled):not([aria-disabled="true"]):active { background: var(--color-error-tint); }
+.danger:not(:disabled):not([aria-disabled="true"]):active { background: var(--color-danger-hover); }
 
 .spin {
   width: var(--icon-sm);

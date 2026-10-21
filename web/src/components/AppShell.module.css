@@ -32,6 +32,8 @@
 }
 /* A fixed width per state: while the rail animates, the body is revealed, never squeezed. */
 .railBody {
+  /* One icon slot of the rail: the plus circle (icon-lg + space-1) with space-1 either side = 36px. */
+  --rail-slot: calc(var(--icon-lg) + 3 * var(--space-1));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -39,8 +41,9 @@
   height: 100%;
   min-height: 0;
 }
+/* D80: folding moves nothing. Each icon sits the same distance from the rail edge in both states (the rows keep their
+ * left padding and height; only the labels go), and the collapsed column is exactly one icon slot wide. */
 .railBody[data-collapsed] {
-  align-items: center;
   width: calc(var(--layout-rail-collapsed) - 2 * var(--space-2));
 }
 .top {
@@ -57,8 +60,8 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: var(--control-h-md);
-  height: var(--control-h-md);
+  width: var(--rail-slot);
+  height: var(--rail-slot);
   padding: 0;
   border: 0;
   border-radius: var(--radius-pill);
@@ -88,14 +91,14 @@
 }
 
 .nav { display: flex; flex: none; flex-direction: column; gap: var(--space-0); }
-.railBody[data-collapsed] .nav { align-items: center; }
+
 /* New practice: a small round filled plus (the primary fill) and the label, like Claude's "New chat". */
 .newRow {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: calc(var(--control-h-md) - var(--space-1));
-  padding: 0 var(--space-2);
+  min-height: var(--rail-slot);
+  padding: 0 var(--space-1);
   border-radius: var(--radius-pill);
   color: var(--color-text-primary);
   font-size: var(--text-sm);
@@ -129,7 +132,7 @@
   color: var(--color-text-secondary);
 }
 .newLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.railBody[data-collapsed] .newRow { justify-content: center; width: var(--control-h-md); height: var(--control-h-md); padding: 0; }
+.railBody[data-collapsed] .newRow { width: var(--rail-slot); }
 
 /* Recents: the one part of the rail that scrolls. */
 .recent {
@@ -185,7 +188,7 @@
 
 /* ---- Bottom: engine warning (only when not ready) + account ---- */
 .foot { display: flex; flex: none; flex-direction: column; gap: var(--space-1); }
-.railBody[data-collapsed] .foot { align-items: center; }
+
 /* The engine row: the Not ready badge carries the warning (tone + icon + words). */
 .foot .engineWarn { gap: var(--space-2); }
 /* Collapsed: a warning icon (its words are the tooltip and the accessible name). */
@@ -193,8 +196,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--control-h-md);
-  height: var(--control-h-md);
+  width: var(--rail-slot);
+  height: var(--rail-slot);
   border-radius: var(--radius-pill);
   background: var(--color-warning-tint);
   color: var(--color-text-warning);
@@ -211,7 +214,8 @@
   gap: var(--space-2);
   width: 100%;
   min-height: var(--control-h-lg);
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  /* The avatar's centre lines up with the plus circle above (both at half a rail slot from the edge). */
+  padding: var(--space-1) var(--space-3) var(--space-1) calc((var(--rail-slot) - var(--control-h-sm)) / 2);
   border: 0;
   /* D78: a pill, like the rest of the rounded interface. */
   border-radius: var(--radius-pill);
@@ -225,7 +229,12 @@
 }
 .account:hover,
 .account[aria-expanded="true"] { background: var(--color-hover); }
-.railBody[data-collapsed] .account { width: auto; padding: var(--space-1); }
+.railBody[data-collapsed] .account { width: var(--rail-slot); padding-inline-end: 0; }
+/* Collapsed, the row is one slot wide but taller than wide: the hover shows on the avatar circle, not as a tall pill. */
+.railBody[data-collapsed] .account:hover,
+.railBody[data-collapsed] .account[aria-expanded="true"] { background: transparent; }
+.railBody[data-collapsed] .account:hover .avatar,
+.railBody[data-collapsed] .account[aria-expanded="true"] .avatar { background: var(--color-hover); }
 .avatar {
   display: inline-flex;
   flex: none;

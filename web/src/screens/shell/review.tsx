@@ -59,7 +59,7 @@ export const shellReview: ReviewScreen = {
     }),
     state("collapsed", "Свёрнут в полосу значков", () => <Scene collapsed />, {
       dark: true,
-      note: "D78: сверху знак Vukoli (круг с буквой v); наведение или фокус меняют его на значок «Open sidebar», клик разворачивает. Остаются круглый плюс «New practice» и аватар; у каждого значка подсказка с названием. Ширина меняется за --duration-slow, при reduced motion мгновенно; контент справа занимает освободившееся место. Состояние запоминается в ic.railCollapsed.",
+      note: "D80: при сворачивании значки не сдвигаются — плюс, архив и аватар стоят на тех же местах, уходят только подписи; узкая полоса 52 px. D78: сверху знак Vukoli (круг с буквой v); наведение или фокус меняют его на значок «Open sidebar», клик разворачивает. Остаются круглый плюс «New practice» и аватар; у каждого значка подсказка с названием. Ширина меняется за --duration-slow, при reduced motion мгновенно; контент справа занимает освободившееся место. Состояние запоминается в ic.railCollapsed.",
     }),
     state("account-menu", "Меню аккаунта", () => <Scene initialMenu="account" />, {
       dark: true,
@@ -102,7 +102,7 @@ export const shellReview: ReviewScreen = {
       note: "То же меню от аватара, пока полоса свёрнута.",
     }),
     state("row-menu", "Меню «…» у чата", () => <Scene initialMenu="row" />, {
-      note: "На наведении или фокусе у строки появляется «…» (на сенсорных экранах всегда). D80: Rename (поле прямо в строке, Enter сохраняет, Esc отменяет), Download as Markdown, Archive (чат уходит в Archive, в тосте Undo), и после разделителя Delete — сначала окно «Delete this chat?» с Cancel и Delete (кнопка нейтральная, не красная: удаление обратимо, правило ds-danger); удалённое лежит в Trash (Settings → Privacy and data), в тосте Undo.",
+      note: "На наведении или фокусе у строки появляется «…» (на сенсорных экранах всегда). D80: Rename (поле прямо в строке, Enter сохраняет, Esc отменяет), Download as Markdown, Archive (чат уходит в Archive, в тосте Undo), и после разделителя Delete — сначала окно «Delete this chat?» с Cancel и красной Delete (D80: удаление — всегда красная кнопка); удалённое лежит в Trash (Settings → Privacy and data), в тосте Undo.",
     }),
     state("engine-down", "Движок не готов", () => <Scene engine={DOWN} />, {
       note: "Строка «AI engine · Not ready» осталась над аккаунтом и показывается только пока движок не готов (ведёт в Settings → AI engine).",
