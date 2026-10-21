@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 import httpx
 import pytest
 
 from server import engines
-from server.engines import claude_cli, codex_cli, gemini_live, ollama, openai_compat
+from server.engines import antigravity_cli, claude_cli, codex_cli, gemini_live, ollama, openai_compat
 from server.engines.base import EngineError, EngineStatus, ThinkFilter, extract_json, strip_think
 
 
@@ -138,14 +139,17 @@ async def test_engine_registry_lists_all_with_status(monkeypatch):
     monkeypatch.setattr(claude_cli, "find_claude", lambda: None)
     settings = {"engine": "ollama", "ollama": {"url": "http://127.0.0.1:9", "model": ""},
                 "openai_compatible": {"base_url": "", "api_key": "", "model": ""}, "claude_cli": {"model": "haiku"},
-                "codex_cli": {"model": ""}, "gemini_live": {"api_key": "", "model": "m", "text_model": "t", "voice": "Puck"}}
+                "codex_cli": {"model": ""}, "antigravity_cli": {"model": ""},
+                "gemini_live": {"api_key": "", "model": "m", "text_model": "t", "voice": "Puck"}}
     items = await engines.all_engines(settings)
-    assert [i["id"] for i in items] == ["ollama", "openai_compatible", "claude_cli", "codex_cli", "gemini_live"]
+    assert [i["id"] for i in items] == ["ollama", "openai_compatible", "claude_cli", "codex_cli", "antigravity_cli",
+                                        "gemini_live"]
     by_id = {i["id"]: i for i in items}
     assert by_id["ollama"]["selected"] and by_id["ollama"]["status"]["code"] == "not_installed"
     assert by_id["openai_compatible"]["status"]["code"] == "not_configured"
     assert by_id["claude_cli"]["status"]["code"] == "not_installed"
     assert by_id["codex_cli"]["status"]["code"] == "not_installed"
+    assert by_id["antigravity_cli"]["status"]["code"] == "not_installed"
 
 
 async def test_ollama_voice_session_defaults_to_small_model():
@@ -439,3 +443,127 @@ def test_codex_connect_checks_login_then_sends_one_request(monkeypatch):
 
 async def _ready_status():
     return EngineStatus(code="ready", ready=True)
+
+
+AGY_ID = "5064716f-c4e2-4487-b19d-b2e897b75aed"
+
+
+def fake_agy(tmp_path, *, signed_in: bool, lines: list[dict], stderr: str = "", wait: int = 0):
+    """A stand-in `agy`: `models` exits 0 or 1, a run saves its arguments and stdin, then prints NDJSON events."""
+    fake = tmp_path / "agy"
+    out = "\n".join(json.dumps(x) for x in lines)
+    fake.write_text(f"""#!/bin/sh
+if [ "$1" = models ]; then {'echo "gemini-3.8-flash-low"; exit 0' if signed_in else 'echo "Please sign in" >&2; exit 1'}; fi
+echo "$@" > "{tmp_path}/args"
+pwd > "{tmp_path}/cwd"
+cat > "{tmp_path}/prompt"
+{f'echo "{stderr}" >&2' if stderr else ''}
+{f'sleep {wait}' if wait else ''}
+cat <<'JSONL'
+{out}
+JSONL
+""")
+    fake.chmod(0o755)
+    return str(fake)
+
+
+def agy_turn(text: str, cid: str = AGY_ID) -> list[dict]:
+    return [{"event": "init", "conversation_id": cid, "init": {"cwd": "/x", "tools": ["run_command"],
+                                                               "permission_mode": "request-review"}},
+            {"event": "step_update", "step_update": {"conversation_id": cid, "step_index": 0, "state": "DONE",
+                                                     "step_type": "user_input"}},
+            {"event": "step_update", "step_update": {"conversation_id": cid, "step_index": 1, "state": "DONE",
+                                                     "step_type": "agent_response", "text_delta": text}},
+            {"event": "result", "result": {"conversation_id": cid, "status": "SUCCESS", "response": text + "\n"}}]
+
+
+async def test_antigravity_status_needs_sign_in_then_a_real_answer(tmp_path):
+    """D87: not installed → not signed in (`agy models`) → unverified until Connect → ready."""
+    status = await antigravity_cli.AntigravityCLIEngine(binary=None).status()
+    assert status.code == "not_installed" and "install.sh" in status.hint_command
+    out = fake_agy(tmp_path, signed_in=False, lines=[])
+    status = await antigravity_cli.AntigravityCLIEngine(binary=out, verified=True).status()
+    assert status.code == "unauthorized" and status.hint_command == "agy"
+    antigravity_cli._signed_in_cache.clear()
+    out = fake_agy(tmp_path, signed_in=True, lines=[])
+    assert (await antigravity_cli.AntigravityCLIEngine(binary=out, verified=None).status()).code == "unverified"
+    assert (await antigravity_cli.AntigravityCLIEngine(binary=out, verified=True).status()).ready
+
+
+async def test_antigravity_runs_fenced_in_and_forgets_its_runs(tmp_path):
+    """D87: the prompt goes in on stdin (never on the command line), from an empty folder, in the sandbox, without
+    slash commands; the reply is the turn's response; Vukoli deletes its own run from Antigravity's history only."""
+    history = tmp_path / "agy-history"
+    mine, theirs = history / "conversations" / f"{AGY_ID}.db", history / "conversations" / "user-own.db"
+    (history / "brain" / AGY_ID).mkdir(parents=True)
+    mine.parent.mkdir(parents=True)
+    mine.write_text("x")
+    theirs.write_text("y")
+    out = fake_agy(tmp_path, signed_in=True, lines=agy_turn("Hi, I'm Mike."))
+    reply = await antigravity_cli.AntigravityCLIEngine(binary=out).complete(
+        [{"role": "system", "content": "You are Mike."}, {"role": "user", "content": "Say hi"}])
+    assert reply == "Hi, I'm Mike."
+    args = (tmp_path / "args").read_text().split()
+    assert "-p" not in args and "Say" not in args and "--dangerously-skip-permissions" not in args
+    for flag in ("--sandbox", "--disable-slash-commands"):
+        assert flag in args
+    assert args[args.index("--input-format") + 1] == "stream-json" and args[args.index("--effort") + 1] == "low"
+    workdir = (tmp_path / "cwd").read_text().strip()
+    assert "vukoli-agy-" in workdir and not Path(workdir).exists()        # an empty folder, removed afterwards
+    message = json.loads((tmp_path / "prompt").read_text())
+    content = message["message"]["content"]
+    assert message["event"] == "user" and content.startswith(antigravity_cli.NO_TOOLS)
+    assert "You are Mike." in content and content.rstrip().endswith("Say hi")
+    assert not mine.exists() and not (history / "brain" / AGY_ID).exists() and theirs.exists()
+
+
+async def test_antigravity_stops_a_run_that_reaches_for_a_tool(tmp_path):
+    """D87, fail closed: web search and subagents run without approval, so any tool step ends the run."""
+    for step in ({"step_type": "tool", "state": "ACTIVE", "tool_name": "search_web",
+                  "tool_info": {"name": "search_web", "parameters": {"query": "weather"}}},
+                 {"step_type": "tool", "state": "DONE", "subagent_info": {"subagents": [
+                     {"conversation_id": "8885725d-aa0f-4904-ae4f-deb6179bf64d"}]}}):
+        lines = agy_turn("It is sunny.")
+        lines.insert(2, {"event": "step_update", "step_update": {"conversation_id": AGY_ID, **step}})
+        out = fake_agy(tmp_path, signed_in=True, lines=lines)
+        with pytest.raises(EngineError) as err:
+            await antigravity_cli.AntigravityCLIEngine(binary=out).complete([{"role": "user", "content": "Say hi"}])
+        assert err.value.code == "engine_error" and "Vukoli stopped it" in err.value.message
+
+
+async def test_antigravity_signed_out_stops_at_once_and_forgets_the_sign_in(tmp_path):
+    """D87: signed out, print mode waits a minute for a sign-in code; Vukoli stops it at the first notice."""
+    from server import config
+    out = fake_agy(tmp_path, signed_in=True, lines=agy_turn("late"), wait=30,
+                   stderr="Waiting for authentication (timeout 60s)...")
+    config.update_settings({"antigravity_cli": {"verified": True}})
+    started = time.monotonic()
+    status = await antigravity_cli.AntigravityCLIEngine(binary=out).test()
+    assert time.monotonic() - started < 10
+    assert status.code == "unauthorized" and status.hint_command == "agy"
+    assert config.load_settings()["antigravity_cli"]["verified"] is False
+
+
+def test_antigravity_connect_checks_sign_in_then_sends_one_request(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server import config
+    from server.main import create_app
+    signed = iter([False, True])
+    sent = []
+
+    async def fake_test(self):
+        sent.append(1)
+        return EngineStatus(code="ready", ready=True, message="Antigravity answered.")
+    monkeypatch.setattr(antigravity_cli, "find_agy", lambda: "/bin/agy")
+    monkeypatch.setattr(antigravity_cli, "signed_in", lambda binary, fresh=False: next(signed))
+    monkeypatch.setattr(antigravity_cli.AntigravityCLIEngine, "test", fake_test)
+    monkeypatch.setattr(antigravity_cli.AntigravityCLIEngine, "status", lambda self: _ready_status())
+    same = {"Origin": "http://testserver"}
+    with TestClient(create_app()) as client:
+        client.post("/api/engines/antigravity_cli/connect", headers=same)
+        assert not sent and config.load_settings()["antigravity_cli"]["verified"] is False   # signed out: no request
+        r = client.post("/api/engines/antigravity_cli/connect", headers=same).json()
+        assert r["status"]["ready"] is True and config.load_settings()["antigravity_cli"]["verified"] is True
+        assert len(sent) == 1
+        client.post("/api/engines/antigravity_cli/disconnect", headers=same)
+        assert "antigravity_cli" in config.load_settings()["disconnected"]

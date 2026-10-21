@@ -233,6 +233,22 @@
       "failed": "Codex didn't answer: {message}",
       "signedIn": "Codex answered. It's connected."
     },
+    "antigravity": {
+      "name": "Antigravity CLI",
+      "tagline": "Uses the Antigravity CLI you already have, signed in with your Google account.",
+      "notFound": "Antigravity wasn't found on this computer.",
+      "install": "About Antigravity CLI",
+      "pick": "Your own Google account",
+      "connectHint": "Already installed? Press Connect. If not, install it with this command, then run agy and sign in with Google.",
+      "stillMissing": "Still can't find Antigravity. Install it, run agy in Terminal and sign in, then press Connect again.",
+      "unverified": "Antigravity is signed in.",
+      "connectNote": "Connect sends one short test request on your Google account to check that Antigravity answers. Antigravity gets no access to your files or commands, and Vukoli deletes its own chats from Antigravity's history.",
+      "checking": "Sending a test request to Antigravity. This can take up to a minute.",
+      "signedOut": "Antigravity isn't signed in.",
+      "signInHint": "Open a new Terminal window, run this, choose Google sign-in and finish in the browser. Then press Connect.",
+      "failed": "Antigravity didn't answer: {message}",
+      "signedIn": "Antigravity answered. It's connected."
+    },
     "gemini": {
       "name": "Gemini Live",
       "tagline": "Google's live voice model, with your own free API key.",

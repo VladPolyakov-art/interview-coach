@@ -1,6 +1,6 @@
 /* Types for the REST API and the session WebSocket protocol (app/server/PROTOCOL.md, data_version 1). */
 
-export type EngineId = "ollama" | "openai_compatible" | "claude_cli" | "codex_cli" | "gemini_live";
+export type EngineId = "ollama" | "openai_compatible" | "claude_cli" | "codex_cli" | "antigravity_cli" | "gemini_live";
 export type StatusCode =
   | "ready" | "unverified" | "not_installed" | "not_running" | "no_model" | "not_configured" | "unreachable"
   | "unauthorized" | "billing_required" | "disconnected" | "error";
@@ -80,6 +80,7 @@ export interface Settings {
   openai_compatible: { base_url: string; model: string; has_api_key: boolean };
   claude_cli: { model: string };
   codex_cli: { model: string };
+  antigravity_cli: { model: string };
   gemini_live: { model: string; text_model: string; voice: string; has_api_key: boolean };
   voice: string;
   kokoro_speed: number;
@@ -101,6 +102,7 @@ export interface SettingsPatch {
   openai_compatible?: Partial<{ base_url: string; api_key: string; model: string }>;
   claude_cli?: Partial<{ model: string }>;
   codex_cli?: Partial<{ model: string }>;
+  antigravity_cli?: Partial<{ model: string }>;
   gemini_live?: Partial<{ api_key: string; model: string; text_model: string; voice: string }>;
   voice?: string;
   kokoro_speed?: number;

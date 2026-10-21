@@ -51,6 +51,18 @@ export const setupReview: ReviewScreen = {
       note: "D86: как у Claude Code — «Connect» шлёт один короткий настоящий запрос с плана ChatGPT, Ready только если Codex ответил. Codex запускается без инструментов: без команд и файлов, без веба, приложений, плагинов, MCP и твоих настроек, в пустой временной папке, сессия не сохраняется.",
     }),
     state("engine-codex-ready", "1 · Codex подключён", "engineCodexReady", { mobile: false, note: "D86: Codex ответил на Connect — статус Ready, под строкой «Connected.» + «Disconnect», Continue включается. В настройках — «Codex answered. It's connected.» и условие: запросы идут с плана ChatGPT, правила OpenAI." }),
+    state("engine-no-antigravity", "1 · Antigravity не найден", "engineNoAntigravity", {
+      mobile: false,
+      note: "D87: шестой движок — Antigravity CLI (agy) на аккаунте Google. Не найден — команда установки с копированием и «Connect» (ищет уже установленный agy: PATH, Homebrew, ~/.local/bin). Логотип — знак Antigravity.",
+    }),
+    state("engine-antigravity-signed-out", "1 · Antigravity не вошёл", "engineAntigravitySignedOut", {
+      note: "D87: вход проверяется без запроса к модели (agy models — список моделей, ~1,5 с). Не вошёл — команда agy с копированием: новое окно Терминала, вход через Google в браузере, потом Connect.",
+    }),
+    state("engine-antigravity-connect", "1 · Antigravity вошёл, не проверен", "engineAntigravityConnect", {
+      mobile: false,
+      note: "D87: как у Codex — «Connect» шлёт один короткий настоящий запрос, Ready только если Antigravity ответил. Выключателя инструментов у agy нет, поэтому: пустая временная папка, песочница, без слэш-команд; в фоновом режиме он сам отказывает командам, файлам вне папки, браузеру и MCP, а веб-поиск или субагента Vukoli останавливает на первом шаге. Antigravity хранит каждый разговор — Vukoli удаляет свои по id.",
+    }),
+    state("engine-antigravity-ready", "1 · Antigravity подключён", "engineAntigravityReady", { mobile: false, note: "D87: Antigravity ответил на Connect — Ready, «Connected.» + «Disconnect», Continue включается. Условие: запросы идут с аккаунта Google и считаются в квоту Antigravity, правила Google." }),
     state("check-idle", "2 · Проверка — старт", "checkIdle", {
       dark: true,
       note: "Сверху выбор голоса Майка и ▶ образец. Справа от голоса — кнопка «Listen» (D82: с подписью, не значок). Ниже — микрофон: «Press the microphone and say something like “Hi Mike, can you hear me?”». Справа внизу — «I'll type instead», без проверки микрофона.",

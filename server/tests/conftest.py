@@ -16,11 +16,14 @@ def isolated_data(tmp_path, monkeypatch):
     monkeypatch.delenv("OLLAMA_URL", raising=False)
     monkeypatch.setenv("IC_PRELOAD", "0")                                  # no Whisper/Kokoro loading in tests
     from server import tts
-    from server.engines import claude_cli, codex_cli
+    from server.engines import antigravity_cli, claude_cli, codex_cli
     monkeypatch.setattr(tts, "_kokoro", None)
     # Never the real `claude` binary: Connect sends a real request on the user's plan (D85).
     monkeypatch.setattr(claude_cli, "find_claude", lambda: None)
     monkeypatch.setattr(codex_cli, "find_codex", lambda: None)            # nor `codex` (D86)
+    monkeypatch.setattr(antigravity_cli, "find_agy", lambda: None)        # nor `agy` (D87)
+    monkeypatch.setattr(antigravity_cli, "history_dir", lambda: tmp_path / "agy-history")
+    monkeypatch.setattr(antigravity_cli, "_signed_in_cache", {})
     yield tmp_path / "data"
 
 

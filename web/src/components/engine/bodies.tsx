@@ -207,9 +207,9 @@ export function OpenAiBody({ engine }: { engine: EngineInfo }) {
   );
 }
 
-/** Claude Code (D85) and Codex (D86): found isn't enough — Connect sends one short real request on the user's plan,
+/** Claude Code (D85), Codex (D86) and Antigravity (D87): found isn't enough — Connect sends one short real request on the user's plan,
  * and only an answer makes it Ready. Not signed in → the command to sign in; any other failure shows the CLI's own
- * message. Copy comes from engines.claude.* / engines.codex.*. */
+ * message. Copy comes from engines.claude.* / engines.codex.* / engines.antigravity.*. */
 function CliBody({ engine, login }: { engine: EngineInfo; login: string }) {
   const code = engine.status.code;
   const k = cliKey(engine.id);
@@ -263,6 +263,7 @@ function CliBody({ engine, login }: { engine: EngineInfo; login: string }) {
 
 export const ClaudeBody = ({ engine }: { engine: EngineInfo }) => <CliBody engine={engine} login="claude" />;
 export const CodexBody = ({ engine }: { engine: EngineInfo }) => <CliBody engine={engine} login="codex login" />;
+export const AntigravityBody = ({ engine }: { engine: EngineInfo }) => <CliBody engine={engine} login="agy" />;
 
 export function GeminiBody({ engine }: { engine: EngineInfo }) {
   const { settings, updateSettings, refreshEngines } = useApp();

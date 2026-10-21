@@ -34,6 +34,13 @@ const BASE: Record<EngineId, Omit<EngineInfo, "status" | "selected">> = {
     needs: [], terms_note: "Uses your own ChatGPT plan via the Codex CLI; check OpenAI's terms. Each request counts against your Codex limits.",
     privacy_note: "", setup_url: "https://github.com/openai/codex",
   },
+  antigravity_cli: {
+    id: "antigravity_cli", name: "Antigravity (your Antigravity CLI)", kind: "text", local: false,
+    cost: "Uses your own Google AI plan or free quota.",
+    data_line: "Your transcribed words go to Google through your Antigravity CLI. Speech is recognised on this computer.",
+    needs: [], terms_note: "Uses your own Google account via the Antigravity CLI; check Google's terms. Each request counts against your Antigravity quota.",
+    privacy_note: "", setup_url: "https://antigravity.google/docs/cli",
+  },
   gemini_live: {
     id: "gemini_live", name: "Gemini Live", kind: "live", local: false, cost: "Free tier with your own API key; limits apply.",
     data_line: "Your voice and words go to Google's Gemini API.", needs: [], terms_note: "",
@@ -78,6 +85,15 @@ const STATUS: Record<EngineId, Record<EngineState, EngineStatus>> = {
     unverified: status("unverified", "Codex is signed in. Connect checks that it answers."),
     signed_out: status("unauthorized", "Codex isn't signed in.", { hint_command: "codex login" }),
   },
+  antigravity_cli: {
+    ready: status("ready", "Antigravity is signed in."),
+    not_installed: status("not_installed", "The Antigravity CLI was not found on this computer.",
+      { hint_command: "curl -fsSL https://antigravity.google/cli/install.sh | bash" }),
+    not_running: status("not_installed"), no_model: status("not_installed"), not_configured: status("not_installed"),
+    disconnected: status("disconnected", "Disconnected in Vukoli."),
+    unverified: status("unverified", "Antigravity is signed in. Connect checks that it answers."),
+    signed_out: status("unauthorized", "Antigravity isn't signed in.", { hint_command: "agy" }),
+  },
   gemini_live: {
     ready: status("ready", "Gemini key works.", { model: "gemini-live" }),
     not_installed: status("not_configured"), not_running: status("not_configured"), no_model: status("not_configured"),
@@ -86,9 +102,9 @@ const STATUS: Record<EngineId, Record<EngineState, EngineStatus>> = {
   },
 };
 
-/** The five engines with a state each (default: only Ollama ready, the others not set up). */
+/** The six engines with a state each (default: only Ollama ready, the others not set up). */
 export function makeEngines(states: Partial<Record<EngineId, EngineState>> = {}, selected: EngineId = "ollama"): EnginesResponse {
-  const order: EngineId[] = ["ollama", "openai_compatible", "claude_cli", "codex_cli", "gemini_live"];
+  const order: EngineId[] = ["ollama", "openai_compatible", "claude_cli", "codex_cli", "antigravity_cli", "gemini_live"];
   return {
     selected,
     engines: order.map((id) => ({ ...BASE[id], status: STATUS[id][states[id] ?? (id === "ollama" ? "ready" : "not_configured")], selected: id === selected })),
@@ -104,6 +120,7 @@ export const SETTINGS: Settings = {
   openai_compatible: { base_url: "", model: "", has_api_key: false },
   claude_cli: { model: "" },
   codex_cli: { model: "" },
+  antigravity_cli: { model: "" },
   gemini_live: { model: "", text_model: "", voice: "", has_api_key: false },
   voice: "", kokoro_speed: 1, stt: { backend: "auto", model: "" }, answer_suggester: true, telemetry_opt_in: false,
   obsidian_dir: "", layer_order: "content-first", level: "B2", strictness: 2, questions_per_session: 5,
@@ -142,7 +159,7 @@ function installStub() {
     if (/\/api\/engines\/[a-z_]+\/disconnect$/.test(url)) return json({ status: status("disconnected", "") });
     // "Connect" in stories: still not found, so the story shows the follow-up hint.
     const connect = /\/api\/engines\/([a-z_]+)\/connect$/.exec(url);
-    if (connect) return json({ started: false, status: status(connect[1] === "claude_cli" || connect[1] === "codex_cli" ? "not_installed" : "not_running", "") });
+    if (connect) return json({ started: false, status: status(connect[1] === "claude_cli" || connect[1] === "codex_cli" || connect[1] === "antigravity_cli" ? "not_installed" : "not_running", "") });
     if (/\/api\/engines\/[a-z_]+\/test$/.test(url)) return json({ ok: true, latency_ms: 840, status: STATUS.ollama.ready });
     // Settings sections (D76 review frames): fictional voices, speech and data, no server.
     if (url.endsWith("/api/voices")) return json({ default: "am_eric", tts: { available: true }, voices: [

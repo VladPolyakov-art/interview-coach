@@ -77,6 +77,22 @@ export const SETUP_SCENES = {
     engines: makeEngines({ ollama: "no_model", codex_cli: "ready" }), settings: SETTINGS,
     render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="codex_cli" /></SetupFrame>,
   },
+  engineNoAntigravity: {
+    engines: makeEngines({ ollama: "no_model", antigravity_cli: "not_installed" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="antigravity_cli" /></SetupFrame>,
+  },
+  engineAntigravitySignedOut: {
+    engines: makeEngines({ ollama: "no_model", antigravity_cli: "signed_out" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="antigravity_cli" /></SetupFrame>,
+  },
+  engineAntigravityConnect: {
+    engines: makeEngines({ ollama: "no_model", antigravity_cli: "unverified" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="antigravity_cli" /></SetupFrame>,
+  },
+  engineAntigravityReady: {
+    engines: makeEngines({ ollama: "no_model", antigravity_cli: "ready" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="antigravity_cli" /></SetupFrame>,
+  },
   engineNotRunning: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
   checkIdle: { render: check({ phase: "idle" }) },
   checkListening: { render: check({ phase: "listening" }, 0.55) },
