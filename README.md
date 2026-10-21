@@ -14,6 +14,30 @@ There is also an English conversation mode.
 
 License: AGPL-3.0-or-later (see `LICENSE`).
 
+## What's free
+
+Everything you need to practise is free forever, with no account and no key. The free core is never a demo.
+
+| Feature | Free forever | Premium (coming later) |
+|---|---|---|
+| Interview practice with Mike | ✓ | ✓ |
+| English practice | ✓ | ✓ |
+| Prep from your CV and the job description | ✓ | ✓ |
+| Question bank | ✓ | ✓ |
+| Debrief after every session | ✓ | ✓ |
+| Mistake memory | ✓ | ✓ |
+| Weak-spot drill | ✓ | ✓ |
+| Zero setup | Set up a local engine once | ✓ |
+| Best live voice | Voice on this computer | ✓ |
+| Trends across sessions | — | ✓ |
+| History on all your devices | This computer only | ✓ |
+
+Premium isn't available yet and has no price. When it comes, it adds to the free core and takes nothing away.
+
+**Practice only.** This app is for rehearsal, never for help during a real interview.
+
+<!-- Keep this table identical to Settings → About and what's free (web/src/i18n/en.json, settings.about; US-30). -->
+
 ## Quick start (development)
 
 Requirements: Python 3.11+, and [Ollama](https://ollama.com/download) for the default local engine.
