@@ -133,7 +133,8 @@ kbd {
 /* Utility classes. Entrances use fill-mode "backwards" so nothing is left transformed afterwards
  * (a leftover transform would break position: sticky and the focus ring offset). */
 .motion-rise { animation: rise-in var(--duration-slow) var(--ease-enter) backwards; }
-.motion-page-in { animation: rise-in var(--duration-slow) var(--ease-enter) var(--duration-stagger) backwards; }
+/* D59: a page change is a short fade only (no rise, no delay): moving between pages should feel instant. */
+.motion-page-in { animation: fade-in var(--duration-fast) var(--ease-enter) backwards; }
 /* A page that runs its own build-up (Home) does not also rise as a whole. */
 .motion-page-in:has(.motion-stagger) { animation: none; }
 .motion-rise-base { animation: rise-in var(--duration-base) var(--ease-enter) backwards; }

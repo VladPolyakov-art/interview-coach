@@ -49,7 +49,7 @@ const DOWN = { name: "Ollama · qwen3:4b", status: "notReady" as const };
 export const shellReview: ReviewScreen = {
   id: "sidebar",
   title: "Sidebar",
-  note: "D57: меню как у Claude (claude.ai). Сверху — знак и название, справа кнопка «Close sidebar»; ниже «New practice» (круглый плюс); «Recents» — чаты в одну строку, без дат, у английских тихое «EN»; снизу строка аккаунта открывает меню вверх (Settings, Appearance, Privacy and data, Help & what's free). От 1024 сайдбар сворачивается в узкую полосу значков (запоминается), ниже 1024 он в выезжающей панели. Строки — заливка без линий.",
+  note: "D57: меню как у Claude (claude.ai). Сверху — знак и название, справа кнопка «Close sidebar»; ниже «New practice» (серый круг с плюсом, как у Claude, D59); «Recents» — чаты в одну строку, без дат, у английских тихое «EN»; снизу строка аккаунта «You · Local» с шевроном открывает меню вверх (Settings, Appearance, Privacy and data, Help & what's free). От 1024 сайдбар сворачивается в узкую полосу значков (запоминается), ниже 1024 он в выезжающей панели. Строки — заливка без линий. D59: сайдбар на шаг светлее рабочей области (тёмная тема: #141414 и #0A0A0A); чаты появляются без анимации.",
   states: [
     state("expanded", "Развёрнут", () => <Scene />, {
       dark: true,
@@ -61,7 +61,7 @@ export const shellReview: ReviewScreen = {
     }),
     state("account-menu", "Меню аккаунта", () => <Scene initialMenu="account" />, {
       dark: true,
-      note: "Вся строка «You · Saved on this computer» — одна кнопка, меню открывается вверх: имя, Settings, Appearance, Privacy and data, Help & what's free (D58). Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
+      note: "Вся строка «You · Local» с шевроном (D59) — одна кнопка, меню открывается вверх (шеврон переворачивается), в шапке меню — «Saved on this computer»: имя, Settings, Appearance, Privacy and data, Help & what's free (D58). Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
     }),
     state("about", "Help & what's free → Settings · About", () => (
       <Scene at="/settings/about" current="settings" currentSessionId={undefined}

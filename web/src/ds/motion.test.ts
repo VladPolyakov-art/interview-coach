@@ -152,7 +152,7 @@ describe("small rules", () => {
   it("Home build-up plays on the first visit and after a session only", () => {
     expect(shouldBuildUp({ homeSeen: false, returnFromSession: false })).toBe(true);
     expect(shouldBuildUp({ homeSeen: true, returnFromSession: false })).toBe(false);
-    expect(shouldBuildUp({ homeSeen: true, returnFromSession: true })).toBe(true);
+    expect(shouldBuildUp({ homeSeen: true, returnFromSession: true })).toBe(false); // D59
   });
   it("mic level smoothing attacks fast, releases slowly, and clamps", () => {
     const up = smoothLevel(0, 1);

@@ -42,7 +42,7 @@ export const engineReview: ReviewScreen = {
   note: "D54: сначала выбор, потом подключение. Было: четыре движка развёрнуты целиком (около 2500 px). Стало: A — короткий список из четырёх вариантов с одним словом статуса; B — только подключение выбранного; C — в Settings один компактный блок «движок в работе». Выбор сам по себе движок не переключает.",
   states: [
     state("choose-none", "A · Setup, ничего не готово", () => <SetupScene engines={NONE_READY} props={{ mode: "setup" }} />, {
-      note: "Заголовок «Choose how Mike runs» и одна строка. Четыре варианта (радио): значок, название, одна простая строка, справа слово «Needs setup» / «Ready». У Ollama — «Recommended» и он выбран заранее. Кнопка Continue ведёт к подключению.",
+      note: "Заголовок «Choose how Mike runs» и одна строка. Четыре варианта без радио-кружков (D59): значок, название, одна простая строка, под ней «Needs setup» / «Ready»; у выбранного — обводка и метка «Selected» справа. У Ollama — «Recommended» и он выбран заранее. Кнопка Continue ведёт к подключению.",
     }),
     state("choose-ready", "A · Setup, Ollama готов", () => <SetupScene engines={makeEngines()} props={{ mode: "setup" }} />, {
       dark: true,

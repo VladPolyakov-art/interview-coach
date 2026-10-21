@@ -9,7 +9,7 @@
  * a warning icon (only when not ready) and the avatar, each with a Tooltip. The rail is set off from the content by its fill, no line.
  * <main> is the scroll container and the `page` container for screens.
  * `AppShellView` is pure (every state by props: review frames, stories); `AppShell` is the live container. */
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode, type Ref } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Badge, Drawer, Icon, IconButton, Menu, NavRow, Skeleton, Tooltip, ToastProvider, useToast } from "../ds";
 import type { LinkComponent, MenuEntry } from "../ds";
@@ -33,8 +33,6 @@ export type RecentState =
 export type EngineStatus = "checking" | "ready" | "notReady";
 export interface ShellEngine { name?: string; status: EngineStatus }
 
-/** Rows that play the enter motion on the first load (the rest appear at once: a long list must not stagger for seconds). */
-const ANIMATED_ROWS = 12;
 /** Shell width from which the full rail shows (a container width, docs/frontend.md): the drawer closes above it. */
 const SHELL_FULL_MIN = 1024;
 
@@ -80,14 +78,12 @@ export interface AppShellViewProps {
   onTrashSession?: (id: string) => void;
   mainRef?: Ref<HTMLElement>;
   rootRef?: Ref<HTMLDivElement>;
-  /** Enter motion for Recents rows (first load only). */
-  animateRecent?: boolean;
   children: ReactNode;
 }
 
 export function AppShellView({
   current, currentSessionId, recent, engine, drawerOpen, onDrawerOpenChange, collapsed, onCollapsedChange, initialMenu,
-  onTrashSession, mainRef, rootRef, animateRecent, children,
+  onTrashSession, mainRef, rootRef, children,
 }: AppShellViewProps) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = drawerOpen ?? ownOpen;
@@ -118,7 +114,6 @@ export function AppShellView({
             {...common}
             collapsed={isCollapsed}
             onToggle={() => setCollapsed(!isCollapsed)}
-            animateRecent={animateRecent}
             initialMenu={initialMenu}
           />
         </aside>
@@ -172,13 +167,12 @@ interface RailProps {
   drawer?: boolean;
   onToggle: () => void;
   onNavigate?: () => void;
-  animateRecent?: boolean;
   initialMenu?: InitialMenu;
   onTrashSession?: (id: string) => void;
 }
 
 /** The sidebar, expanded or collapsed. The body keeps a fixed width per state, so the rail's width animation only reveals it. */
-function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, onToggle, onNavigate, animateRecent, initialMenu, onTrashSession }: RailProps) {
+function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, onToggle, onNavigate, initialMenu, onTrashSession }: RailProps) {
   const toggleLabel = drawer || !collapsed ? t("rail.toggleClose") : t("rail.toggleOpen");
   const toggle = <IconButton icon="sidebar" size={collapsed ? "md" : "sm"} label={toggleLabel} onClick={onToggle} title={undefined} data-review-id="AppShell/toggle" />;
   return (
@@ -196,7 +190,6 @@ function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, on
         <Recents
           recent={recent}
           currentSessionId={currentSessionId}
-          animateRecent={animateRecent}
           openRowMenu={initialMenu === "row"}
           onTrashSession={onTrashSession}
           onNavigate={onNavigate}
@@ -227,7 +220,7 @@ function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, on
   );
 }
 
-/** "New practice": a round filled plus, then the label, like Claude's "New chat". Collapsed: the circle alone. */
+/** "New practice": a grey circle with the plus, then the label, like Claude's "New chat" (D59: no white fill). Collapsed: the circle alone. */
 function NewPractice({ current, collapsed }: { current: boolean; collapsed: boolean }) {
   const link = (
     <Link to="/" className={s.newRow} aria-current={current ? "page" : undefined} data-review-id="AppShell/new">
@@ -238,8 +231,8 @@ function NewPractice({ current, collapsed }: { current: boolean; collapsed: bool
   return collapsed ? <Tooltip content={t("nav.newPractice")} placement="bottom-start">{link}</Tooltip> : link;
 }
 
-function Recents({ recent, currentSessionId, animateRecent, openRowMenu, onTrashSession, onNavigate }: {
-  recent: RecentState; currentSessionId?: string; animateRecent?: boolean; openRowMenu: boolean;
+function Recents({ recent, currentSessionId, openRowMenu, onTrashSession, onNavigate }: {
+  recent: RecentState; currentSessionId?: string; openRowMenu: boolean;
   onTrashSession?: (id: string) => void; onNavigate?: () => void;
 }) {
   const recentId = useId();
@@ -258,8 +251,6 @@ function Recents({ recent, currentSessionId, animateRecent, openRowMenu, onTrash
               key={item.id}
               item={item}
               current={item.id === currentSessionId}
-              animate={Boolean(animateRecent) && i < ANIMATED_ROWS}
-              index={i}
               menuOpen={openRowMenu && i === 0}
               onTrash={onTrashSession}
               onNavigate={onNavigate}
@@ -272,8 +263,8 @@ function Recents({ recent, currentSessionId, animateRecent, openRowMenu, onTrash
 }
 
 /** One chat: a link row (title, quiet EN) and, on hover or focus, a "…" menu with the actions the app already has. */
-function ChatRow({ item, current, animate, index, menuOpen, onTrash, onNavigate }: {
-  item: RecentSession; current: boolean; animate: boolean; index: number; menuOpen: boolean;
+function ChatRow({ item, current, menuOpen, onTrash, onNavigate }: {
+  item: RecentSession; current: boolean; menuOpen: boolean;
   onTrash?: (id: string) => void; onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
@@ -284,8 +275,7 @@ function ChatRow({ item, current, animate, index, menuOpen, onTrash, onNavigate 
   const label = t("rail.rowActions", { title: item.title });
   return (
     <li
-      className={`${s.chatItem} ${animate ? "motion-row" : ""}`}
-      style={animate ? ({ animationDelay: `calc(var(--duration-stagger) / 2 * ${index})` } as CSSProperties) : undefined}
+      className={s.chatItem}
     >
       <NavRow
         href={`/sessions/${encodeURIComponent(item.id)}`}
@@ -307,7 +297,8 @@ function ChatRow({ item, current, animate, index, menuOpen, onTrash, onNavigate 
   );
 }
 
-/** The account row (avatar, "You", "Saved on this computer"): one button that opens a menu upward. Collapsed: the avatar alone. */
+/** The account row (avatar, "You" over "Local", a chevron; D59): one button that opens a menu upward, whose header still says
+ * "Saved on this computer". Collapsed: the avatar alone. */
 function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; defaultOpen: boolean; onNavigate?: () => void }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(defaultOpen);
@@ -333,10 +324,14 @@ function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; d
           <button {...p} type="button" className={s.account} aria-label={collapsed ? `${t("rail.you")}. ${t("rail.accountMenu")}` : undefined} data-review-id="AppShell/accountButton">
             <span className={s.avatar}><Icon name="user" size="sm" /></span>
             {collapsed ? null : (
-              <span className={s.accountText}>
-                <span className={s.accountName}>{t("rail.you")}</span>
-                <span className={s.accountSub}>{t("rail.storage")}</span>
-              </span>
+              <>
+                <span className={s.accountText}>
+                  <span className={s.accountName}>{t("rail.you")}</span>
+                  <span className={s.accountSub}>{t("rail.local")}</span>
+                </span>
+                {/* D59: the chevron says the row opens a menu (up while closed, since the menu opens upward). */}
+                <span className={s.accountChevron} aria-hidden="true"><Icon name="chevronDown" size="sm" /></span>
+              </>
             )}
           </button>
         );
@@ -384,7 +379,6 @@ function LiveShell({ children }: { children: ReactNode }) {
   const toast = useToast();
   const engine = useEngine();
   const [recent, setRecent] = useState<RecentState>({ status: "loading" });
-  const [animateRecent, setAnimateRecent] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useRailCollapsed();
   const mainRef = useRef<HTMLElement>(null);
@@ -407,12 +401,6 @@ function LiveShell({ children }: { children: ReactNode }) {
     void loadRecent();
   }, [location.pathname, loadRecent]);
 
-  // Row enter motion only on the first load (docs/motion.md 3.7): switched off once the rows have played.
-  useEffect(() => {
-    if (recent.status !== "ready" || !animateRecent) return;
-    const id = window.setTimeout(() => setAnimateRecent(false), 1000);
-    return () => window.clearTimeout(id);
-  }, [recent.status, animateRecent]);
 
   // A new page starts at the top (<main> is the scroll container).
   const page = pageKey(location.pathname);
@@ -461,7 +449,6 @@ function LiveShell({ children }: { children: ReactNode }) {
       onTrashSession={(id) => { void trashSession(id); }}
       mainRef={mainRef}
       rootRef={rootRef}
-      animateRecent={animateRecent}
     >
       {children}
     </AppShellView>

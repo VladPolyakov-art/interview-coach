@@ -14,20 +14,8 @@
 .presets { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .result { font-size: var(--text-sm); }
 
-/* A: option rows. One radio per engine: [mark] [icon] name + line … status word. */
-.option { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-3); row-gap: var(--space-1); }
-.radio {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  border-radius: var(--radius-pill);
-  box-shadow: inset 0 0 0 var(--border-width) var(--color-border-control);
-  color: var(--color-text-on-checked);
-}
-.radioOn { background: var(--color-checked); box-shadow: none; }
+/* A: option rows (D59: no radio mark): [icon] name + line + status … "Selected" on the chosen row. */
+.option { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-3); row-gap: var(--space-1); }
 .optIcon {
   flex: none;
   display: inline-flex;
@@ -42,11 +30,12 @@
 .optText { min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .optName { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-md); font-weight: var(--weight-medium); }
 .optLine { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.selectedMark { display: inline-flex; flex: none; }
 .status { flex: none; display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); color: var(--color-text-secondary); white-space: nowrap; }
 .statusReady { color: var(--color-text-success); }
 @container (max-width: 479px) {
-  .option { grid-template-columns: auto auto minmax(0, 1fr); }
-  .status { grid-column: 3; justify-self: start; }
+  .option { grid-template-columns: auto minmax(0, 1fr); }
+  .selectedMark { grid-column: 2; justify-self: start; }
 }
 
 /* B and C: one engine card. */

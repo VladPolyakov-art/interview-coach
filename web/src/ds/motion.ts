@@ -185,7 +185,8 @@ export function useFreshOnce(registry: Set<string>, key: string): boolean {
   return fresh;
 }
 
-/** App-wide motion memory: the Home build-up plays on the first visit and after a session, not on every visit. */
+/** App-wide motion memory: the Home build-up plays on the first visit only (D59: less motion between pages; it no longer
+ * replays after a session). `returnFromSession` stays for callers that track it. */
 export const motionMemory = {
   homeSeen: false,
   returnFromSession: false,
@@ -193,7 +194,7 @@ export const motionMemory = {
 
 /** Should the Home build-up play now? Pure, so the rule is testable. */
 export function shouldBuildUp(memory: { homeSeen: boolean; returnFromSession: boolean }): boolean {
-  return !memory.homeSeen || memory.returnFromSession;
+  return !memory.homeSeen;
 }
 
 /** Visual smoothing for the live mic level: fast attack, slower release (the disc never flickers). */

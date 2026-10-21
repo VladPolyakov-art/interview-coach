@@ -65,7 +65,8 @@ export function StartScreen(props: StartScreenProps) {
       label: t(typed ? "chat.quick.textButton" : "chat.quick.voiceButton"),
       title: quick.detail || undefined,
       icon: typed ? "keyboard" : "mic",
-      variant: "action",
+      // D59: no white fill under the mic: a grey chip, so the icon reads clearly in both themes.
+      variant: "quiet",
       disabled: props.loading || !props.engineReady,
       busy: props.starting,
       onSend: props.onQuickStart,

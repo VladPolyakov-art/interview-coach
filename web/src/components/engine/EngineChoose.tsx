@@ -1,4 +1,5 @@
-/* Step A: a short list of options, one radio per engine. Choosing alone does not switch the engine (D54). */
+/* Step A: a short list of options (a radio group of rows). D59: no radio mark: the chosen row is outlined and says
+ * "Selected" on the right; the status word sits under the name. Choosing alone does not switch the engine (D54). */
 import { EngineLogo } from "./EngineLogo";
 import { Badge, Button, Icon, SelectableCard, SelectableCardGroup } from "../../ds";
 import { t } from "../../i18n";
@@ -27,7 +28,6 @@ export function EngineChoose({ engines, value, onChange, mode, onNext, onCancel 
           const on = e.id === value;
           return (
             <SelectableCard key={e.id} role="radio" check={false} padding="sm" selected={on} onSelect={() => onChange(e.id)} className={s.option}>
-              <span className={`${s.radio} ${on ? s.radioOn : ""}`} aria-hidden="true">{on ? <Icon name="check" size="sm" /> : null}</span>
               <span className={s.optIcon}><EngineLogo id={e.id} /></span>
               <span className={s.optText}>
                 <span className={s.optName}>
@@ -35,11 +35,12 @@ export function EngineChoose({ engines, value, onChange, mode, onNext, onCancel 
                   {e.id === RECOMMENDED ? <Badge>{t("engines.recommended")}</Badge> : null}
                 </span>
                 <span className={s.optLine}>{engineLine(e.id)}</span>
+                <span className={`${s.status} ${e.status.ready ? s.statusReady : ""}`}>
+                  {e.status.ready ? <Icon name="check" size="sm" /> : null}
+                  {engineStatusWord(e)}
+                </span>
               </span>
-              <span className={`${s.status} ${e.status.ready ? s.statusReady : ""}`}>
-                {e.status.ready ? <Icon name="check" size="sm" /> : null}
-                {engineStatusWord(e)}
-              </span>
+              {on ? <span className={s.selectedMark}><Badge tone="outline" icon="check">{t("engines.flow.selected")}</Badge></span> : null}
             </SelectableCard>
           );
         })}

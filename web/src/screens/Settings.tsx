@@ -35,8 +35,6 @@ export function SettingsScreen() {
 }
 
 function SettingsLayout({ id }: { id: SectionId }) {
-  // Switching sections swaps the content with a short rise; the first section arrives with the page itself.
-  const firstId = useRef(id);
   return (
     <Page title={t("settings.title")}>
       <div className={s.layout}>
@@ -51,7 +49,7 @@ function SettingsLayout({ id }: { id: SectionId }) {
             ))}
           </ul>
         </nav>
-        <div key={id} className={`${s.content} ${id !== firstId.current ? "motion-rise-base" : ""}`}>
+        <div key={id} className={s.content}>
           {id === "engine" ? <EnginePanel mode="settings" /> : null}
           {id === "voice" ? <VoiceSection /> : null}
           {id === "practice" ? <PracticeSection /> : null}

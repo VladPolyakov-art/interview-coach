@@ -107,11 +107,11 @@
   width: calc(var(--icon-lg) + var(--space-1));
   height: calc(var(--icon-lg) + var(--space-1));
   border-radius: var(--radius-pill);
-  background: var(--color-action);
-  color: var(--color-text-on-action);
+  background: var(--color-surface-chip);
+  color: var(--color-text-primary);
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
-.newRow:hover .plus { background: var(--color-action-hover); }
+.newRow:hover .plus { background: var(--color-surface-chip-hover); }
 .newLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .railBody[data-collapsed] .newRow { justify-content: center; width: var(--control-h-md); height: var(--control-h-md); padding: 0; }
 
@@ -220,7 +220,15 @@
   background: var(--color-selected);
   color: var(--color-text-secondary);
 }
-.accountText { display: flex; flex-direction: column; gap: var(--space-0); min-width: 0; }
+.accountText { display: flex; flex: 1 1 auto; flex-direction: column; gap: var(--space-0); min-width: 0; }
+.accountChevron {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-text-tertiary);
+  transform: rotate(180deg);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.account[aria-expanded="true"] .accountChevron { transform: none; }
 .accountName { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .accountSub { color: var(--color-text-tertiary); font-size: var(--text-sm); overflow-wrap: anywhere; }
 /* The menu's header: the same two lines. */

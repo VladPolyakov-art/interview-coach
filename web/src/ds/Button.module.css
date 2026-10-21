@@ -100,8 +100,8 @@
 .iconButton.outlined:not(:disabled):hover { background: var(--color-surface-chip-hover); }
 .iconButton:disabled { opacity: 0.5; cursor: not-allowed; }
 .iconButton.sm { width: var(--control-h-sm); height: var(--control-h-sm); min-height: 0; padding: 0; }
-/* D51: `outlined` keeps its name for the API but has no stroke: a chip fill. */
-.iconButton.outlined { background: var(--color-surface-chip); }
+/* D51: `outlined` keeps its name for the API but has no stroke: a chip fill. D59: round, like the send button. */
+.iconButton.outlined { background: var(--color-surface-chip); border-radius: var(--radius-pill); }
 /* Pressed = selected fill + the "on" icon variant supplied by the caller (e.g. micOff) + aria-pressed. */
 .iconButton[aria-pressed="true"] { background: var(--color-selected); color: var(--color-text-primary); }
 /* Pressed + hover: the selected fill one step over, the icon colour unchanged. */

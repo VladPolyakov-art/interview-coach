@@ -62,7 +62,8 @@
     "rowActions": "Actions for {title}",
     "rowOpen": "Open",
     "engineWarning": "AI engine",
-    "help": "Help & what's free"
+    "help": "Help & what's free",
+    "local": "Local"
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -202,7 +203,8 @@
       "change": "Change engine",
       "models": "Models",
       "costData": "Cost and your data",
-      "finish": "Finish setup"
+      "finish": "Finish setup",
+      "selected": "Selected"
     }
   },
   "setup": {

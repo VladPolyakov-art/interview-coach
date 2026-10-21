@@ -23,6 +23,7 @@
   --color-gray-900: #1C1C1C;
   --color-gray-950: #141414;
   --color-gray-975: #0E0E0E;
+  --color-gray-990: #0A0A0A;
   --color-blue-50: #EDF3FF;
   --color-blue-100: #DBE7FF;
   --color-blue-200: #B8D1FF;
@@ -160,7 +161,7 @@
   --color-presence-soft: var(--color-blue-400);
   --color-layer-session-text: var(--color-gray-950);
   --color-layer-session-rule: var(--color-gray-200);
-  --color-layer-content-tint: var(--color-blue-50);
+  --color-layer-content-tint: var(--color-gray-50);
   --color-layer-language-tint: var(--color-gray-50);
   --color-layer-delivery-tint: var(--color-gray-100);
   --color-mark-fix: var(--color-gray-100);
@@ -179,8 +180,8 @@
   --shadow-overlay: var(--elevation-overlay-light);
 }
 [data-theme="dark"] {
-  --color-canvas: var(--color-gray-950);
-  --color-sidebar: var(--color-gray-975);
+  --color-canvas: var(--color-gray-990);
+  --color-sidebar: var(--color-gray-950);
   --color-raised: var(--color-gray-900);
   --color-subtle: var(--color-gray-850);
   --color-hover: var(--color-gray-850);
@@ -212,7 +213,7 @@
   --color-presence-soft: var(--color-blue-400);
   --color-layer-session-text: var(--color-gray-100);
   --color-layer-session-rule: var(--color-gray-750);
-  --color-layer-content-tint: var(--color-blue-950);
+  --color-layer-content-tint: var(--color-gray-850);
   --color-layer-language-tint: var(--color-gray-850);
   --color-layer-delivery-tint: var(--color-gray-800);
   --color-mark-fix: var(--color-gray-800);
@@ -232,8 +233,8 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-canvas: var(--color-gray-950);
-    --color-sidebar: var(--color-gray-975);
+    --color-canvas: var(--color-gray-990);
+    --color-sidebar: var(--color-gray-950);
     --color-raised: var(--color-gray-900);
     --color-subtle: var(--color-gray-850);
     --color-hover: var(--color-gray-850);
@@ -265,7 +266,7 @@
     --color-presence-soft: var(--color-blue-400);
     --color-layer-session-text: var(--color-gray-100);
     --color-layer-session-rule: var(--color-gray-750);
-    --color-layer-content-tint: var(--color-blue-950);
+    --color-layer-content-tint: var(--color-gray-850);
     --color-layer-language-tint: var(--color-gray-850);
     --color-layer-delivery-tint: var(--color-gray-800);
     --color-mark-fix: var(--color-gray-800);
