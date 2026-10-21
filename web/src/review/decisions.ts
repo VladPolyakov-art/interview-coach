@@ -61,6 +61,7 @@ export const DECISIONS: Decision[] = [
   { id: "session-d64-input", screen: "Session", question: "D64: голос ↔ текст в одной сессии. В текстовом режиме микрофон в островке теперь активен («Switch to voice», клавиша T): поле ввода закрывается и включается микрофон; обратно — клавиатура («Type instead», T). Сессия, начатая текстом, тоже переключается: сервер подключает распознавание речи на лету. 🟡 Майк в такой сессии продолжает молчать (говорит, только если сессия начиналась голосом).", chosen: "так" },
   { id: "session-d64-composer", screen: "Session", question: "D64: текст в поле «Type your answer» начинается дальше от левого края — 20px от скругления вместо 12.", chosen: "так" },
   { id: "session-d66-michelp", screen: "Session", question: "D66: окно «Mike can't hear you» закрывается — крестик в углу, Esc; «Use text mode» и «Try again» теперь работают и закрывают окно (раньше в живом приложении кнопки ничего не делали).", chosen: "так" },
+  { id: "session-d67-focus", screen: "Session", question: "D67: обводка фокуса серая, а не синяя (по всему приложению); у микрофона нет кольца — синее свечение внутри круга снизу, растёт с голосом.", chosen: "так" },
   { id: "session-o8", screen: "Session", question: "Подсказчик ответа выключен по умолчанию", chosen: "да" },
   { id: "session-o9", screen: "Session", question: "Разговорная практика заканчивается только кнопкой «End practice»", chosen: "да" },
   { id: "debrief-o2", screen: "Debrief", question: "Время начала каждого вопроса в разборе (нужно сохранять при записи)", chosen: "да" },

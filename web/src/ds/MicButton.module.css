@@ -1,5 +1,4 @@
-/* The ring sits outside the button face, so the icon is always on a raised surface (contrast stays the
- * face's, whatever the ring does). --mic is written by the rAF loop in MicButton.tsx (or by `level`). */
+/* --mic is written by the rAF loop in MicButton.tsx (or by `level`); the glow lives inside the face (D67). */
 .mic {
   --mic: 0;
   position: relative;
@@ -16,21 +15,9 @@
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-standard);
 }
-/* Thin live ring (session.md §7.3): 2px --color-mic-live at --space-1 outside the face, same ring language as
- * the v1 orb's listening ring (retired in D49). Opacity .4 → 1 and scale 1 → 1.15 follow the level, 120ms linear (v1 D8). */
-.ring {
-  position: absolute;
-  inset: calc(-1 * var(--space-1));
-  border: var(--border-width-strong) solid var(--color-mic-live);
-  border-radius: var(--radius-pill);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity calc(var(--duration-stagger) * 1.5) linear, transform calc(var(--duration-stagger) * 1.5) linear;
-}
-.live .ring {
-  opacity: calc(0.4 + var(--mic) * 0.6);
-  transform: scale(calc(1 + var(--mic) * 0.15));
-}
+/* D67: no ring around the button — the live state is a soft blue glow inside the circle, rising from the bottom with
+ * the voice level (like the v1 prototype's mic, there green; owner: blue). Opacity .35 → 1, lift and scale follow
+ * --mic, 120ms linear. The icon sits above the glow, on the face's own fill. */
 .face {
   position: relative;
   display: inline-grid;
@@ -40,8 +27,31 @@
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-surface-chip);
+  overflow: hidden;
+  isolation: isolate;
   transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
 }
+.face > svg { position: relative; z-index: 1; }
+.face::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -46%;
+  width: 120%;
+  height: 80%;
+  border-radius: var(--radius-pill);
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--color-mic-live) 85%, transparent),
+    color-mix(in srgb, var(--color-mic-live) 35%, transparent) 55%,
+    transparent);
+  filter: blur(6px);
+  opacity: 0;
+  transform: translateX(-50%) translateY(calc(var(--mic) * -14%)) scale(calc(0.8 + var(--mic) * 0.35));
+  transition: opacity calc(var(--duration-stagger) * 1.5) linear, transform calc(var(--duration-stagger) * 1.5) linear;
+  pointer-events: none;
+  z-index: 0;
+}
+.live .face::after { opacity: calc(0.35 + var(--mic) * 0.65); }
 .mic:not(:disabled):hover .face { background: var(--color-surface-chip-hover); }
 /* Muted: no ring, grey slashed icon, pressed fill (the "on" variant, design-system 4.4). Never red. */
 .mic[aria-pressed="true"] .face { background: var(--color-selected); color: var(--color-text-secondary); }
@@ -51,5 +61,5 @@
 /* Disabled = colour tokens, no opacity (DS-5). */
 .mic:disabled { cursor: not-allowed; }
 .mic:disabled .face, .mic:disabled:hover .face { background: var(--color-subtle); color: var(--color-text-tertiary); }
-/* The focus ring stays outside the live ring at its largest (56px × 1.15 ≈ 64px), so blue never sits on blue. */
-.mic:focus-visible { outline-offset: calc(var(--space-2) + var(--space-1)); }
+/* Focus ring just outside the face (the glow lives inside it). */
+.mic:focus-visible { outline-offset: var(--focus-ring-offset); }

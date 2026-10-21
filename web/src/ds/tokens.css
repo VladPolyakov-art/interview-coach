@@ -153,7 +153,7 @@
   --color-border-subtle: var(--color-gray-150);
   --color-border-control: var(--color-gray-500);
   --color-border-selected: var(--color-gray-950);
-  --color-focus: var(--color-blue-600);
+  --color-focus: var(--color-gray-600);
   --color-mic-live: var(--color-blue-600);
   --color-presence-deep: var(--color-blue-700);
   --color-presence-strong: var(--color-blue-600);
@@ -205,7 +205,7 @@
   --color-border-subtle: var(--color-gray-750);
   --color-border-control: var(--color-gray-550);
   --color-border-selected: var(--color-gray-100);
-  --color-focus: var(--color-blue-400);
+  --color-focus: var(--color-gray-400);
   --color-mic-live: var(--color-blue-400);
   --color-presence-deep: var(--color-blue-700);
   --color-presence-strong: var(--color-blue-600);
@@ -258,7 +258,7 @@
     --color-border-subtle: var(--color-gray-750);
     --color-border-control: var(--color-gray-550);
     --color-border-selected: var(--color-gray-100);
-    --color-focus: var(--color-blue-400);
+    --color-focus: var(--color-gray-400);
     --color-mic-live: var(--color-blue-400);
     --color-presence-deep: var(--color-blue-700);
     --color-presence-strong: var(--color-blue-600);

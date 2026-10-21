@@ -1,10 +1,9 @@
-/* Live mic indicator (G10; docs/motion.md 3.7 "Mic live ring", moodboard Q1, session.md O4): the round mute
- * button of the session dock. While the mic is open, a thin 2px --color-mic-live ring around the face follows
- * the real voice level: opacity .4 + level × .6, scale 1 + level × .15. It replaced the solid disc, which read
- * as a heavy blue mass at full level. A rAF loop reads `getLevel` and writes the CSS variable --mic on the
- * button — no React re-render per frame. `level` sets a static value instead (review frames, stories).
- * Muted: no ring, grey slashed mic icon, aria-pressed. Under reduced motion the ring still follows the level
- * (it is information), only without its transition. Blue appears only here, in the Presence glow and on the focus ring. */
+/* Live mic indicator (G10; docs/motion.md 3.7, moodboard Q1, session.md O4): the round mute button of the session
+ * dock. D67: while the mic is open, a soft --color-mic-live glow inside the circle rises from the bottom with the real
+ * voice level (opacity .35 + level × .65, lift and scale with it); no ring outside the face. A rAF loop reads
+ * `getLevel` and writes the CSS variable --mic on the button — no React re-render per frame. `level` sets a static
+ * value instead (review frames, stories). Muted: no glow, grey slashed mic icon, aria-pressed. Under reduced motion
+ * the glow still follows the level (it is information), only without its transition. */
 import { forwardRef, useEffect, useRef, type ButtonHTMLAttributes } from "react";
 import { Icon } from "./icons";
 import { smoothLevel } from "./motion";
@@ -69,7 +68,6 @@ export const MicButton = forwardRef<HTMLButtonElement, MicButtonProps>(function 
       aria-pressed={muted}
       {...rest}
     >
-      <span className={s.ring} aria-hidden="true" />
       <span className={s.face}><Icon name={muted ? "micOff" : "mic"} /></span>
     </button>
   );
