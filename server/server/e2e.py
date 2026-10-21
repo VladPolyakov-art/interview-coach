@@ -4,6 +4,7 @@ without the flag these paths do not exist (404) and `config.e2e_enabled()` is Fa
   POST /api/_e2e/reset            wipe the data folder (settings, profile, jobs, sessions, trash) and reset the scripted engine
   GET  /api/_e2e/engine           the scripted engine's state (status, kinds that fail, delay, calls per kind)
   POST /api/_e2e/engine           steer it: {"status": "ready|not_running|no_model|not_installed", "fail": ["p2b", ...], "delay_ms": 0}
+  POST /api/_e2e/storage          {"writable": false}: GET /api/health reports storage_ok=false until reset (US-23 AC4)
   POST /api/_e2e/seed             {"fixture": "returning"}: a returning user with a CV, a job and three past sessions
 """
 from __future__ import annotations
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/api/_e2e")
 
 
 def wipe() -> None:
+    config.E2E_STORAGE_BLOCKED = False
     root = config.data_dir()
     for child in list(root.iterdir()):
         if child.is_dir():
@@ -53,6 +55,16 @@ async def get_engine() -> dict:
 @router.post("/engine")
 async def set_engine(body: EngineBody) -> dict:
     return scripted.configure(body.status, body.fail, body.delay_ms)
+
+
+class StorageBody(BaseModel):
+    writable: bool = True
+
+
+@router.post("/storage")
+async def set_storage(body: StorageBody) -> dict:
+    config.E2E_STORAGE_BLOCKED = not body.writable
+    return {"ok": True, "writable": body.writable}
 
 
 # ---------- seeded history ----------

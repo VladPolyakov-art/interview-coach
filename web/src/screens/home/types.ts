@@ -129,6 +129,9 @@ export interface HomeViewProps {
   track: Track;
   /** Profile name: "What are we practising today, Alex?" (US-08 AC3). */
   name?: string;
+  /** Settings (and so the name) haven't loaded yet: the greeting keeps its place but stays blank, so it doesn't
+   * flash without the name first. */
+  namePending?: boolean;
   loading?: boolean;
   /** Mike's engine can start. false: banner, Start disabled with the reason. */
   engineReady: boolean;

@@ -641,8 +641,12 @@ async def session_flag(session_id: str, flag_id: str, body: FlagBody, request: R
         raise fail(422, "unknown_action", "Use confirm, dismiss or restore.")
     except KeyError:
         raise fail(404, "not_found", "Correction not found.")
+    # US-22 AC3: what counts as a weak spot changes with the flag; the saved debrief follows.
+    if session.get("debrief"):
+        session["debrief"] = feedback.refresh_weak_spots(
+            session["debrief"], session.get("feedback", []), config.load_settings()["layer_order"])
     storage.save_session(session)
-    return {"flag": flag, "language": record["layers"]["language"]}
+    return {"flag": flag, "language": record["layers"]["language"], "debrief": session.get("debrief")}
 
 
 class StrongerBody(BaseModel):
@@ -727,8 +731,11 @@ async def session_recheck(session_id: str, body: RecheckBody, request: Request) 
     old = record.get("answer", "")
     feedback.apply_recheck(record, fields)
     _swap_user_line(session.get("transcript") or [], record, old, record["answer"])
+    if session.get("debrief"):                     # the corrected answer may add or remove a weak spot (US-22 AC3)
+        session["debrief"] = feedback.refresh_weak_spots(
+            session["debrief"], session.get("feedback", []), settings["layer_order"])
     storage.save_session(session)
-    return {"feedback": record, "transcript": session.get("transcript") or []}
+    return {"feedback": record, "transcript": session.get("transcript") or [], "debrief": session.get("debrief")}
 
 
 @router.get("/memory")

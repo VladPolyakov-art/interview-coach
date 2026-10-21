@@ -137,6 +137,19 @@ test.describe("US-24 English practice", () => {
     await expect(panel.getByRole("list", { name: "Summary" })).toContainText("Good");
   });
 
+  test("negative: an English debrief with no phrases to review never says 'uses these 0 phrases'", async ({ page }) => {
+    await startEnglishInText(page);
+    await sendAnswer(page, "I run the checkout team and I like the work. We shipped on time.");
+    await expect(conversation(page)).toContainText("Mike: That sounds interesting.");
+    await (await endSession(page, "End practice")).click();
+    await expect(page.getByRole("region", { name: "Corrections" })).toBeVisible();
+    const actions = page.getByRole("region", { name: "What next" });
+    await expect(actions).toBeVisible();
+    await expect(actions.getByRole("button", { name: "Practise again" })).toBeVisible();
+    await expect(page.getByText(/uses (these )?0 phrases/)).toHaveCount(0);
+    await expect(page.getByText(/0 phrases/)).toHaveCount(0);
+  });
+
   test("boundary: an English session with no turns ends on a short screen, not an empty debrief", async ({ page }) => {
     await startEnglishInText(page);
     await page.getByRole("button", { name: "End practice", exact: true }).click();

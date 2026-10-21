@@ -111,13 +111,13 @@ export const api = {
   restoreSession: (trashId: string) => post<{ ok: boolean; id: string }>(`/sessions/trash/${encodeURIComponent(trashId)}/restore`),
   rerunDebrief: (id: string) => post<Debrief>(`/sessions/${encodeURIComponent(id)}/debrief`),
   sessionFlag: (id: string, flagId: string, feedbackId: string, action: "confirm" | "dismiss" | "restore") =>
-    post<{ flag: LanguageItem; language: LanguageLayer }>(
+    post<{ flag: LanguageItem; language: LanguageLayer; debrief: Debrief | null }>(
       `/sessions/${encodeURIComponent(id)}/flags/${encodeURIComponent(flagId)}`, { feedback_id: feedbackId, action }),
   sessionStronger: (id: string, feedbackId: string) =>
     post<StrongerVersion>(`/sessions/${encodeURIComponent(id)}/stronger`, { feedback_id: feedbackId }),
   /** "Edit what I said": this answer's feedback again from the corrected text (or from `flagId`'s fragment replaced). */
   sessionRecheck: (id: string, feedbackId: string, text: string, flagId?: string) =>
-    post<{ feedback: FeedbackRecord; transcript: TranscriptTurn[] }>(
+    post<{ feedback: FeedbackRecord; transcript: TranscriptTurn[]; debrief?: Debrief | null }>(
       `/sessions/${encodeURIComponent(id)}/recheck`, { feedback_id: feedbackId, text, ...(flagId ? { flag_id: flagId } : {}) }),
   memory: () => request<MemorySummary>("/memory"),
   telemetry: () => request<TelemetryInfo>("/telemetry"),

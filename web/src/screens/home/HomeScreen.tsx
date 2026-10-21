@@ -119,6 +119,16 @@ export function HomeScreen() {
     };
   }, [list, prep, sessionList, memoryData, hasCv, settings, track]);
 
+  /* "Drill these weak spots" in a debrief arrives as /?drill=1: start the same drill as the suggestion chip,
+     once, after the weak spots and jobs have loaded. The param stays in the URL so the reset above is not re-run. */
+  const drillAsked = useRef(false);
+  const dataReady = !memory.loading && !sessions.loading && !vacancies.loading;
+  useEffect(() => {
+    if (drillAsked.current || params.get("drill") !== "1" || !dataReady) return;
+    drillAsked.current = true;
+    setSetup(begin(ctx, { kind: "suggestion", id: "drill" }));
+  }, [params, dataReady, ctx]);
+
   /* Questions from a job: the plan's Job row shows "Preparing questions…" until the call returns. */
   const prepareQuestions = useCallback((job: JobItem) => {
     setPrep((p) => ({ ...p, [job.id]: "preparing" }));
@@ -249,6 +259,7 @@ export function HomeScreen() {
         step={setup ? "setup" : "start"}
         track={setup?.track ?? track}
         name={settings?.name?.trim() || undefined}
+        namePending={!settings}
         loading={loading}
         engineReady={engineReady}
         engineBanner={selectedEngine && !engineReady

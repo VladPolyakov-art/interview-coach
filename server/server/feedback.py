@@ -505,6 +505,33 @@ async def debrief(llm: LLMEngine | None, feedback: list[dict], *, layer_order: s
             "next_step": norm(str(data.get("next_step", ""))), "source": "model"}
 
 
+def refresh_weak_spots(debrief: dict | None, records: list[dict], layer_order: str) -> dict | None:
+    """US-22 AC3: a correction the user dismissed (or brought back) after the debrief was written changes which
+    weak spots count. Spots whose tag no longer counts are dropped, a restored one comes back when its layer has
+    no spot, and the evidence is recounted. A template debrief is rebuilt as a whole (its verdict names the main
+    spot); a model-written verdict keeps its wording, "Rerun" in the debrief writes it again. Returns the debrief
+    unchanged when there is none or it was too short to carry weak spots."""
+    if not debrief or debrief.get("too_short"):
+        return debrief
+    scored = [f for f in records if (f.get("layers") or {}).get("content") or (f.get("layers") or {}).get("language")]
+    fresh = fallback_debrief(scored, layer_order)
+    if debrief.get("source") == "template":
+        return {**fresh, "strength": debrief.get("strength", "")}
+    evidence = {(s["layer"], s["tag"]): s["evidence"] for s in fresh["weak_spots"]}
+    for i, record in enumerate(scored, 1):         # the evidence of every counted tag, not only of the ranked ones
+        for layer, tag, _sev in counted_tags(record):
+            evidence.setdefault((layer, tag), [])
+            if f"q{i}" not in evidence[(layer, tag)]:
+                evidence[(layer, tag)].append(f"q{i}")
+    spots = [{**s, "evidence": evidence[(s.get("layer"), s.get("tag"))]}
+             for s in debrief.get("weak_spots") or [] if (s.get("layer"), s.get("tag")) in evidence]
+    used = {s["layer"] for s in spots}
+    spots += [s for s in fresh["weak_spots"] if s["layer"] not in used]
+    order = ["content", "language", "delivery"] if layer_order == "content-first" else ["delivery", "content", "language"]
+    spots.sort(key=lambda s: order.index(s["layer"]) if s.get("layer") in order else 9)
+    return {**debrief, "weak_spots": spots[:3]}
+
+
 # ---------- Answer suggester (practice only, D35) ----------
 
 async def suggest_answer(llm: LLMEngine, *, question: str, history: list[dict], profile: str, jd: str,

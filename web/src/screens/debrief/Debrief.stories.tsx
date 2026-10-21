@@ -35,6 +35,8 @@ export const InterviewRecheckFailed = desktop("interviewRecheckFailed");
 /** §3.6: summary, corrections in order with their turn, phrases to review. */
 export const English = desktop("english");
 export const EnglishMobile = mobile("english");
+/** A clean English session: no phrases to review, so the action is a plain "Practise again" without a hint. */
+export const EnglishNoPhrases = desktop("englishNoPhrases");
 /** §3.7: a fictional debrief (Sam Rivera) with the banner; Q3 open. */
 export const Example = desktop("exampleContentFirst");
 export const ExampleDeliveryFirst = desktop("exampleDeliveryFirst");

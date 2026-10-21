@@ -30,6 +30,9 @@ export const debriefReview: ReviewScreen = {
       dark: true,
       note: "Только язык: Summary, исправления по порядку с «Turn n · mm:ss», «Show 2 more», Phrases to review.",
     }),
+    state("english-no-phrases", "English · нечего повторять", "englishNoPhrases", {
+      note: "12d: в чистой сессии нет фраз для повторения — внизу просто «Practise again», без строки «uses these 0 phrases».",
+    }),
     state("example", "Example · Sam Rivera, Brightline", "exampleContentFirst", {
       tall: true,
       note: "Выдуманный пример с баннером Example; Q3 открыт. Для нового пользователя — путь «Start your first interview».",

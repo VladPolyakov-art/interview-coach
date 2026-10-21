@@ -1,6 +1,6 @@
 /* Shared steps for the specs. The server runs in test mode (IC_E2E=1, see playwright.config.ts): a scripted AI engine
  * stands in for Ollama and `/api/_e2e/*` resets and steers it. Test data is fictional (Alex Morgan, Kestrel Pay). */
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Page, type WebSocketRoute } from "@playwright/test";
 
 export const NAME = "Alex";
 export const CV_TEXT = "Alex Morgan, product manager at Kestrel Pay. I lead the checkout team of six people.";
@@ -38,6 +38,12 @@ export async function steerEngine(
   body: { status?: EngineStatus; fail?: string[]; delay_ms?: number },
 ) {
   const res = await request.post("/api/_e2e/engine", { data: body });
+  expect(res.ok()).toBeTruthy();
+}
+
+/** US-23 AC4: GET /api/health reports the data folder as not writable until the next reset. */
+export async function blockStorage(request: APIRequestContext) {
+  const res = await request.post("/api/_e2e/storage", { data: { writable: false } });
   expect(res.ok()).toBeTruthy();
 }
 
@@ -148,4 +154,68 @@ export function collectPageErrors(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   return errors;
+}
+
+/** A message the page sends to the session socket (the `start` message is the one the resume tests read). */
+export type SocketMessage = { type: string; [key: string]: unknown };
+
+/** The session WebSocket, seen from the browser: everything passes through to the real server, and the test can cut the
+ * connection, push a server error into the page, or make the next resume attempt fail. Call before the page opens
+ * `/session`. */
+export async function watchSessionSocket(page: Page) {
+  const pairs: { page: WebSocketRoute; server: WebSocketRoute }[] = [];
+  const sent: SocketMessage[] = [];
+  let failResume: string | null = null;
+  await page.routeWebSocket(/\/ws\/session$/, (route) => {
+    if (failResume && pairs.length > 0) {
+      // A resume attempt the server refuses: answer in its words and close, without reaching the real server.
+      const code = failResume;
+      route.onMessage((m) => {
+        if (typeof m === "string") sent.push(JSON.parse(m) as SocketMessage);
+        route.send(JSON.stringify({ type: "error", code, message: "This session cannot be continued.", retryable: true }));
+        void route.close();
+      });
+      pairs.push({ page: route, server: route });
+      return;
+    }
+    const server = route.connectToServer();
+    route.onMessage((m) => {
+      if (typeof m === "string") sent.push(JSON.parse(m) as SocketMessage);
+      server.send(m);
+    });
+    server.onMessage((m) => route.send(m));
+    pairs.push({ page: route, server });
+  });
+  return {
+    /** What the page has sent, in order. */
+    sent,
+    starts: () => sent.filter((m) => m.type === "start"),
+    /** The voice connection drops: both ends close, so the server saves the session as it would for a closed tab. */
+    async drop() {
+      const last = pairs.at(-1)!;
+      await last.server.close();
+      await last.page.close();
+    },
+    /** The server tells the page the engine failed (the card for an engine that stopped). */
+    injectError(code: string, message: string) {
+      pairs.at(-1)!.page.send(JSON.stringify({ type: "error", code, message, retryable: true }));
+    },
+    /** The next socket the page opens is refused with this error code (e.g. resume_unavailable); null lets it through. */
+    failNextResume(code: string | null) {
+      failResume = code;
+    },
+  };
+}
+
+/** The id of the session the server holds for this test (there is only one), once it has been saved. */
+export async function savedSessionId(request: APIRequestContext) {
+  let id = "";
+  await expect
+    .poll(async () => {
+      const list = (await (await request.get("/api/sessions")).json()) as { sessions: { id: string }[] };
+      id = list.sessions[0]?.id ?? "";
+      return id;
+    })
+    .not.toBe("");
+  return id;
 }

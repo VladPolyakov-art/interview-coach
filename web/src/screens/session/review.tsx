@@ -54,6 +54,11 @@ const states: ReviewState[] = [
     render: show({ scene: "thinking" }),
   },
   {
+    id: "s1-tips-text", label: "S1 · Подсказки первого раза (текст): где откроется разбор",
+    note: "12d (US-15): на широком экране — «on the right», на среднем — «slides in from the right», на телефоне — «slides up from the bottom». Слова следуют за раскладкой, а не за шириной окна.",
+    render: show({ scene: "q1-start" }, { input: "text" }),
+  },
+  {
     id: "s5a", label: "S5a · Разбор готов: панель открылась сама", dark: true,
     note: "На широком экране панель плавает справа, без затемнения; сцена сдвинулась влево, чтобы остаться по центру свободного места. Основная кнопка «Next question» — в островке, в подвале панели она вторичная (одна основная на экран, 🟡). Скрыть — X, F или Esc.",
     render: show({ scene: "feedback" }),
@@ -133,6 +138,11 @@ const states: ReviewState[] = [
   },
   { id: "s14a", label: "S14a · Готовим разбор (P2)", note: "В слоте — «Preparing feedback», панель открыта и показывает ожидание.", render: show({ scene: "preparing" }) },
   { id: "s14b", label: "S14b · Разбор недоступен (P4)", render: show({ scene: "unavailable" }) },
+  {
+    id: "s14e", label: "S14e · Не получилось проверить слои: Content и Language",
+    note: "12d (US-15 AC5): слой, который движок не смог сделать, говорит «Not available for this answer.» и «n/a» в сводке, а не «Nothing to fix» и «Good». Delivery считается локально и остаётся.",
+    render: show({ scene: "layers-unavailable" }),
+  },
   { id: "s14c", label: "S14c · Микрофон выключен", note: "Кнопка микрофона перечёркнута, «Talk now» неактивна до включения (M).", render: show({ scene: "muted" }) },
   { id: "s14c2", label: "S14c2 · Говорите при выключенном микрофоне", note: "D72: вместо плашки над сценой — тултип над кнопкой микрофона; исчезает при включении (M) или через 6 с.", render: show({ scene: "muted-talking" }) },
   {

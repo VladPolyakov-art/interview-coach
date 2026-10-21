@@ -81,7 +81,7 @@ export function StartScreen(props: StartScreenProps) {
 
   return (
     <div className={`${s.start} ${buildUp ? "motion-stagger" : ""}`} data-review-id="Home/Start-screen">
-      <h1 className={s.greeting} data-review-id="Home/Greeting" data-review-section="Home · Greeting" data-comment-target>{title}</h1>
+      <h1 className={`${s.greeting} ${props.namePending ? s.greetingPending : ""}`} aria-hidden={props.namePending || undefined} data-review-id="Home/Greeting" data-review-section="Home · Greeting" data-comment-target>{title}</h1>
       <div ref={composerRef} className={s.composer} data-review-id="Home/Composer" data-review-section="Home · Composer" data-comment-target>
         <Composer
           label={t("chat.start.label")}

@@ -61,6 +61,12 @@ const interviewEdited: DebriefModel = {
   questions: interviewS2.questions.map((q) => (q.n === 2 ? { ...q, edited: true } : q)),
 };
 
+/** A clean English session: nothing repeated, so no phrases to review and no "uses these 0 phrases" line. */
+const englishNoPhrases = {
+  ...englishS3,
+  english: englishS3.english && { ...englishS3.english, phrases: [], repeated: 0, practiseMinutes: undefined },
+};
+
 const base = { variant: "interview", state: "ready" } as const;
 
 export const DEBRIEF_SCENES = {
@@ -77,6 +83,8 @@ export const DEBRIEF_SCENES = {
   /** The check failed: the old feedback stays and a callout says so. */
   interviewRecheckFailed: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2 }, notice: "Couldn't check that answer again. It was not changed. The model took too long to answer." },
   english: { variant: "english", state: "ready", model: englishS3, route: "/sessions/s3" },
+  /** US-24: no phrases to review, so "Practise again" stands alone. */
+  englishNoPhrases: { variant: "english", state: "ready", model: englishNoPhrases, route: "/sessions/s3" },
   exampleContentFirst: { variant: "example", state: "ready", model: exampleSam, ui: { open: DEFAULT_OPEN.example }, route: "/sessions/example" },
   exampleDeliveryFirst: { variant: "example", state: "ready", model: exampleSam, layerOrder: "delivery-first", ui: { open: DEFAULT_OPEN.example }, route: "/sessions/example" },
   partial: { ...base, model: interviewPartial, ui: { open: DEFAULT_OPEN["s-partial"] }, route: "/sessions/s-partial" },

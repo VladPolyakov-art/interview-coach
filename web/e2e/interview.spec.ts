@@ -131,19 +131,26 @@ test.describe("US-14 / US-15 / US-20 A text interview", () => {
     await expect(page.getByRole("region", { name: "Breakdown" }).getByRole("article")).toContainText(ANSWER_WITH_RESULT);
   });
 
-  test.fixme("negative: when a layer cannot be made the live panel says so instead of 'Nothing to fix' (US-15 AC5)", async ({
+  test("negative: when a layer cannot be made the live panel says so instead of 'Nothing to fix' or 'Good' (US-15 AC5)", async ({
     page,
     request,
   }) => {
-    // KNOWN GAP (docs/e2e.md): with the content layer failing, the chip says "Content · n/a" but the Content section
-    // still reads "Nothing to fix in this answer." and the Language chip reads "Good". AC5 asks the panel to say that
-    // feedback is unavailable. Remove `fixme` when the live panel marks a failed layer.
     await steerEngine(request, { fail: ["p2a", "p2b"] });
     await startTextInterview(page);
     await sendAnswer(page, ANSWER_WITH_RESULT);
     const panel = await showFeedback(page);
-    await expect(panel.getByRole("region", { name: "Content" })).toContainText(/unavailable|couldn't|isn't available/i);
-    await expect(panel.getByRole("region", { name: "Language" })).not.toContainText("Nothing to fix");
+    for (const layer of ["Content", "Language"]) {
+      const block = panel.getByRole("region", { name: layer });
+      await expect(block).toContainText("Not available for this answer.");
+      await expect(block).not.toContainText("Nothing to fix");
+    }
+    // The summary chips say n/a, never Good; delivery (computed locally) still reports.
+    const summary = panel.getByRole("list", { name: "Summary" });
+    await expect(summary).toContainText("Content · n/a");
+    await expect(summary).toContainText("Language · n/a");
+    await expect(summary).not.toContainText("Good");
+    // Mike moves on and the session is not stuck.
+    await expect(page.getByRole("heading", { name: "Question 2", level: 2 })).toBeVisible();
   });
 
   test("a language slip is a weak spot in the debrief, with a reason (US-17 AC1, US-20 AC1)", async ({ page }) => {
@@ -191,6 +198,28 @@ test.describe("US-14 / US-15 / US-20 A text interview", () => {
   });
 });
 
+test.describe("US-15 The first-time hint names where feedback appears", () => {
+  const WORDING = {
+    wide: "Feedback appears on the right after each question.",
+    mid: "Feedback slides in from the right after each question.",
+    narrow: "Feedback slides up from the bottom after each question.",
+  } as const;
+  for (const [layout, width] of [["narrow", 375], ["mid", 900], ["wide", 1440]] as const) {
+    test(`${layout} layout (${width} px): the hint matches where the panel opens`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await startTextInterview(page);
+      // The session reports the layout it measured; the hint must follow it, not the viewport.
+      const measured = await page.locator("[data-layout]").first().getAttribute("data-layout");
+      expect(measured).toBe(layout);
+      const tips = page.getByText("First time here").locator("xpath=ancestor::div[1]");
+      await expect(tips).toContainText(WORDING[layout]);
+      for (const other of Object.values(WORDING).filter((w) => w !== WORDING[layout])) {
+        await expect(tips).not.toContainText(other);
+      }
+    });
+  }
+});
+
 test.describe("US-18 AC3 Edit my answer", () => {
   test("happy path: correct the typed answer, only that answer is checked again", async ({ page }) => {
     await startTextInterview(page);
@@ -236,19 +265,5 @@ test.describe("US-18 AC3 Edit my answer", () => {
     await panel.getByRole("textbox", { name: "Your answer" }).fill("Activation went up by twelve percent.");
     await panel.getByRole("button", { name: "Save and check again" }).click();
     await expect(conversation(page)).toContainText(`You typed: ${ANSWER_WITH_SLIP}`);
-  });
-
-  test.fixme("Recheck from the debrief: 'Edit what I said' on a question card", async () => {
-    // Not covered yet: the debrief entry point of the same recheck (POST /api/sessions/:id/recheck with a flag_id).
-    // The live-session path above is covered. Plan: seed a returning user, open a session, a question card, "Edit what I
-    // said" on a "Heard as" correction, type what was really said, save -> that card's language layer is recomputed.
-  });
-});
-
-test.describe("US-13 Interrupted session", () => {
-  test.fixme("Resume: the engine goes down in the middle of an answer and the user can resume", async () => {
-    // Not built yet (fe-session, "Interrupted / Resume"). Plan: steerEngine({ status: "not_running" }) mid-session ->
-    // an interrupted banner with "Resume" disabled and "We check again every 5 seconds"; steerEngine({ status: "ready" })
-    // -> Resume enabled -> the same question carries on and no answer is lost.
   });
 });

@@ -26,6 +26,9 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    // A fake microphone: the page sees a working input device (permission is granted per test with `permissions`).
+    // Tests that need "no microphone" stub getUserMedia themselves (helpers.denyMicrophone).
+    launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] },
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },

@@ -53,6 +53,22 @@ def test_without_the_flag_the_routes_do_not_exist(plain_client):
     assert plain_client.get("/api/_e2e/engine").status_code == 404
     assert plain_client.post("/api/_e2e/seed", json={}).status_code == 404
     assert plain_client.post("/api/_e2e/engine", json={"status": "ready"}).status_code == 404
+    assert plain_client.post("/api/_e2e/storage", json={"writable": False}).status_code == 404
+
+
+def test_storage_can_be_reported_as_not_writable_until_reset(e2e_client):
+    assert e2e_client.get("/api/health").json()["storage_ok"] is True
+    assert e2e_client.post("/api/_e2e/storage", json={"writable": False}).json() == {"ok": True, "writable": False}
+    body = e2e_client.get("/api/health").json()
+    assert body["storage_ok"] is False and body["ok"] is True
+    e2e_client.post("/api/_e2e/reset")
+    assert e2e_client.get("/api/health").json()["storage_ok"] is True
+
+
+def test_the_storage_switch_does_nothing_without_the_flag(monkeypatch):
+    monkeypatch.delenv("IC_E2E", raising=False)
+    monkeypatch.setattr(config, "E2E_STORAGE_BLOCKED", True)
+    assert config.data_dir_writable() is True
 
 
 def test_without_the_flag_ollama_is_the_real_engine(monkeypatch, plain_client):

@@ -108,27 +108,35 @@ test.describe("US-20 AC1 What next, in the debrief", () => {
     await expect(page.getByRole("button", { name: "Drill these weak spots" })).toBeVisible();
   });
 
-  test.fixme("'Drill these weak spots' in the debrief starts a drill on exactly those weak spots", async ({ page, request }) => {
-    // KNOWN GAP (docs/e2e.md): Debrief.tsx wires `onDrill` to the same handler as "Practise again", which only
-    // navigates to "/". Expected: the Home chat opens with the drill plan ("Focus: ...") for the debrief's weak spots.
+  test("'Drill these weak spots' in the debrief starts the same drill as Home's chip", async ({ page, request }) => {
     await seedReturningUser(request);
     await page.goto("/");
     await openMenu(page);
     await page.getByRole("link", { name: "Kestrel Pay · Product Manager" }).click();
     await page.getByRole("button", { name: /^Verdict/ }).click();
     await page.getByRole("button", { name: "Drill these weak spots" }).click();
-    await expect(page.getByRole("region", { name: "Here's the plan" })).toContainText("Focus");
+
+    // Home opens straight in the drill: Mike names the recurring weak spots and asks which layer to drill.
+    await expect(page).toHaveURL(/\/\?drill=1$/);
+    const chat = page.getByRole("log", { name: "Setup with Mike" });
+    await expect(chat).toContainText("From your last 3 interviews");
+    await expect(chat).toContainText("end with the result (3 sessions)");
+    const replies = page.getByRole("group", { name: "Quick replies" });
+    await expect(replies.getByRole("button", { name: "All 2" })).toBeVisible();
+    await replies.getByRole("button", { name: "All 2" }).click();
+    const plan = page.getByRole("region", { name: "Here's the plan" });
+    await expect(plan).toContainText("All 2: end with the result, prepositions");
+    await expect(plan).toContainText("3 questions");
   });
 });
 
 test.describe("US-22 AC3 Dismissed corrections are not counted", () => {
-  test.fixme("negative: dismissing the language correction in an old debrief takes it out of the weak spots", async ({
+  test("negative: dismissing the language correction in an old debrief takes it out of the weak spots", async ({
     page,
     request,
   }) => {
-    // KNOWN GAP (docs/e2e.md): the weak spots come from each session's saved debrief (memory.py), and dismissing a
-    // correction later (POST /api/sessions/:id/flags/:flag) does not recompute that debrief. The dismissal inside a
-    // running session works: see interview.spec.ts ("a correction the user dismisses is not counted").
+    // The weak spots come from each session's saved debrief (memory.py); the server recomputes them on every
+    // dismiss / restore / recheck (feedback.refresh_weak_spots), so Home's drill follows.
     const { sessions } = await seedReturningUser(request);
     for (const session of sessions) {
       await page.goto(`/sessions/${session.id}`);

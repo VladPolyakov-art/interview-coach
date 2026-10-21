@@ -45,9 +45,15 @@ def data_dir() -> Path:
     return path
 
 
+# E2E mode only (POST /api/_e2e/storage): report the folder as not writable without touching the disk.
+E2E_STORAGE_BLOCKED = False
+
+
 def data_dir_writable() -> bool:
     """US-23 AC4: can sessions be written? A real write and remove of a small file in the data folder (a read-only
     mount, a full disk and a missing permission all show up here; os.access does not catch them all)."""
+    if E2E_STORAGE_BLOCKED and e2e_enabled():
+        return False
     try:
         probe = data_dir() / f".write-test-{os.getpid()}-{threading.get_ident()}"
         probe.write_text("ok", encoding="utf-8")

@@ -50,6 +50,14 @@ function isPending(record: FeedbackRecord, layer: LayerName) {
   return !record.layers[layer] && !record.complete;
 }
 
+/** The layer could not be made for any answer of the thread (the engine failed, or the record finished without it). */
+function layerGone(records: FeedbackRecord[], layer: LayerName) {
+  return records.length > 0 && records.every((r) => {
+    const data = r.layers[layer];
+    return data ? data.status === "unavailable" : r.complete;
+  });
+}
+
 function fixCount(records: FeedbackRecord[], layer: "content" | "delivery") {
   let fixes = 0;
   let pending = false;
@@ -71,7 +79,7 @@ function SummaryRow({ records, mode, order, tinted }: { records: FeedbackRecord[
       const { counted, toCheck } = languageCounts(records);
       const pending = records.some((r) => isPending(r, "language"));
       label = pending && !counted ? t("feedback.count.pending")
-        : counted ? tp("feedback.count.phrasings", counted) : t("feedback.count.good");
+        : counted ? tp("feedback.count.phrasings", counted) : layerGone(records, "language") ? t("feedback.count.na") : t("feedback.count.good");
       if (toCheck) label += ` ${t("feedback.count.toCheck", { n: toCheck })}`;
     } else {
       const c = fixCount(records, layer);
@@ -292,12 +300,14 @@ function LayerBlock({ layer, records, live, onFlag, onSaveHeard, initialOpenHear
     const c = fixCount(records, layer);
     count = c.fixes ? tp("feedback.count.fix", c.fixes) : null;
   }
-  const empty = live && !shown.length;
+  const gone = layerGone(records, layer);
+  const empty = live && !shown.length && !gone;
   return (
     <section className={`${s.block} ${s[layer]}`} aria-label={t(`feedback.layer.${layer}`)} data-review-id={`Feedback/${layer}`}>
       <div className={s.blockHead}>
         <h4 className={s.blockTitle}><Icon name={ICON[layer]} size="sm" />{t(`feedback.layer.${layer}`)}{count ? ` · ${count}` : ""}</h4>
       </div>
+      {live && gone ? <p className={s.ok}>{t("feedback.layerUnavailable")}</p> : null}
       {empty ? <p className={s.ok}>{layer === "delivery" ? t("feedback.delivery.nothing") : t("feedback.content.nothing")}</p> : null}
       {(live ? shown : records).map((r) => (
         <div key={r.id} className={s.sub}>

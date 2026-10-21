@@ -141,7 +141,7 @@ const typed = (turns: TranscriptTurn[]) => turns.map((x) => (x.speaker === "user
 export type FixtureScene =
   | "q1-start" | "follow-up" | "listening" | "thinking" | "feedback" | "that-not-said" | "edit" | "edit-failed" | "rechecking" | "text" | "drill" | "english"
   | "connecting" | "interrupted-engine" | "interrupted-voice" | "mic-help" | "storage" | "browser" | "overflow"
-  | "preparing" | "unavailable" | "muted" | "muted-talking" | "suggester";
+  | "preparing" | "unavailable" | "layers-unavailable" | "muted" | "muted-talking" | "suggester";
 
 export interface FixtureOptions {
   scene: FixtureScene;
@@ -266,6 +266,12 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
       return withThread({ thread: { ...q2(), records: [], pendingIds: ["fb-q2-main"] } }, { phase: "preparing" });
     case "unavailable":
       return withThread({ thread: { ...q2(), records: [], unavailable: [{ id: "fb-q2-main", code: "unavailable", message: "" }] } }, { phase: "unavailable" });
+    case "layers-unavailable": {
+      // The engine failed on content and language; delivery is measured locally and still reports.
+      const main = mainRecord({ withChecks });
+      const record: FeedbackRecord = { ...main, stronger: undefined, layers: { content: { status: "unavailable" }, language: { status: "unavailable" }, delivery: main.layers.delivery } };
+      return withThread({ thread: thread("q2", 2, Q2, [record]) }, { phase: "feedback" });
+    }
     case "muted":
       return withThread({
         transcript: [...Q1_TURNS, Q2_ASK, Q2_ANSWER, Q2_FOLLOW], followUp: FOLLOW_UP,

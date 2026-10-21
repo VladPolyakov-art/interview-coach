@@ -75,7 +75,8 @@ test.describe("US-02 First-run wizard", () => {
 
     // AC6: once the wizard is done, the app opens on home, not on the wizard.
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "What are we practising today?", level: 1 })).toBeVisible();
+    // Q4 / US-08 AC3: Home greets by the name given in the wizard.
+    await expect(page.getByRole("heading", { name: `What are we practising today, ${NAME}?`, level: 1 })).toBeVisible();
     await expect(page).not.toHaveURL(/\/setup/);
     expect(errors).toEqual([]);
   });

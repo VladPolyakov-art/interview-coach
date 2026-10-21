@@ -717,6 +717,8 @@
       "text1": "Type your answer in the box below.",
       "text2": "When you're done, press Send (Enter).",
       "text3": "Feedback appears on the right after each question.",
+      "text3Mid": "Feedback slides in from the right after each question.",
+      "text3Narrow": "Feedback slides up from the bottom after each question.",
       "voice1Manual": "Answer aloud when Mike stops. Take your time: Mike waits until you press Send now."
     },
     "controls": {
@@ -1270,11 +1272,13 @@
       "phrases": "Phrases to review",
       "times": "{n} times",
       "practise": "Practise these phrases",
-      "practiseHint": "A short talk that uses these {n} phrases · about {minutes} min",
+      "practiseHint_one": "A short talk that uses this phrase · about {minutes} min",
+      "practiseHint_other": "A short talk that uses these {n} phrases · about {minutes} min",
       "becomes": "becomes",
       "drillHintNoTime": "{questions} questions on these {points} points",
       "turn": "Turn {n}",
-      "practiseHintNoTime": "A short talk that uses these {n} phrases"
+      "practiseHintNoTime_one": "A short talk that uses this phrase",
+      "practiseHintNoTime_other": "A short talk that uses these {n} phrases"
     },
     "gone": {
       "title": "This session no longer exists",

@@ -8,7 +8,7 @@ import { api, ApiError } from "../lib/api";
 import { useInterval, useLoad } from "../lib/hooks";
 import { useStorageWritable } from "../lib/storageProbe";
 import { errorMessage, useApp } from "../lib/store";
-import type { FeedbackRecord, SessionRecord } from "../lib/types";
+import type { SessionRecord } from "../lib/types";
 import type { StrongerState } from "../session/reducer";
 import { DebriefView } from "./debrief/DebriefView";
 import { DEFAULT_OPEN, exampleSam } from "./debrief/fixtures";
@@ -89,15 +89,17 @@ function LiveDebrief() {
   }
 
   const fail = (e: unknown) => { setNotice(errorMessage(e)); setEpoch((n) => n + 1); };
-  const replaceFeedback = (fb: FeedbackRecord) =>
-    session.setData({ ...record, feedback: record.feedback.map((x) => (x.id === fb.id ? fb : x)) });
 
   const flag = (flagId: string, action: "dismiss" | "restore") => {
     const fb = feedbackOfFlag(record, flagId);
     if (!fb) return;
     setNotice("");
     api.sessionFlag(record.id, flagId, fb.id, action)
-      .then(({ language }) => replaceFeedback({ ...fb, layers: { ...fb.layers, language } }))
+      .then(({ language, debrief }) => {
+        // The weak spots follow the flag: a dismissed correction stops counting (US-22 AC3).
+        const cur = latest.current ?? record;
+        session.setData({ ...cur, debrief: debrief ?? cur.debrief, feedback: cur.feedback.map((x) => (x.id === fb.id ? { ...fb, layers: { ...fb.layers, language } } : x)) });
+      })
       .catch(fail);
   };
   /* "Edit what I said" (US-18 AC3): the server swaps in the corrected text, regenerates this answer's feedback and
@@ -111,9 +113,9 @@ function LiveDebrief() {
     setRechecking(n);
     setNotice("");
     return api.sessionRecheck(record.id, fb.id, text, whole ? undefined : target)
-      .then(({ feedback, transcript }) => {
+      .then(({ feedback, transcript, debrief }) => {
         const cur = latest.current ?? record;
-        session.setData({ ...cur, transcript, feedback: cur.feedback.map((x) => (x.id === feedback.id ? feedback : x)) });
+        session.setData({ ...cur, transcript, debrief: debrief ?? cur.debrief, feedback: cur.feedback.map((x) => (x.id === feedback.id ? feedback : x)) });
         setStronger((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== fb.id)));
         return true;
       })
@@ -178,6 +180,7 @@ function LiveDebrief() {
     }
   };
   const practise = () => navigate(record.mode === "english" ? "/?track=english" : "/");
+  const drill = () => navigate(record.mode === "english" ? "/?track=english" : "/?drill=1");
 
   return (
     <DebriefView
@@ -197,7 +200,7 @@ function LiveDebrief() {
       onDownload={download}
       onArchive={() => void archive()}
       onTrash={() => void trash()}
-      onDrill={practise}
+      onDrill={drill}
       onPractise={practise}
       onDismiss={(_q, flagId) => flag(flagId, "dismiss")}
       onRestore={(_q, flagId) => flag(flagId, "restore")}

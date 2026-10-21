@@ -177,15 +177,21 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
       </>
     );
   } else if (variant === "english") {
+    // No phrases to practise (a clean session): a plain "Practise again", never "uses these 0 phrases".
+    const count = english?.phrases.length ?? 0;
     body = (
       <>
         <div className={s.action}>
-          <Button variant="primary" size="lg" icon="refresh" onClick={onPractise}>{t("debrief.english.practise")}</Button>
-          <p className={s.hint}>
-            {english?.practiseMinutes !== undefined
-              ? t("debrief.english.practiseHint", { n: english.phrases.length, minutes: english.practiseMinutes })
-              : t("debrief.english.practiseHintNoTime", { n: english?.phrases.length ?? 0 })}
-          </p>
+          <Button variant="primary" size="lg" icon="refresh" onClick={onPractise}>
+            {count ? t("debrief.english.practise") : t("debrief.practiceAgain")}
+          </Button>
+          {count ? (
+            <p className={s.hint}>
+              {english?.practiseMinutes !== undefined
+                ? tp("debrief.english.practiseHint", count, { minutes: english.practiseMinutes })
+                : tp("debrief.english.practiseHintNoTime", count)}
+            </p>
+          ) : null}
         </div>
       </>
     );

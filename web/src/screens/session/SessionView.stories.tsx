@@ -108,9 +108,15 @@ export const S12cBothBanners = patched("S12c · Storage and browser banners toge
 export const S13Overflow = scene("S13 · Overflow +30%", "overflow");
 export const S14aPreparing = scene("S14a · Preparing feedback", "preparing");
 export const S14bUnavailable = scene("S14b · Feedback unavailable", "unavailable");
+export const S14eLayersUnavailable = scene("S14e · Content and Language unavailable, Delivery still reports", "layers-unavailable");
 export const S14cMuted = scene("S14c · Muted", "muted");
 export const S14c2MutedTalking = scene("S14c2 · Talking while muted: tip over the mic", "muted-talking");
 export const S14dSuggester = scene("S14d · Answer suggester on", "suggester");
+
+/* First-time tips name where feedback opens: right (wide), slides in from the right (mid), slides up (phone). */
+export const S1TipsMid = scene("Mid · First-time tips (text)", "q1-start", { args: { frame: "mid" } }, { input: "text" });
+export const S1TipsNarrow = scene("Narrow · First-time tips (text)", "q1-start", { args: { frame: "mobile" } }, { input: "text" });
+export const S1TipsWideText = scene("S1 · First-time tips (text)", "q1-start", {}, { input: "text" });
 
 /* The same feedback on a phone and in the mid layout: bottom sheet and right drawer. */
 export const NarrowFeedback = scene("Narrow · Feedback sheet", "feedback", { args: { frame: "mobile" } });
