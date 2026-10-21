@@ -29,6 +29,8 @@ export interface HomeScene {
   props?: Partial<HomeViewProps>;
   recent: RecentState;
   engine: ShellEngine;
+  /** D73: the toast at the top after End (the session is being saved / is ready). */
+  toast?: "saving" | "saved";
   /** Keep a pending read pending (the "Reading the job…" states); otherwise the harness resolves it after a pause. */
   hold?: boolean;
   /** How a pending read resolves when played live. */
@@ -84,6 +86,8 @@ export const SCENES = {
   firstVisit: { ...first, label: "First visit", props: { name: "Alex" } },
   noName: { ...first, label: "No profile name" },
   english: { ...ret, ctx: CTX_ENGLISH, label: "English practice" },
+  afterEndSaving: { ...ret, label: "After End: saving", toast: "saving" },
+  afterEndSaved: { ...ret, label: "After End: saved", toast: "saved" },
   modeMenu: { ...ret, label: "Practice type menu open", props: { name: "Alex", initialOverlay: "mode" } },
   typed: { ...ret, label: "Typed a message", props: { name: "Alex", composer: { text: "I have an HR screen with Lumen tomorrow" } } },
   pasted: { ...ret, label: "Pasted a job", props: { name: "Alex", composer: { text: PASTED_TEXT } } },

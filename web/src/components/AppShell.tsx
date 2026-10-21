@@ -9,12 +9,13 @@
  * a warning icon (only when not ready) and the avatar, each with a Tooltip. The rail is set off from the content by its fill, no line.
  * <main> is the scroll container and the `page` container for screens.
  * `AppShellView` is pure (every state by props: review frames, stories); `AppShell` is the live container. */
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode, type Ref } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode, type Ref } from "react";
+import { Link, useLocation, useNavigate, type NavigateFunction } from "react-router-dom";
 import { Badge, Drawer, Icon, IconButton, Menu, NavRow, Skeleton, Tooltip, ToastProvider, useToast } from "../ds";
-import type { LinkComponent, MenuEntry } from "../ds";
+import type { LinkComponent, MenuEntry, ToastOptions } from "../ds";
 import { t } from "../i18n";
 import { api } from "../lib/api";
+import { pendingSave } from "../lib/pendingSave";
 import { prefs } from "../lib/prefs";
 import { errorMessage, useApp } from "../lib/store";
 import { railSessions, type RailSession } from "./railItems";
@@ -373,6 +374,59 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** D73: how often the shell asks whether a session saved after End is ready, and how long it waits. Past the wait the
+ * session is offered anyway (its page says "Writing your debrief…" until the debrief lands) or, if nothing was saved,
+ * an error says so. Behaviour timers, not motion tokens. */
+const SAVE_POLL_MS = 2000;
+const SAVE_WAIT_MS = 3 * 60_000;
+
+/** D73 toasts, shared with the review frames: "Saving…" stays (shimmer: real work is going on), "saved" offers the debrief. */
+export const savingToast = (): ToastOptions => ({ message: <span className="shimmer-text">{t("session.afterEnd.saving")}</span>, duration: null });
+export const savedToast = (onOpen: () => void): ToastOptions => ({
+  message: t("session.afterEnd.ready"), action: { label: t("session.afterEnd.open"), onClick: onOpen }, duration: 12_000,
+});
+
+/** D73: the toast for a session being saved after End (lib/pendingSave). It stays while the server saves the session
+ * and writes the debrief, then says it is ready, with the way in. Polled: the session's socket is gone by then. */
+function useSaveWatch(toast: ReturnType<typeof useToast>, loadRecent: () => Promise<void>, navigate: NavigateFunction) {
+  const pending = useSyncExternalStore(pendingSave.subscribe, pendingSave.get);
+  useEffect(() => {
+    if (!pending) return;
+    const { id, at } = pending;
+    let stopped = false;
+    let listed = false;
+    let timer = 0;
+    const saving = toast.show(savingToast());
+    const finish = (saved: boolean) => {
+      stopped = true;
+      toast.dismiss(saving);
+      pendingSave.clear(id);
+      void loadRecent();
+      toast.show(saved ? savedToast(() => navigate(`/sessions/${encodeURIComponent(id)}`)) : { message: t("session.afterEnd.failed"), tone: "error" });
+    };
+    const poll = async () => {
+      const late = Date.now() - at > SAVE_WAIT_MS;
+      try {
+        const record = await api.session(id);
+        if (stopped) return;
+        // Saved: it shows in Recents now; the toast waits for the debrief.
+        if (!listed) { listed = true; void loadRecent(); }
+        if (record.debrief || late) { finish(true); return; }
+      } catch {
+        if (stopped) return;
+        if (late) { finish(false); return; }
+      }
+      timer = window.setTimeout(() => { void poll(); }, SAVE_POLL_MS);
+    };
+    void poll();
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+      toast.dismiss(saving);
+    };
+  }, [pending, toast, loadRecent, navigate]);
+}
+
 function LiveShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -395,6 +449,8 @@ function LiveShell({ children }: { children: ReactNode }) {
     },
     () => { if (aliveRef.current) setRecent((prev) => (prev.status === "ready" ? prev : { status: "error" })); },
   ), []);
+
+  useSaveWatch(toast, loadRecent, navigate);
 
   // Recents: refetched on every navigation (a session may have been added, renamed or trashed).
   useEffect(() => {

@@ -2,7 +2,8 @@
  * playable (send, pick a reply, change a plan row, start); pending reads resolve after a pause. No network. */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import { AppShellView } from "../../components/AppShell";
+import { AppShellView, savedToast, savingToast } from "../../components/AppShell";
+import { ToastProvider, useToast } from "../../ds";
 import { VacancyEditorView, type FileState, type LinkState, type VacancySource } from "../../components/VacancyEditor";
 import { OverlayRoot } from "../../ds/OverlayRoot";
 import type { EditorSeed } from "./editorSeeds";
@@ -182,13 +183,26 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
 }
 
 /** The screen inside the shell, no frame around it (the review page brings its own). */
+/** D73: the toast the shell shows after End, as in the app (the same options, the real region). */
+function SceneToast({ kind }: { kind: "saving" | "saved" }) {
+  const toast = useToast();
+  useEffect(() => {
+    const id = toast.show(kind === "saving" ? savingToast() : { ...savedToast(() => {}), duration: null });
+    return () => toast.dismiss(id);
+  }, [toast, kind]);
+  return null;
+}
+
 export function HomeScene({ id }: { id: HomeSceneId }) {
-  const scene = SCENES[id];
+  const scene: HomeScene = SCENES[id];
   return (
     <MemoryRouter initialEntries={["/"]}>
-      <AppShellView current="practice" recent={scene.recent} engine={scene.engine}>
-        <HomeHarness scene={scene} />
-      </AppShellView>
+      <ToastProvider>
+        <AppShellView current="practice" recent={scene.recent} engine={scene.engine}>
+          <HomeHarness scene={scene} />
+        </AppShellView>
+        {scene.toast ? <SceneToast kind={scene.toast} /> : null}
+      </ToastProvider>
     </MemoryRouter>
   );
 }

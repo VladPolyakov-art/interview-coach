@@ -771,6 +771,12 @@
       "n": "Next question",
       "esc": "Close the panel, menu or this list",
       "q": "Show this list"
+    },
+    "afterEnd": {
+      "saving": "Saving your session… It'll be ready in a moment",
+      "ready": "Your session is saved",
+      "open": "Open debrief",
+      "failed": "Couldn't find the saved session yet. Check History in a minute."
     }
   },
   "feedback": {

@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Callout, EmptyState, motionMemory } from "../ds";
 import { t, tMaybe } from "../i18n";
 import { useElapsed } from "../lib/hooks";
+import { pendingSave } from "../lib/pendingSave";
 import { useApp } from "../lib/store";
 import { selectThreads, type SessionState } from "../session/reducer";
 import { useSession, type SessionConfig } from "../session/useSession";
@@ -59,13 +60,25 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   }, [live, startedAt]);
   const elapsed = useElapsed(startedAt, live || state.phase === "connecting");
 
-  /* Done and saved: go to the debrief. */
+  /* Done and saved while still here (the server ended the session): go to the debrief. */
   useEffect(() => {
     if (state.phase === "done" && state.savedSessionId) navigate(`/sessions/${state.savedSessionId}`, { replace: true });
   }, [state.phase, state.savedSessionId, navigate]);
 
   const threads = useMemo(() => selectThreads(state), [state]);
   const userTurns = state.transcript.filter((x) => x.speaker === "user").length;
+
+  /* D73: with an answer on record the server saves the session and writes the debrief by itself (the socket is not
+   * needed), so End goes Home at once and the shell's toast says when it is ready (lib/pendingSave). Without an
+   * answer nothing is saved: stay for that message. */
+  const end = () => {
+    const id = state.sessionId;
+    const leave = !!id && userTurns > 0 && (state.phase === "live" || state.phase === "connecting");
+    actions.end();
+    if (!leave) return;
+    pendingSave.start(id);
+    navigate("/", { replace: true });
+  };
   const questionIndex = state.threadOrder.indexOf(state.currentThreadId);
   const total = state.questions.length;
   const phase = phaseOf(state, playing);
@@ -185,7 +198,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     if (micError) notices.push({ id: "mic", tone: "warning", text: tMaybe(`session.mic.${micError}`, t("session.mic.failed")) });
     if (state.notice && state.notice.code !== "muted_speech") notices.push({ id: "notice", tone: "info", text: state.notice.message, onDismiss: actions.dismissNotice });
     if (state.error) notices.push({ id: "error", tone: "error", text: [state.error.message, state.error.hint].filter(Boolean).join(" "), onDismiss: actions.dismissError });
-    if (state.closing) notices.push({ id: "closing", tone: "info", title: t("session.closing.title"), text: t("session.closing.body"), action: { label: t("session.closing.debrief"), onClick: actions.end } });
+    if (state.closing) notices.push({ id: "closing", tone: "info", title: t("session.closing.title"), text: t("session.closing.body"), action: { label: t("session.closing.debrief"), onClick: end } });
   }
 
   const suggestion = state.suggestion
@@ -223,7 +236,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     : current.unavailable.length ? "p4" : "p0";
 
   const handlers: SessionHandlers = {
-    onEnd: actions.end,
+    onEnd: end,
     onToggleMute: actions.toggleMute,
     onInterrupt: actions.interrupt,
     onSendNow: actions.sendNow,
@@ -237,7 +250,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     onFlag: actions.flag,
     onStronger: actions.stronger,
     onSetSuggest: actions.setSuggest,
-    onSeeDebrief: actions.end,
+    onSeeDebrief: end,
   };
 
   return (
