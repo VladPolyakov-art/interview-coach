@@ -20,13 +20,17 @@
   border-radius: var(--radius-pill);
   background: var(--color-text-tertiary);
 }
-/* Blue only while the user's mic is open; static (rule 3). */
 .dotLive { background: var(--color-mic-live); }
 .dotPulse { animation: global(pulse-dot) var(--duration-loop-dots) var(--ease-standard) infinite; }
 .icon { display: inline-flex; color: var(--color-text-secondary); }
 .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .labelIn { animation: global(fade-in) var(--duration-fast) var(--ease-standard) backwards; }
-.bare { min-height: 0; background: none; padding: 0; }
+/* D93: see-through, the glow behind it shows through (blurred, so the label stays readable). */
+.glass {
+  background: color-mix(in srgb, var(--color-subtle) 50%, transparent);
+  -webkit-backdrop-filter: blur(var(--space-3));
+  backdrop-filter: blur(var(--space-3));
+}
 /* The sub line folds away (D91): opacity first, then its row closes, so nothing under it jumps. */
 .subWrap {
   display: grid;

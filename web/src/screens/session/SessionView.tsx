@@ -272,7 +272,7 @@ export function SessionView(props: SessionViewProps) {
           </div>
           {/* D92: the state text sits in the glow at the top (the glow is the same state), not in a row above the island. */}
           <div className={`${s.status} ${s.shift}`} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
-            <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} subFadeMs={stage.hint ? (props.hintMs ?? HINT_MS) : undefined} surface="none" className={data.micTip && muted ? s.statusQuiet : undefined} />
+            <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} subFadeMs={stage.hint ? (props.hintMs ?? HINT_MS) : undefined} surface="glass" className={data.micTip && muted ? s.statusQuiet : undefined} />
           </div>
           <div className={s.scroll} ref={scrollRef} onScroll={onScroll}>
             <div className={`${s.flow} ${s.shift}`}>
