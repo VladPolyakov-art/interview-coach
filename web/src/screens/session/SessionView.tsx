@@ -264,7 +264,6 @@ export function SessionView(props: SessionViewProps) {
                 <Transcript
                   turns={data.transcript}
                   label={variant === "english" ? t("session.captions.transcriptEnglish") : t("session.transcript")}
-                  pending={thinking}
                   recording={phase === "listening"}
                   footer={showHeard ? t("session.heard") : undefined}
                 />

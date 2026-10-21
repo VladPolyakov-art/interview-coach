@@ -45,7 +45,8 @@ export function islandModel(p: {
   else if (phase === "mike-speaking") main = voice ? { kind: "button", id: "interrupt", label: t("session.controls.interrupt"), icon: "hand", variant: "secondary", onClick: h?.onInterrupt } : null;
   else if (phase === "listening") main = { kind: "button", id: "send", label: t("session.controls.sendNow"), icon: "send", variant: "primary", onClick: h?.onSendNow };
   else if (yourTurn) main = voice ? { kind: "button", id: "talk", label: t("session.controls.talk"), icon: "mic", variant: "secondary", disabled: muted, onClick: h?.onInterrupt } : null;
-  else if (phase === "thinking") main = { kind: "dots", label: t("session.island.thinking") };
+  // Thinking (D55): no dots here — the glow and the one state text above the island already say it.
+  else if (phase === "thinking") main = null;
   else if (phase === "preparing" || phase === "rechecking") main = { kind: "dots", label: t("session.island.preparing") };
   else if (AFTER.has(phase)) {
     const last = data.nextNumber === null;
