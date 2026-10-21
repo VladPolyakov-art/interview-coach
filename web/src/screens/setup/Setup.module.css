@@ -17,16 +17,16 @@
 .step {
   display: flex; align-items: center; gap: var(--space-2);
   font-size: var(--text-sm); color: var(--color-text-tertiary);
-  /* D82: the number's circle sits close to the pill's left edge (the same room as above and below it). */
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3); min-height: var(--control-h-sm); border-radius: var(--radius-pill);
 }
-.step[aria-current="step"] { background: var(--color-selected); color: var(--color-text-primary); font-weight: var(--weight-medium); }
+/* The current step: a see-through fill, so the voice check's glow shows through it. */
+.step[aria-current="step"] {
+  background: color-mix(in srgb, var(--color-selected) 55%, transparent);
+  color: var(--color-text-primary); font-weight: var(--weight-medium);
+}
 .stepDone { color: var(--color-text-secondary); }
-.num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: var(--icon-lg); height: var(--icon-lg); border-radius: var(--radius-pill);
-  border: var(--border-width) solid currentColor; font-size: var(--text-sm);
-}
+/* The number (or the done check) without a circle around it. */
+.num { display: inline-flex; align-items: center; justify-content: center; min-width: var(--icon-sm); font-variant-numeric: tabular-nums; }
 .main {
   flex: 1;
   width: 100%;
