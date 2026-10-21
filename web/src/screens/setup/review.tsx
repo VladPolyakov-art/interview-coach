@@ -20,6 +20,9 @@ export const setupReview: ReviewScreen = {
       note: "D83: Ollama не нашлась — две кнопки: «Connect» (уже установлена: сервер ищет её и вне PATH — Homebrew, Ollama.app — и запускает) и «Download Ollama». Если Connect ничего не нашёл — подсказка «открой её один раз и нажми Connect ещё раз».",
     }),
     state("engine-not-running", "1 · Ollama не запущена", "engineNotRunning", { mobile: false, note: "D83: установлена, но не запущена — «Connect» сам открывает Ollama и ждёт до 15 с (проверено вживую: ~2 с → Ready). Не получилось — открыть самому или команда ollama serve с копированием." }),
+    state("engine-disconnected", "1 · Движок отключён", "engineDisconnected", {
+      note: "D84: у готового выбранного движка под строкой «Connected.» + «Disconnect». Отключённый — статус «Disconnected», Continue выключена, «Connect» возвращает (Ollama/Claude Code отключаются только в приложении, сама Ollama не останавливается; у Gemini/OpenAI Disconnect удаляет ключ). Отметка радио — толще (stroke 3).",
+    }),
     state("engine-no-claude", "1 · Claude Code не найден", "engineNoClaude", {
       note: "D83: «Connect» ищет уже установленный claude (PATH, ~/.claude/local, Homebrew, ~/.local/bin) — без переустановки. «Install Claude Code» — запасной путь.",
     }),

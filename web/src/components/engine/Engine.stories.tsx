@@ -27,4 +27,5 @@ export const SettingsOllamaNoModel: Story = panel(makeEngines({ ollama: "no_mode
 export const SettingsGemini: Story = panel(makeEngines({ gemini_live: "ready" }, "gemini_live"), {});
 export const SettingsSetUpOpenAi: Story = panel(makeEngines(), { initialPick: "openai_compatible" });
 export const SettingsSetUpClaude: Story = panel(makeEngines({ claude_cli: "not_installed" }), { initialPick: "claude_cli" });
+export const SettingsDisconnected: Story = panel(makeEngines({ ollama: "disconnected" }), {});
 export const SettingsSetUpGemini: Story = panel(makeEngines(), { initialPick: "gemini_live" });

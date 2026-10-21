@@ -3,7 +3,7 @@
 export type EngineId = "ollama" | "openai_compatible" | "claude_cli" | "gemini_live";
 export type StatusCode =
   | "ready" | "not_installed" | "not_running" | "no_model" | "not_configured" | "unreachable"
-  | "unauthorized" | "billing_required" | "error";
+  | "unauthorized" | "billing_required" | "disconnected" | "error";
 
 export interface EngineStatus {
   code: StatusCode;

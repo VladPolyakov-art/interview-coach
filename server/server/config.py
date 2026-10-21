@@ -80,9 +80,12 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "strictness": 2,                          # 1 gentle .. 3 demanding
     "questions_per_session": 5,
     "name": "",                               # how Mike addresses the user (D80); "" = no name
+    "disconnected": [],                       # local engines switched off with Disconnect (D84)
 }
 SECRET_PATHS = [("openai_compatible", "api_key"), ("gemini_live", "api_key")]
 ENGINES = ("ollama", "openai_compatible", "claude_cli", "gemini_live")
+# Engines found on this computer: Disconnect only switches them off in the app (the key engines forget the key).
+LOCAL_ENGINES = ("ollama", "claude_cli")
 LEVELS = ("A2", "B1", "B2", "C1")
 
 _lock = threading.Lock()
@@ -129,6 +132,8 @@ def _validate(settings: dict) -> dict:
     settings["telemetry_opt_in"] = bool(settings.get("telemetry_opt_in"))
     # D80: one line, no control characters, at most 60 characters.
     settings["name"] = " ".join(str(settings.get("name") or "").split())[:60]
+    raw = settings.get("disconnected")
+    settings["disconnected"] = sorted({e for e in raw if e in LOCAL_ENGINES}) if isinstance(raw, list) else []
     if settings.get("stt", {}).get("backend") not in ("auto", "mlx", "faster_whisper", "none"):
         settings["stt"]["backend"] = "auto"
     return settings

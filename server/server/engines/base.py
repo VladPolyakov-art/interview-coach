@@ -19,6 +19,7 @@ StatusCode = Literal[
     "unreachable",        # configured URL does not answer
     "unauthorized",       # key rejected
     "billing_required",   # provider says the key's project needs billing / credits
+    "disconnected",       # the user pressed Disconnect in the app (D84); Connect brings it back
     "error",
 ]
 

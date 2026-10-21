@@ -36,7 +36,7 @@ const BASE: Record<EngineId, Omit<EngineInfo, "status" | "selected">> = {
 };
 
 export type EngineState =
-  | "ready" | "not_installed" | "not_running" | "no_model" | "not_configured";
+  | "ready" | "not_installed" | "not_running" | "no_model" | "not_configured" | "disconnected";
 
 const STATUS: Record<EngineId, Record<EngineState, EngineStatus>> = {
   ollama: {
@@ -45,21 +45,25 @@ const STATUS: Record<EngineId, Record<EngineState, EngineStatus>> = {
     not_running: status("not_running", "Ollama isn't running.", { hint_command: "ollama serve" }),
     no_model: status("no_model", "No model is downloaded yet.", { hint_command: "ollama pull qwen3:4b-instruct" }),
     not_configured: status("not_configured", "Set up Ollama."),
+    disconnected: status("disconnected", "Disconnected in Vukoli."),
   },
   openai_compatible: {
     ready: status("ready", "Connected.", { model: "qwen3-4b-instruct" }),
     not_installed: status("not_configured"), not_running: status("not_configured"), no_model: status("not_configured"),
     not_configured: status("not_configured", "Set the base URL of your AI server.", { hint: "For LM Studio use http://localhost:1234/v1; for OpenAI https://api.openai.com/v1" }),
+    disconnected: status("not_configured"),
   },
   claude_cli: {
     ready: status("ready", "Claude Code is signed in.", { model: "sonnet" }),
     not_installed: status("not_installed", "Claude Code wasn't found."),
     not_running: status("not_installed"), no_model: status("not_installed"), not_configured: status("not_installed"),
+    disconnected: status("disconnected", "Disconnected in Vukoli."),
   },
   gemini_live: {
     ready: status("ready", "Gemini key works.", { model: "gemini-live" }),
     not_installed: status("not_configured"), not_running: status("not_configured"), no_model: status("not_configured"),
     not_configured: status("not_configured", "Add a Gemini API key.", { hint: "Create a free key in Google AI Studio." }),
+    disconnected: status("not_configured"),
   },
 };
 
@@ -103,6 +107,8 @@ function installStub() {
   window.fetch = (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (url.endsWith("/api/engines/ollama/models")) return json(MODELS);
+    // "Disconnect" in stories: the server answers; the fixture list stays as it is.
+    if (/\/api\/engines\/[a-z_]+\/disconnect$/.test(url)) return json({ status: status("disconnected", "") });
     // "Connect" in stories: still not found, so the story shows the follow-up hint.
     const connect = /\/api\/engines\/([a-z_]+)\/connect$/.exec(url);
     if (connect) return json({ started: false, status: status(connect[1] === "claude_cli" ? "not_installed" : "not_running", "") });

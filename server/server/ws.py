@@ -39,7 +39,7 @@ def get_llm(settings: dict, engine_id: str, voice: bool = False) -> LLMEngine:  
 
 
 async def check_engine(settings: dict, engine_id: str, voice: bool = False):             # patched in tests
-    if engine_id == "gemini_live":
+    if engine_id == "gemini_live" and engine_id not in settings.get("disconnected", []):
         block = settings["gemini_live"]
         return basic_status(block.get("api_key", ""), block.get("model", ""))
     return await get_llm(settings, engine_id, voice).status()

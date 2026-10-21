@@ -8,7 +8,7 @@ import { formatBytes } from "../../lib/format";
 import { useLoad } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
 import type { EngineId, EngineInfo } from "../../lib/types";
-import { DEFAULT_PULL, PRESETS } from "./meta";
+import { DEFAULT_PULL, PRESETS, engineName } from "./meta";
 import s from "./engine.module.css";
 
 export function StatusHint({ engine }: { engine: EngineInfo }) {
@@ -42,6 +42,35 @@ function useConnect(id: EngineId) {
 
 function ConnectButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
   return <Button variant="primary" size="sm" loading={busy} onClick={onClick}>{t("engines.connect")}</Button>;
+}
+
+/** D84: switched off with Disconnect; Connect brings it back (and starts Ollama if it isn't running). */
+export function DisconnectedBody({ engine }: { engine: EngineInfo }) {
+  const { connect, busy, failed } = useConnect(engine.id);
+  return (
+    <Callout tone="info" live={failed ? "status" : undefined}
+      actions={<ConnectButton busy={busy} onClick={connect} />}>
+      {failed && engine.id === "ollama" ? t("engines.ollama.stillMissing")
+        : failed && engine.id === "claude_cli" ? t("engines.claude.stillMissing")
+        : t("engines.disconnectedBody", { name: engineName(engine) })}
+    </Callout>
+  );
+}
+
+/** D84: Ollama / Claude Code are switched off in the app only; a key engine forgets its key. */
+export function DisconnectButton({ engine }: { engine: EngineInfo }) {
+  const { refreshEngines } = useApp();
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      await api.disconnectEngine(engine.id);
+    } finally {
+      await refreshEngines();
+      setBusy(false);
+    }
+  };
+  return <Button variant="ghost" size="sm" loading={busy} onClick={() => void run()}>{t("engines.disconnect")}</Button>;
 }
 
 export function OllamaBody({ engine }: { engine: EngineInfo }) {

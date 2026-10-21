@@ -68,6 +68,7 @@ export const api = {
   ollamaModels: () => request<OllamaModelsResponse>("/engines/ollama/models"),
   testEngine: (id: EngineId) => post<EngineTestResult>(`/engines/${id}/test`),
   connectEngine: (id: EngineId) => post<EngineConnectResult>(`/engines/${id}/connect`),
+  disconnectEngine: (id: EngineId) => post<{ status: EngineStatus }>(`/engines/${id}/disconnect`),
   settings: () => request<Settings>("/settings"),
   saveSettings: (patch: SettingsPatch) => post<Settings>("/settings", patch),
   voices: () => request<VoicesResponse>("/voices"),

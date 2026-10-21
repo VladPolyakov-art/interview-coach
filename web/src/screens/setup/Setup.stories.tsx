@@ -26,6 +26,8 @@ export const EngineNoOllamaMobile = mobile("engineNoOllama");
 /** Ollama picked, installed but not running: how to start it. */
 export const EngineNotRunning = desktop("engineNotRunning");
 export const EngineNoClaude = desktop("engineNoClaude");
+export const EngineDisconnected = desktop("engineDisconnected");
+export const EngineDisconnectedMobile = mobile("engineDisconnected");
 export const EngineNoClaudeMobile = mobile("engineNoClaude");
 export const CheckIdle = desktop("checkIdle");
 export const CheckIdleMobile = mobile("checkIdle");

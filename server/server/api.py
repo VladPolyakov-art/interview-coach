@@ -78,10 +78,30 @@ async def engine_connect(engine_id: str, request: Request) -> dict:
     if engine_id not in engines.DESCRIPTORS:
         raise fail(404, "unknown_engine", "Unknown engine.")
     settings = config.load_settings()
+    if engine_id in settings["disconnected"]:
+        settings = config.update_settings({"disconnected": [e for e in settings["disconnected"] if e != engine_id]})
     started = False
     if engine_id == "ollama" and (await engines.engine_status("ollama", settings)).code == "not_running":
         started = await ollama_engine.start(config.ollama_url(settings))
     return {"status": (await engines.engine_status(engine_id, settings)).model_dump(), "started": started}
+
+
+@router.post("/engines/{engine_id}/disconnect")
+async def engine_disconnect(engine_id: str, request: Request) -> dict:
+    """"Disconnect" (D84): Ollama / Claude Code are switched off in the app only (Ollama keeps running for other apps);
+    an OpenAI-compatible service or Gemini forgets its key (and the service address)."""
+    check_origin(request)
+    if engine_id not in engines.DESCRIPTORS:
+        raise fail(404, "unknown_engine", "Unknown engine.")
+    settings = config.load_settings()
+    if engine_id in config.LOCAL_ENGINES:
+        patch: dict = {"disconnected": sorted({*settings["disconnected"], engine_id})}
+    elif engine_id == "openai_compatible":
+        patch = {"openai_compatible": {"api_key": "", "base_url": "", "model": ""}}
+    else:
+        patch = {"gemini_live": {"api_key": ""}}
+    settings = config.update_settings(patch)
+    return {"status": (await engines.engine_status(engine_id, settings)).model_dump()}
 
 
 @router.post("/engines/{engine_id}/test")

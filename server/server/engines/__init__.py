@@ -13,11 +13,29 @@ DESCRIPTORS: dict[str, EngineDescriptor] = {
 }
 
 
+class DisconnectedEngine(LLMEngine):
+    """D84: the user pressed Disconnect. Nothing is called until Connect."""
+
+    def __init__(self, engine_id: str):
+        self.id = engine_id
+
+    async def status(self) -> EngineStatus:
+        return EngineStatus(code="disconnected", message="Disconnected in Vukoli.",
+                            hint="Press Connect in Settings → AI engine to use it again.")
+
+    async def chat_stream(self, messages, *, temperature: float = 0.6, max_tokens: int = 300, json_schema=None):
+        raise EngineError("disconnected", "This AI engine is disconnected.",
+                          "Press Connect in Settings → AI engine to use it again.")
+        yield ""  # pragma: no cover - makes this an async generator
+
+
 def make_llm(settings: dict | None = None, engine_id: str | None = None, *, voice: bool = False) -> LLMEngine:
     """The text LLM for the chosen engine (for gemini_live: the Gemini text model used for feedback).
     voice=True: an Ollama voice session uses ollama.voice_model, by default the small fast model."""
     settings = settings or config.load_settings()
     engine_id = engine_id or settings["engine"]
+    if engine_id in settings.get("disconnected", []):
+        return DisconnectedEngine(engine_id)
     if engine_id == "ollama":
         block = settings["ollama"]
         if voice:
@@ -53,5 +71,5 @@ async def all_engines(settings: dict | None = None) -> list[dict]:
             for eid, status in zip(DESCRIPTORS, statuses)]
 
 
-__all__ = ["DESCRIPTORS", "EngineDescriptor", "EngineError", "EngineStatus", "LLMEngine", "make_llm",
+__all__ = ["DESCRIPTORS", "DisconnectedEngine", "EngineDescriptor", "EngineError", "EngineStatus", "LLMEngine", "make_llm",
            "engine_status", "all_engines"]

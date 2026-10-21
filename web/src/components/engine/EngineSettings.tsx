@@ -9,7 +9,7 @@ import { t } from "../../i18n";
 import { useInterval } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
 import type { EngineId, EngineInfo } from "../../lib/types";
-import { ClaudeBody, GeminiBody, OllamaBody, OllamaModelPicker, OpenAiBody } from "./bodies";
+import { ClaudeBody, DisconnectButton, DisconnectedBody, GeminiBody, OllamaBody, OllamaModelPicker, OpenAiBody } from "./bodies";
 import { EngineStatus, engineStatusWord } from "./EngineStatus";
 import { RECOMMENDED, engineLine, engineModel, engineName } from "./meta";
 import s from "./engine.module.css";
@@ -60,7 +60,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
         <div data-review-id="Engine/InUse" data-review-section="AI engine · In use" data-comment-target>
           <SettingGroup title={t("engines.settings.inUse")} id="engine-in-use" action={recheck} flush>
             <div className={s.item}>
-              <EngineHead engine={selected} />
+              <EngineHead engine={selected} action={selected.status.ready ? <DisconnectButton engine={selected} /> : undefined} />
               {selected.status.ready ? (
                 <Disclosure surface="plain" title={selected.id === "ollama" ? t("engines.flow.models") : t("engines.settings.connection")}>
                   <div className={s.itemBody}>
@@ -71,7 +71,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
               ) : (
                 <div className={s.itemBody}>
                   <EngineBody engine={selected} />
-                  {selected.status.code !== "not_configured" ? <span className={s.note} aria-live="polite">{t("engines.recheckNote")}</span> : null}
+                  {selected.status.code !== "not_configured" && selected.status.code !== "disconnected" ? <span className={s.note} aria-live="polite">{t("engines.recheckNote")}</span> : null}
                 </div>
               )}
             </div>
@@ -111,6 +111,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
                     <EngineBody engine={e} />
                     <Facts engine={e} />
                     <div className={s.footerEnd}>
+                      {e.status.ready ? <DisconnectButton engine={e} /> : null}
                       {!e.status.ready ? <span className={s.note} aria-live="polite">{t("engines.flow.useNote", { name: engineName(e) })}</span> : null}
                       <Button variant="primary" size="sm" disabled={!e.status.ready || switching !== null} loading={switching === e.id} onClick={() => void use(e)}>
                         {t("engines.flow.use", { name: engineName(e) })}
@@ -146,6 +147,7 @@ export function EngineHead({ engine, action }: { engine: EngineInfo; action?: Re
 export function EngineBody({ engine }: { engine: EngineInfo }) {
   // The server repeats terms/privacy notes in status.warnings; show each text once.
   const warnings = engine.status.warnings.filter((w) => w !== engine.terms_note && w !== engine.privacy_note);
+  if (engine.status.code === "disconnected") return <DisconnectedBody engine={engine} />;
   return (
     <>
       {engine.id === "ollama" ? <OllamaBody engine={engine} /> : null}

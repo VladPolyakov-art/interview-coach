@@ -73,3 +73,5 @@
   color: var(--color-text-on-checked);
 }
 .choiceHead[aria-checked="true"] .radio { background: var(--color-checked); border-color: var(--color-checked); }
+/* D84: a Ready pick in the Setup choice: one quiet line and Disconnect. */
+.connectedRow { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }

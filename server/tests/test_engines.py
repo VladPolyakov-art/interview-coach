@@ -8,7 +8,7 @@ import pytest
 
 from server import engines
 from server.engines import claude_cli, gemini_live, ollama, openai_compat
-from server.engines.base import ThinkFilter, extract_json, strip_think
+from server.engines.base import EngineStatus, ThinkFilter, extract_json, strip_think
 
 
 def ollama_transport(models=None, chat_chunks=None, fail=False):
@@ -199,3 +199,39 @@ def test_connect_route_starts_ollama_when_not_running(monkeypatch):
         assert r.status_code == 200 and r.json()["started"] is True and r.json()["status"]["ready"] is True
         assert len(calls) == 1
         assert client.post("/api/engines/nope/connect", headers=same).status_code == 404
+
+
+def test_disconnect_and_connect_round_trip(monkeypatch):
+    """D84: Disconnect switches a local engine off in the app (no process is touched); Connect brings it back.
+    A key engine forgets its key."""
+    from fastapi.testclient import TestClient
+    from server import api, config
+    from server.main import create_app
+
+    async def fake_status(self):
+        return EngineStatus(code="ready", ready=True, message="ok")
+    monkeypatch.setattr(claude_cli.ClaudeCLIEngine, "status", fake_status)
+    same = {"Origin": "http://testserver"}
+    with TestClient(create_app()) as client:
+        r = client.post("/api/engines/claude_cli/disconnect", headers=same)
+        assert r.status_code == 200 and r.json()["status"]["code"] == "disconnected"
+        assert config.load_settings()["disconnected"] == ["claude_cli"]
+        listed = {e["id"]: e["status"]["code"] for e in client.get("/api/engines").json()["engines"]}
+        assert listed["claude_cli"] == "disconnected"
+        r = client.post("/api/engines/claude_cli/connect", headers=same)
+        assert r.json()["status"]["ready"] is True and config.load_settings()["disconnected"] == []
+        config.update_settings({"gemini_live": {"api_key": "k-123"}})
+        client.post("/api/engines/gemini_live/disconnect", headers=same)
+        assert config.load_settings()["gemini_live"]["api_key"] == ""
+        assert client.post("/api/engines/nope/disconnect", headers=same).status_code == 404
+
+
+def test_disconnected_engine_never_runs():
+    from server import engines
+    llm = engines.make_llm({**config_defaults(), "disconnected": ["ollama"]}, "ollama")
+    assert isinstance(llm, engines.DisconnectedEngine)
+
+
+def config_defaults():
+    from server import config
+    return config.load_settings()

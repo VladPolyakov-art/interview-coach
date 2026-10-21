@@ -1,13 +1,14 @@
 /* Setup step 1 (D82): the four engines as a choice, nothing picked for you on the first run. Picking one that isn't
  * ready opens its setup right under it (Ollama not installed → "Download Ollama"; not running → how to start it; a key
  * for Gemini, and so on), and the status re-checks every 5 s until it is Ready. Picking doesn't switch the engine:
- * the step's Continue does, once the picked engine is Ready. */
+ * the step's Continue does, once the picked engine is Ready. A Ready pick shows Disconnect (D84). */
 import { useEffect } from "react";
 import { Badge, Icon, IconButton, SettingGroup, Skeleton } from "../../ds";
 import { t } from "../../i18n";
 import { useInterval } from "../../lib/hooks";
 import { useApp } from "../../lib/store";
 import type { EngineId } from "../../lib/types";
+import { DisconnectButton } from "./bodies";
 import { EngineBody, Facts } from "./EngineSettings";
 import { EngineLogo } from "./EngineLogo";
 import { engineStatusWord } from "./EngineStatus";
@@ -48,13 +49,19 @@ export function EngineChoice({ value, onChange }: EngineChoiceProps) {
                     {model ? `${engineStatusWord(e)} · ${model}` : engineStatusWord(e)}
                   </span>
                 </span>
-                <span className={s.radio} aria-hidden="true">{on ? <Icon name="check" size="sm" /> : null}</span>
+                <span className={s.radio} aria-hidden="true">{on ? <Icon name="check" size="sm" strokeWidth={3} /> : null}</span>
               </button>
               {on && !e.status.ready ? (
                 <div className={s.itemBody}>
                   <EngineBody engine={e} />
                   <Facts engine={e} />
-                  {e.status.code !== "not_configured" ? <span className={s.note} aria-live="polite">{t("engines.recheckNote")}</span> : null}
+                  {e.status.code !== "not_configured" && e.status.code !== "disconnected" ? <span className={s.note} aria-live="polite">{t("engines.recheckNote")}</span> : null}
+                </div>
+              ) : null}
+              {on && e.status.ready ? (
+                <div className={`${s.itemBody} ${s.connectedRow}`}>
+                  <span className={s.note}>{t("engines.connected")}</span>
+                  <DisconnectButton engine={e} />
                 </div>
               ) : null}
             </div>

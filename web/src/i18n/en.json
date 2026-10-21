@@ -134,6 +134,7 @@
       "unreachable": "Can't connect",
       "unauthorized": "Key rejected",
       "billing_required": "Needs billing",
+      "disconnected": "Disconnected",
       "error": "Error"
     },
     "ollama": {
@@ -232,7 +233,10 @@
       "title": "Pick an engine",
       "hint": "Ollama is free and runs on this computer. The others need a key or a plan."
     },
-    "connect": "Connect"
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connected": "Connected.",
+    "disconnectedBody": "Mike won't use {name} until you connect it again."
   },
   "setup": {
     "steps": "Setup steps",
