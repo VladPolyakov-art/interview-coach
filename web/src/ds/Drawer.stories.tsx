@@ -43,7 +43,7 @@ function Demo({ side, startOpen = false }: { side: DrawerSide; startOpen?: boole
         onClose={() => setOpen(false)}
         side={side}
         label={left ? "Menu" : "Feedback"}
-        title={left ? "Interview Coach" : "Feedback"}
+        title={left ? "Vukoli" : "Feedback"}
         closeLabel={left ? undefined : "Hide feedback"}
         duration={left ? "slow" : "slower"}
       >
@@ -56,7 +56,7 @@ function Demo({ side, startOpen = false }: { side: DrawerSide; startOpen?: boole
 /** Left: the rail below 1024 (sidebar surface), open and static. */
 export const LeftRail: StoryObj = {
   render: () => (
-    <Drawer inline open onClose={() => {}} side="left" label="Menu" title="Interview Coach">{railBody}</Drawer>
+    <Drawer inline open onClose={() => {}} side="left" label="Menu" title="Vukoli">{railBody}</Drawer>
   ),
 };
 

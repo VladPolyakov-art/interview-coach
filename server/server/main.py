@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     config.ensure_meta()
-    app = FastAPI(title="Interview Coach", version=__version__, docs_url="/api/docs", redoc_url=None,
+    app = FastAPI(title="Vukoli", version=__version__, docs_url="/api/docs", redoc_url=None,
                   openapi_url="/api/openapi.json", lifespan=lifespan)
     app.include_router(api.router)
     app.include_router(ws.router)
@@ -71,7 +71,7 @@ def create_app() -> FastAPI:
     else:
         @app.get("/", include_in_schema=False)
         async def root():
-            return JSONResponse({"app": "Interview Coach API", "version": __version__,
+            return JSONResponse({"app": "Vukoli API", "version": __version__,
                                  "ui": "Not built yet. Build app/web (npm run build) or run its dev server.",
                                  "docs": "/api/docs"})
     return app

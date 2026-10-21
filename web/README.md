@@ -1,4 +1,4 @@
-# Interview Coach: web client
+# Vukoli: web client
 
 React 19 + Vite 7 + TypeScript (strict) + Storybook 9. It talks to the backend in `../server` over REST (`/api`)
 and one WebSocket per session (`/ws/session`, protocol in `../server/PROTOCOL.md`).

@@ -18,6 +18,7 @@ import { api } from "../lib/api";
 import { prefs } from "../lib/prefs";
 import { errorMessage, useApp } from "../lib/store";
 import { railSessions, type RailSession } from "./railItems";
+import { Wordmark } from "./Wordmark";
 import s from "./AppShell.module.css";
 
 /** react-router adapter for DS rows (NavRow, ListRow): `href` → `to`. */
@@ -126,7 +127,7 @@ export function AppShellView({
             aria-controls={open ? drawerId : undefined}
             onClick={() => setOpen(true)}
           />
-          <Link to="/" className={s.topbarName}>{t("app.name")}</Link>
+          <Link to="/" className={s.topbarName}><Wordmark /></Link>
           {engine.status === "notReady" ? (
             <Link to="/settings/engine" className={s.topbarEngine} aria-label={`${t("rail.engineWarning")}: ${t("rail.notReady")}`}>
               <EngineBadge status="notReady" />
@@ -151,8 +152,7 @@ export function AppShellView({
 function Brand() {
   return (
     <Link to="/" className={s.brand} data-review-id="AppShell/brand">
-      <span className={s.mark}><Icon name="mic" size="sm" /></span>
-      <span className={s.brandName}>{t("app.name")}</span>
+      <Wordmark />
     </Link>
   );
 }

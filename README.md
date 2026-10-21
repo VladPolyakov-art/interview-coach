@@ -1,4 +1,4 @@
-# Interview Coach
+# Vukoli
 
 Practise job interviews out loud with **Mike**, an AI interviewer, on your own computer.
 Mike asks real interview questions (general ones, or questions built from your CV and a job posting), follows up

@@ -1,4 +1,4 @@
-# Contributing to Interview Coach
+# Contributing to Vukoli
 
 Thanks for your interest. Bug reports, ideas and pull requests are welcome.
 
@@ -8,7 +8,7 @@ Thanks for your interest. Bug reports, ideas and pull requests are welcome.
 
 ## No personal data
 
-Interview Coach handles CVs, job postings and voice recordings, so this rule is strict:
+Vukoli handles CVs, job postings and voice recordings, so this rule is strict:
 
 - Never commit real CVs, real names, contact details, job postings tied to a real person, or audio recordings.
 - Test fixtures, examples and screenshots use **fictional** people and companies only. For e-mail addresses
@@ -90,4 +90,4 @@ npm run build
 
 ## License
 
-Interview Coach is licensed under AGPL-3.0-or-later (see `LICENSE`).
+Vukoli is licensed under AGPL-3.0-or-later (see `LICENSE`).

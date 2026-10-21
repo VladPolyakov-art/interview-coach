@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Interview Coach",
+    "name": "Vukoli",
     "practiceOnly": "Practice only: this app is for rehearsal, never for help during a real interview.",
     "noAccount": "No account. Nothing leaves this computer unless you choose an engine that says so.",
     "skipToContent": "Skip to content"
@@ -86,7 +86,7 @@
   },
   "server": {
     "title": "The app server isn't answering",
-    "body": "Interview Coach runs a small server on this computer. Start it, then check again.",
+    "body": "Vukoli runs a small server on this computer. Start it, then check again.",
     "command": "cd app/server && .venv/bin/python -m server",
     "checkAgain": "Check again"
   },

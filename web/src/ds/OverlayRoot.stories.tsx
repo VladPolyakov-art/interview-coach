@@ -40,7 +40,7 @@ function Controls() {
       >
         <p>You answered 2 of 5 questions. The debrief covers what you answered.</p>
       </Dialog>
-      <Drawer open={drawer} onClose={() => setDrawer(false)} side="left" label="Menu" title="Interview Coach">
+      <Drawer open={drawer} onClose={() => setDrawer(false)} side="left" label="Menu" title="Vukoli">
         <nav aria-label="Main" style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
           <NavRow href="#practice" label="Practice" icon="practice" current />
           <NavRow href="#history" label="History" icon="history" />

@@ -44,7 +44,7 @@ export function ReviewPage() {
   return (
     <div className={s.page}>
       <header className={s.intro}>
-        <p className={s.kicker}>Interview Coach · дизайн в коде · 20 окт 2026</p>
+        <p className={s.kicker}>Vukoli · дизайн в коде · 20 окт 2026</p>
         <h1 className={s.h1}>Дизайн-ревью: ключевые экраны</h1>
         <p className={s.lead}>
           Это не макет, а живой код: экраны собраны на React из токенов и компонентов дизайн-системы (направление A, «Тихий чат, одна живая вещь»).

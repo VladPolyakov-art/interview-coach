@@ -59,27 +59,13 @@
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control-h-md);
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-2);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   text-decoration: none;
 }
-.brandName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mark {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
-  border-radius: var(--radius-md);
-  background: var(--color-action);
-  color: var(--color-text-on-action);
-  transition: transform var(--duration-slow) var(--ease-standard);
-}
-.brand:hover .mark { transform: rotate(-8deg) scale(1.04); }
 
 .nav { display: flex; flex: none; flex-direction: column; gap: var(--space-0); }
 .railBody[data-collapsed] .nav { align-items: center; }

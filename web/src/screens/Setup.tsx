@@ -5,6 +5,7 @@ import { Button, Callout, Card, Icon, Segmented, Spinner, Textarea, Toggle } fro
 import { t } from "../i18n";
 import { EnginePanel, EngineTest } from "../components/EnginePanel";
 import { VacancyEditor } from "../components/VacancyEditor";
+import { Wordmark } from "../components/Wordmark";
 import { captureErrorCode, micLevelMeter } from "../audio/capture";
 import { api } from "../lib/api";
 import { useLoad } from "../lib/hooks";
@@ -40,7 +41,7 @@ export function SetupFrame({ step, children }: { step: Step; children: ReactNode
   return (
     <div className={s.screen}>
       <header className={s.header}>
-        <span className={s.brand}><span className={s.mark}><Icon name="mic" size="sm" /></span>{t("app.name")}</span>
+        <span className={s.brand}><Wordmark /></span>
         <nav aria-label={t("setup.steps")}>
           <ol className={s.steps}>
             {STEPS.map((x, i) => (
