@@ -143,6 +143,9 @@ export function SessionView(props: SessionViewProps) {
   /* ---------- island overlays ---------- */
   const [shortcuts, setShortcuts] = useState(props.initialOverlay === "shortcuts");
   const [micHelp, setMicHelp] = useState(false);
+  /* D66: the dialog always closes — ×, Esc, or either way forward; an `overlay="mic-help"` state opens it only once. */
+  const [micHelpClosed, setMicHelpClosed] = useState(false);
+  const closeMicHelp = () => { setMicHelp(false); setMicHelpClosed(true); handlers?.onCloseMicHelp?.(); };
   const [suggestOn, setSuggestOn] = useState(data.suggestOn ?? true);
   const showSuggester = props.suggester === "on" && variant === "interview";
 
@@ -366,7 +369,15 @@ export function SessionView(props: SessionViewProps) {
           <div data-review-id="Session/Panel" data-review-section="Session · Feedback panel" data-comment-target>{body}</div>
         </Drawer>
       ) : null}
-      <MicHelpDialog open={overlay === "mic-help" || micHelp} handlers={{ ...handlers, onCloseMicHelp: () => { setMicHelp(false); handlers?.onCloseMicHelp?.(); } }} />
+      <MicHelpDialog
+        open={(overlay === "mic-help" && !micHelpClosed) || micHelp}
+        handlers={{
+          ...handlers,
+          onCloseMicHelp: closeMicHelp,
+          onUseText: () => { closeMicHelp(); (handlers?.onUseText ?? handlers?.onTypeInstead)?.(); },
+          onTryAgain: () => { closeMicHelp(); handlers?.onTryAgain?.(); },
+        }}
+      />
       <ShortcutsDialog
         open={shortcuts}
         onClose={() => setShortcuts(false)}

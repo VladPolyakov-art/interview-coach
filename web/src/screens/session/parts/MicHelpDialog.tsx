@@ -10,6 +10,7 @@ export function MicHelpDialog({ open, reason = "blocked", handlers }: { open: bo
       open={open}
       title={t("session.micHelp.title")}
       onClose={() => handlers?.onCloseMicHelp?.()}
+      closeLabel={t("common.close")}
       actions={
         <>
           <Button variant="ghost" icon="keyboard" onClick={handlers?.onUseText}>{t("session.micHelp.useText")}</Button>

@@ -285,6 +285,18 @@ export function useSession(config: SessionConfig) {
       send({ type: "input_mode", input });
       dispatch({ type: "local/input_changed", input });
     },
+    /** D66: "Try again" in the mic help — ask for the mic afresh (the user may have just allowed it). In voice the
+     * live-phase effect restarts it once the old capture is gone; from text it is the switch to voice. */
+    retryMic() {
+      stopMic();
+      setMicError(null);
+      if (stateRef.current.input === "text") {
+        ensureAudio();
+        const input = browserRef.current ? "browser_stt" : "voice";
+        send({ type: "input_mode", input });
+        dispatch({ type: "local/input_changed", input });
+      } else void startMic();
+    },
     dismissNotice() {
       dispatch({ type: "local/dismiss_notice" });
     },
@@ -292,7 +304,7 @@ export function useSession(config: SessionConfig) {
       dispatch({ type: "local/dismiss_error" });
     },
     end,
-  }), [send, stopMic, ensureAudio, end, muted]);
+  }), [send, stopMic, startMic, ensureAudio, end, muted]);
 
   const getLevel = useCallback(() => level.current, []);
 

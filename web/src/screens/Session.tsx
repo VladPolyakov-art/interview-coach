@@ -218,6 +218,9 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     onRedo: actions.redo,
     onTypeInstead: actions.switchToText,
     onUseVoice: actions.switchToVoice,
+    // D66: the mic help dialog's ways forward (they did nothing in the live app).
+    onUseText: actions.switchToText,
+    onTryAgain: actions.retryMic,
     onSendText: actions.sendText,
     onFlag: actions.flag,
     onStronger: actions.stronger,

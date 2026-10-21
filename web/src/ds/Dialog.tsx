@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode, type Ref } from "react";
+import { IconButton } from "./Button";
 import { durationMs, runExit, usePresence } from "./motion";
 import { OverlayPortal, useOverlayRoot } from "./OverlayRoot";
 import { trapTab, useOverlayFocus } from "./overlay";
@@ -13,6 +14,8 @@ export interface DialogProps {
   /** Start-aligned actions, e.g. "Delete job" in the vacancy editor (edit mode). */
   actionsStart?: ReactNode;
   onClose: () => void;
+  /** A × button in the header with this label: for help and info dialogs that are not a decision (D66). */
+  closeLabel?: string;
   /** Render open in the document flow: no portal, no scrim, no focus move. For stories and the review gallery. */
   inline?: boolean;
 }
@@ -38,7 +41,7 @@ interface BoxProps extends DialogProps {
   ref?: Ref<HTMLDialogElement>;
 }
 
-function DialogBox({ title, children, actions, actionsStart, onClose, mode, open, className, ref }: BoxProps) {
+function DialogBox({ title, children, actions, actionsStart, onClose, closeLabel, mode, open, className, ref }: BoxProps) {
   const id = useId();
   return (
     <dialog
@@ -58,17 +61,21 @@ function DialogBox({ title, children, actions, actionsStart, onClose, mode, open
         if (mode === "contained") trapTab(e, e.currentTarget);
       }}
     >
-      <Inner id={id} title={title} actions={actions} actionsStart={actionsStart}>{children}</Inner>
+      <Inner id={id} title={title} actions={actions} actionsStart={actionsStart} onClose={onClose} closeLabel={closeLabel}>{children}</Inner>
     </dialog>
   );
 }
 
-function Inner({ id, title, children, actions, actionsStart }: {
+function Inner({ id, title, children, actions, actionsStart, onClose, closeLabel }: {
   id: string; title: ReactNode; children?: ReactNode; actions: ReactNode; actionsStart?: ReactNode;
+  onClose: () => void; closeLabel?: string;
 }) {
   return (
     <div className={s.inner}>
-      <h2 id={`${id}-t`} className={s.title}>{title}</h2>
+      <div className={s.head}>
+        <h2 id={`${id}-t`} className={s.title}>{title}</h2>
+        {closeLabel ? <IconButton icon="x" size="sm" label={closeLabel} className={s.close} onClick={onClose} /> : null}
+      </div>
       {children ? <div className={s.body}>{children}</div> : null}
       <div className={s.actionsRow}>
         {actionsStart ? <div className={s.actionsStart}>{actionsStart}</div> : null}
@@ -94,7 +101,7 @@ function ContainedDialog(props: DialogProps) {
   );
 }
 
-function ModalDialog({ open, title, children, actions, actionsStart, onClose }: DialogProps) {
+function ModalDialog({ open, title, children, actions, actionsStart, onClose, closeLabel }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const cancelExit = useRef<(() => void) | null>(null);
@@ -135,7 +142,7 @@ function ModalDialog({ open, title, children, actions, actionsStart, onClose }: 
       onClose={() => { if (open) onClose(); }}
       onCancel={(e) => { e.preventDefault(); onClose(); }}
     >
-      <Inner id={id} title={title} actions={actions} actionsStart={actionsStart}>{children}</Inner>
+      <Inner id={id} title={title} actions={actions} actionsStart={actionsStart} onClose={onClose} closeLabel={closeLabel}>{children}</Inner>
     </dialog>
   );
 }
