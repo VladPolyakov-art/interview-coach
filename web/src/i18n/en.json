@@ -777,7 +777,8 @@
     "chat": {
       "hide": "Hide the conversation (H)",
       "show": "Show the conversation (H)",
-      "hiddenNote": "The conversation is hidden. Press H to show it."
+      "hiddenNote": "Conversation hidden",
+      "showAction": "Show"
     }
   },
   "feedback": {
