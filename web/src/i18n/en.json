@@ -61,7 +61,8 @@
     "toggleOpen": "Open sidebar",
     "rowActions": "Actions for {title}",
     "rowOpen": "Open",
-    "engineWarning": "AI engine"
+    "engineWarning": "AI engine",
+    "help": "Help & what's free"
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -1184,7 +1185,8 @@
       "practice": "Practice",
       "profile": "Your CV",
       "appearance": "Appearance",
-      "privacy": "Privacy and data"
+      "privacy": "Privacy and data",
+      "about": "About and what's free"
     },
     "voice": {
       "title": "Mike's voice",
@@ -1248,7 +1250,40 @@
       "trashHint": "Sessions you moved to Trash stay here until you delete them for good."
     },
     "saved": "Saved",
-    "saveError": "Couldn't save: {message}"
+    "saveError": "Couldn't save: {message}",
+    "about": {
+      "freeTitle": "What's free",
+      "freeIntro": "Everything you need to practise is free forever, with no account and no key. The free core is never a demo.",
+      "tableCaption": "What's free forever and what Premium will add",
+      "feature": "Feature",
+      "free": "Free forever",
+      "premium": "Premium",
+      "later": "Coming later",
+      "included": "Included",
+      "notIncluded": "Not included",
+      "premiumNote": "Premium isn't available yet and has no price. When it comes, it adds to the free core and takes nothing away.",
+      "row": {
+        "practice": "Interview practice with Mike",
+        "english": "English practice",
+        "prep": "Prep from your CV and the job description",
+        "bank": "Question bank",
+        "debrief": "Debrief after every session",
+        "memory": "Mistake memory",
+        "drill": "Weak-spot drill",
+        "setup": "Zero setup",
+        "voice": "Best live voice",
+        "trends": "Trends across sessions",
+        "devices": "History on all your devices"
+      },
+      "cell": {
+        "setup": "Set up a local engine once",
+        "voice": "Voice on this computer",
+        "devices": "This computer only"
+      },
+      "practiceTitle": "Practice only",
+      "licenceTitle": "Open source",
+      "licence": "The app is open source under AGPL-3.0-or-later. Your sessions stay on this computer."
+    }
   },
   "errors": {
     "generic": "Something went wrong.",

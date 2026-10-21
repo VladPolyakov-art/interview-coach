@@ -5,7 +5,7 @@
  * Rail, top to bottom: app mark + name with the sidebar toggle · New practice (a round filled plus) · "Recents" = ALL sessions,
  * newest first (one line each, no dates, a quiet EN marker for English; the middle part scrolls; a "…" menu on hover or focus:
  * Open, Move to Trash) · an "AI engine · Not ready" row (only when it is not ready: P6) · the account row (avatar, "You",
- * "Saved on this computer") which opens a menu upward (Settings, Appearance, Privacy and data). Collapsed: toggle, round plus,
+ * "Saved on this computer") which opens a menu upward (Settings, Appearance, Privacy and data, Help & what's free). Collapsed: toggle, round plus,
  * a warning icon (only when not ready) and the avatar, each with a Tooltip. The rail is set off from the content by its fill, no line.
  * <main> is the scroll container and the `page` container for screens.
  * `AppShellView` is pure (every state by props: review frames, stories); `AppShell` is the live container. */
@@ -317,6 +317,7 @@ function Account({ collapsed, defaultOpen, onNavigate }: { collapsed: boolean; d
     { id: "appearance", label: t("settings.section.appearance"), icon: "sun", onSelect: go("/settings/appearance") },
     { id: "sep", separator: true },
     { id: "privacy", label: t("settings.section.privacy"), icon: "lock", onSelect: go("/settings/privacy") },
+    { id: "help", label: t("rail.help"), icon: "info", onSelect: go("/settings/about#free") },
   ];
   return (
     <Menu

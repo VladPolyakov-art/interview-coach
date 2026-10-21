@@ -1,7 +1,8 @@
-/* Settings: engine (same flow as the setup wizard, a summary card by default), voice and speech, practice, CV, appearance, privacy and data. */
+/* Settings: engine (same flow as the setup wizard, a summary card by default), voice and speech, practice, CV, appearance, privacy and data,
+ * about and what's free (D58: the free-vs-premium table of US-30, practice-only statement, licence; `#free` anchor). */
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import { Button, Callout, Card, CopyField, Icon, Segmented, Select, Skeleton, Textarea, Toggle, Input, type IconName } from "../ds";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { Badge, Button, Callout, Card, CopyField, Icon, Segmented, Select, Skeleton, Textarea, Toggle, Input, type IconName } from "../ds";
 import { t, tp } from "../i18n";
 import { EnginePanel } from "../components/EnginePanel";
 import { Page, Section } from "../components/Page";
@@ -22,8 +23,9 @@ const SECTIONS: { id: string; icon: IconName }[] = [
   { id: "profile", icon: "user" },
   { id: "appearance", icon: "sun" },
   { id: "privacy", icon: "lock" },
+  { id: "about", icon: "info" },
 ];
-type SectionId = "engine" | "voice" | "practice" | "profile" | "appearance" | "privacy";
+type SectionId = "engine" | "voice" | "practice" | "profile" | "appearance" | "privacy" | "about";
 
 export function SettingsScreen() {
   const { section = "engine" } = useParams();
@@ -56,6 +58,7 @@ function SettingsLayout({ id }: { id: SectionId }) {
           {id === "profile" ? <ProfileSection /> : null}
           {id === "appearance" ? <AppearanceSection /> : null}
           {id === "privacy" ? <PrivacySection /> : null}
+          {id === "about" ? <AboutSection /> : null}
         </div>
       </div>
     </Page>
@@ -340,5 +343,78 @@ function PrivacySection() {
         <p className={s.hint}>{t("settings.privacy.trashHint")}</p>
       </Card>
     </Section>
+  );
+}
+
+/** US-30 rows in table order: free-forever features first, then what Premium adds. A text cell says what the free core
+ * offers instead (D13); no cell means "not included". */
+const FREE_ROWS = ["practice", "english", "prep", "bank", "debrief", "memory", "drill"] as const;
+const PREMIUM_ROWS = [
+  { id: "setup", free: "setup" },
+  { id: "voice", free: "voice" },
+  { id: "trends", free: null },
+  { id: "devices", free: "devices" },
+] as const;
+
+function Included() {
+  return <span className={s.yes}><Icon name="check" size="sm" /><span className="visually-hidden">{t("settings.about.included")}</span></span>;
+}
+
+function NotIncluded() {
+  return <span className={s.no}><span aria-hidden="true">—</span><span className="visually-hidden">{t("settings.about.notIncluded")}</span></span>;
+}
+
+/** About and what's free (D58): reached from the account menu ("Help & what's free") and Home's "What's free" link. */
+function AboutSection() {
+  const { hash } = useLocation();
+  const freeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (hash === "#free") freeRef.current?.scrollIntoView({ block: "start" });
+  }, [hash]);
+  return (
+    <>
+      <div id="free" ref={freeRef} className={s.anchor}>
+        <Section title={t("settings.about.freeTitle")} id="about-free-title">
+          <p className={s.lead}>{t("settings.about.freeIntro")}</p>
+          <Card className={s.tableCard}>
+            <table className={s.table} data-review-id="Settings/freeTable">
+              <caption className="visually-hidden">{t("settings.about.tableCaption")}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t("settings.about.feature")}</th>
+                  <th scope="col">{t("settings.about.free")}</th>
+                  <th scope="col">
+                    <span className={s.premiumHead}>{t("settings.about.premium")}<Badge tone="outline">{t("settings.about.later")}</Badge></span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {FREE_ROWS.map((id) => (
+                  <tr key={id}>
+                    <th scope="row">{t(`settings.about.row.${id}`)}</th>
+                    <td><Included /></td>
+                    <td><Included /></td>
+                  </tr>
+                ))}
+                {PREMIUM_ROWS.map((row) => (
+                  <tr key={row.id}>
+                    <th scope="row">{t(`settings.about.row.${row.id}`)}</th>
+                    <td>{row.free ? <span className={s.cellText}>{t(`settings.about.cell.${row.free}`)}</span> : <NotIncluded />}</td>
+                    <td><Included /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+          <p className={s.hint}>{t("settings.about.premiumNote")}</p>
+        </Section>
+      </div>
+      <Section title={t("settings.about.practiceTitle")} id="about-practice-title">
+        <Callout tone="info">{t("app.practiceOnly")}</Callout>
+      </Section>
+      <Section title={t("settings.about.licenceTitle")} id="about-licence-title">
+        <p className={s.lead}>{t("settings.about.licence")}</p>
+      </Section>
+    </>
   );
 }

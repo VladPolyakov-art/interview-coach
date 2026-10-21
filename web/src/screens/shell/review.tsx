@@ -1,9 +1,10 @@
 /* Sidebar on the review page (D57): the claude.ai-style sidebar of the AppShell, every state from props (no network).
  * Each state is a 1440 frame (the rail) and, for the drawer, a 375 frame. Fixture: docs/ia.md §6 (Alex Morgan). */
 import type { ReactNode } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AppShellView, type AppShellViewProps, type RecentState } from "../../components/AppShell";
 import { Page } from "../../components/Page";
+import { SettingsScreen } from "../Settings";
 import { Card } from "../../ds";
 import type { ReviewScreen, ReviewState } from "../../review/screens";
 
@@ -19,9 +20,9 @@ const RECENT: RecentState = {
   ],
 };
 
-function Scene(props: Partial<AppShellViewProps>) {
+function Scene({ at = "/sessions/s1", page, ...props }: Partial<AppShellViewProps> & { at?: string; page?: ReactNode }) {
   return (
-    <MemoryRouter initialEntries={["/sessions/s1"]}>
+    <MemoryRouter initialEntries={[at]}>
       <AppShellView
         current={null}
         currentSessionId="s1"
@@ -30,9 +31,11 @@ function Scene(props: Partial<AppShellViewProps>) {
         onTrashSession={() => {}}
         {...props}
       >
-        <Page layout="start" title="Good evening, Alex">
-          <Card padding="md"><p>The page content takes the room the sidebar leaves: collapse it and this column grows.</p></Card>
-        </Page>
+        {page ?? (
+          <Page layout="start" title="Good evening, Alex">
+            <Card padding="md"><p>The page content takes the room the sidebar leaves: collapse it and this column grows.</p></Card>
+          </Page>
+        )}
       </AppShellView>
     </MemoryRouter>
   );
@@ -46,7 +49,7 @@ const DOWN = { name: "Ollama · qwen3:4b", status: "notReady" as const };
 export const shellReview: ReviewScreen = {
   id: "sidebar",
   title: "Sidebar",
-  note: "D57: меню как у Claude (claude.ai). Сверху — знак и название, справа кнопка «Close sidebar»; ниже «New practice» (круглый плюс); «Recents» — чаты в одну строку, без дат, у английских тихое «EN»; снизу строка аккаунта открывает меню вверх (Settings, Appearance, Privacy and data). От 1024 сайдбар сворачивается в узкую полосу значков (запоминается), ниже 1024 он в выезжающей панели. Строки — заливка без линий.",
+  note: "D57: меню как у Claude (claude.ai). Сверху — знак и название, справа кнопка «Close sidebar»; ниже «New practice» (круглый плюс); «Recents» — чаты в одну строку, без дат, у английских тихое «EN»; снизу строка аккаунта открывает меню вверх (Settings, Appearance, Privacy and data, Help & what's free). От 1024 сайдбар сворачивается в узкую полосу значков (запоминается), ниже 1024 он в выезжающей панели. Строки — заливка без линий.",
   states: [
     state("expanded", "Развёрнут", () => <Scene />, {
       dark: true,
@@ -58,7 +61,14 @@ export const shellReview: ReviewScreen = {
     }),
     state("account-menu", "Меню аккаунта", () => <Scene initialMenu="account" />, {
       dark: true,
-      note: "Вся строка «You · Saved on this computer» — одна кнопка, меню открывается вверх: имя, Settings, Appearance, Privacy and data. Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
+      note: "Вся строка «You · Saved on this computer» — одна кнопка, меню открывается вверх: имя, Settings, Appearance, Privacy and data, Help & what's free (D58). Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
+    }),
+    state("about", "Help & what's free → Settings · About", () => (
+      <Scene at="/settings/about" current="settings" currentSessionId={undefined}
+        page={<Routes><Route path="/settings/:section" element={<SettingsScreen />} /></Routes>} />
+    ), {
+      dark: true, tall: true,
+      note: "D58: пункт «Help & what's free» в меню аккаунта и ссылка «What's free» на Home ведут сюда (/settings/about#free). Одна таблица US-30: бесплатно навсегда — практика, английский, подготовка по CV и вакансии, банк вопросов, разбор, память ошибок, дрилл; Premium помечен «Coming later», цены нет. Ниже — «Practice only» и лицензия AGPL-3.0-or-later.",
     }),
     state("account-menu-collapsed", "Меню аккаунта в узкой полосе", () => <Scene collapsed initialMenu="account" />, {
       note: "То же меню от аватара, пока полоса свёрнута.",
