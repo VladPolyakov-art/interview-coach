@@ -8,7 +8,7 @@ import { formatBytes } from "../../lib/format";
 import { useLoad } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
 import type { EngineId, EngineInfo, EngineStatus } from "../../lib/types";
-import { PRESETS, engineName } from "./meta";
+import { PRESETS, cliKey, engineName, isCli } from "./meta";
 import { OllamaDownload } from "./OllamaDownload";
 import s from "./engine.module.css";
 
@@ -53,15 +53,15 @@ export function DisconnectedBody({ engine }: { engine: EngineInfo }) {
   return (
     <Callout tone="info" live={failed ? "status" : undefined}
       actions={<ConnectButton busy={busy} onClick={connect} />}>
-      {busy && engine.id === "claude_cli" ? t("engines.claude.checking")
+      {busy && isCli(engine.id) ? t(`engines.${cliKey(engine.id)}.checking`)
         : failed && engine.id === "ollama" ? t("engines.ollama.stillMissing")
-        : failed && engine.id === "claude_cli" ? t("engines.claude.stillMissing")
+        : failed && isCli(engine.id) ? t(`engines.${cliKey(engine.id)}.stillMissing`)
         : t("engines.disconnectedBody", { name: engineName(engine) })}
     </Callout>
   );
 }
 
-/** D84: Ollama / Claude Code are switched off in the app only; a key engine forgets its key. */
+/** D84: Ollama / Claude Code / Codex are switched off in the app only; a key engine forgets its key. */
 export function DisconnectButton({ engine }: { engine: EngineInfo }) {
   const { refreshEngines } = useApp();
   const [busy, setBusy] = useState(false);
@@ -207,51 +207,62 @@ export function OpenAiBody({ engine }: { engine: EngineInfo }) {
   );
 }
 
-/** Claude Code (D85): found isn't enough — Connect sends one short real request on the user's plan, and only an
- * answer makes it Ready. Not signed in → the command to sign in; any other failure shows Claude's own message. */
-export function ClaudeBody({ engine }: { engine: EngineInfo }) {
+/** Claude Code (D85) and Codex (D86): found isn't enough — Connect sends one short real request on the user's plan,
+ * and only an answer makes it Ready. Not signed in → the command to sign in; any other failure shows the CLI's own
+ * message. Copy comes from engines.claude.* / engines.codex.*. */
+function CliBody({ engine, login }: { engine: EngineInfo; login: string }) {
   const code = engine.status.code;
-  const { connect, busy, failed } = useConnect("claude_cli");
+  const k = cliKey(engine.id);
+  const { connect, busy, failed } = useConnect(engine.id);
   const terms = engine.terms_note ? <p className={s.note}><Icon name="info" size="sm" /> {engine.terms_note}</p> : null;
   if (code === "ready") {
-    return <><Callout tone="success" title={t("engines.claude.signedIn")} />{terms}</>;
+    return <><Callout tone="success" title={t(`engines.${k}.signedIn`)} />{terms}</>;
   }
   if (code === "not_installed") {
+    const install = engine.status.hint_command;
     return (
       <>
-        <Callout tone="warning" title={t("engines.claude.notFound")} live={failed ? "status" : undefined}
+        <Callout tone="warning" title={t(`engines.${k}.notFound`)} live={failed ? "status" : undefined}
           actions={(
             <>
               <ConnectButton busy={busy} onClick={connect} />
-              {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.claude.install")}</Button> : null}
+              {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t(`engines.${k}.install`)}</Button> : null}
             </>
           )}>
-          {failed ? t("engines.claude.stillMissing") : t("engines.claude.connectHint")}
+          {failed ? t(`engines.${k}.stillMissing`) : install ? (
+            <>
+              <p>{t(`engines.${k}.connectHint`)}</p>
+              <CopyField value={install} copyLabel={t("common.copyCommand")} copiedLabel={t("common.copied")} label={t("common.command")} />
+            </>
+          ) : t(`engines.${k}.connectHint`)}
         </Callout>
         {terms}
       </>
     );
   }
-  const signedOut = code === "unauthorized";
+  const signedOut = code === "unauthorized" || failed?.code === "unauthorized";
   const errored = Boolean(failed && failed.code !== "unauthorized");
   return (
     <>
       <Callout tone={errored ? "error" : signedOut ? "warning" : "info"} live={failed ? "alert" : undefined}
-        title={signedOut ? t("engines.claude.signedOut") : t("engines.claude.unverified")}
+        title={signedOut ? t(`engines.${k}.signedOut`) : t(`engines.${k}.unverified`)}
         actions={<ConnectButton busy={busy} onClick={connect} />}>
-        {busy ? t("engines.claude.checking")
-          : errored ? t("engines.claude.failed", { message: failed?.message ?? "" })
+        {busy ? t(`engines.${k}.checking`)
+          : errored ? t(`engines.${k}.failed`, { message: failed?.message ?? "" })
           : signedOut ? (
             <>
-              <p>{t("engines.claude.signInHint")}</p>
-              <CopyField value="claude" copyLabel={t("common.copyCommand")} copiedLabel={t("common.copied")} label={t("common.command")} />
+              <p>{t(`engines.${k}.signInHint`)}</p>
+              <CopyField value={engine.status.hint_command || login} copyLabel={t("common.copyCommand")} copiedLabel={t("common.copied")} label={t("common.command")} />
             </>
-          ) : t("engines.claude.connectNote")}
+          ) : t(`engines.${k}.connectNote`)}
       </Callout>
       {terms}
     </>
   );
 }
+
+export const ClaudeBody = ({ engine }: { engine: EngineInfo }) => <CliBody engine={engine} login="claude" />;
+export const CodexBody = ({ engine }: { engine: EngineInfo }) => <CliBody engine={engine} login="codex login" />;
 
 export function GeminiBody({ engine }: { engine: EngineInfo }) {
   const { settings, updateSettings, refreshEngines } = useApp();

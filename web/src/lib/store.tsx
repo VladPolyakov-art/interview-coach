@@ -43,7 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback(async (patch: SettingsPatch) => {
     const next = await api.saveSettings(patch);
     setSettings(next);
-    if (patch.engine || patch.ollama || patch.openai_compatible || patch.gemini_live || patch.claude_cli) void refreshEngines();
+    if (patch.engine || patch.ollama || patch.openai_compatible || patch.gemini_live || patch.claude_cli || patch.codex_cli) void refreshEngines();
     return next;
   }, [refreshEngines]);
 

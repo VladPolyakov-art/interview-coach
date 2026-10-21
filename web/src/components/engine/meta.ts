@@ -14,11 +14,17 @@ export const PRESETS = [
 
 /** i18n key segment: engines.<key>.name / tagline / pick. */
 export function engineKey(id: EngineId) {
-  return id === "openai_compatible" ? "openai" : id === "claude_cli" ? "claude" : id === "gemini_live" ? "gemini" : "ollama";
+  return id === "openai_compatible" ? "openai" : id === "claude_cli" ? "claude" : id === "codex_cli" ? "codex"
+    : id === "gemini_live" ? "gemini" : "ollama";
 }
 
 export const engineName = (e: Pick<EngineInfo, "id" | "name">) => tMaybe(`engines.${engineKey(e.id)}.name`, e.name);
 export const engineLine = (id: EngineId) => t(`engines.${engineKey(id)}.pick`);
+
+/** Engines that run a CLI the user signed in to themselves (D85, D86): signed in, not a key. */
+export const isCli = (id: EngineId) => id === "claude_cli" || id === "codex_cli";
+/** Their copy: engines.claude.* / engines.codex.*. */
+export const cliKey = (id: EngineId) => (id === "codex_cli" ? "codex" : "claude") as "claude" | "codex";
 
 /** The model Mike would use right now: the status model when ready, else the saved setting (if any). */
 export function engineModel(e: EngineInfo, settings: Settings | null): string {

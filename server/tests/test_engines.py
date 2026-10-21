@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import httpx
 import pytest
 
 from server import engines
-from server.engines import claude_cli, gemini_live, ollama, openai_compat
-from server.engines.base import EngineStatus, ThinkFilter, extract_json, strip_think
+from server.engines import claude_cli, codex_cli, gemini_live, ollama, openai_compat
+from server.engines.base import EngineError, EngineStatus, ThinkFilter, extract_json, strip_think
 
 
 def ollama_transport(models=None, chat_chunks=None, fail=False):
@@ -137,13 +138,14 @@ async def test_engine_registry_lists_all_with_status(monkeypatch):
     monkeypatch.setattr(claude_cli, "find_claude", lambda: None)
     settings = {"engine": "ollama", "ollama": {"url": "http://127.0.0.1:9", "model": ""},
                 "openai_compatible": {"base_url": "", "api_key": "", "model": ""}, "claude_cli": {"model": "haiku"},
-                "gemini_live": {"api_key": "", "model": "m", "text_model": "t", "voice": "Puck"}}
+                "codex_cli": {"model": ""}, "gemini_live": {"api_key": "", "model": "m", "text_model": "t", "voice": "Puck"}}
     items = await engines.all_engines(settings)
-    assert [i["id"] for i in items] == ["ollama", "openai_compatible", "claude_cli", "gemini_live"]
+    assert [i["id"] for i in items] == ["ollama", "openai_compatible", "claude_cli", "codex_cli", "gemini_live"]
     by_id = {i["id"]: i for i in items}
     assert by_id["ollama"]["selected"] and by_id["ollama"]["status"]["code"] == "not_installed"
     assert by_id["openai_compatible"]["status"]["code"] == "not_configured"
     assert by_id["claude_cli"]["status"]["code"] == "not_installed"
+    assert by_id["codex_cli"]["status"]["code"] == "not_installed"
 
 
 async def test_ollama_voice_session_defaults_to_small_model():
@@ -325,3 +327,115 @@ def test_claude_gets_user_and_home_outside_a_terminal(monkeypatch):
     monkeypatch.delenv("LOGNAME", raising=False)
     env = claude_cli.child_env()
     assert env["USER"] and env["LOGNAME"] == env["USER"] and env["HOME"]
+
+
+def fake_codex(tmp_path, *, signed_in: bool, lines: list[dict]):
+    """A stand-in `codex`: `login status` exits 0 or 1, `exec` prints JSONL events and saves its arguments."""
+    fake = tmp_path / "codex"
+    out = "\n".join(json.dumps(x) for x in lines)
+    fake.write_text(f"""#!/bin/sh
+if [ "$1" = login ]; then {'exit 0' if signed_in else 'echo "Not logged in"; exit 1'}; fi
+echo "$@" > "{tmp_path}/args"
+cat > "{tmp_path}/prompt"
+cat <<'JSONL'
+{out}
+JSONL
+""")
+    fake.chmod(0o755)
+    return str(fake)
+
+
+async def test_codex_status_needs_login_then_a_real_answer(tmp_path):
+    """D86: not installed → not signed in (`codex login status`) → unverified until Connect → ready."""
+    assert (await codex_cli.CodexCLIEngine(binary=None).status()).code == "not_installed"
+    out = fake_codex(tmp_path, signed_in=False, lines=[])
+    status = await codex_cli.CodexCLIEngine(binary=out, verified=True).status()
+    assert status.code == "unauthorized" and status.hint_command == "codex login"
+    out = fake_codex(tmp_path, signed_in=True, lines=[])
+    assert (await codex_cli.CodexCLIEngine(binary=out, verified=None).status()).code == "unverified"
+    assert (await codex_cli.CodexCLIEngine(binary=out, verified=False).status()).code == "unverified"
+    assert (await codex_cli.CodexCLIEngine(binary=out, verified=True).status()).ready
+
+
+async def test_codex_runs_with_every_tool_switched_off(tmp_path):
+    """D86: Codex is a coding agent — no shell, files, web, apps, plugins, MCP, skills, sub-agents or user config;
+    the reply is the last agent message (earlier ones are preambles); instructions lead the prompt."""
+    out = fake_codex(tmp_path, signed_in=True, lines=[
+        {"type": "thread.started", "thread_id": "t"}, {"type": "turn.started"},
+        {"type": "item.completed", "item": {"id": "i0", "type": "reasoning", "text": "thinking"}},
+        {"type": "item.completed", "item": {"id": "i1", "type": "agent_message", "text": "I'll answer now."}},
+        {"type": "item.completed", "item": {"id": "i2", "type": "agent_message", "text": "Hi, I'm Mike."}},
+        {"type": "turn.completed", "usage": {}}])
+    reply = await codex_cli.CodexCLIEngine(binary=out).complete(
+        [{"role": "system", "content": "You are Mike."}, {"role": "user", "content": "Say hi"}])
+    assert reply == "Hi, I'm Mike."
+    args = (tmp_path / "args").read_text().split()
+    for flag in ("--ephemeral", "--ignore-user-config", "--ignore-rules", "--skip-git-repo-check", "--json"):
+        assert flag in args
+    assert args[args.index("--sandbox") + 1] == "read-only"
+    disabled = {args[i + 1] for i, a in enumerate(args) if a == "--disable"}
+    assert {"shell_tool", "unified_exec", "apps", "plugins", "browser_use", "computer_use", "multi_agent",
+            "code_mode"} <= disabled
+    for value in ('web_search="disabled"', "skills.include_instructions=false", "skills.bundled.enabled=false",
+                  "agents.max_depth=0"):
+        assert value in args
+    workdir = args[args.index("-C") + 1]
+    assert "vukoli-codex-" in workdir and not Path(workdir).exists()      # an empty folder, removed afterwards
+    prompt = (tmp_path / "prompt").read_text()
+    assert prompt.startswith(codex_cli.NO_TOOLS) and "You are Mike." in prompt and prompt.rstrip().endswith("Say hi")
+
+
+async def test_codex_stops_a_run_that_reaches_for_a_tool(tmp_path):
+    """D86, fail closed: a tool event despite the flags ends the run with an error, its output never reaches Mike."""
+    out = fake_codex(tmp_path, signed_in=True, lines=[
+        {"type": "turn.started"},
+        {"type": "item.started", "item": {"id": "i0", "type": "command_execution", "command": "ls ~"}},
+        {"type": "item.completed", "item": {"id": "i1", "type": "agent_message", "text": "Desktop Documents"}}])
+    with pytest.raises(EngineError) as err:
+        await codex_cli.CodexCLIEngine(binary=out).complete([{"role": "user", "content": "Say hi"}])
+    assert err.value.code == "engine_error" and "command_execution" in err.value.message
+
+
+async def test_codex_401_forgets_the_sign_in(tmp_path):
+    from server import config
+    out = fake_codex(tmp_path, signed_in=True, lines=[
+        {"type": "turn.started"},
+        {"type": "error", "message": "Reconnecting... 1/5 (unexpected status 401 Unauthorized: Missing bearer)"},
+        {"type": "turn.failed", "error": {"message": "unexpected status 401 Unauthorized"}}])
+    config.update_settings({"codex_cli": {"verified": True}})
+    status = await codex_cli.CodexCLIEngine(binary=out).test()
+    assert status.code == "unauthorized" and status.hint_command == "codex login"
+    assert config.load_settings()["codex_cli"]["verified"] is False
+
+
+def test_codex_connect_checks_login_then_sends_one_request(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server import config
+    from server.main import create_app
+    logged = iter([False, True, True])
+    answers = iter([EngineStatus(code="error", message="usage limit"),
+                    EngineStatus(code="ready", ready=True, message="Codex answered.")])
+    sent = []
+
+    async def fake_test(self):
+        sent.append(1)
+        return next(answers)
+    monkeypatch.setattr(codex_cli, "find_codex", lambda: "/bin/codex")
+    monkeypatch.setattr(codex_cli, "signed_in", lambda binary: next(logged))
+    monkeypatch.setattr(codex_cli.CodexCLIEngine, "test", fake_test)
+    monkeypatch.setattr(codex_cli.CodexCLIEngine, "status", lambda self: _ready_status())
+    same = {"Origin": "http://testserver"}
+    with TestClient(create_app()) as client:
+        client.post("/api/engines/codex_cli/connect", headers=same)
+        assert not sent and config.load_settings()["codex_cli"]["verified"] is False   # not signed in: no request
+        r = client.post("/api/engines/codex_cli/connect", headers=same).json()
+        assert r["status"]["message"] == "usage limit" and config.load_settings()["codex_cli"]["verified"] is False
+        r = client.post("/api/engines/codex_cli/connect", headers=same).json()
+        assert r["status"]["ready"] is True and config.load_settings()["codex_cli"]["verified"] is True
+        assert len(sent) == 2
+        client.post("/api/engines/codex_cli/disconnect", headers=same)
+        assert "codex_cli" in config.load_settings()["disconnected"]
+
+
+async def _ready_status():
+    return EngineStatus(code="ready", ready=True)

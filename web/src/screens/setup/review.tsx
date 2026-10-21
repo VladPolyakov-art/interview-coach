@@ -39,6 +39,18 @@ export const setupReview: ReviewScreen = {
     state("engine-claude-signed-out", "1 · Claude Code не вошёл", "engineClaudeSignedOut", {
       note: "D85: проверка вернула «Not logged in» — команда claude с копированием: открыть Терминал, войти, нажать Connect. Другая ошибка (лимит, сеть) — текст Claude как есть, красным.",
     }),
+    state("engine-no-codex", "1 · Codex не найден", "engineNoCodex", {
+      mobile: false,
+      note: "D86: пятый движок — Codex CLI на подписке ChatGPT. Не найден — команда установки brew install --cask codex с копированием и «Connect» (ищет уже установленный codex: PATH, Homebrew, npm, ~/.local/bin). Логотип — знак OpenAI.",
+    }),
+    state("engine-codex-signed-out", "1 · Codex не вошёл", "engineCodexSignedOut", {
+      mobile: false,
+      note: "D86: вход проверяется локально и бесплатно (codex login status) — без запроса. Не вошёл — команда codex login с копированием: войти через ChatGPT, нажать Connect. В списке слово «Not signed in», а не «Key rejected» (то же у Claude Code).",
+    }),
+    state("engine-codex-connect", "1 · Codex вошёл, не проверен", "engineCodexConnect", {
+      note: "D86: как у Claude Code — «Connect» шлёт один короткий настоящий запрос с плана ChatGPT, Ready только если Codex ответил. Codex запускается без инструментов: без команд и файлов, без веба, приложений, плагинов, MCP и твоих настроек, в пустой временной папке, сессия не сохраняется.",
+    }),
+    state("engine-codex-ready", "1 · Codex подключён", "engineCodexReady", { mobile: false, note: "D86: Codex ответил на Connect — статус Ready, под строкой «Connected.» + «Disconnect», Continue включается. В настройках — «Codex answered. It's connected.» и условие: запросы идут с плана ChatGPT, правила OpenAI." }),
     state("check-idle", "2 · Проверка — старт", "checkIdle", {
       dark: true,
       note: "Сверху выбор голоса Майка и ▶ образец. Справа от голоса — кнопка «Listen» (D82: с подписью, не значок). Ниже — микрофон: «Press the microphone and say something like “Hi Mike, can you hear me?”». Справа внизу — «I'll type instead», без проверки микрофона.",

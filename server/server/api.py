@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from . import (DATA_VERSION, __version__, config, content, engines, feedback, memory, planner, storage, stt,
                telemetry, tts)
 from .documents import DocumentError, read_file, read_url
-from .engines import claude_cli
+from .engines import claude_cli, codex_cli
 from .engines import ollama as ollama_engine
 from .engines.base import EngineError
 
@@ -123,12 +123,22 @@ async def engine_connect(engine_id: str, request: Request) -> dict:
             settings = config.update_settings({"claude_cli": {"verified": tested.ready}})
         if not tested.ready:
             return {"status": tested.model_dump(), "started": False}
+    if engine_id == "codex_cli" and (binary := codex_cli.find_codex()):
+        # D86: the same for Codex, once `codex login status` says it's signed in (that check is local and free).
+        if not await asyncio.to_thread(codex_cli.signed_in, binary):
+            settings = config.update_settings({"codex_cli": {"verified": False}})
+        else:
+            tested = await codex_cli.CodexCLIEngine(settings["codex_cli"].get("model", "")).test()
+            if tested.code in ("ready", "unauthorized"):
+                settings = config.update_settings({"codex_cli": {"verified": tested.ready}})
+            if not tested.ready:
+                return {"status": tested.model_dump(), "started": False}
     return {"status": (await engines.engine_status(engine_id, settings)).model_dump(), "started": started}
 
 
 @router.post("/engines/{engine_id}/disconnect")
 async def engine_disconnect(engine_id: str, request: Request) -> dict:
-    """"Disconnect" (D84): Ollama / Claude Code are switched off in the app only (Ollama keeps running for other apps);
+    """"Disconnect" (D84): Ollama / Claude Code / Codex are switched off in the app only (Ollama keeps running for other apps);
     an OpenAI-compatible service or Gemini forgets its key (and the service address)."""
     check_origin(request)
     if engine_id not in engines.DESCRIPTORS:
@@ -177,6 +187,7 @@ class SettingsPatch(BaseModel):
     ollama: Optional[dict] = None
     openai_compatible: Optional[dict] = None
     claude_cli: Optional[dict] = None
+    codex_cli: Optional[dict] = None
     gemini_live: Optional[dict] = None
     voice: Optional[str] = None
     kokoro_speed: Optional[float] = None

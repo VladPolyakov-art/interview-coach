@@ -62,12 +62,14 @@ DEV_ORIGINS = {o.strip().rstrip("/") for o in os.getenv(
     "IC_DEV_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()}
 
 DEFAULT_SETTINGS: dict[str, Any] = {
-    "engine": "ollama",                       # ollama | openai_compatible | claude_cli | gemini_live
+    "engine": "ollama",                       # ollama | openai_compatible | claude_cli | codex_cli | gemini_live
     # "" url = env OLLAMA_URL or localhost; "" model = chosen by RAM; "" voice_model = qwen3:4b-instruct
     "ollama": {"url": "", "model": "", "voice_model": ""},
     "openai_compatible": {"base_url": "", "api_key": "", "model": ""},
     # verified: None = not checked yet, True = a real request answered, False = Claude Code isn't signed in (D85)
     "claude_cli": {"model": "haiku", "verified": None},
+    # D86: the same for Codex; "" model = the Codex CLI's own default for the ChatGPT plan
+    "codex_cli": {"model": "", "verified": None},
     "gemini_live": {"api_key": "", "model": "gemini-3.8-live", "text_model": "gemini-3.5-flash-lite",
                     "voice": "Puck"},
     "voice": "",                              # Kokoro voice id; "" = default male voice for Mike
@@ -84,9 +86,9 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "disconnected": [],                       # local engines switched off with Disconnect (D84)
 }
 SECRET_PATHS = [("openai_compatible", "api_key"), ("gemini_live", "api_key")]
-ENGINES = ("ollama", "openai_compatible", "claude_cli", "gemini_live")
+ENGINES = ("ollama", "openai_compatible", "claude_cli", "codex_cli", "gemini_live")
 # Engines found on this computer: Disconnect only switches them off in the app (the key engines forget the key).
-LOCAL_ENGINES = ("ollama", "claude_cli")
+LOCAL_ENGINES = ("ollama", "claude_cli", "codex_cli")
 LEVELS = ("A2", "B1", "B2", "C1")
 
 _lock = threading.Lock()
@@ -133,8 +135,9 @@ def _validate(settings: dict) -> dict:
     settings["telemetry_opt_in"] = bool(settings.get("telemetry_opt_in"))
     # D80: one line, no control characters, at most 60 characters.
     settings["name"] = " ".join(str(settings.get("name") or "").split())[:60]
-    if settings["claude_cli"].get("verified") not in (True, False, None):
-        settings["claude_cli"]["verified"] = None
+    for cli in ("claude_cli", "codex_cli"):
+        if settings[cli].get("verified") not in (True, False, None):
+            settings[cli]["verified"] = None
     raw = settings.get("disconnected")
     settings["disconnected"] = sorted({e for e in raw if e in LOCAL_ENGINES}) if isinstance(raw, list) else []
     if settings.get("stt", {}).get("backend") not in ("auto", "mlx", "faster_whisper", "none"):

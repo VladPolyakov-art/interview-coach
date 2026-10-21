@@ -9,7 +9,7 @@ import { t } from "../../i18n";
 import { useInterval } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
 import type { EngineId, EngineInfo } from "../../lib/types";
-import { ClaudeBody, DisconnectButton, DisconnectedBody, GeminiBody, OllamaBody, OllamaModelPicker, OpenAiBody } from "./bodies";
+import { ClaudeBody, CodexBody, DisconnectButton, DisconnectedBody, GeminiBody, OllamaBody, OllamaModelPicker, OpenAiBody } from "./bodies";
 import { EngineStatus, engineStatusWord } from "./EngineStatus";
 import { RECOMMENDED, engineLine, engineModel, engineName } from "./meta";
 import s from "./engine.module.css";
@@ -153,6 +153,7 @@ export function EngineBody({ engine }: { engine: EngineInfo }) {
       {engine.id === "ollama" ? <OllamaBody engine={engine} /> : null}
       {engine.id === "openai_compatible" ? <OpenAiBody engine={engine} /> : null}
       {engine.id === "claude_cli" ? <ClaudeBody engine={engine} /> : null}
+      {engine.id === "codex_cli" ? <CodexBody engine={engine} /> : null}
       {engine.id === "gemini_live" ? <GeminiBody engine={engine} /> : null}
       {warnings.length ? <Callout tone="warning">{warnings.map((w) => <p key={w}>{w}</p>)}</Callout> : null}
     </>

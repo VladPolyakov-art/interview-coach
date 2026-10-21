@@ -82,6 +82,7 @@ export const DECISIONS: Decision[] = [
   { id: "setup-d83-connect", screen: "Setup", question: "Уже установленные Ollama / Claude Code подключаются кнопкой «Connect» (поиск вне PATH, запуск Ollama), скачать — запасной путь", chosen: "да (D83)" },
   { id: "engine-d84-disconnect", screen: "Setup", question: "Кнопка Disconnect у подключённого движка (Ollama/Claude Code — только в приложении, ключевые — удаляют ключ), Connect возвращает", chosen: "да (D84)" },
   { id: "engine-d85-verify-pull", screen: "Setup", question: "Claude Code — Ready только после настоящего тестового запроса (Connect); модель Ollama скачивается из приложения с прогрессом", chosen: "да (D85)" },
+  { id: "engine-d86-codex", screen: "Setup", question: "Пятый движок — Codex CLI на подписке ChatGPT: вход проверяется локально, Connect — один настоящий запрос, все инструменты Codex выключены", chosen: "да (D86)" },
   { id: "session-o8", screen: "Session", question: "Подсказчик ответа выключен по умолчанию", chosen: "да" },
   { id: "session-o9", screen: "Session", question: "Разговорная практика заканчивается только кнопкой «End practice»", chosen: "да" },
   { id: "debrief-o2", screen: "Debrief", question: "Время начала каждого вопроса в разборе (нужно сохранять при записи)", chosen: "да" },

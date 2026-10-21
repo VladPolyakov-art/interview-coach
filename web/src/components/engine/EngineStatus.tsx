@@ -1,6 +1,7 @@
 import { Badge } from "../../ds";
 import { t, tMaybe } from "../../i18n";
 import type { EngineInfo } from "../../lib/types";
+import { isCli } from "./meta";
 
 function statusTone(e: EngineInfo) {
   if (e.status.ready) return "success" as const;
@@ -12,7 +13,8 @@ function statusTone(e: EngineInfo) {
 export function EngineStatus({ engine }: { engine: EngineInfo }) {
   return (
     <Badge tone={statusTone(engine)} icon={engine.status.ready ? "check" : statusTone(engine) === "neutral" ? undefined : "alert"}>
-      {tMaybe(`engines.status.${engine.status.code}`, engine.status.code)}
+      {isCli(engine.id) && engine.status.code === "unauthorized" ? t("engines.status.signedOut")
+        : tMaybe(`engines.status.${engine.status.code}`, engine.status.code)}
     </Badge>
   );
 }

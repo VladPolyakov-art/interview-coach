@@ -1,4 +1,4 @@
-/* Real app marks for the engines (D56): Ollama, OpenAI (the OpenAI-compatible option), Claude, Gemini.
+/* Real app marks for the engines (D56): Ollama, OpenAI (the OpenAI-compatible option and Codex, D86), Claude, Gemini.
  * SVGs from @lobehub/icons-static-svg 1.90.0 (MIT) in ./logos. Colour marks (Claude, Gemini) render as they are;
  * mono marks (Ollama, OpenAI) are a CSS mask filled with the current text colour, so they follow the theme.
  * Decorative: the engine name is always next to the mark. */
@@ -13,6 +13,7 @@ const LOGOS: Record<EngineId, { src: string; mono: boolean }> = {
   ollama: { src: ollama, mono: true },
   openai_compatible: { src: openai, mono: true },
   claude_cli: { src: claude, mono: false },
+  codex_cli: { src: openai, mono: true },
   gemini_live: { src: gemini, mono: false },
 };
 

@@ -136,7 +136,8 @@
       "unauthorized": "Key rejected",
       "billing_required": "Needs billing",
       "disconnected": "Disconnected",
-      "error": "Error"
+      "error": "Error",
+      "signedOut": "Not signed in"
     },
     "ollama": {
       "name": "Ollama",
@@ -215,6 +216,22 @@
       "signInHint": "Open Terminal, run this and sign in. Then press Connect.",
       "failed": "Claude didn't answer: {message}",
       "signedIn": "Signed in to Claude Code."
+    },
+    "codex": {
+      "name": "Codex CLI",
+      "tagline": "Uses the Codex CLI you already have, signed in with your ChatGPT account.",
+      "notFound": "Codex wasn't found on this computer.",
+      "install": "About Codex CLI",
+      "pick": "Your own ChatGPT plan",
+      "connectHint": "Already installed? Press Connect. If not, install it with this command, then run codex login.",
+      "stillMissing": "Still can't find Codex. Install it, run codex login in Terminal, then press Connect again.",
+      "unverified": "Codex is signed in.",
+      "connectNote": "Connect sends one short test request on your ChatGPT plan to check that Codex answers. Codex gets no access to your files or commands.",
+      "checking": "Sending a test request to Codex. This can take up to a minute.",
+      "signedOut": "Codex isn't signed in.",
+      "signInHint": "Open Terminal, run this and sign in with ChatGPT. Then press Connect.",
+      "failed": "Codex didn't answer: {message}",
+      "signedIn": "Codex answered. It's connected."
     },
     "gemini": {
       "name": "Gemini Live",

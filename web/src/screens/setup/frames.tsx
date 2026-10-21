@@ -61,6 +61,22 @@ export const SETUP_SCENES = {
     engines: makeEngines({ ollama: "no_model", claude_cli: "signed_out" }), settings: SETTINGS,
     render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="claude_cli" /></SetupFrame>,
   },
+  engineNoCodex: {
+    engines: makeEngines({ ollama: "no_model", codex_cli: "not_installed" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="codex_cli" /></SetupFrame>,
+  },
+  engineCodexSignedOut: {
+    engines: makeEngines({ ollama: "no_model", codex_cli: "signed_out" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="codex_cli" /></SetupFrame>,
+  },
+  engineCodexConnect: {
+    engines: makeEngines({ ollama: "no_model", codex_cli: "unverified" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="codex_cli" /></SetupFrame>,
+  },
+  engineCodexReady: {
+    engines: makeEngines({ ollama: "no_model", codex_cli: "ready" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="codex_cli" /></SetupFrame>,
+  },
   engineNotRunning: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
   checkIdle: { render: check({ phase: "idle" }) },
   checkListening: { render: check({ phase: "listening" }, 0.55) },

@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from .. import config
-from . import claude_cli, gemini_live, ollama, openai_compat
+from . import claude_cli, codex_cli, gemini_live, ollama, openai_compat
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine
 
 DESCRIPTORS: dict[str, EngineDescriptor] = {
     "ollama": ollama.DESCRIPTOR,
     "openai_compatible": openai_compat.DESCRIPTOR,
     "claude_cli": claude_cli.DESCRIPTOR,
+    "codex_cli": codex_cli.DESCRIPTOR,
     "gemini_live": gemini_live.DESCRIPTOR,
 }
 
@@ -49,6 +50,9 @@ def make_llm(settings: dict | None = None, engine_id: str | None = None, *, voic
     if engine_id == "claude_cli":
         block = settings["claude_cli"]
         return claude_cli.ClaudeCLIEngine(block.get("model", "haiku"), verified=block.get("verified"))
+    if engine_id == "codex_cli":
+        block = settings["codex_cli"]
+        return codex_cli.CodexCLIEngine(block.get("model", ""), verified=block.get("verified"))
     if engine_id == "gemini_live":
         block = settings["gemini_live"]
         return gemini_live.GeminiTextEngine(block.get("api_key", ""), block.get("text_model", ""),
