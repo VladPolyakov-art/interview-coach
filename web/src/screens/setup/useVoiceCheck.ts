@@ -29,8 +29,12 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
-export function useVoiceCheck({ voice, serverStt, initial }: { voice: string; serverStt: boolean; initial?: CheckState }) {
+export function useVoiceCheck({ voice, serverStt, initial, initialSpeaking = false }: {
+  voice: string; serverStt: boolean; initial?: CheckState; initialSpeaking?: boolean;
+}) {
   const [state, setState] = useState<CheckState>(initial ?? { phase: "idle" });
+  /** Mike's reply is playing (D82: drives the presence glow along the top). */
+  const [speaking, setSpeaking] = useState(initialSpeaking);
   const level = useRef(0);
   const ctx = useRef<AudioContext | null>(null);
   const cap = useRef<VoiceCapture | null>(null);
@@ -56,8 +60,11 @@ export function useVoiceCheck({ voice, serverStt, initial }: { voice: string; se
     if (url.current) URL.revokeObjectURL(url.current);
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     url.current = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
-    audio.current = new Audio(url.current);
-    void audio.current.play().catch(() => {});
+    const a = new Audio(url.current);
+    audio.current = a;
+    a.onplaying = () => setSpeaking(true);
+    a.onpause = a.onended = () => setSpeaking(false);
+    void a.play().catch(() => setSpeaking(false));
   }, []);
 
   useEffect(() => () => {
@@ -150,5 +157,5 @@ export function useVoiceCheck({ voice, serverStt, initial }: { voice: string; se
 
   const reset = useCallback(() => { stopMic(); setState({ phase: "idle" }); }, [stopMic]);
 
-  return { state, start, finish, replay, reset, stop: stopMic, getLevel: () => level.current };
+  return { state, speaking, start, finish, replay, reset, stop: stopMic, getLevel: () => level.current };
 }

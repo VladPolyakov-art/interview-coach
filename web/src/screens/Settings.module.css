@@ -79,11 +79,49 @@
 .resultLabel { font-size: var(--text-md); font-weight: var(--weight-medium); }
 .resultMeta { font-size: var(--text-sm); color: var(--color-text-secondary); }
 /* Narrow popup (a phone): sections become a scrolling row under the search, the section fills the rest. */
+/* Back to the list of sections: only on a phone (below). */
+.back { display: none; }
+.navChevron { display: none; }
+/* Narrow popup (a phone), D82 like Claude: two levels instead of a row of tabs cut by the search. Level one = the search
+ * and one full-width row per section with a chevron; level two = the section alone under "‹ Settings". Typing in the
+ * search shows the results under it. */
 @container dialog (width < 640px) {
-  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: var(--space-4); }
-  .side { overflow: visible; padding-bottom: 0; }
-  .nav { flex-direction: row; overflow-x: auto; padding-bottom: var(--space-1); }
-  .navLink { white-space: nowrap; }
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-4); }
+  .layout[data-view="list"]:not([data-searching]) .content { display: none; }
+  .layout[data-view="list"][data-searching] { grid-template-rows: auto minmax(0, 1fr); }
+  .layout[data-searching] .nav { display: none; }
+  .layout[data-view="section"] .side { display: none; }
+  .side { padding-bottom: 0; }
+  .nav { gap: 0; }
+  .nav li + li .navLink { border-top: var(--border-width) solid var(--color-border-subtle); }
+  .navLink {
+    min-height: var(--control-h-lg);
+    padding: 0 var(--space-1);
+    gap: var(--space-3);
+    border-radius: 0;
+    font-size: var(--text-md);
+    color: var(--color-text-primary);
+  }
+  .navLink:hover { background: transparent; }
+  .navLink[aria-current="page"] { background: transparent; font-weight: var(--weight-regular); }
+  .navChevron { display: inline-flex; margin-inline-start: auto; color: var(--color-text-tertiary); }
+  .back {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--control-h-sm);
+    margin-bottom: calc(var(--space-6) * -1);
+    padding: 0 var(--space-2) 0 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+  .back:hover { color: var(--color-text-primary); }
+  .back:focus-visible { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: var(--focus-ring-offset); border-radius: var(--radius-sm); }
 }
 /* About and what's free (D58): the US-30 table. Rows are hairline-separated; the feature column takes the slack. */
 .anchor { scroll-margin-top: var(--space-6); }

@@ -90,13 +90,14 @@ export function searchSettings(query: string): SearchItem[] {
 const HOME: Location = { pathname: "/", search: "", hash: "", state: null, key: "settings-home" };
 
 /** `/settings/<section>` → the section (aliases resolved, unknown → general); null when the path is not Settings. */
-export function settingsSection(pathname: string): { section: SectionId; canonical: boolean; hash?: string } | null {
+/** `bare`: plain /settings (the account menu's "Settings") — on a phone it opens on the list of sections (D82). */
+export function settingsSection(pathname: string): { section: SectionId; canonical: boolean; hash?: string; bare?: boolean } | null {
   const m = /^\/settings(?:\/([^/]*))?\/?$/.exec(pathname);
   if (!m) return null;
   const raw = m[1] ?? "";
   if (SECTIONS.some((x) => x.id === raw)) return { section: raw as SectionId, canonical: true };
   const alias = ALIASES[raw];
-  return { section: alias?.section ?? DEFAULT_SECTION, canonical: false, hash: alias?.hash };
+  return { section: alias?.section ?? DEFAULT_SECTION, canonical: false, hash: alias?.hash, bare: raw === "" };
 }
 
 /** Settings open as a popup over the page you came from (D76). Returns the location the page routes should render —
@@ -113,7 +114,11 @@ export function useSettingsRoute() {
   const [section, setSection] = useState<SectionId>(route?.section ?? DEFAULT_SECTION);
   if (!open && page !== location) setPage(location);
   if (!open && from !== null) setFrom(null);
-  if (open && from === null) setFrom(page && navType === "PUSH" ? "push" : "direct");
+  const [startOnList, setStartOnList] = useState(false);
+  if (open && from === null) {
+    setFrom(page && navType === "PUSH" ? "push" : "direct");
+    setStartOnList(Boolean(route?.bare));
+  }
   if (route && route.section !== section) setSection(route.section);
 
   useEffect(() => {
@@ -131,7 +136,7 @@ export function useSettingsRoute() {
   return {
     open,
     pageLocation,
-    dialog: <SettingsDialog open={open} section={section} onClose={close} />,
+    dialog: <SettingsDialog open={open} section={section} onClose={close} startOnList={startOnList} />,
   };
 }
 
@@ -140,6 +145,8 @@ interface ReviewProps {
   initialQuery?: string;
   /** Review and stories: this content instead of the section's own (e.g. the engine panel at a given step). */
   content?: ReactNode;
+  /** Phone (D82): open on the list of sections instead of a section. No effect on a wide popup. */
+  startOnList?: boolean;
 }
 
 /** Review frames and stories: the popup at the router's current section, nothing behind it. */
@@ -156,10 +163,13 @@ export function SettingsDialog({ open, section, onClose, ...review }: { open: bo
   );
 }
 
-function SettingsBody({ section, initialQuery = "", content: override }: { section: SectionId } & ReviewProps) {
+function SettingsBody({ section, initialQuery = "", content: override, startOnList = false }: { section: SectionId } & ReviewProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState(initialQuery);
+  /* D82, like Claude on a phone: the list of sections (search on top, one row per section with a chevron), then the
+   * section on its own with "‹ Settings" back to the list. A wide popup shows both side by side and ignores this. */
+  const [view, setView] = useState<"list" | "section">(startOnList ? "list" : "section");
   const results = query.trim() ? searchSettings(query) : null;
   const content = useRef<HTMLDivElement>(null);
 
@@ -185,11 +195,12 @@ function SettingsBody({ section, initialQuery = "", content: override }: { secti
 
   const go = (item: SearchItem) => {
     setQuery("");
+    setView("section");
     navigate(`/settings/${item.section}${item.id === item.section ? "" : `#${item.id}`}`, { replace: true });
   };
 
   return (
-    <div className={s.layout}>
+    <div className={s.layout} data-view={view} data-searching={results ? "" : undefined}>
       <div className={s.side}>
         <div className={s.search} role="search">
           <Input
@@ -211,9 +222,10 @@ function SettingsBody({ section, initialQuery = "", content: override }: { secti
           <ul className={s.nav}>
             {SECTIONS.map((x) => (
               <li key={x.id}>
-                <Link className={s.navLink} to={`/settings/${x.id}`} replace onClick={() => setQuery("")}
+                <Link className={s.navLink} to={`/settings/${x.id}`} replace onClick={() => { setQuery(""); setView("section"); }}
                   aria-current={!results && x.id === section ? "page" : undefined}>
                   <Icon name={x.icon} size="sm" />{t(`settings.section.${x.id}`)}
+                  <span className={s.navChevron} aria-hidden="true"><Icon name="chevronRight" size="sm" /></span>
                 </Link>
               </li>
             ))}
@@ -223,6 +235,9 @@ function SettingsBody({ section, initialQuery = "", content: override }: { secti
       <div key={results ? "search" : section} ref={content} className={s.content}>
         {results ? <SearchResults query={query.trim()} results={results} onPick={go} /> : (
           <>
+            <button type="button" className={s.back} onClick={() => setView("list")}>
+              <Icon name="chevronLeft" size="sm" />{t("settings.allSettings")}
+            </button>
             <h2 className={s.pageTitle}>{t(`settings.section.${section}`)}</h2>
             {override ?? <SectionContent id={section} />}
           </>

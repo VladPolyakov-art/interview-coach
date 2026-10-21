@@ -2,7 +2,8 @@
   position: relative;
   isolation: isolate;
   display: inline-flex;
-  flex-wrap: wrap;
+  /* D82: always one row — never a stack of options in a tall pill on a phone; options shrink and truncate instead. */
+  flex-wrap: nowrap;
   gap: var(--space-1);
   padding: var(--space-1);
   background: var(--color-surface-chip);
@@ -34,8 +35,11 @@
   font-weight: var(--weight-medium);
   cursor: pointer;
   white-space: nowrap;
+  min-width: 0;
+  flex: 0 1 auto;
   transition: color var(--duration-fast) var(--ease-standard);
 }
+.optionLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .option:not(:disabled):hover { color: var(--color-text-primary); }
 /* D51: no strokes. The selected segment is the inverted chip fill (the thumb below), label = on-checked, hover never changes it. */
 .option[aria-checked="true"],

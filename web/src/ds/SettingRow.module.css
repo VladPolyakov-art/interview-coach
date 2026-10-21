@@ -24,6 +24,12 @@
   .row:not(:has(> .control [role="switch"])) { flex-direction: column; align-items: stretch; gap: var(--space-3); }
   .row:not(:has(> .control [role="switch"])) .control { max-width: none; justify-content: flex-start; flex-wrap: nowrap; }
   .control > [data-field] { flex: 1 1 auto; width: auto; }
+  /* D82: a segmented control under the text fills the row in one line, its options sharing the width. */
+  .control > :has(> [role="radiogroup"]) { flex: 1 1 auto; }
+  .control [role="radiogroup"] { width: 100%; }
+  .control [role="radiogroup"] > [role="radio"] { flex: 1 1 0; }
+  /* Narrow: the words carry the choice, the icons give way so two segments fit one row (D82). */
+  .control [role="radiogroup"] > [role="radio"] > svg { display: none; }
 }
 
 /* SettingGroup (D78): the title, then one rounded box; rows inside run edge to edge with the box's side padding. */

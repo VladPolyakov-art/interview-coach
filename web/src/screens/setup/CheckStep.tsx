@@ -2,7 +2,7 @@
  * recognised → Mike answers in that voice → "It works". Telemetry is one unticked checkbox next to "It works".
  * A blocked or missing mic names the cause and the fix and offers the keyboard. */
 import { useEffect, useRef, useState } from "react";
-import { Button, Callout, ChatLog, ChatMessage, Checkbox, IconButton, MicButton, Select, SettingGroup, SettingRow } from "../../ds";
+import { Button, Callout, ChatLog, ChatMessage, Checkbox, MicButton, Presence, Select, SettingGroup, SettingRow, type PresenceState } from "../../ds";
 import { t } from "../../i18n";
 import { api } from "../../lib/api";
 import { useLoad } from "../../lib/hooks";
@@ -22,24 +22,34 @@ export interface CheckStepProps {
   /** Review and stories: show this state of the check (a static mic level while listening). */
   initial?: CheckState;
   level?: number;
+  /** Review and stories: Mike's reply is playing (the glow speaks). */
+  speaking?: boolean;
 }
 
-export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level }: CheckStepProps) {
+export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level, speaking: initialSpeaking }: CheckStepProps) {
   const { settings, updateSettings } = useApp();
   const voices = useLoad(() => api.voices());
   const stt = useLoad(() => api.stt());
   const [share, setShare] = useState(false);
   const voice = settings?.voice || voices.data?.default || "";
   const ttsOk = voices.data?.tts.available !== false;
-  const check = useVoiceCheck({ voice, serverStt: Boolean(stt.data?.available), initial });
+  const check = useVoiceCheck({ voice, serverStt: Boolean(stt.data?.available), initial, initialSpeaking });
+  const [sampling, setSampling] = useState(false);
   const sample = useRef<HTMLAudioElement | null>(null);
   useEffect(() => () => sample.current?.pause(), []);
   const { state } = check;
+  // D82: the Session's presence glow along the top — your mic while you talk, a sweep while Mike thinks, his voice
+  // while the reply (or the sample) plays.
+  const presence: PresenceState = state.phase === "listening" ? "listening" : state.phase === "thinking" ? "thinking"
+    : check.speaking || sampling ? "speaking" : "idle";
 
   const playSample = () => {
     sample.current?.pause();
-    sample.current = new Audio(api.voiceSampleUrl(voice));
-    void sample.current.play().catch(() => {});
+    const a = new Audio(api.voiceSampleUrl(voice));
+    sample.current = a;
+    a.onplaying = () => setSampling(true);
+    a.onpause = a.onended = () => setSampling(false);
+    void a.play().catch(() => setSampling(false));
   };
   const leave = (input: "voice" | "text") => {
     check.stop();
@@ -55,6 +65,10 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
 
   return (
     <>
+      <div className={s.presenceBox} aria-hidden="true">
+        <Presence state={presence} level={presence === "listening" ? level : undefined}
+          getLevel={presence === "listening" && !initial ? check.getLevel : undefined} />
+      </div>
       <StepHead headingRef={headingRef} title={t("setup.check.title")} sub={t("setup.check.subtitle")} />
       <div data-review-id="Setup/Check" data-review-section="Setup · Check" data-comment-target>
         <SettingGroup title={t("setup.check.group")}>
@@ -63,7 +77,7 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
               <Select label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
                 onChange={(v) => void updateSettings({ voice: v }).catch(() => {})}
                 options={(voices.data?.voices ?? []).map((v) => ({ value: v.id, label: `${v.label} · ${v.locale}` }))} />
-              <IconButton icon="play" label={t("setup.check.sample")} onClick={playSample} disabled={!voice} />
+              <Button size="sm" variant="secondary" icon="play" onClick={playSample} disabled={!voice}>{t("setup.check.sample")}</Button>
             </SettingRow>
           ) : <Callout tone="info">{t("setup.check.voiceMissing")}</Callout>}
           <div className={s.checkArea}>

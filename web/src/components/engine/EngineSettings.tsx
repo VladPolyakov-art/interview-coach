@@ -143,7 +143,7 @@ export function EngineHead({ engine, action }: { engine: EngineInfo; action?: Re
 }
 
 /** The engine's own connection UI (install steps, form, key) and any warnings the server adds. */
-function EngineBody({ engine }: { engine: EngineInfo }) {
+export function EngineBody({ engine }: { engine: EngineInfo }) {
   // The server repeats terms/privacy notes in status.warnings; show each text once.
   const warnings = engine.status.warnings.filter((w) => w !== engine.terms_note && w !== engine.privacy_note);
   return (
@@ -157,7 +157,7 @@ function EngineBody({ engine }: { engine: EngineInfo }) {
   );
 }
 
-function Facts({ engine }: { engine: EngineInfo }) {
+export function Facts({ engine }: { engine: EngineInfo }) {
   return (
     <dl className={s.facts}>
       <dt>{t("engines.cost")}</dt>

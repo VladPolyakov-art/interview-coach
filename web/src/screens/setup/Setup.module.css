@@ -1,21 +1,24 @@
 /* Setup (D81): brand + three steps on top, one narrow column, the same SettingGroup blocks as Settings. */
 /* A container, so a 375 frame on the review page narrows like a phone does. */
-.screen { container: setup / inline-size; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-canvas); }
+.screen { position: relative; isolation: isolate; container: setup / inline-size; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-canvas); }
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-4) var(--space-8);
-  background: var(--color-canvas);
   flex-wrap: wrap;
 }
+/* D82: the Session's presence glow along the top edge of the screen during the voice check: under everything (the
+ * screen isolates, so -1 still paints over its own background), never takes a click. */
+.presenceBox { position: absolute; inset-inline: 0; top: 0; height: var(--presence-reach); z-index: -1; pointer-events: none; }
 .brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-semibold); }
 .steps { display: flex; gap: var(--space-2); margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
 .step {
   display: flex; align-items: center; gap: var(--space-2);
   font-size: var(--text-sm); color: var(--color-text-tertiary);
-  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill);
+  /* D82: the number's circle sits close to the pill's left edge (the same room as above and below it). */
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); border-radius: var(--radius-pill);
 }
 .step[aria-current="step"] { background: var(--color-selected); color: var(--color-text-primary); font-weight: var(--weight-medium); }
 .stepDone { color: var(--color-text-secondary); }
@@ -41,7 +44,6 @@
 .note { font-size: var(--text-sm); color: var(--color-text-secondary); }
 .body { display: flex; flex-direction: column; gap: var(--space-6); }
 
-.engineRow { padding: var(--space-4); }
 
 /* Check: the voice row, then under a divider the check itself. */
 .checkArea { border-top: var(--border-width) solid var(--color-border-subtle); padding-top: var(--space-4); }
@@ -57,6 +59,7 @@
 .nameInput { width: min(16rem, 100%); }
 @container setup (width < 768px) {
   .header { padding: var(--space-3) var(--layout-gutter); }
+  .presenceBox { height: var(--presence-reach-sm); }
   .main { padding: var(--space-6) var(--layout-gutter) var(--space-12); gap: var(--space-6); }
   .stepLabel { display: none; }
   .step[aria-current="step"] .stepLabel { display: inline; }

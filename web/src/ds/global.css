@@ -13,6 +13,25 @@ html {
   color-scheme: light dark;
 }
 
+/* D82: one quiet scrollbar everywhere — a thin thumb on a transparent track, so hovering it never paints the
+ * system's white track (macOS showed a white strip on hover, worst in the dark theme). Inherited by every scroller. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-control) transparent;
+}
+/* Safari before scrollbar-width: the same look through the WebKit pseudo-elements. */
+@supports not (scrollbar-width: thin) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-control);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: var(--radius-pill);
+  }
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
 }

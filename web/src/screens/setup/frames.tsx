@@ -19,17 +19,21 @@ const REPLY = "Loud and clear, Alex. Let's get you ready for that interview.";
 type Engines = ReturnType<typeof makeEngines>;
 interface SetupSceneSpec { engines?: Engines; settings?: Settings; render: () => ReactNode }
 
-const check = (initial: CheckState, level?: number) => () =>
-  <SetupFrame step="check"><CheckStep onNext={noop} onBack={noop} onEngine={noop} initial={initial} level={level} /></SetupFrame>;
+const check = (initial: CheckState, level?: number, speaking?: boolean) => () =>
+  <SetupFrame step="check"><CheckStep onNext={noop} onBack={noop} onEngine={noop} initial={initial} level={level} speaking={speaking} /></SetupFrame>;
 
 export const SETUP_SCENES = {
-  engineReady: { render: () => <SetupFrame step="engine"><EngineStep onNext={noop} /></SetupFrame> },
-  engineChanging: { render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialChanging /></SetupFrame> },
-  engineNotReady: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} /></SetupFrame> },
+  engineFirst: { render: () => <SetupFrame step="engine"><EngineStep onNext={noop} /></SetupFrame> },
+  enginePicked: { render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
+  engineNoOllama: {
+    engines: makeEngines({ ollama: "not_installed", claude_cli: "not_installed" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame>,
+  },
+  engineNotRunning: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
   checkIdle: { render: check({ phase: "idle" }) },
   checkListening: { render: check({ phase: "listening" }, 0.55) },
   checkThinking: { render: check({ phase: "thinking", heard: HEARD }) },
-  checkDone: { render: check({ phase: "done", heard: HEARD, reply: REPLY, audio: "fixture" }) },
+  checkDone: { render: check({ phase: "done", heard: HEARD, reply: REPLY, audio: "fixture" }, undefined, true) },
   checkMicDenied: { render: check({ phase: "error", code: "mic_denied" }) },
   checkNotHeard: { render: check({ phase: "error", code: "not_heard" }) },
   checkEngine: { render: check({ phase: "error", code: "engine", heard: HEARD, message: "Ollama isn't running." }) },

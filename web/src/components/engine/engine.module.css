@@ -46,3 +46,30 @@
 /* Real app marks (D56, EngineLogo): 20px inside the icon box; mono marks take the text colour. */
 .logo { display: block; width: var(--icon-md); height: var(--icon-md); }
 .logoMono { background: var(--color-text-primary); }
+
+/* Setup choice (D82): each engine row is one radio; the mark sits on the right (like menus, D82). */
+.choiceItem { transition: background-color var(--duration-fast) var(--ease-standard); }
+.choiceItem:has(.choiceHead:hover) { background: var(--color-hover); }
+.choiceHead {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+.choiceHead:focus-visible { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: var(--focus-ring-offset); }
+.radio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  border-radius: var(--radius-pill);
+  border: var(--border-width) solid var(--color-border-control);
+  color: var(--color-text-on-checked);
+}
+.choiceHead[aria-checked="true"] .radio { background: var(--color-checked); border-color: var(--color-checked); }

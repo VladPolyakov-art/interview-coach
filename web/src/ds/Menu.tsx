@@ -1,6 +1,6 @@
 /* Menu / popover (G4, components.md §4). One component, two kinds (ds/screens/home.md §3.2, debrief.md §3.1):
  * - kind "menu" (default): an action menu — job ⋯ (Edit job, Delete job), Debrief ⋯ (Export, Download, Move to
- *   Trash), History row ⋯ at narrow width; radio items (`checked`) for the Strictness menu. WAI-ARIA menu button:
+ *   Trash), History row ⋯ at narrow width; radio items (`checked`, the check on the right, D82) for the Strictness menu. WAI-ARIA menu button:
  *   Enter / Space / ↓ open on the first item, ↑ on the last; ↑ ↓ Home End move, a letter jumps, Enter / Space
  *   activate, Esc and Tab close and return focus to the trigger.
  * - kind "listbox": a selection popover — the Saved jobs picker. The listbox (or the search field, as a combobox)
@@ -278,7 +278,8 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
     }
   };
 
-  const hasChecks = items.some((e) => isItem(e) && (e.checked !== undefined || e.checkbox));
+  // D82: a radio item's check sits on the right (like Claude's menus); only checkbox items keep their box on the left.
+  const hasBoxes = items.some((e) => isItem(e) && e.checkbox);
   return (
     <div
       ref={floatingRef}
@@ -296,7 +297,7 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
         if ("choices" in entry) {
           return (
             <div key={entry.id} role="group" aria-label={entry.label} className={`${s.choiceRow} ${entry.hideLabel ? s.choiceFill : ""}`}>
-              {hasChecks && !entry.hideLabel ? <span className={s.check} aria-hidden="true" /> : null}
+              {hasBoxes && !entry.hideLabel ? <span className={s.check} aria-hidden="true" /> : null}
               {entry.icon && !entry.hideLabel ? <span className={s.itemIcon}><Icon name={entry.icon} size="sm" /></span> : null}
               {entry.hideLabel ? null : <span className={s.choiceLabel} aria-hidden="true">{entry.label}</span>}
               <span className={s.choices}>
@@ -337,17 +338,18 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
               entry.onSelect?.();
             }}
           >
-            {hasChecks ? (
-              <span className={`${s.check} ${entry.checkbox ? s.box : ""}`} aria-hidden="true">
-                {entry.checked ? <Icon name="check" size="sm" /> : null}
-              </span>
-            ) : null}
+            {entry.checkbox ? (
+              <span className={`${s.check} ${s.box}`} aria-hidden="true">{entry.checked ? <Icon name="check" size="sm" /> : null}</span>
+            ) : hasBoxes ? <span className={s.check} aria-hidden="true" /> : null}
             {entry.icon ? <span className={s.itemIcon}><Icon name={entry.icon} size="sm" /></span> : null}
             <span className={s.itemText}>
               <span className={s.itemLabel}>{entry.label}</span>
               {entry.description ? <span className={s.itemDescription}>{entry.description}</span> : null}
             </span>
             {entry.shortcut ? <span className={s.shortcut} aria-hidden="true"><Kbd>{entry.shortcut}</Kbd></span> : null}
+            {checkable && !entry.checkbox ? (
+              <span className={`${s.check} ${s.checkEnd}`} aria-hidden="true">{entry.checked ? <Icon name="check" size="sm" /> : null}</span>
+            ) : null}
           </button>
         );
       })}
@@ -463,13 +465,13 @@ function ListboxPopup({
               onPointerMove={() => { if (!o.disabled) setActiveId(o.id); }}
               onClick={() => { if (!o.disabled) choose(o.id); }}
             >
-              <span className={s.check} aria-hidden="true">{selected ? <Icon name="check" size="sm" /> : null}</span>
               {o.icon ? <span className={s.itemIcon}><Icon name={o.icon} size="sm" /></span> : null}
-              <span className={s.itemText}>
+              <span className={`${s.itemText} ${s.optionText}`}>
                 <span className={s.optionLabel}>{o.label}</span>
                 {o.description ? <span className={s.itemDescription}>{o.description}</span> : null}
                 {o.meta ? <span className={s.optionMeta}>{o.meta}</span> : null}
               </span>
+              <span className={`${s.check} ${s.checkEnd}`} aria-hidden="true">{selected ? <Icon name="check" size="sm" /> : null}</span>
             </div>
           );
         })}

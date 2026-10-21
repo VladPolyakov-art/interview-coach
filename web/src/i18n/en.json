@@ -205,7 +205,7 @@
     "runs": "Runs",
     "flow": {
       "chooseTitle": "Choose how Mike runs",
-      "chooseSub": "Free and local by default. No key, no account.",
+      "chooseSub": "Mike needs an AI engine to ask questions and give feedback.",
       "chooseLabel": "AI engine",
       "connect": "Connect",
       "connectTitle": "Connect {name}",
@@ -225,6 +225,10 @@
       "setUp": "Set up",
       "hide": "Hide",
       "connection": "Connection"
+    },
+    "choice": {
+      "title": "Pick an engine",
+      "hint": "Ollama is free and runs on this computer. The others need a key or a plan."
     }
   },
   "setup": {
@@ -237,18 +241,17 @@
     "stepDone": "done",
     "engine": {
       "title": "Choose how Mike runs",
-      "subtitle": "Free and local by default. No key, no account.",
-      "group": "AI engine",
-      "change": "Change",
+      "subtitle": "Mike needs an AI engine to ask questions and give feedback.",
       "later": "You can switch any time in Settings → AI engine.",
-      "waiting": "Continue once {name} is Ready."
+      "waiting": "Continue once {name} is Ready.",
+      "pickFirst": "Pick an engine to continue."
     },
     "check": {
       "title": "Say hi to Mike",
       "subtitle": "One quick check of your microphone, speech recognition and Mike's voice.",
       "voice": "Mike's voice",
       "voiceHint": "You'll hear it in the check below.",
-      "sample": "Play a sample",
+      "sample": "Listen",
       "voiceMissing": "Mike's voice isn't installed on this computer, so he'll reply in text.",
       "group": "Voice check",
       "start": "Start the check",
@@ -1259,6 +1262,7 @@
   },
   "settings": {
     "title": "Settings",
+    "allSettings": "All settings",
     "sections": "Settings sections",
     "section": {
       "general": "General",
@@ -1279,8 +1283,8 @@
       "speakHint": "Off: Mike only writes. Useful in a quiet office.",
       "stt": "Speech recognition",
       "sttWhere": "Recognise my speech",
-      "sttServer": "On this computer",
-      "sttBrowser": "In the browser",
+      "sttServer": "Computer",
+      "sttBrowser": "Browser",
       "sttServerMissing": "Local recognition isn't installed. Use the browser or the keyboard.",
       "sttBrowserUnsupported": "This browser has no speech recognition.",
       "pause": "Send my voice answer after",

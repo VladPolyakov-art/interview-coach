@@ -97,7 +97,7 @@ export function Segmented<T extends string>({ label, hideLabel, options, value, 
               onKeyDown={(e) => onKey(e, i)}
             >
               {o.icon ? <Icon name={o.icon} size="sm" /> : null}
-              {o.label}
+              <span className={s.optionLabel}>{o.label}</span>
             </button>
           );
         })}

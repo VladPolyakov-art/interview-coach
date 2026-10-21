@@ -77,7 +77,9 @@
 .optionLabel { font-weight: var(--weight-semibold); }
 .optionMeta { color: var(--color-text-tertiary); }
 
-.item .itemText { flex: 1 1 auto; }
+.item .itemText, .optionText { flex: 1 1 auto; }
+/* D82: the radio check closes the row on the right. */
+.checkEnd { margin-inline-start: var(--space-3); }
 .shortcut { flex: none; display: inline-flex; align-items: center; margin-inline-start: var(--space-3); height: calc(var(--text-sm) * var(--leading-normal)); }
 /* Checkbox item (v2): a small square box; checked = inverted fill, like Checkbox (G7). */
 .box {

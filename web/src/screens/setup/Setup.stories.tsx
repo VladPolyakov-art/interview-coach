@@ -15,16 +15,20 @@ const mobile = (id: SetupSceneId): StoryObj => ({
   parameters: { viewport: { defaultViewport: "mobile1" } },
 });
 
-/** Ollama is Ready: one row and Change; nothing to decide. */
-export const EngineReady = desktop("engineReady");
-export const EngineReadyMobile = mobile("engineReady");
-/** After Change: the Settings → AI engine view. */
-export const EngineChanging = desktop("engineChanging");
-/** No engine is ready: setup in place, Continue waits. */
-export const EngineNotReady = desktop("engineNotReady");
+/** First run: the four engines, nothing picked; Continue waits for a pick. */
+export const EngineFirst = desktop("engineFirst");
+export const EngineFirstMobile = mobile("engineFirst");
+/** Ollama picked and Ready. */
+export const EnginePicked = desktop("enginePicked");
+/** Ollama picked but not installed: "Download Ollama" right under it. */
+export const EngineNoOllama = desktop("engineNoOllama");
+export const EngineNoOllamaMobile = mobile("engineNoOllama");
+/** Ollama picked, installed but not running: how to start it. */
+export const EngineNotRunning = desktop("engineNotRunning");
 export const CheckIdle = desktop("checkIdle");
 export const CheckIdleMobile = mobile("checkIdle");
 export const CheckListening = desktop("checkListening");
+export const CheckListeningMobile = mobile("checkListening");
 export const CheckThinking = desktop("checkThinking");
 /** One exchange done: what was heard, Mike's answer in the chosen voice, telemetry unticked, "It works". */
 export const CheckDone = desktop("checkDone");
