@@ -115,6 +115,18 @@ export interface EnglishModel {
   practiseMinutes?: number;
 }
 
+/** One line of the saved talk (D71: the Debrief shows the whole conversation as a chat). */
+export interface ConversationTurn {
+  id: string;
+  speaker: "mike" | "user";
+  text: string;
+  /** The question the line belongs to (1-based); absent for small talk and in English practice. */
+  q?: number;
+  /** Mike asks question `q` here. */
+  opens?: boolean;
+  followUp?: boolean;
+}
+
 export interface DebriefModel {
   id: string;
   title: string;
@@ -133,10 +145,14 @@ export interface DebriefModel {
   /** The numbers of questions that were never asked in a partial session. */
   skipped?: { from: number; to: number };
   english?: EnglishModel;
+  /** The saved transcript; without it (fixtures) the chat is rebuilt from the questions. */
+  conversation?: ConversationTurn[];
 }
 
 /** Local UI state a static state can start in (review frames, stories). */
 export interface DebriefUi {
+  /** The question whose breakdown shows next to the chat (default: the first one in `open`, else the first question). */
+  selected?: number;
   open?: number[];
   /** Questions whose "stronger answer" starts open. */
   strongerOpen?: number[];

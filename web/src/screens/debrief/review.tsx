@@ -12,10 +12,10 @@ export const debriefReview: ReviewScreen = {
   title: "Debrief",
   note: "Разбор сессии как конспект: вердикт, что подтянуть (по слою), вопросы по порядку. Слои — только оттенки; правки — внутри вашей фразы, не красным и не зелёным.",
   states: [
-    state("interview-full", "Interview · S2 Kestrel Pay, Q2 открыт", "interviewFull", {
+    state("interview-full", "Interview · S2 Kestrel Pay, выбран ответ Q2", "interviewFull", {
       tall: true,
       dark: true,
-      note: "Вердикт → по одному пункту на слой → действия → карточки вопросов. В Q2 открыты ответ, три слоя и «stronger answer»; пары Heard as / Say подсвечены внутри фразы.",
+      note: "Вердикт → по одному пункту на слой → действия → разговор: слева весь чат, справа разбор выбранного ответа (D71). Клик по ответу или номер сверху меняет вопрос; в разборе Q2 — ответ, три слоя и «stronger answer».",
     }),
     state("interview-delivery-first", "Interview · delivery first", "interviewDeliveryFirst", {
       mobile: false,

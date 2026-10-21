@@ -1,6 +1,5 @@
 /* Verdict, weak spots and actions (debrief.md §3.2–3.4, §3.7). Section labels are h2 (Section style). */
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { Badge, Button, Callout, Skeleton, TextShimmer, WeakSpotStrip, type WeakSpot } from "../../../ds";
 import { t, tp } from "../../../i18n";
 import { layerSequence, type DebriefModel, type DebriefVariant, type EnglishModel, type Evidence, type Layer, type VerdictModel } from "../types";
@@ -137,7 +136,6 @@ export interface ActionsProps {
 }
 
 export function Actions({ variant, model, storageError, partial, onDrill, onPractise, onStartFirst, english, id }: ActionsProps) {
-  const back = <Link to="/" className={s.linkAction}>{t("debrief.backHome")}</Link>;
   let body: ReactNode;
   if (variant === "example") {
     body = (
@@ -150,24 +148,22 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
     body = (
       <>
         <div className={s.action}>
-          <Button variant="primary" size="lg" icon="practice" onClick={onPractise}>{t("debrief.english.practise")}</Button>
+          <Button variant="primary" size="lg" icon="refresh" onClick={onPractise}>{t("debrief.english.practise")}</Button>
           <p className={s.hint}>
             {english?.practiseMinutes !== undefined
               ? t("debrief.english.practiseHint", { n: english.phrases.length, minutes: english.practiseMinutes })
               : t("debrief.english.practiseHintNoTime", { n: english?.phrases.length ?? 0 })}
           </p>
         </div>
-        {back}
       </>
     );
   } else if (partial) {
     body = (
       <>
         <div className={s.action}>
-          <Button variant="primary" size="lg" icon="practice" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
+          <Button variant="primary" size="lg" icon="refresh" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
           <p className={s.hint}>{t("debrief.practiseHint")}</p>
         </div>
-        {back}
       </>
     );
   } else {
@@ -176,7 +172,7 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
       <>
         {d ? (
           <div className={s.action}>
-            <Button variant={storageError ? "secondary" : "primary"} size="lg" icon="practice" onClick={onDrill}>{t("debrief.drill")}</Button>
+            <Button variant={storageError ? "secondary" : "primary"} size="lg" icon="play" onClick={onDrill}>{t("debrief.drill")}</Button>
             <p className={s.hint}>
               {d.questions === undefined
                 ? tp("debrief.drillHintPoints", d.points)
@@ -187,10 +183,9 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
           </div>
         ) : null}
         <div className={s.action}>
-          <Button variant="secondary" size="lg" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
+          <Button variant="secondary" size="lg" icon="refresh" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
           <p className={s.hint}>{t("debrief.practiseHint")}</p>
         </div>
-        {back}
       </>
     );
   }

@@ -5,6 +5,8 @@
  *   `error` (an alert icon before the text; no status colour, the words carry it), `interim` (the user's words still
  *   being recognised, Session D49: the bubble gets a thin --color-mic-live outline; the words update in place).
  * - Slots: `attachment` (a pasted job, a file) above the text, `actions` (quick replies, a link) under it.
+ * - `onPress` (D71, the Debrief chat): the user's bubble is a toggle button (`aria-pressed`) that shows its breakdown;
+ *   hover and pressed only deepen the fill, no outline.
  * Messages sit in a ChatLog (`role="log"`, polite), so new ones are announced without moving focus. ChatLog
  * `size="lg"` is the Session transcript (text-lg, md in a narrow log); `live={false}` drops the announcements where the
  * words are already heard (Mike's TTS, the user's own voice).
@@ -28,10 +30,13 @@ export interface ChatMessageProps {
   animate?: boolean;
   className?: string;
   reviewId?: string;
+  /** The bubble is a button (user messages only). */
+  onPress?: () => void;
+  pressed?: boolean;
 }
 
 export function ChatMessage({
-  speaker, state = "final", name, pendingLabel, attachment, actions, children, animate, className, reviewId,
+  speaker, state = "final", name, pendingLabel, attachment, actions, children, animate, className, reviewId, onPress, pressed,
 }: ChatMessageProps) {
   const cls = [s.message, s[speaker], state === "interim" ? s.interim : "", animate ? "motion-rise" : "", className ?? ""].filter(Boolean).join(" ");
   return (
@@ -40,6 +45,10 @@ export function ChatMessage({
       {attachment ? <div className={s.attachment}>{attachment}</div> : null}
       {state === "pending" ? (
         <TextShimmer as="p" size="md" status>{pendingLabel ?? children}</TextShimmer>
+      ) : children && onPress && speaker === "user" ? (
+        <button type="button" className={`${s.bubble} ${s.press}`} aria-pressed={pressed ?? false} onClick={onPress}>
+          <span className={s.body}>{children}</span>
+        </button>
       ) : children ? (
         <div className={speaker === "user" ? s.bubble : s.text}>
           {state === "error" ? <span className={s.errorIcon}><Icon name="alert" size="sm" /></span> : null}

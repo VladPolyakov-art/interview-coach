@@ -65,6 +65,7 @@ export const DECISIONS: Decision[] = [
   { id: "shell-d68-name", screen: "Shell", question: "D68: продукт называется Vukoli; логотип — только слово «vukoli» строчными шрифтом интерфейса, фавикон — буква «v». Значок микрофона в плитке убран.", chosen: "так" },
   { id: "history-d69-rows", screen: "History", question: "D69: под названием строки — первый вопрос сессии (одинаковые названия различимы); сессии меньше 3 ответов свёрнуты в «N short sessions» в конце недели и не попадают в Recents; вердикт справа — спокойным серым. Название вакансии больше не берётся из заголовка «About the job».", chosen: "так" },
   { id: "composer-d70-ring", screen: "Home / Session", question: "D70: у поля ввода нет обводки при фокусе (ни мышью, ни с клавиатуры) — только светлее фон и курсор; скругление 24px.", chosen: "так" },
+  { id: "debrief-d71-convo", screen: "Debrief", question: "D71: разбор сессии — слева весь разговор чатом, справа разбор выбранного ответа (клик по ответу или номер вопроса). Убраны «Back to home» и иконка-домик у «Practise again»; бейджи называют слой («Content: 1 fix»), а «Nothing to fix» — один, только если чисто.", chosen: "две колонки" },
   { id: "session-o8", screen: "Session", question: "Подсказчик ответа выключен по умолчанию", chosen: "да" },
   { id: "session-o9", screen: "Session", question: "Разговорная практика заканчивается только кнопкой «End practice»", chosen: "да" },
   { id: "debrief-o2", screen: "Debrief", question: "Время начала каждого вопроса в разборе (нужно сохранять при записи)", chosen: "да" },

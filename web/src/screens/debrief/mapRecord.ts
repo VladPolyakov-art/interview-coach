@@ -7,7 +7,7 @@ import { formatClock, formatDateTime, formatDuration } from "../../lib/format";
 import type { FeedbackRecord, LanguageItem, LayerName, LowConfWord, SessionRecord } from "../../lib/types";
 import { languageCounts, type StrongerState, type Thread } from "../../session/reducer";
 import type {
-  ContentBlock, Correction, DebriefModel, DeliveryBlock, EnglishModel, LanguageBlock, MetaItem, QuestionModel, Segments,
+  ContentBlock, ConversationTurn, Correction, DebriefModel, DeliveryBlock, EnglishModel, LanguageBlock, MetaItem, QuestionModel, Segments,
   StrongerModel, WeakSpotModel,
 } from "./types";
 
@@ -253,7 +253,31 @@ function englishModel(threads: Thread[]): EnglishModel {
   return { corrections, visible: 3, repeated: phrases.length, removed: [], phrases };
 }
 
+/** The saved transcript as chat lines; each line knows its question (by `question_id`) so an answer opens its breakdown. */
+function conversation(record: SessionRecord): ConversationTurn[] {
+  const english = record.mode === "english";
+  const number = (id?: string) => {
+    const i = english || !id ? -1 : record.questions.findIndex((q) => q.id === id);
+    return i >= 0 ? i + 1 : undefined;
+  };
+  return record.transcript
+    .filter((x) => x.text?.trim())
+    .map((x, i) => ({
+      id: `t${i}`,
+      speaker: x.role === "model" ? "mike" : "user",
+      text: x.text.trim(),
+      q: number(x.question_id),
+      opens: x.role === "model" && x.kind === "question" ? true : undefined,
+      followUp: x.role === "model" && x.kind === "follow_up" ? true : undefined,
+    }));
+}
+
 const plainText = (s: Segments) => s.map((p) => (typeof p === "string" ? p : p.text)).join("");
+
+/** Questions Mike actually asked (D71: counting answers gave "8 questions" for a talk with one question and 8 replies). */
+function asked(record: SessionRecord): number {
+  return new Set(record.transcript.filter((x) => x.role === "model" && x.kind === "question").map((x) => x.question_id ?? x.text)).size;
+}
 
 /** Map a saved session to the view model. */
 export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel {
@@ -274,7 +298,7 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
   return {
     id: record.id,
     title: record.title || t("debrief.title"),
-    meta: metaFor(record, english ? 0 : Math.max(answered, threads.length), followUps, threads.length),
+    meta: metaFor(record, english ? 0 : asked(record) || threads.length, followUps, threads.length),
     obsidian: opts.obsidian,
     saved: true,
     verdict: d?.verdict && !partial && !english ? { headline: d.verdict } : undefined,
@@ -285,6 +309,7 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
     questions: english ? [] : threads.map((th) => questionModel(record, th, opts)),
     skipped: partial && maxAsked < total ? { from: maxAsked + 1, to: total } : undefined,
     english: english ? englishModel(threads) : undefined,
+    conversation: conversation(record),
   };
 }
 

@@ -991,6 +991,14 @@
     "backHome": "Back to home",
     "actions": "What next",
     "qSection": "Question by question",
+    "convo": {
+      "title": "Conversation",
+      "sub": "Pick an answer to see its breakdown",
+      "label": "Conversation with Mike",
+      "you": "You",
+      "breakdown": "Breakdown",
+      "pick": "Question"
+    },
     "openAll": "Open all",
     "closeAll": "Close all",
     "q": {

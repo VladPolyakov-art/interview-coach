@@ -41,6 +41,21 @@ describe("mapRecord", () => {
     expect(m.questions[0]!.layers.language?.corrections).toHaveLength(1);
   });
 
+  it("keeps the whole talk as chat lines, each tied to its question (D71)", () => {
+    const m = mapRecord(rec({
+      transcript: [
+        { role: "model", text: "Tell me about a redesign.", question_id: "q2", kind: "question" },
+        { role: "user", text: "I led it.", question_id: "q2", kind: "main" },
+        { role: "model", text: "  ", kind: "ack" },
+        { role: "model", text: "What was the result?", question_id: "q2", kind: "follow_up" },
+        { role: "model", text: "Thanks, that's all.", kind: "closing" },
+      ],
+    }), opts);
+    expect(m.conversation?.map((c) => [c.speaker, c.q, c.opens ?? false, c.followUp ?? false])).toEqual([
+      ["mike", 2, true, false], ["user", 2, false, false], ["mike", 2, false, true], ["mike", undefined, false, false],
+    ]);
+  });
+
   it("keeps one weak spot per layer and folds the second content spot into `also`", () => {
     const m = mapRecord(rec(), opts);
     expect(m.weakSpots.map((w) => w.layer).sort()).toEqual(["content", "language"]);

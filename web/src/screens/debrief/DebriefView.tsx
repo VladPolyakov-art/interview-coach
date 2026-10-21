@@ -2,13 +2,16 @@
  * stories and the review page render it without a server; `screens/Debrief.tsx` is the live container.
  * Structure after Otter's summary (R5): Verdict (overview) → What to work on (key points + actions) → Question by
  * question (outline with quotes). Layer tints live only here (CONTRACT §2.6); fixes are marked inside the user's own
- * sentence, never red / green (P8). Container queries on `page`, no viewport media queries. */
-import { useEffect, useId, useRef, useState } from "react";
-import { Button, Callout, durationMs, scrollBehavior } from "../../ds";
+ * sentence, never red / green (P8). Container queries on `page`, no viewport media queries.
+ * D71: "Question by question" is two columns: the whole conversation as a chat on the left, the breakdown of the picked
+ * answer on the right (sticky). A narrow page stacks them, and picking an answer scrolls to its breakdown. */
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { Callout, Segmented, durationMs, scrollBehavior } from "../../ds";
 import { t } from "../../i18n";
 import { pageStyles } from "../../components/Page";
 import { layerSequence, type DebriefViewProps } from "./types";
 import { BackLink, Header } from "./parts/Header";
+import { Conversation, conversationFromQuestions } from "./parts/Conversation";
 import { EnglishBody } from "./parts/English";
 import type { RowContext } from "./parts/Layers";
 import { QuestionCard } from "./parts/QuestionCard";
@@ -16,13 +19,19 @@ import { Actions, SectionHead, TemplateNote, Verdict, VerdictNotice, WeakSpots }
 import { ErrorBody, ExampleBanner, LoadingBody, NotFoundBody, PartialBanner, StorageBanner } from "./parts/States";
 import s from "./DebriefView.module.css";
 
+/** `n` rem in px (the sticky offset is --space-6 = 1.5rem). */
+const remPx = (el: Element, n: number) => n * parseFloat(getComputedStyle(el.ownerDocument.documentElement).fontSize || "16");
+
 export function DebriefView(props: DebriefViewProps) {
   const { variant, state, model, layerOrder, ui, buildUp, storageError, className } = props;
   const uid = useId();
   const root = `${pageStyles.page} ${s.page} ${buildUp && state === "ready" ? "motion-stagger" : ""} ${className ?? ""}`;
   const heading = <h1 className="visually-hidden">{t("debrief.title")}</h1>;
 
-  const [open, setOpen] = useState<ReadonlySet<number>>(() => new Set(ui?.open ?? []));
+  const [picked, setPicked] = useState<number | undefined>(ui?.selected ?? ui?.open?.[0]);
+  const detail = useRef<HTMLDivElement>(null);
+  /** The breakdown's height cap: the visible height of <main> minus the sticky offset (D71). */
+  const [detailMax, setDetailMax] = useState<number | undefined>(undefined);
   const [strongerOpen, setStrongerOpen] = useState<ReadonlySet<number>>(() => new Set(ui?.strongerOpen ?? []));
   const [renaming, setRenaming] = useState(ui?.renaming ?? false);
   const [titleOverride, setTitleOverride] = useState<string | null>(null);
@@ -36,6 +45,19 @@ export function DebriefView(props: DebriefViewProps) {
   const [userOpened, setUserOpened] = useState(false);
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
+
+  const hasDetail = state === "ready" && Boolean(model?.questions.length);
+  useLayoutEffect(() => {
+    const panel = detail.current;
+    const main = panel?.closest("main");
+    if (!hasDetail || !panel || !main) return;
+    // Stacked (narrow) the panel is not sticky and takes its full height.
+    const measure = () => setDetailMax(getComputedStyle(panel).position === "sticky" ? Math.max(0, main.clientHeight - 2 * remPx(main, 1.5)) : undefined);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(main);
+    return () => ro.disconnect();
+  }, [hasDetail]);
 
   if (state === "loading" || state === "preparing") {
     return (
@@ -55,23 +77,26 @@ export function DebriefView(props: DebriefViewProps) {
   const headerId = (n: number) => `${uid}q${n}`;
   const key = (q: number, id: string) => `${q}:${id}`;
 
-  const jump = (n: number) => {
-    setOpen((prev) => new Set(prev).add(n));
-    // The card region mounts on the next frames: scroll, then focus the card header (focus is moved, not stolen).
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      const el = document.getElementById(headerId(n));
-      el?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
-      el?.focus({ preventScroll: true });
-    }));
-  };
+  const selected = model.questions.some((q) => q.n === picked) ? picked : model.questions[0]?.n;
+  const current = model.questions.find((q) => q.n === selected);
 
-  const setCard = (n: number, value: boolean) => setOpen((prev) => {
-    const next = new Set(prev);
-    if (value) next.add(n); else next.delete(n);
-    return next;
-  });
-  const allOpen = model.questions.length > 0 && model.questions.every((q) => open.has(q.n));
-  const toggleAll = () => setOpen(allOpen ? new Set() : new Set(model.questions.map((q) => q.n)));
+  /** Show question `n` in the breakdown. Scroll to it only when it is out of view (the narrow, stacked layout, or a
+   * weak-spot link above); `focus` moves focus to its heading (evidence links), a chat bubble keeps it. */
+  const pick = (n: number, focus = false) => {
+    setPicked(n);
+    window.requestAnimationFrame(() => {
+      const panel = detail.current;
+      if (!panel) return;
+      panel.scrollTop = 0;
+      const top = panel.getBoundingClientRect().top;
+      const viewport = panel.closest("main")?.getBoundingClientRect() ?? { top: 0, bottom: window.innerHeight };
+      if (top < viewport.top || top > viewport.top + (viewport.bottom - viewport.top) * 0.6) {
+        panel.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+      }
+      if (focus) document.getElementById(headerId(n))?.focus({ preventScroll: true });
+    });
+  };
+  const jump = (n: number) => pick(n, true);
 
   const dismiss = (q: number, id: string) => {
     const k = key(q, id);
@@ -105,6 +130,7 @@ export function DebriefView(props: DebriefViewProps) {
   });
 
   const english = variant === "english" ? model.english : undefined;
+  const turns = model.conversation?.length ? model.conversation : conversationFromQuestions(model.questions);
   const partial = Boolean(model.partial);
   const ids = { verdict: `${uid}-verdict`, spots: `${uid}-spots`, actions: `${uid}-actions`, questions: `${uid}-questions` };
 
@@ -153,46 +179,55 @@ export function DebriefView(props: DebriefViewProps) {
         id={ids.actions}
       />
 
-      {model.questions.length ? (
-        <section className={s.questions} aria-labelledby={ids.questions} data-review-id="Debrief/Questions" data-review-section="Debrief · Question by question" data-comment-target="">
-          <SectionHead
-            id={ids.questions}
-            title={t("debrief.qSection")}
-            action={model.questions.length > 1 ? (
-              <Button variant="link" size="sm" onClick={toggleAll}>{allOpen ? t("debrief.closeAll") : t("debrief.openAll")}</Button>
-            ) : undefined}
-          />
-          <ol className={s.list}>
-            {model.questions.map((q) => (
-              <QuestionCard
-                key={q.n}
-                q={q}
-                order={seq}
-                headerId={headerId(q.n)}
-                open={open.has(q.n)}
-                onOpenChange={(v) => setCard(q.n, v)}
-                strongerOpen={strongerOpen.has(q.n)}
-                onStrongerOpenChange={(v) => {
-                  setStrongerOpen((prev) => { const n = new Set(prev); if (v) n.add(q.n); else n.delete(q.n); return n; });
-                  if (v && q.stronger?.status === "idle") props.onStronger?.(q.n);
-                }}
-                rows={rowsFor(q.n)}
-                rechecking={rechecking === q.n}
-                answerEditing={editing?.q === q.n && editing.target === "answer"}
-                onEditAnswer={canEdit ? () => { setUserOpened(true); setEditing({ q: q.n, target: "answer" }); } : undefined}
-                onSaveAnswer={(text) => save(q.n, "answer", text)}
-                onCancelAnswer={() => setEditing(null)}
-                focusEditor={userOpened}
-              />
-            ))}
-          </ol>
-          {model.skipped ? (
-            <p className={s.skipped}>
-              {model.skipped.from === model.skipped.to
-                ? t("debrief.partial.skippedOne", { n: model.skipped.from })
-                : t("debrief.partial.skipped", { from: model.skipped.from, to: model.skipped.to })}
-            </p>
-          ) : null}
+      {turns.length ? (
+        <section className={s.questions} aria-labelledby={ids.questions} data-review-id="Debrief/Questions" data-review-section="Debrief · Conversation" data-comment-target="">
+          <SectionHead id={ids.questions} title={t("debrief.convo.title")} sub={current ? t("debrief.convo.sub") : undefined} />
+          <div className={`${s.split} ${current ? "" : s.single}`}>
+            <div className={s.chat}>
+              <Conversation turns={turns} questions={new Set(model.questions.map((q) => q.n))} selected={selected} onSelect={(n) => pick(n)} />
+              {model.skipped ? (
+                <p className={s.skipped}>
+                  {model.skipped.from === model.skipped.to
+                    ? t("debrief.partial.skippedOne", { n: model.skipped.from })
+                    : t("debrief.partial.skipped", { from: model.skipped.from, to: model.skipped.to })}
+                </p>
+              ) : null}
+            </div>
+            {current ? (
+              <div ref={detail} className={s.detail} style={detailMax ? { maxHeight: detailMax } : undefined} aria-label={t("debrief.convo.breakdown")} role="region">
+                {model.questions.length > 1 ? (
+                  <Segmented
+                    label={t("debrief.convo.pick")}
+                    hideLabel
+                    options={model.questions.map((q) => ({ value: String(q.n), label: String(q.n), title: q.question }))}
+                    value={String(current.n)}
+                    onChange={(v) => pick(Number(v))}
+                  />
+                ) : null}
+                <QuestionCard
+                  key={current.n}
+                  fixed
+                  q={current}
+                  order={seq}
+                  headerId={headerId(current.n)}
+                  open
+                  onOpenChange={() => {}}
+                  strongerOpen={strongerOpen.has(current.n)}
+                  onStrongerOpenChange={(v) => {
+                    setStrongerOpen((prev) => { const n = new Set(prev); if (v) n.add(current.n); else n.delete(current.n); return n; });
+                    if (v && current.stronger?.status === "idle") props.onStronger?.(current.n);
+                  }}
+                  rows={rowsFor(current.n)}
+                  rechecking={rechecking === current.n}
+                  answerEditing={editing?.q === current.n && editing.target === "answer"}
+                  onEditAnswer={canEdit ? () => { setUserOpened(true); setEditing({ q: current.n, target: "answer" }); } : undefined}
+                  onSaveAnswer={(text) => save(current.n, "answer", text)}
+                  onCancelAnswer={() => setEditing(null)}
+                  focusEditor={userOpened}
+                />
+              </div>
+            ) : null}
+          </div>
         </section>
       ) : null}
     </div>

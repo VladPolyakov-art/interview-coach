@@ -1,6 +1,8 @@
 /* One question card (debrief.md §3.5; G19 Disclosure as an <li> card, headingLevel 3). Collapsed: number, question,
  * summary badges per layer, facts (length, start time, follow-ups). Expanded: follow-up, your answer (clamped to 6
- * lines), layer blocks in the configured order, a stronger answer. Local state lives in DebriefView; this part is pure. */
+ * lines), layer blocks in the configured order, a stronger answer. Local state lives in DebriefView; this part is pure.
+ * `fixed` (D71): the breakdown next to the chat, always open, no toggle; the follow-up lines stay in the chat.
+ * Badges (D71): only layers with something to work on, each named ("Content: 1 fix"); all clear → one "Nothing to fix". */
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { Badge, Button, Callout, Disclosure, Icon, Skeleton, TextShimmer } from "../../../ds";
 import { t, tp } from "../../../i18n";
@@ -26,6 +28,8 @@ export interface QuestionCardProps {
   onSaveAnswer?: (text: string) => void;
   onCancelAnswer?: () => void;
   focusEditor: boolean;
+  /** The breakdown panel next to the chat: an open card without the toggle. */
+  fixed?: boolean;
 }
 
 /** True when the text is cut by the line clamp (measured while collapsed, so "Show full answer" appears only when needed). */
@@ -103,15 +107,21 @@ function Stronger({ q, open, onOpenChange }: { q: QuestionModel; open: boolean; 
   );
 }
 
+const QUIET = () => new Set([t("debrief.sum.contentNothing"), t("debrief.sum.languageNothing")]);
+
 export function QuestionCard(p: QuestionCardProps) {
   const { q, order, headerId, open, onOpenChange } = p;
   const sum = q.summary;
+  const quiet = QUIET();
+  const work = (["content", "language"] as const).filter((l) => sum[l] && !quiet.has(sum[l]!));
+  const clear = !q.unavailable && !work.length && Boolean(sum.content || sum.language);
+  const named = (l: Layer, text: string) => `${t(`feedback.layer.${l}`)}: ${text}`;
   const meta = (
     <>
       {q.unavailable ? <Badge>{t("debrief.sum.noFeedback")}</Badge> : null}
-      {!q.unavailable && sum.content ? <Badge tone="content" tinted icon="content">{sum.content}</Badge> : null}
-      {!q.unavailable && sum.language ? <Badge tone="language" tinted icon="language">{sum.language}</Badge> : null}
-      {!q.unavailable && sum.delivery ? <Badge tone="delivery" tinted icon="delivery">{sum.delivery}</Badge> : null}
+      {!q.unavailable ? work.map((l) => <Badge key={l} tone={l} tinted icon={l}>{named(l, sum[l]!)}</Badge>) : null}
+      {clear ? <Badge icon="check">{t("debrief.sum.languageNothing")}</Badge> : null}
+      {!q.unavailable && sum.delivery ? <Badge tone="delivery" tinted icon="delivery">{named("delivery", sum.delivery)}</Badge> : null}
       {q.suggestion ? <Badge icon="sparkle">{t("debrief.q.suggestion")}</Badge> : null}
       {q.duration ? <span className={s.fact}><Icon name="clock" size="sm" />{q.duration}</span> : null}
       {q.startsAt ? <span className={s.fact}>{t("debrief.q.startsAt", { time: q.startsAt })}</span> : null}
@@ -128,6 +138,47 @@ export function QuestionCard(p: QuestionCardProps) {
     return <DeliveryLayer key={layer} block={q.layers.delivery!} />;
   };
 
+  const body = (
+    <div className={s.body} data-review-id="Debrief/QuestionBody">
+      {q.followUp && !p.fixed ? <p className={s.followUp}><span className={s.lead}>{t("debrief.q.followUp")}</span> {q.followUp}</p> : null}
+      <Answer q={q} answerEditing={p.answerEditing} onEditAnswer={p.onEditAnswer} onSaveAnswer={p.onSaveAnswer} onCancelAnswer={p.onCancelAnswer} focusEditor={p.focusEditor} />
+      {q.followUpAnswer && !p.fixed ? (
+        <section className={s.part}>
+          <h4 className={s.label}>{t("debrief.q.yourFollowUp")}</h4>
+          <p className={s.answer}>{q.followUpAnswer}</p>
+        </section>
+      ) : null}
+      {q.unavailable ? (
+        <Callout tone="info">{t("debrief.q.unavailable")}</Callout>
+      ) : p.rechecking ? (
+        <div className={s.part} data-review-id="Debrief/Rechecking">
+          <TextShimmer as="p" status>{t("debrief.q.rechecking")}</TextShimmer>
+          <Skeleton variant="card" lines={3} label={t("debrief.q.rechecking")} />
+        </div>
+      ) : (
+        <div className={s.layers}>{order.map(layerBlock)}</div>
+      )}
+      {!q.unavailable && !p.rechecking ? <Stronger q={q} open={p.strongerOpen} onOpenChange={p.onStrongerOpenChange} /> : null}
+    </div>
+  );
+
+  if (p.fixed) {
+    return (
+      <article className={s.fixed} aria-labelledby={headerId} data-review-id="Debrief/Breakdown">
+        <div className={s.fixedHead}>
+          <span className={s.num} aria-hidden="true">{q.n}</span>
+          <div className={s.fixedText}>
+            <h3 id={headerId} tabIndex={-1} className={s.fixedTitle}>
+              <span className="visually-hidden">{t("debrief.q.number", { n: q.n })}: </span>{q.question}
+            </h3>
+            <div className={s.fixedMeta}>{meta}</div>
+          </div>
+        </div>
+        <div className={s.fixedBody}>{body}</div>
+      </article>
+    );
+  }
+
   return (
     <Disclosure
       as="li"
@@ -139,27 +190,7 @@ export function QuestionCard(p: QuestionCardProps) {
       title={<><span className="visually-hidden">{t("debrief.q.number", { n: q.n })}: </span>{q.question}</>}
       meta={meta}
     >
-      <div className={s.body} data-review-id="Debrief/QuestionBody">
-        {q.followUp ? <p className={s.followUp}><span className={s.lead}>{t("debrief.q.followUp")}</span> {q.followUp}</p> : null}
-        <Answer q={q} answerEditing={p.answerEditing} onEditAnswer={p.onEditAnswer} onSaveAnswer={p.onSaveAnswer} onCancelAnswer={p.onCancelAnswer} focusEditor={p.focusEditor} />
-        {q.followUpAnswer ? (
-          <section className={s.part}>
-            <h4 className={s.label}>{t("debrief.q.yourFollowUp")}</h4>
-            <p className={s.answer}>{q.followUpAnswer}</p>
-          </section>
-        ) : null}
-        {q.unavailable ? (
-          <Callout tone="info">{t("debrief.q.unavailable")}</Callout>
-        ) : p.rechecking ? (
-          <div className={s.part} data-review-id="Debrief/Rechecking">
-            <TextShimmer as="p" status>{t("debrief.q.rechecking")}</TextShimmer>
-            <Skeleton variant="card" lines={3} label={t("debrief.q.rechecking")} />
-          </div>
-        ) : (
-          <div className={s.layers}>{order.map(layerBlock)}</div>
-        )}
-        {!q.unavailable && !p.rechecking ? <Stronger q={q} open={p.strongerOpen} onOpenChange={p.onStrongerOpenChange} /> : null}
-      </div>
+      {body}
     </Disclosure>
   );
 }
