@@ -98,6 +98,8 @@ export interface SettingsPatch {
 export interface Health { ok: boolean; version: string; data_version: number; data_dir: string; web_built: boolean }
 
 export interface Voice { id: string; label: string; locale: string; gender: string }
+/** POST /api/check/voice (D81). `audio`: Mike's reply as base64 WAV, null when speech is off. */
+export interface VoiceCheckResult { ok: boolean; heard: string; reply?: string; audio?: string | null; code?: string; message?: string; latency_ms?: number }
 export interface VoicesResponse { voices: Voice[]; default: string; tts: { available: boolean; [k: string]: unknown } }
 export interface SttInfo { available: boolean; backend: string; word_confidence?: boolean; model?: string }
 

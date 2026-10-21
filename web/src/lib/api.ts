@@ -1,7 +1,7 @@
 /* Typed REST client for app/server (all routes under /api). Errors become ApiError with the server's code. */
 import type {
   Debrief, EngineId, EngineStatus, EnginesResponse, EngineTestResult, Health, MemorySummary, OllamaModelsResponse,
-  Profile, Question, SessionRecord, SessionSummary, Settings, SettingsPatch, SttInfo, StrongerVersion, TelemetryInfo,
+  Profile, Question, SessionRecord, SessionSummary, Settings, SettingsPatch, SttInfo, StrongerVersion, TelemetryInfo, VoiceCheckResult,
   TrashItem, Vacancy, VacancySummary, VoicesResponse, LanguageItem, LanguageLayer,
 } from "./types";
 
@@ -72,6 +72,8 @@ export const api = {
   voices: () => request<VoicesResponse>("/voices"),
   voiceSampleUrl: (voice: string) => `/api/voices/sample?voice=${encodeURIComponent(voice)}`,
   stt: () => request<SttInfo>("/stt"),
+  /** Setup check (D81): what you said (recorded PCM or the browser's text) → what was heard → Mike's reply. */
+  voiceCheck: (body: { audio?: string; text?: string; voice?: string }) => post<VoiceCheckResult>("/check/voice", body),
   profile: () => request<Profile>("/profile"),
   saveProfile: (text: string, source = "pasted") =>
     request<Profile>("/profile", { method: "PUT", body: JSON.stringify({ text, source }) }),

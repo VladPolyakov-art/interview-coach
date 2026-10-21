@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import time
 from typing import Optional
 
@@ -154,6 +155,57 @@ async def voice_sample(voice: str = "") -> Response:
     wav = await asyncio.to_thread(tts.synthesize_wav, content.copy("voice_sample"), voice,
                                   settings["kokoro_speed"], settings)
     return Response(wav, media_type="audio/wav")
+
+
+class VoiceCheckBody(BaseModel):
+    model_config = {"extra": "forbid"}
+    audio: Optional[str] = Field(default=None, max_length=2_000_000)   # base64 PCM16 16 kHz mono, up to ~45 s
+    text: Optional[str] = Field(default=None, max_length=500)          # what the browser's recogniser heard
+    voice: str = Field(default="", max_length=64)
+
+
+VOICE_CHECK_SYSTEM = ("You are Mike, a friendly interview coach. This is a quick microphone check before the first "
+                      "practice round. Reply in one short spoken sentence (at most 15 words): show you heard what "
+                      "they said, and say everything works. No questions, no lists.")
+
+
+@router.post("/check/voice")
+async def voice_check(body: VoiceCheckBody, request: Request) -> dict:
+    """Setup check (US-02 AC2): what you said → what was recognised → Mike's reply, in his voice when speech is on."""
+    check_origin(request)
+    settings = config.load_settings()
+    started = time.perf_counter()
+    heard = (body.text or "").strip()
+    if not heard and body.audio:
+        recogniser = stt.get_stt(settings)
+        if not recogniser.available:
+            raise fail(503, "stt_unavailable", "Speech recognition is not set up on this computer.")
+        try:
+            pcm = base64.b64decode(body.audio, validate=True)
+        except ValueError:
+            raise fail(422, "bad_audio", "The recording could not be read.")
+        heard = (await asyncio.to_thread(recogniser.transcribe, pcm, False)).text.strip()
+    if not heard:
+        return {"ok": False, "code": "not_heard", "heard": "", "message": "Mike didn't catch anything."}
+    llm = engines.make_llm(settings, voice=True)
+    status = await llm.status()
+    if not status.ready:
+        return {"ok": False, "code": status.code, "heard": heard, "message": status.message}
+    try:
+        reply = await asyncio.wait_for(llm.complete(
+            [{"role": "system", "content": VOICE_CHECK_SYSTEM + content.name_line(settings.get("name", ""))},
+             {"role": "user", "content": heard}], temperature=0.4, max_tokens=60), timeout=90)
+    except (EngineError, asyncio.TimeoutError) as exc:
+        return {"ok": False, "code": getattr(exc, "code", "timeout"), "heard": heard,
+                "message": getattr(exc, "message", "The engine did not answer in time.")}
+    reply = reply.strip() or "I can hear you. Everything works."
+    audio = None
+    if tts.status(settings)["available"]:
+        wav = await asyncio.to_thread(tts.synthesize_wav, reply, body.voice or settings.get("voice", ""),
+                                      settings["kokoro_speed"], settings)
+        audio = base64.b64encode(wav).decode("ascii")
+    return {"ok": True, "heard": heard, "reply": reply, "audio": audio,
+            "latency_ms": round((time.perf_counter() - started) * 1000)}
 
 
 @router.get("/tts")

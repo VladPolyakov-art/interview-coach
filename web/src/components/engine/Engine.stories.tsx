@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 import { EnginePanel, type EnginePanelProps } from "../EnginePanel";
 import { EngineFixture, NONE_READY, SETTINGS, makeEngines } from "./fixtures";
 
-/* D54: choose first, connect after (Setup). A = choose, B = connect (one engine). D78: Settings is one view: the
- * engine in use on top, the other engines under it, set up in place.
- * Fixture: no server; switching and saving change local state. The playable stories start at the first step. */
+/* D78: Settings → AI engine is one view: the engine in use on top, the other engines under it, set up in place.
+ * D81: Setup step 1 uses the same view (Pages/Setup). Fixture: no server; switching and saving change local state. */
 const meta: Meta = { title: "Patterns/EnginePanel", parameters: { layout: "padded" } };
 export default meta;
 type Story = StoryObj;
@@ -21,24 +20,11 @@ const panel = (engines: ReturnType<typeof makeEngines>, props: EnginePanelProps,
   render: () => <Stage engines={engines} settings={settings}><EnginePanel {...props} /></Stage>,
 });
 
-// A: choose
-export const ChooseNoneReady: Story = panel(NONE_READY, { mode: "setup" });
-export const ChooseOllamaReady: Story = panel(makeEngines(), { mode: "setup" });
-
-// B: connect, one engine at a time
-export const ConnectOllamaReady: Story = panel(makeEngines(), { mode: "setup", initialStep: "connect", initialPick: "ollama" }, { ...SETTINGS, ollama: { ...SETTINGS.ollama, model: "qwen3:8b" } });
-export const ConnectOllamaNotRunning: Story = panel(NONE_READY, { mode: "setup", initialStep: "connect", initialPick: "ollama" });
-export const ConnectOllamaNotInstalled: Story = panel(makeEngines({ ollama: "not_installed" }), { mode: "setup", initialStep: "connect", initialPick: "ollama" });
-export const ConnectOllamaNoModel: Story = panel(makeEngines({ ollama: "no_model" }), { mode: "setup", initialStep: "connect", initialPick: "ollama" });
-export const ConnectOpenAiNeedsSetup: Story = panel(makeEngines(), { mode: "setup", initialStep: "connect", initialPick: "openai_compatible" });
-export const ConnectOpenAiReady: Story = panel(makeEngines({ openai_compatible: "ready" }), { mode: "setup", initialStep: "connect", initialPick: "openai_compatible" }, { ...SETTINGS, openai_compatible: { base_url: "http://localhost:1234/v1", model: "qwen3-4b-instruct", has_api_key: false } });
-export const ConnectClaudeFound: Story = panel(makeEngines({ claude_cli: "ready" }), { mode: "setup", initialStep: "connect", initialPick: "claude_cli" });
-export const ConnectClaudeNotFound: Story = panel(makeEngines({ claude_cli: "not_installed" }), { mode: "setup", initialStep: "connect", initialPick: "claude_cli" });
-export const ConnectGeminiNeedsKey: Story = panel(makeEngines(), { mode: "setup", initialStep: "connect", initialPick: "gemini_live" });
-export const ConnectGeminiReady: Story = panel(makeEngines({ gemini_live: "ready" }), { mode: "setup", initialStep: "connect", initialPick: "gemini_live" }, { ...SETTINGS, gemini_live: { ...SETTINGS.gemini_live, has_api_key: true } });
-
-// Settings (D78): one view
-export const SettingsOllama: Story = panel(makeEngines(), { mode: "settings" }, { ...SETTINGS, ollama: { ...SETTINGS.ollama, model: "qwen3:8b" } });
-export const SettingsNotReady: Story = panel(NONE_READY, { mode: "settings" });
-export const SettingsGemini: Story = panel(makeEngines({ gemini_live: "ready" }, "gemini_live"), { mode: "settings" });
-export const SettingsSetUpOpenAi: Story = panel(makeEngines(), { mode: "settings", initialPick: "openai_compatible" });
+export const SettingsOllama: Story = panel(makeEngines(), {}, { ...SETTINGS, ollama: { ...SETTINGS.ollama, model: "qwen3:8b" } });
+export const SettingsNotReady: Story = panel(NONE_READY, {});
+export const SettingsOllamaNotInstalled: Story = panel(makeEngines({ ollama: "not_installed" }), {});
+export const SettingsOllamaNoModel: Story = panel(makeEngines({ ollama: "no_model" }), {});
+export const SettingsGemini: Story = panel(makeEngines({ gemini_live: "ready" }, "gemini_live"), {});
+export const SettingsSetUpOpenAi: Story = panel(makeEngines(), { initialPick: "openai_compatible" });
+export const SettingsSetUpClaude: Story = panel(makeEngines({ claude_cli: "not_installed" }), { initialPick: "claude_cli" });
+export const SettingsSetUpGemini: Story = panel(makeEngines(), { initialPick: "gemini_live" });

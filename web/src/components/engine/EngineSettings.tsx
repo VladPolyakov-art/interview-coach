@@ -2,7 +2,7 @@
  * under a disclosure, or its setup in place while it is not ready), the other engines under it. A ready engine
  * switches with "Use"; one that needs setup opens its connection right in its row ("Set up"), and "Use <name>"
  * appears once it is ready. No "Test" button: the status is the check, and it re-checks every 5 s while not ready. */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { EngineLogo } from "./EngineLogo";
 import { Badge, Button, Callout, Disclosure, Icon, IconButton, SettingGroup, Skeleton } from "../../ds";
 import { t } from "../../i18n";
@@ -20,7 +20,7 @@ export interface EngineSettingsProps {
 }
 
 export function EngineSettings({ initialOpen }: EngineSettingsProps) {
-  const { engines, settings, refreshEngines, enginesLoading, updateSettings } = useApp();
+  const { engines, refreshEngines, enginesLoading, updateSettings } = useApp();
   const [open, setOpen] = useState<EngineId | null>(initialOpen ?? null);
   const [switching, setSwitching] = useState<EngineId | null>(null);
   const [error, setError] = useState("");
@@ -60,14 +60,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
         <div data-review-id="Engine/InUse" data-review-section="AI engine · In use" data-comment-target>
           <SettingGroup title={t("engines.settings.inUse")} id="engine-in-use" action={recheck} flush>
             <div className={s.item}>
-              <div className={s.itemHead}>
-                <span className={s.optIcon}><EngineLogo id={selected.id} /></span>
-                <span className={s.optText}>
-                  <span className={s.optName}>{engineName(selected)}</span>
-                  <span className={s.optLine}>{engineModel(selected, settings) || engineLine(selected.id)}</span>
-                </span>
-                <EngineStatus engine={selected} />
-              </div>
+              <EngineHead engine={selected} />
               {selected.status.ready ? (
                 <Disclosure surface="plain" title={selected.id === "ollama" ? t("engines.flow.models") : t("engines.settings.connection")}>
                   <div className={s.itemBody}>
@@ -130,6 +123,21 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
           })}
         </SettingGroup>
       </div>
+    </div>
+  );
+}
+
+/** The engine in use as one row: logo, name, model, status, and the caller's action (Setup's "Change", D81). */
+export function EngineHead({ engine, action }: { engine: EngineInfo; action?: ReactNode }) {
+  const { settings } = useApp();
+  return (
+    <div className={s.itemHead}>
+      <span className={s.optIcon}><EngineLogo id={engine.id} /></span>
+      <span className={s.optText}>
+        <span className={s.optName}>{engineName(engine)}</span>
+        <span className={s.optLine}>{engineModel(engine, settings) || engineLine(engine.id)}</span>
+      </span>
+      <span className={s.headEnd}><EngineStatus engine={engine} />{action}</span>
     </div>
   );
 }

@@ -10,19 +10,19 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useNavigationType, type Location } from "react-router-dom";
 import {
-  Badge, Button, Callout, CopyField, Dialog, Disclosure, FileDrop, FileRow, Icon, IconButton, Input, Segmented, Select, SettingGroup,
-  SettingRow, Skeleton, Textarea, Toggle, scrollBehavior, type IconName,
+  Badge, Button, Callout, CopyField, Dialog, Icon, IconButton, Input, Segmented, Select, SettingGroup,
+  SettingRow, Skeleton, Toggle, scrollBehavior, type IconName,
 } from "../ds";
 import { t, tp, type MessageKey } from "../i18n";
 import { EnginePanel } from "../components/EnginePanel";
+import { ProfileEditor } from "../components/ProfileEditor";
 import { browserSttSupported } from "../audio/browserStt";
 import { api } from "../lib/api";
-import { formatDateTime } from "../lib/format";
 import { useLoad } from "../lib/hooks";
 import { prefs, type PausePref } from "../lib/prefs";
 import { errorMessage, useApp } from "../lib/store";
 import { useTheme } from "../lib/theme";
-import type { Level, Profile, SettingsPatch } from "../lib/types";
+import type { Level, SettingsPatch } from "../lib/types";
 import s from "./Settings.module.css";
 
 const SECTIONS: { id: SectionId; icon: IconName }[] = [
@@ -42,10 +42,8 @@ const ALIASES: Record<string, { section: SectionId; hash?: string }> = {
   appearance: { section: "general", hash: "general-theme" },
 };
 /** How long the "Saved" toast stays (D78): long enough to read one word. */
-const PROFILE_MAX_FILES = 10;
 /** The server keeps at most 60 characters of the name (D80). */
 const NAME_MAX = 60;
-const CV_ACCEPT = ".pdf,.docx,.txt,.md";
 
 /* ---------- search ---------- */
 
@@ -72,6 +70,7 @@ const SEARCH: SearchItem[] = [
   { id: "privacy-obsidian", section: "privacy", label: "settings.privacy.obsidian", description: "settings.privacy.obsidianHint", keywords: "obsidian markdown export notes" },
   { id: "privacy-trash", section: "privacy", label: "settings.privacy.trash", description: "settings.privacy.trashHint", keywords: "deleted restore" },
   { id: "free", section: "about", label: "settings.about.freeTitle", description: "settings.about.freeIntro", keywords: "premium price cost" },
+  { id: "about-setup", section: "about", label: "settings.about.setupRun", description: "settings.about.setupHint", keywords: "onboarding wizard start first run welcome" },
   { id: "about-licence", section: "about", label: "settings.about.licenceTitle", description: "settings.about.licence", keywords: "agpl open source license" },
 ];
 
@@ -260,7 +259,7 @@ function SearchResults({ query, results, onPick }: { query: string; results: Sea
 
 function SectionContent({ id }: { id: SectionId }) {
   if (id === "general") return <GeneralSection />;
-  if (id === "engine") return <div id="engine"><EnginePanel mode="settings" /></div>;
+  if (id === "engine") return <div id="engine"><EnginePanel /></div>;
   if (id === "voice") return <VoiceSection />;
   if (id === "practice") return <PracticeSection />;
   if (id === "privacy") return <PrivacySection />;
@@ -335,88 +334,11 @@ function NameGroup() {
   );
 }
 
-/** Your CV (D78, D79): the files themselves — drop several, replace or remove each — and, under a disclosure, text
- * about yourself the files don't say. Mike reads the text and every file together. No "Saved" toast: the list shows it. */
+/** Your CV (D78, D79): the files and the text about yourself, shared with Setup → About you (D81). */
 function CvGroup() {
-  const profile = useLoad(() => api.profile());
-  const [note, setNote] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [reading, setReading] = useState<string[]>([]);
-  const [error, setError] = useState("");
-  const data = profile.data;
-  if (!data) return profile.error ? <Callout tone="error">{errorMessage(profile.error)}</Callout> : <Skeleton lines={3} />;
-  const files = data.files;
-  const room = PROFILE_MAX_FILES - files.length;
-  const value = note ?? data.note;
-  const run = async (key: string, fn: () => Promise<Profile>) => {
-    setBusy(key);
-    setError("");
-    try {
-      profile.setData(await fn());
-      return true;
-    } catch (e) {
-      setError(errorMessage(e));
-      return false;
-    } finally {
-      setBusy(null);
-    }
-  };
-  // Several files go up one after another; each shows as "reading" until the server has its text.
-  const add = async (picked: File[]) => {
-    const take = picked.slice(0, Math.max(room, 0));
-    setReading(take.map((f) => f.name));
-    setError(picked.length > take.length ? t("settings.profile.full", { n: PROFILE_MAX_FILES }) : "");
-    for (const f of take) {
-      setBusy("add");
-      try {
-        profile.setData(await api.uploadProfile(f));
-      } catch (e) {
-        setError(`${f.name}: ${errorMessage(e)}`);
-      }
-      setReading((names) => names.filter((n) => n !== f.name));
-    }
-    setBusy(null);
-  };
   return (
     <SettingGroup title={t("settings.profile.title")} id="profile-title" description={t("settings.profile.hint")}>
-      <div id="profile-cv" className={s.cvFiles}>
-        {files.map((f) => (
-          <FileRow key={f.id} name={f.name} meta={t("settings.profile.added", { date: formatDateTime(f.added) })}
-            accept={CV_ACCEPT} replaceLabel={t("settings.profile.replace")} replaceName={t("settings.profile.replaceName", { name: f.name })}
-            onReplace={(file) => void run(f.id, () => api.uploadProfile(file, f.id))}
-            removeLabel={t("settings.profile.remove", { name: f.name })} onRemove={() => void run(f.id, () => api.deleteProfileFile(f.id))}
-            reading={busy === f.id} readingLabel={t("common.checking")} disabled={busy !== null} />
-        ))}
-        {reading.map((name) => <FileRow key={`r-${name}`} name={name} reading readingLabel={t("common.checking")} />)}
-        {room > 0 ? (
-          <FileDrop
-            label={t("settings.profile.fileLabel")}
-            prompt={files.length ? t("settings.profile.dropMore") : t("settings.profile.drop")}
-            browseLabel={t("settings.profile.browse")}
-            hint={t("settings.profile.fileHint", { n: PROFILE_MAX_FILES })}
-            accept={CV_ACCEPT}
-            multiple
-            compact={files.length > 0 || reading.length > 0}
-            onFiles={(picked) => void add(picked)}
-            disabled={busy !== null}
-          />
-        ) : <p className={s.note}>{t("settings.profile.full", { n: PROFILE_MAX_FILES })}</p>}
-        {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
-      </div>
-      <div className={s.cvText}>
-        <Disclosure surface="plain" defaultOpen={Boolean(data.note) && !files.length}
-          title={data.note ? t("settings.profile.text") : files.length ? t("settings.profile.moreText") : t("settings.profile.asText")}>
-          <div className={s.cvTextBody}>
-            <p className={s.hint}>{t("settings.profile.textHint")}</p>
-            <Textarea label={t("settings.profile.text")} hideLabel placeholder={t("setup.about.cvPlaceholder")} rows={8} value={value}
-              onChange={(e) => setNote(e.target.value)} showCount />
-            <div className={s.cvActions}>
-              <Button variant="primary" loading={busy === "note"} disabled={note === null || note === data.note || busy !== null}
-                onClick={() => void run("note", () => api.saveProfile(value, "paste")).then((ok) => { if (ok) setNote(null); })}>{t("common.save")}</Button>
-            </div>
-          </div>
-        </Disclosure>
-      </div>
+      <ProfileEditor id="profile-cv" />
     </SettingGroup>
   );
 }
@@ -646,6 +568,7 @@ function NotIncluded() {
 
 /** About and what's free (D58): reached from the account menu ("Help & what's free") and Home's "What's free" link. */
 function AboutSection() {
+  const navigate = useNavigate();
   return (
     <>
       <div id="free" className={s.anchor}>
@@ -685,6 +608,11 @@ function AboutSection() {
       </div>
       <SettingGroup title={t("settings.about.practiceTitle")} id="about-practice-title">
         <p className={s.lead}>{t("app.practiceOnly")}</p>
+      </SettingGroup>
+      <SettingGroup title={t("settings.about.setupTitle")} id="about-setup-title">
+        <SettingRow id="about-setup" label={t("settings.about.setupRun")} description={t("settings.about.setupHint")}>
+          <Button size="sm" variant="secondary" icon="refresh" onClick={() => navigate("/setup")}>{t("settings.about.setupRun")}</Button>
+        </SettingRow>
       </SettingGroup>
       <div id="about-licence" className={s.anchor}>
         <SettingGroup title={t("settings.about.licenceTitle")} id="about-licence-title">

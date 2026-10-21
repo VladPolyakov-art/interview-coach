@@ -230,56 +230,85 @@
   "setup": {
     "steps": "Setup steps",
     "step": {
-      "engine": "Engine",
-      "test": "Test",
-      "about": "About you and the job",
-      "first": "First round"
+      "engine": "AI engine",
+      "check": "Check",
+      "about": "About you"
     },
     "stepDone": "done",
-    "test": {
-      "title": "Let's check everything works",
-      "subtitle": "A quick check of your microphone, the AI model and Mike's voice.",
-      "mic": "Microphone",
-      "micStart": "Test microphone",
-      "micStop": "Stop",
-      "micPrompt": "Your browser will ask to use the microphone. Choose \"Allow\".",
-      "micSay": "Say: \"I'm preparing for an interview next week.\"",
-      "micHeard": "We can hear you.",
-      "micQuiet": "Speak a little louder or closer to the microphone.",
-      "micDenied": "The microphone is blocked. Allow it in the browser's address bar, or use the keyboard instead.",
-      "micMissing": "No microphone found. Connect one, or use the keyboard instead.",
-      "micLevel": "Microphone level",
-      "engine": "AI model",
-      "engineRun": "Ask Mike to reply",
+    "engine": {
+      "title": "Choose how Mike runs",
+      "subtitle": "Free and local by default. No key, no account.",
+      "group": "AI engine",
+      "change": "Change",
+      "later": "You can switch any time in Settings → AI engine.",
+      "waiting": "Continue once {name} is Ready."
+    },
+    "check": {
+      "title": "Say hi to Mike",
+      "subtitle": "One quick check of your microphone, speech recognition and Mike's voice.",
       "voice": "Mike's voice",
-      "voicePlay": "Play a sample",
-      "voiceMissing": "Mike's voice isn't installed. You'll read his questions instead.",
-      "speech": "Speech recognition",
-      "speechReady": "Local ({backend})",
-      "speechMissing": "Not installed. You can still answer with the keyboard.",
-      "worksTitle": "It works",
+      "voiceHint": "You'll hear it in the check below.",
+      "sample": "Play a sample",
+      "voiceMissing": "Mike's voice isn't installed on this computer, so he'll reply in text.",
+      "group": "Voice check",
+      "start": "Start the check",
+      "idle": "Press the microphone and say something like “Hi Mike, can you hear me?”",
+      "listening": "Listening… Mike replies after a short pause.",
+      "done": "Done",
+      "recognising": "Recognising…",
+      "answering": "Mike is answering…",
+      "replay": "Play again",
+      "tryAgain": "Try again",
+      "works": "It works",
+      "typeInstead": "I'll type instead",
       "telemetry": "Share anonymous usage counts to help improve the app",
-      "telemetryHint": "Counts, timings, engine names and error codes. Never what you said or wrote. Off by default, and today nothing leaves this computer.",
-      "useKeyboard": "I'll use the keyboard"
+      "telemetryHint": "Counts, timings, engine names and error codes. Never what you said or wrote. Today nothing leaves this computer.",
+      "error": {
+        "mic_denied": {
+          "title": "Vukoli can't use the microphone",
+          "body": "Allow the microphone in your browser's address bar, then try again. Or answer with the keyboard."
+        },
+        "mic_missing": {
+          "title": "No microphone found",
+          "body": "Connect a microphone and try again, or answer with the keyboard."
+        },
+        "no_stt": {
+          "title": "Speech recognition isn't set up",
+          "body": "This computer can't turn speech into text yet. Answer with the keyboard; Mike still speaks."
+        },
+        "not_heard": {
+          "title": "Mike didn't catch that",
+          "body": "Speak a little louder or closer to the microphone, then try again."
+        },
+        "engine": {
+          "title": "Mike heard you, but the engine didn't answer",
+          "body": "{message}"
+        },
+        "failed": {
+          "title": "The check didn't finish",
+          "body": "{message}"
+        }
+      },
+      "engineBack": "Back to AI engine"
     },
     "about": {
-      "title": "About you and the job",
-      "subtitle": "Both are optional. With them, Mike asks about your own experience and the role you want.",
-      "cv": "Your CV or a short summary",
-      "cvPlaceholder": "Paste your CV, or a few lines about your experience.",
-      "cvUpload": "Upload a file",
-      "cvSaved": "CV saved.",
+      "title": "About you",
+      "subtitle": "Mike tailors questions to you and the job. Everything here is optional and stays on this computer.",
+      "nameGroup": "Your name",
+      "name": "What should Mike call you?",
+      "nameHint": "He says it in the greeting and now and then.",
+      "namePlaceholder": "Your first name",
+      "cv": "Your CV",
+      "cvHint": "Mike asks about your own experience. Several files are fine.",
       "job": "The job you're preparing for",
-      "jobAdd": "Add the job description",
-      "jobAdded": "Added: {title}",
-      "skip": "Skip for now"
-    },
-    "first": {
-      "title": "Your first round",
-      "subtitle": "Five questions, about 20 minutes. Feedback appears after each question, never while you're talking.",
+      "jobHint": "A posting, a link or a file. Mike asks about that role.",
+      "jobAdd": "Add a job",
+      "jobChange": "Change",
       "how": "How you'll answer",
-      "start": "Start my first interview",
-      "later": "Go to Practice"
+      "roundHint": "Five questions, about 20 minutes. Feedback comes after each answer, never while you talk.",
+      "later": "Not now",
+      "start": "Start the first round",
+      "roundTitle": "Your first round"
     }
   },
   "home": {
@@ -1296,7 +1325,8 @@
       "full": "That's {n} files, the most Mike takes. Remove one to add another.",
       "added": "Added {date}",
       "replaceName": "Replace {name}",
-      "moreText": "Add text about yourself"
+      "moreText": "Add text about yourself",
+      "textPlaceholder": "Paste your CV, or a few lines about your experience."
     },
     "appearance": {
       "title": "Appearance",
@@ -1351,6 +1381,9 @@
         "devices": "This computer only"
       },
       "practiceTitle": "Practice only",
+      "setupTitle": "Setup",
+      "setupRun": "Run setup again",
+      "setupHint": "AI engine, voice check, your name and CV. Sessions and settings stay as they are.",
       "licenceTitle": "Open source",
       "licence": "The app is open source under AGPL-3.0-or-later. Your sessions stay on this computer."
     },

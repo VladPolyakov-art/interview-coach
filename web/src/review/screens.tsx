@@ -4,6 +4,7 @@ import { homeReview } from "../screens/home/review";
 import { historyReview } from "../screens/history/review";
 import { debriefReview } from "../screens/debrief/review";
 import { engineReview } from "../screens/engine/review";
+import { setupReview } from "../screens/setup/review";
 import { shellReview } from "../screens/shell/review";
 
 /*
@@ -32,4 +33,4 @@ export interface ReviewScreen {
   states: ReviewState[];
 }
 
-export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, engineReview, shellReview];
+export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, engineReview, setupReview, shellReview];

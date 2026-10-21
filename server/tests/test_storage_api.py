@@ -197,3 +197,26 @@ def test_name_setting_and_greeting(client):
     assert content.copy("english_opening", name="Alex").startswith("Hi Alex, I'm Mike")
     assert content.copy("english_opening").startswith("Hi, I'm Mike")
     assert "Alex" in content.name_line("Alex") and content.name_line("") == ""
+
+
+def test_voice_check_recognises_and_replies(client, monkeypatch, fake_llm):
+    """US-02 AC2: recognised text and Mike's reply; text from the browser's recogniser skips the server STT."""
+    from server import engines, stt
+    llm = fake_llm({"text": "I hear you, Alex. Everything works."})
+    monkeypatch.setattr(engines, "make_llm", lambda settings=None, engine_id=None, voice=False: llm)
+    client.post("/api/settings", json={"name": "Alex"}, headers=SAME)
+    typed = client.post("/api/check/voice", json={"text": "Hi Mike"}, headers=SAME).json()
+    assert typed["ok"] and typed["heard"] == "Hi Mike" and typed["reply"].startswith("I hear you")
+    assert typed["audio"] is None                                   # no Kokoro in tests: text-only reply
+    assert "Alex" in llm.calls[-1]["messages"][0]["content"]
+
+    class Heard:
+        available = True
+        def transcribe(self, pcm, words=True):
+            return stt.Transcript(text="Hello there")
+    monkeypatch.setattr(stt, "get_stt", lambda settings: Heard())
+    pcm = base64.b64encode(b"\0\0" * 16000).decode()
+    assert client.post("/api/check/voice", json={"audio": pcm}, headers=SAME).json()["heard"] == "Hello there"
+    silent = client.post("/api/check/voice", json={"text": "  "}, headers=SAME).json()
+    assert not silent["ok"] and silent["code"] == "not_heard"
+    assert client.post("/api/check/voice", json={"text": "hi"}, headers=OTHER).status_code == 403

@@ -144,6 +144,8 @@ export function EngineFixture({ engines, settings = SETTINGS, children }: { engi
         const next: Settings = {
           ...cfg,
           ...(patch.engine ? { engine: patch.engine } : {}),
+          ...(patch.voice !== undefined ? { voice: patch.voice } : {}),
+          ...(patch.name !== undefined ? { name: patch.name } : {}),
           ollama: { ...cfg.ollama, ...patch.ollama },
           openai_compatible: { ...cfg.openai_compatible, base_url: patch.openai_compatible?.base_url ?? cfg.openai_compatible.base_url, model: patch.openai_compatible?.model ?? cfg.openai_compatible.model },
           gemini_live: { ...cfg.gemini_live, has_api_key: patch.gemini_live?.api_key ? true : cfg.gemini_live.has_api_key },
