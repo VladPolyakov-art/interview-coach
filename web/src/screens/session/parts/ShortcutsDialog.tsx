@@ -20,7 +20,6 @@ export function ShortcutsDialog({ open, onClose, input, variant, onMicHelp }: {
     ["R", t("session.shortcuts.r")],
     ...(voice ? ([["T", t("session.shortcuts.t")]] as [string, string][]) : []),
     ["F", t("session.shortcuts.f")],
-    ["H", t("session.shortcuts.h")],
     ...(variant === "english" ? [] : ([["N", t("session.shortcuts.n")]] as [string, string][])),
     ["Esc", t("session.shortcuts.esc")],
     ["?", t("session.shortcuts.q")],

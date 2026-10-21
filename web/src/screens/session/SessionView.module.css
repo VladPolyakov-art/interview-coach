@@ -51,7 +51,6 @@
     transparent var(--dock-top)
   );
 }
-.hiddenNote { pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin: 0; color: var(--color-text-tertiary); font-size: var(--text-sm); }
 .flow { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-8); width: 100%; max-width: var(--layout-narrow); margin-top: auto; min-width: 0; }
 
 /* "Jump to latest": above the dock, centred, only while the user reads above. */

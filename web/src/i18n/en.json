@@ -770,14 +770,7 @@
       "f": "Show or hide feedback",
       "n": "Next question",
       "esc": "Close the panel, menu or this list",
-      "q": "Show this list",
-      "h": "Hide or show the conversation"
-    },
-    "chat": {
-      "hide": "Hide the conversation (H)",
-      "show": "Show the conversation (H)",
-      "hiddenNote": "Conversation hidden",
-      "showAction": "Show"
+      "q": "Show this list"
     }
   },
   "feedback": {

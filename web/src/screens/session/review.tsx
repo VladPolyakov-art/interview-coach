@@ -25,11 +25,6 @@ const states: ReviewState[] = [
     render: show({ scene: "q1-start" }, { suggester: "on", tools: "menu", initialOverlay: "more" }), mobile: false,
   },
   {
-    id: "s-chat-hidden", label: "D63 · Разговор скрыт", dark: true,
-    note: "Кнопка с облачком в островке (или H): на сцене остаётся только текущий вопрос Майка, ваши ответы и прошлые вопросы скрыты — как на настоящем интервью. Нажата = разговор скрыт. 🟡",
-    render: show({ scene: "follow-up" }, { initialChatHidden: true, panelOpen: false }),
-  },
-  {
     id: "s1-panel", label: "D62 · Разбор открыт до первого ответа",
     note: "Кнопка Feedback работает всегда. Пока разбора нет, панель говорит, что появится здесь; во время ответа — «Still in progress…».",
     render: show({ scene: "q1-start" }, { panelOpen: true }),

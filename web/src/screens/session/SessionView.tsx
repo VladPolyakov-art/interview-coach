@@ -144,13 +144,6 @@ export function SessionView(props: SessionViewProps) {
   const [shortcuts, setShortcuts] = useState(props.initialOverlay === "shortcuts");
   const [micHelp, setMicHelp] = useState(false);
   const [suggestOn, setSuggestOn] = useState(data.suggestOn ?? true);
-  const [chatHidden, setChatHidden] = useState(props.initialChatHidden ?? false);
-  /* Hiding or showing the conversation reflows the whole stage: land on its end, next to the island. */
-  const chatToggled = useRef(false);
-  useLayoutEffect(() => {
-    if (!chatToggled.current) { chatToggled.current = true; return; }
-    sendRef.current({ type: "jump" }, "auto");
-  }, [chatHidden]);
   const showSuggester = props.suggester === "on" && variant === "interview";
 
   /* Text mode morph: the island turns from pill into box once, when the input switches during the session. */
@@ -186,7 +179,6 @@ export function SessionView(props: SessionViewProps) {
     const run = (fn?: () => void) => { if (fn) { e.preventDefault(); fn(); } };
     if (key === "?") run(() => setShortcuts(true));
     else if (key === "f" && model.feedback.enabled) run(() => setPanel(!panelOpen));
-    else if (key === "h") run(() => setChatHidden(!chatHidden));
     else if (key === "n" && model.main?.kind === "button" && (model.main.id === "next" || model.main.id === "debrief") && !model.main.disabled) run(model.main.onClick);
     else if (!live || !voice) {
       if (key === "r" && model.canRedo) run(handlers?.onRedo);
@@ -250,9 +242,7 @@ export function SessionView(props: SessionViewProps) {
   const showTranscript = data.transcript.length > 0 || thinking;
   
   const showTips = props.firstTime && !interrupted && phase !== "saving";
-  /* D63: "hide the conversation" takes the whole dialogue off the stage, Mike's question included (voice only); one
-   * quiet line in the dock (always in view, never under the island) says so and brings it back. 🟡 In text mode the question is then only heard. */
-  const showHeard = voice && !interrupted && lastTurn?.speaker === "user" && !chatHidden;
+  const showHeard = voice && !interrupted && lastTurn?.speaker === "user";
   const showIsland = phase !== "saving" && !data.closing;
   const shifted = wide && panelOpen;
 
@@ -279,7 +269,7 @@ export function SessionView(props: SessionViewProps) {
           </div>
           <div className={s.scroll} ref={scrollRef} onScroll={onScroll}>
             <div className={`${s.flow} ${s.shift}`}>
-              {showTranscript && !chatHidden ? (
+              {showTranscript ? (
                 <Transcript
                   turns={data.transcript}
                   label={variant === "english" ? t("session.captions.transcriptEnglish") : t("session.transcript")}
@@ -301,12 +291,6 @@ export function SessionView(props: SessionViewProps) {
           ) : null}
           <div className={`${s.islandWrap} ${s.shift}`} data-input={input}>
             <div ref={islandRef} className={s.dock}>
-              {chatHidden ? (
-                <p className={s.hiddenNote}>
-                  {t("session.chat.hiddenNote")}
-                  <Button variant="ghost" size="sm" icon="chat" onClick={() => setChatHidden(false)}>{t("session.chat.showAction")}</Button>
-                </p>
-              ) : null}
               <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
               <div className={s.status} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
                 <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} />
@@ -336,8 +320,6 @@ export function SessionView(props: SessionViewProps) {
                     suggestOn={suggestOn}
                     onSuggest={(on) => { setSuggestOn(on); handlers?.onSetSuggest?.(on); }}
                     tools={props.tools ?? "open"}
-                    chatHidden={chatHidden}
-                    onToggleChat={() => setChatHidden(!chatHidden)}
                     onShortcuts={() => setShortcuts(true)}
                     onMicHelp={() => setMicHelp(true)}
                     sendLocked={sendLocked}
