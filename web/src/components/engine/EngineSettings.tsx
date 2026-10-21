@@ -11,6 +11,7 @@ import { errorMessage, useApp } from "../../lib/store";
 import type { EngineId, EngineInfo } from "../../lib/types";
 import { AntigravityBody, ClaudeBody, CodexBody, DisconnectButton, DisconnectedBody, GeminiBody, OllamaBody, OllamaModelPicker, OpenAiBody } from "./bodies";
 import { EngineStatus, engineStatusWord } from "./EngineStatus";
+import { LimitFacts, PlanLimit } from "./PlanLimit";
 import { RECOMMENDED, engineLine, engineModel, engineName } from "./meta";
 import s from "./engine.module.css";
 
@@ -60,7 +61,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
         <div data-review-id="Engine/InUse" data-review-section="AI engine · In use" data-comment-target>
           <SettingGroup title={t("engines.settings.inUse")} id="engine-in-use" action={recheck} flush>
             <div className={s.item}>
-              <EngineHead engine={selected} action={selected.status.ready ? <DisconnectButton engine={selected} /> : undefined} />
+              <EngineHead engine={selected} limit action={selected.status.ready ? <DisconnectButton engine={selected} /> : undefined} />
               {selected.status.ready ? (
                 <Disclosure surface="plain" title={selected.id === "ollama" ? t("engines.flow.models") : t("engines.settings.connection")}>
                   <div className={s.itemBody}>
@@ -128,8 +129,9 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
   );
 }
 
-/** The engine in use as one row: logo, name, model, status, and the caller's action (Setup's "Change", D81). */
-export function EngineHead({ engine, action }: { engine: EngineInfo; action?: ReactNode }) {
+/** The engine in use as one row: logo, name, model, status, and the caller's action (Setup's "Change", D81).
+ * `limit`: also the plan's limit line (D88). */
+export function EngineHead({ engine, action, limit = false }: { engine: EngineInfo; action?: ReactNode; limit?: boolean }) {
   const { settings } = useApp();
   return (
     <div className={s.itemHead}>
@@ -137,6 +139,7 @@ export function EngineHead({ engine, action }: { engine: EngineInfo; action?: Re
       <span className={s.optText}>
         <span className={s.optName}>{engineName(engine)}</span>
         <span className={s.optLine}>{engineModel(engine, settings) || engineLine(engine.id)}</span>
+        {limit ? <PlanLimit engine={engine} /> : null}
       </span>
       <span className={s.headEnd}><EngineStatus engine={engine} />{action}</span>
     </div>
@@ -170,6 +173,7 @@ export function Facts({ engine }: { engine: EngineInfo }) {
       <dd>{engine.data_line}</dd>
       <dt>{t("engines.runs")}</dt>
       <dd>{engine.local ? t("engines.local") : t("engines.online")}</dd>
+      <LimitFacts engine={engine} />
     </dl>
   );
 }

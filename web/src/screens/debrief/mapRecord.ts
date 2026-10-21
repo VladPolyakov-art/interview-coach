@@ -1,6 +1,7 @@
 /* Live data → Debrief view model. Pure (no I/O), unit-tested in mapRecord.test.ts.
  * What the saved session does not carry (verdict step, per-question start time, corrections count) is left out of the
  * model; the view shows only what is there (see "live data gaps" in docs/frontend.md). */
+import { percent, windowName } from "../../components/engine/PlanLimit";
 import { diffMarks, paceVerdict } from "../../components/Feedback";
 import { t, tMaybe, tp } from "../../i18n";
 import { formatClock, formatDateTime, formatDuration } from "../../lib/format";
@@ -228,8 +229,23 @@ function metaFor(record: SessionRecord, questions: number, followUps: number, tu
       ? tp("debrief.meta.turns", turns)
       : `${tp("debrief.meta.questions", questions)}, ${tp("debrief.meta.followUps", followUps)}`,
   });
+  const usage = usageText(record);
+  if (usage) meta.push({ icon: "cpu", text: usage });
   meta.push({ icon: "check", text: t("debrief.savedHere"), href: "/settings/storage" });
   return meta;
+}
+
+/** D88: "12 requests to the AI · under 1% of the monthly limit" (the percent only where the plan reports one). */
+export function usageText(record: SessionRecord): string {
+  const u = record.usage;
+  if (!u || !u.requests) return "";
+  const parts = [tp("debrief.meta.requests", u.requests)];
+  const spent = (u.windows ?? []).map((w) => ({ id: w.id, used: Math.max(0, w.after - w.before) }));
+  if (spent.length) {
+    const most = spent.reduce((a, b) => (b.used > a.used ? b : a));
+    parts.push(t("debrief.meta.spent", { used: most.used < 1 ? t("engines.limits.underOne") : percent(most.used), window: windowName(most.id) }));
+  }
+  return parts.join(" · ");
 }
 
 function englishModel(threads: Thread[]): EnglishModel {

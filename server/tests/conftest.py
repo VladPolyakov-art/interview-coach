@@ -73,6 +73,8 @@ class FakeLLM(LLMEngine):
     async def chat_stream(self, messages, *, temperature=0.6, max_tokens=300, json_schema=None) -> AsyncIterator[str]:
         key = self._key(json_schema)
         self.calls.append({"key": key, "messages": messages})
+        from server import usage
+        usage.count(self.id)                                   # like every real engine (D88)
         reply = self.replies.get(key, "")
         if callable(reply):
             reply = reply(messages)

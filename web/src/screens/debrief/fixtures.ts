@@ -184,6 +184,8 @@ export const interviewS2: DebriefModel = {
     { icon: "briefcase", text: "Behavioural · Standard" },
     { icon: "clock", text: "Oct 19, 20:40 · 24 min" },
     { icon: "chat", text: counts(5, 4) },
+    // D88: requests this session sent, and the share of the plan where the plan reports one.
+    { icon: "cpu", text: `${tp("debrief.meta.requests", 17)} · ${t("debrief.meta.spent", { used: t("engines.limits.underOne"), window: "monthly" })}` },
     saved,
   ],
   obsidian: true,
@@ -288,6 +290,7 @@ export const englishS3: DebriefModel = {
     { icon: "language", text: "B2" },
     { icon: "clock", text: "Oct 18, 21:05 · 11 min" },
     { icon: "chat", text: tp("debrief.meta.turns", 9) },
+    { icon: "cpu", text: tp("debrief.meta.requests", 13) },
     saved,
   ],
   saved: true,

@@ -11,6 +11,7 @@ from typing import AsyncIterator
 
 import httpx
 
+from .. import usage
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg, ThinkFilter
 from .locate import find_program
 
@@ -284,6 +285,7 @@ class OllamaEngine(LLMEngine):
         think = ThinkFilter()
         try:
             async with self._client(httpx.Timeout(180, connect=5)) as client:
+                usage.count(self.id)
                 async with client.stream("POST", f"{self.url}/api/chat", json=body) as response:
                     if response.status_code == 404:
                         raise EngineError("model_missing", f"The model {model} is not downloaded.",

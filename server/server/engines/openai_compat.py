@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+from .. import usage
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg, ThinkFilter
 
 DESCRIPTOR = EngineDescriptor(
@@ -112,6 +113,7 @@ class OpenAICompatibleEngine(LLMEngine):
             body = self._body(messages, True, temperature, max_tokens, json_schema)
             try:
                 async with self._client(httpx.Timeout(180, connect=8)) as client:
+                    usage.count(self.id)
                     async with client.stream("POST", f"{self.base_url}/chat/completions", json=body) as response:
                         if response.status_code == 400 and json_schema is not None and self._schema_mode != "none":
                             await response.aread()

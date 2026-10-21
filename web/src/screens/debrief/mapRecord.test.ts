@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FeedbackRecord, LanguageItem, SessionRecord } from "../../lib/types";
-import { answerSegments, feedbackOfFlag, mapRecord, rewriteSegments, threadsFromRecord } from "./mapRecord";
+import { answerSegments, feedbackOfFlag, mapRecord, rewriteSegments, threadsFromRecord, usageText } from "./mapRecord";
 
 const item = (over: Partial<LanguageItem> = {}): LanguageItem => ({
   id: "f1", tag: "tense", original: "I have led the redesign last spring", better: ["I led the redesign last spring"],
@@ -116,5 +116,22 @@ describe("segments", () => {
     const { parts, placeholders } = rewriteSegments("It went from [your number] to [your number].");
     expect(placeholders).toBe(true);
     expect(parts).toEqual(["It went from ", { kind: "fix", text: "[your number]" }, " to ", { kind: "fix", text: "[your number]" }, "."]);
+  });
+});
+
+describe("usageText (D88)", () => {
+  it("counts the session's requests and, where the plan reports it, the share it used", () => {
+    expect(usageText(rec())).toBe("");
+    expect(usageText(rec({ usage: { engine: "antigravity_cli", requests: 14 } }))).toBe("14 requests to the AI");
+    expect(usageText(rec({ usage: { engine: "codex_cli", requests: 10, windows: [{ id: "month", before: 2, after: 2 }] } })))
+      .toBe("10 requests to the AI · under 1% of the monthly limit");
+    expect(usageText(rec({ usage: { engine: "claude_cli", requests: 9, windows: [
+      { id: "five_hour", before: 10, after: 13 }, { id: "seven_day", before: 4, after: 4.5 }] } })))
+      .toBe("9 requests to the AI · 3% of the 5-hour limit");
+  });
+
+  it("is in the debrief's meta line", () => {
+    const model = mapRecord(rec({ usage: { engine: "ollama", requests: 1 } }), opts);
+    expect(model.meta.map((m) => m.text)).toContain("1 request to the AI");
   });
 });

@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from . import (DATA_VERSION, __version__, config, content, engines, feedback, memory, planner, storage, stt,
-               telemetry, tts)
+               telemetry, tts, usage)
 from .documents import DocumentError, read_file, read_url
 from .engines import antigravity_cli, claude_cli, codex_cli
 from .engines import ollama as ollama_engine
@@ -102,6 +102,17 @@ async def engine_status(engine_id: str) -> dict:
     if engine_id not in engines.DESCRIPTORS:
         raise fail(404, "unknown_engine", "Unknown engine.")
     return (await engines.engine_status(engine_id)).model_dump()
+
+
+@router.get("/engines/{engine_id}/limits")
+async def engine_limits(engine_id: str) -> dict:
+    """D88: how much of the user's plan is used. Codex: read from the CLI (no model request); Claude Code: what its
+    last reply said; Antigravity / Gemini: Vukoli's own count. Only for a ready engine."""
+    if engine_id not in engines.DESCRIPTORS:
+        raise fail(404, "unknown_engine", "Unknown engine.")
+    if not (await engines.engine_status(engine_id)).ready:
+        return {"engine": engine_id, "kind": "none"}
+    return await usage.limits_for(engine_id, codex_cli.find_codex() if engine_id == "codex_cli" else None)
 
 
 @router.post("/engines/{engine_id}/connect")

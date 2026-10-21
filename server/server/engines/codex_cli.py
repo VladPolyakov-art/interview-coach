@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 from typing import AsyncIterator
 
+from .. import usage
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
 from .claude_cli import child_env, to_prompt
 from .locate import find_program
@@ -77,6 +78,11 @@ def is_auth_error(message: str) -> bool:
     return "401" in low or "unauthorized" in low or "not logged in" in low or "log in" in low
 
 
+def is_quota_error(message: str) -> bool:
+    low = message.lower()
+    return "usage limit" in low or "rate limit" in low or "429" in low
+
+
 class CodexCLIEngine(LLMEngine):
     id = "codex_cli"
 
@@ -130,6 +136,7 @@ class CodexCLIEngine(LLMEngine):
                 *build_command(self._bin(), self._model, workdir), cwd=workdir, env=child_env(),
                 stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
                 limit=4 * 1024 * 1024)
+            usage.count(self.id)
             text, error, blocked = "", "", False
             try:
                 proc.stdin.write(full.encode())
@@ -149,7 +156,7 @@ class CodexCLIEngine(LLMEngine):
                         text = str(item["text"])    # an earlier message is a preamble ("I'll check…"): the last one counts
                     elif kind == "turn.failed":
                         error = str((event.get("error") or {}).get("message") or "Codex CLI error")
-                        if is_auth_error(error):
+                        if is_auth_error(error) or is_quota_error(error):
                             break               # don't sit through its five reconnects on a missing sign-in
                     elif kind == "error" and is_auth_error(str(event.get("message", ""))):
                         error = str(event.get("message"))
@@ -159,6 +166,9 @@ class CodexCLIEngine(LLMEngine):
                 await proc.wait()
                 if blocked:
                     raise EngineError("engine_error", error, "Try again. If it repeats, pick another engine.")
+                if error and not text and is_quota_error(error):
+                    raise EngineError("rate_limited", "Your Codex limit is used up.",
+                                      "Settings → AI engine shows when it resets. Pick another engine meanwhile.")
                 if error and not text:
                     code = "unauthorized" if is_auth_error(error) else "engine_error"
                     if code == "unauthorized":

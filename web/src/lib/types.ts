@@ -182,7 +182,34 @@ export interface SessionRecord {
   feedback: FeedbackRecord[];
   debrief: Debrief | null;
   stats?: { answers: number; turns: number };
+  /** D88: requests this session sent, and how far the plan's own counter moved (Codex, Claude). */
+  usage?: SessionUsage;
 }
+
+export interface SessionUsage {
+  engine: string;
+  requests: number;
+  windows?: { id: string; before: number; after: number }[];
+}
+
+/** D88: the plan limit Settings → AI engine shows. Codex and Claude report a percent; Antigravity and Gemini publish
+ * no number, so Vukoli shows its own count of requests. */
+export interface LimitWindow {
+  id: string;
+  used_percent: number;
+  resets_at: string | null;
+  /** The window has reset since the plan last reported it (Claude reports only on a request). */
+  stale: boolean;
+}
+
+export type EngineLimits =
+  | { engine: EngineId; kind: "none" }
+  | { engine: EngineId; kind: "pending" }
+  | {
+    engine: EngineId; kind: "percent"; plan: string; as_of: string; windows: LimitWindow[];
+    estimate: { sessions: number; at_least: boolean; window: string } | null;
+  }
+  | { engine: EngineId; kind: "count"; period: "week" | "day"; requests: number; resets_at?: string };
 
 export interface MemorySummary {
   sessions_considered: number;

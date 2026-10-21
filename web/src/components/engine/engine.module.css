@@ -42,6 +42,12 @@
 .facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-1) var(--space-4); font-size: var(--text-sm); margin: 0; }
 .facts dt { color: var(--color-text-tertiary); }
 .facts dd { margin: 0; color: var(--color-text-primary); }
+.factLine { margin: 0; }
+.factLine + .factLine { margin-top: var(--space-1); }
+.factNote { color: var(--color-text-secondary); }
+/* D88: the plan's limit under the engine in use. */
+.limit { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); color: var(--color-text-secondary); }
+.limitLow { color: var(--color-text-warning); }
 
 /* Real app marks (D56, EngineLogo): 20px inside the icon box; mono marks take the text colour. */
 .logo { display: block; width: var(--icon-md); height: var(--icon-md); }

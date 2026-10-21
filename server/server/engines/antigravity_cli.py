@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 from typing import AsyncIterator
 
+from .. import usage
 from .base import BACKGROUND, EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
 from .claude_cli import child_env, to_prompt
 from .locate import find_program
@@ -290,6 +291,12 @@ def forget_left_over() -> None:
         _open_runs(left, add=False)
 
 
+def is_quota_error(message: str) -> bool:
+    """🟡 Not seen live (the quota wasn't used up): the words Google's quota errors use."""
+    low = message.lower()
+    return any(w in low for w in ("quota", "resource_exhausted", "rate limit", "rate_limit", "429"))
+
+
 def build_command(binary: str, model: str) -> list[str]:
     cmd = [binary, *BASE_FLAGS]
     return [*cmd, "--model", model] if model else cmd
@@ -350,6 +357,7 @@ class AntigravityCLIEngine(LLMEngine):
         message = {"event": "user", "message": {"content": f"{system}\n\n---\n\n{prompt}"}}
         # A background call (feedback) starts its own: the spare is kept for Mike's reply, which runs alongside it.
         run = await (start_run if BACKGROUND.get() else take_run)(self._bin(), self._model)
+        usage.count(self.id)
         text, error, blocked = "", "", False
         try:
             run.proc.stdin.write((json.dumps(message) + "\n").encode())
@@ -376,6 +384,10 @@ class AntigravityCLIEngine(LLMEngine):
             error = "Antigravity isn't signed in."
         if blocked:
             raise EngineError("engine_error", error, "Try again. If it repeats, pick another engine.")
+        if not text.strip() and is_quota_error(error):
+            raise EngineError("rate_limited", "Your Antigravity quota is used up for now.",
+                              "On a free Google plan it refreshes weekly. Pick another engine in Settings → AI engine "
+                              "meanwhile.")
         if not text.strip():
             error = error or "Antigravity answered with nothing."
             code = "unauthorized" if run.signed_out.is_set() or is_auth_error(error) else "engine_error"

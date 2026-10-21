@@ -84,6 +84,7 @@ export const DECISIONS: Decision[] = [
   { id: "engine-d85-verify-pull", screen: "Setup", question: "Claude Code — Ready только после настоящего тестового запроса (Connect); модель Ollama скачивается из приложения с прогрессом", chosen: "да (D85)" },
   { id: "engine-d86-codex", screen: "Setup", question: "Пятый движок — Codex CLI на подписке ChatGPT: вход проверяется локально, Connect — один настоящий запрос, все инструменты Codex выключены", chosen: "да (D86)" },
   { id: "engine-d87-antigravity", screen: "Setup", question: "Шестой движок — Antigravity CLI на аккаунте Google: вход проверяется без запроса (agy models), Connect — один настоящий запрос, инструменты отрезаны песочницей и остановкой на первом шаге, свои разговоры Vukoli удаляет из истории", chosen: "да (D87)" },
+  { id: "engine-d88-limits", screen: "Setup", question: "Лимит тарифа под движком: проценты и «≈ N сессий» для Codex и Claude, честный счётчик запросов для Antigravity (за неделю) и Gemini (за сегодня), строка «N requests to the AI» в итоге сессии", chosen: "да (D88)" },
   { id: "session-o8", screen: "Session", question: "Подсказчик ответа выключен по умолчанию", chosen: "да" },
   { id: "session-o9", screen: "Session", question: "Разговорная практика заканчивается только кнопкой «End practice»", chosen: "да" },
   { id: "debrief-o2", screen: "Debrief", question: "Время начала каждого вопроса в разборе (нужно сохранять при записи)", chosen: "да" },

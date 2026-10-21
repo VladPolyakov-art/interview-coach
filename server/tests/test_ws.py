@@ -112,6 +112,7 @@ def test_text_turn_feedback_once_save_and_debrief(client, monkeypatch, fake_llm)
     assert record["transcript"][1]["text"] == ANSWER and len(record["feedback"]) == 1
     assert record["feedback"][0]["layers"]["language"]["items"][0]["status"] == "dismissed"
     assert record["debrief"]["too_short"] is True
+    assert record["usage"] == {"engine": "ollama", "requests": len(llm.calls)}    # D88: every call of the session
 
 
 def test_redo_answer_removes_feedback(client, monkeypatch, fake_llm):

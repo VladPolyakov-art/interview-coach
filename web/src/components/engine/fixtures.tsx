@@ -3,8 +3,9 @@
  * The stub only answers those URLs and a few setup ones, and only after a fixture provider has rendered; everything else goes to fetch. */
 import { useMemo, useState, type ReactNode } from "react";
 import { AppStoreProvider, type AppStore } from "../../lib/store";
-import type { EngineId, EngineInfo, EngineStatus, EnginesResponse, OllamaModelsResponse, OllamaPull, Settings, SettingsPatch, StatusCode } from "../../lib/types";
+import type { EngineId, EngineInfo, EngineLimits, EngineStatus, EnginesResponse, OllamaModelsResponse, OllamaPull, Settings, SettingsPatch, StatusCode } from "../../lib/types";
 import { OllamaPullPreview } from "./OllamaDownload";
+import { LimitsOverride } from "./PlanLimit";
 
 const status = (code: StatusCode, message = "", extra: Partial<EngineStatus> = {}): EngineStatus => ({
   code, ready: code === "ready", message, hint: "", hint_command: "", fix_url: "", model: "", warnings: [], ...extra,
@@ -145,6 +146,30 @@ export const PULL_DOWNLOADING: OllamaPull = { ...PULL_BASE, model: "qwen3:8b", s
 export const PULL_CANCELLED: OllamaPull = { ...PULL_BASE, model: "qwen3:4b-instruct", state: "cancelled" };
 export const PULL_FAILED: OllamaPull = { ...PULL_BASE, model: "qwen3:8b", state: "error", error: "no space left on device" };
 
+/** Plan limits (D88), fictional: what each plan reports, or Vukoli's own count where Google publishes no number. */
+export const LIMITS = {
+  codex: { engine: "codex_cli", kind: "percent", plan: "free", as_of: "2026-10-21T09:00:00Z",
+    windows: [{ id: "month", used_percent: 2, resets_at: "2026-11-20T09:00:00Z", stale: false }],
+    estimate: { sessions: 98, at_least: true, window: "month" } },
+  claude: { engine: "claude_cli", kind: "percent", plan: "", as_of: "2026-10-21T09:00:00Z", windows: [
+    { id: "five_hour", used_percent: 28, resets_at: "2026-10-21T13:00:00Z", stale: false },
+    { id: "seven_day", used_percent: 4, resets_at: "2026-10-25T08:00:00Z", stale: false }],
+  estimate: { sessions: 24, at_least: false, window: "five_hour" } },
+  claudeLow: { engine: "claude_cli", kind: "percent", plan: "", as_of: "2026-10-21T09:00:00Z", windows: [
+    { id: "five_hour", used_percent: 86, resets_at: "2026-10-21T13:00:00Z", stale: false },
+    { id: "seven_day", used_percent: 31, resets_at: "2026-10-25T08:00:00Z", stale: false }],
+  estimate: { sessions: 4, at_least: false, window: "five_hour" } },
+  claudeUsedUp: { engine: "claude_cli", kind: "percent", plan: "", as_of: "2026-10-21T09:00:00Z", windows: [
+    { id: "five_hour", used_percent: 100, resets_at: "2026-10-21T13:00:00Z", stale: false }], estimate: { sessions: 0, at_least: false, window: "five_hour" } },
+  claudePending: { engine: "claude_cli", kind: "pending" },
+  antigravity: { engine: "antigravity_cli", kind: "count", period: "week", requests: 46 },
+  gemini: { engine: "gemini_live", kind: "count", period: "day", requests: 12, resets_at: "2026-10-22T07:00:00Z" },
+} satisfies Record<string, EngineLimits>;
+
+const DEFAULT_LIMITS: Partial<Record<EngineId, EngineLimits>> = {
+  codex_cli: LIMITS.codex, claude_cli: LIMITS.claude, antigravity_cli: LIMITS.antigravity, gemini_live: LIMITS.gemini,
+};
+
 let stubbed = false;
 function installStub() {
   if (stubbed || typeof window === "undefined") return;
@@ -184,7 +209,9 @@ function installStub() {
 }
 
 /** Wraps a story / review state: live-looking store without a server. Switching and saving change local state only. */
-export function EngineFixture({ engines, settings = SETTINGS, pull, children }: { engines: EnginesResponse; settings?: Settings; pull?: OllamaPull; children: ReactNode }) {
+export function EngineFixture({ engines, settings = SETTINGS, pull, limits, children }: {
+  engines: EnginesResponse; settings?: Settings; pull?: OllamaPull; limits?: Partial<Record<EngineId, EngineLimits>>; children: ReactNode;
+}) {
   installStub();
   const [list, setList] = useState(engines);
   const [cfg, setCfg] = useState(settings);
@@ -224,7 +251,9 @@ export function EngineFixture({ engines, settings = SETTINGS, pull, children }: 
   }, [list, cfg]);
   return (
     <AppStoreProvider value={value}>
-      <OllamaPullPreview.Provider value={pull ?? null}>{children}</OllamaPullPreview.Provider>
+      <OllamaPullPreview.Provider value={pull ?? null}>
+        <LimitsOverride.Provider value={{ ...DEFAULT_LIMITS, ...limits }}>{children}</LimitsOverride.Provider>
+      </OllamaPullPreview.Provider>
     </AppStoreProvider>
   );
 }

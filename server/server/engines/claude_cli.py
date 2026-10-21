@@ -11,6 +11,7 @@ import pwd
 import tempfile
 from typing import AsyncIterator
 
+from .. import usage
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
 from .locate import find_program
 
@@ -132,7 +133,8 @@ class ClaudeCLIEngine(LLMEngine):
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
             limit=4 * 1024 * 1024)
         self._proc = proc
-        text, error = "", ""
+        usage.count(self.id)
+        text, error, rejected = "", "", False
         try:
             proc.stdin.write(prompt.encode())
             await proc.stdin.drain()
@@ -141,6 +143,9 @@ class ClaudeCLIEngine(LLMEngine):
                 try:
                     event = json.loads(raw)
                 except ValueError:
+                    continue
+                if event.get("type") == "rate_limit_event":
+                    rejected = usage.claude_event(event) == "rejected"
                     continue
                 if event.get("type") == "result":
                     if event.get("is_error"):
@@ -156,6 +161,9 @@ class ClaudeCLIEngine(LLMEngine):
                     if piece:
                         yield piece
             await proc.wait()
+            if error and not text and (rejected or "usage limit" in error.lower()):
+                raise EngineError("rate_limited", "Your Claude limit is used up.",
+                                  "Settings → AI engine shows when it resets. Pick another engine meanwhile.")
             if error and not text:
                 low = error.lower()
                 code = "unauthorized" if ("login" in low or "auth" in low) else "engine_error"

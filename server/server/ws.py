@@ -10,7 +10,7 @@ import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from . import __version__, config, content, engines, feedback, memory, planner, storage, stt, telemetry, tts
+from . import __version__, config, content, engines, feedback, memory, planner, storage, stt, telemetry, tts, usage
 from .engines.base import BACKGROUND, EngineError, LLMEngine
 from .engines.gemini_live import GeminiLiveDriver, basic_status
 from .priority import ModelGate
@@ -413,6 +413,13 @@ async def session_socket(websocket: WebSocket) -> None:
                   hint_command=status.hint_command, fix_url=status.fix_url, engine=engine_id)
             return
         llm = get_llm(settings, engine_id, voice)
+        usage.start_session(engine_id)              # D88: this session's requests, and the plan's limit around it
+        if engine_id == "gemini_live":
+            usage.count(engine_id)                  # the Live connection itself
+        if engine_id == "codex_cli" and (binary := codex_binary(llm)):
+            task = asyncio.create_task(usage.read_codex(binary, fresh=True))
+            side_tasks.add(task)
+            task.add_done_callback(side_tasks.discard)
         gate.enabled = engine_id != "gemini_live" and llm.single_worker
         profile = storage.read_profile().get("text", "")
         jd, vacancy_title, extra = "", "", []
@@ -527,6 +534,11 @@ async def session_socket(websocket: WebSocket) -> None:
             pass
 
 
+def codex_binary(llm: LLMEngine | None) -> str | None:
+    from .engines import codex_cli
+    return getattr(llm, "_binary", None) or codex_cli.find_codex() if isinstance(llm, codex_cli.CodexCLIEngine) else None
+
+
 async def save_and_debrief(session: dict, history: list[dict], records: list[dict], llm: LLMEngine | None,
                            settings: dict, emit, state: dict, t_start: float) -> None:
     emit("saving")
@@ -553,6 +565,10 @@ async def save_and_debrief(session: dict, history: list[dict], records: list[dic
         log.warning("Debrief failed: %s", type(exc).__name__)
         result = feedback.fallback_debrief(session["feedback"], settings["layer_order"])
     session["debrief"] = result
+    if (meter := usage.SESSION.get()) is not None:
+        if session["engine"] == "codex_cli" and (binary := codex_binary(llm)):
+            await usage.read_codex(binary, fresh=True)
+        session["usage"] = usage.finish_session(meter)
     try:
         await asyncio.to_thread(storage.save_session, session)
         if settings.get("obsidian_dir"):

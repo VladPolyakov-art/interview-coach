@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from typing import AsyncGenerator, AsyncIterator, Callable, Dict, List, Optional
 
+from .. import usage
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
 
 KEY_URL = "https://aistudio.google.com/apikey"
@@ -106,6 +107,7 @@ class GeminiTextEngine(LLMEngine):
             response_json_schema=json_schema,
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True))
         client = genai.Client(api_key=self._api_key, http_options=types.HttpOptions(timeout=30000))
+        usage.count(self.id)
         try:
             response = await client.aio.models.generate_content(model=self._model, contents=contents, config=cfg)
         except Exception as exc:
