@@ -1,12 +1,13 @@
 /* Step B: only the chosen engine's connection (its form or install steps, its model choice, Test).
  * Cost and data sit in a closed "Cost and your data" disclosure. The primary action appears once the engine is ready. */
-import { Button, Callout, Card, Disclosure, Icon, IconButton } from "../../ds";
+import { EngineLogo } from "./EngineLogo";
+import { Button, Callout, Card, Disclosure, IconButton } from "../../ds";
 import { t } from "../../i18n";
 import type { EngineInfo } from "../../lib/types";
 import { ClaudeBody, GeminiBody, OllamaBody, OpenAiBody } from "./bodies";
 import { EngineStatus } from "./EngineStatus";
 import { EngineTest } from "./EngineTest";
-import { ENGINE_ICONS, engineName } from "./meta";
+import { engineName } from "./meta";
 import s from "./engine.module.css";
 
 export interface EngineConnectProps {
@@ -28,7 +29,7 @@ export function EngineConnect({ engine, mode, switching, checking, onRecheck, on
     <>
       <Card className={s.card} as="section" aria-label={name} data-review-id="Engine/Connection" data-review-section="AI engine · Connection" data-comment-target>
         <div className={s.cardHead}>
-          <span className={s.optIcon}><Icon name={ENGINE_ICONS[engine.id]} /></span>
+          <span className={s.optIcon}><EngineLogo id={engine.id} /></span>
           <div className={s.cardTitle}>
             <span className={s.name}>{name}</span>
             <EngineStatus engine={engine} />

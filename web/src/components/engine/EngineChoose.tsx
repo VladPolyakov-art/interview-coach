@@ -1,8 +1,9 @@
 /* Step A: a short list of options, one radio per engine. Choosing alone does not switch the engine (D54). */
+import { EngineLogo } from "./EngineLogo";
 import { Badge, Button, Icon, SelectableCard, SelectableCardGroup } from "../../ds";
 import { t } from "../../i18n";
 import type { EngineInfo, EngineId } from "../../lib/types";
-import { ENGINE_ICONS, RECOMMENDED, engineLine, engineName } from "./meta";
+import { RECOMMENDED, engineLine, engineName } from "./meta";
 import { engineStatusWord } from "./EngineStatus";
 import s from "./engine.module.css";
 
@@ -27,7 +28,7 @@ export function EngineChoose({ engines, value, onChange, mode, onNext, onCancel 
           return (
             <SelectableCard key={e.id} role="radio" check={false} padding="sm" selected={on} onSelect={() => onChange(e.id)} className={s.option}>
               <span className={`${s.radio} ${on ? s.radioOn : ""}`} aria-hidden="true">{on ? <Icon name="check" size="sm" /> : null}</span>
-              <span className={s.optIcon}><Icon name={ENGINE_ICONS[e.id]} /></span>
+              <span className={s.optIcon}><EngineLogo id={e.id} /></span>
               <span className={s.optText}>
                 <span className={s.optName}>
                   {engineName(e)}

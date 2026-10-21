@@ -1,9 +1,7 @@
 /* Engine facts shared by the chooser (A), the connection view (B) and the summary card (C). */
 import { t, tMaybe } from "../../i18n";
-import type { IconName } from "../../ds";
 import type { EngineId, EngineInfo, Settings } from "../../lib/types";
 
-export const ENGINE_ICONS: Record<EngineId, IconName> = { ollama: "cpu", openai_compatible: "globe", claude_cli: "terminal", gemini_live: "sparkle" };
 export const DEFAULT_PULL = "ollama pull qwen3:4b-instruct";
 export const RECOMMENDED: EngineId = "ollama";
 

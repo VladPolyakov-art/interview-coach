@@ -1,12 +1,13 @@
 /* C: Settings → AI engine, the default view. One compact card for the engine in use: name · model · status,
  * "Test the engine" and "Change engine"; the Ollama model selects stay reachable under "Models". */
-import { Button, Card, Disclosure, Icon, IconButton } from "../../ds";
+import { EngineLogo } from "./EngineLogo";
+import { Button, Card, Disclosure, IconButton } from "../../ds";
 import { t } from "../../i18n";
 import type { EngineInfo } from "../../lib/types";
 import { OllamaModelPicker, StatusHint } from "./bodies";
 import { EngineStatus } from "./EngineStatus";
 import { EngineTest } from "./EngineTest";
-import { ENGINE_ICONS, engineName } from "./meta";
+import { engineName } from "./meta";
 import s from "./engine.module.css";
 
 export interface EngineSummaryProps {
@@ -24,7 +25,7 @@ export function EngineSummary({ engine, model, checking, onRecheck, onChange, on
   return (
     <Card className={s.card} as="section" aria-label={t("engines.flow.chooseLabel")} data-review-id="Engine/Summary" data-review-section="AI engine · Summary" data-comment-target>
       <div className={s.cardHead}>
-        <span className={s.optIcon}><Icon name={ENGINE_ICONS[engine.id]} /></span>
+        <span className={s.optIcon}><EngineLogo id={engine.id} /></span>
         <div className={s.cardTitle}>
           <span className={s.name}>{[engineName(engine), model].filter(Boolean).join(" · ")}</span>
           <EngineStatus engine={engine} />
