@@ -21,7 +21,7 @@ import { PanelBody, type ConcretePanel } from "./parts/PanelBody";
 import { ShortcutsDialog } from "./parts/ShortcutsDialog";
 import { Suggester } from "./parts/Suggester";
 import { Transcript } from "./parts/Transcript";
-import { stageFor } from "./stage";
+import { HINT_MS, stageFor } from "./stage";
 import { follow, FOLLOW_START, isAtBottom, showJump, type FollowEvent, type FollowState } from "./transcriptScroll";
 import type { SessionPhase, SessionViewProps } from "./types";
 import { useSessionLayout } from "./useSessionLayout";
@@ -296,7 +296,7 @@ export function SessionView(props: SessionViewProps) {
             <div ref={islandRef} className={s.dock}>
               <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
               <div className={s.status} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
-                <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} className={data.micTip && muted ? s.statusQuiet : undefined} />
+                <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} subFadeMs={stage.hint ? (props.hintMs ?? HINT_MS) : undefined} surface="none" className={data.micTip && muted ? s.statusQuiet : undefined} />
               </div>
               {showIsland ? (
                 <div className={s.islandBox} data-input={input} data-stacked={(props.island ?? (narrowIsland ? "stacked" : "inline")) === "stacked" || undefined}>

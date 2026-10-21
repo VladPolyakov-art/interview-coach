@@ -63,6 +63,8 @@ function scene(name: string, sceneId: FixtureOptions["scene"], extra: Partial<St
 export const S1QuestionOne = scene("S1 · Question 1, tips, Mike speaking", "q1-start");
 export const S2FollowUp = scene("S2 · Mike asks the follow-up", "follow-up");
 export const S3Listening = scene("S3 · You are speaking (quiet mode)", "listening");
+export const S3bListeningHintGone = scene("S3b · Listening, the hint folded away (D91)", "listening", {}, { hintMs: 1 });
+export const S14d2SuggesterListening = scene("S14d2 · Suggester on while you speak (D91)", "suggester", {}, { phase: "listening", hintMs: 1 });
 export const S4Thinking = scene("S4 · Thinking", "thinking");
 export const S5aFeedbackContentFirst = scene("S5a · Feedback, content first, with a check", "feedback");
 export const S5bFeedbackDeliveryFirst = scene("S5b · Feedback, delivery first", "feedback", { args: { layerOrder: "delivery-first" } });

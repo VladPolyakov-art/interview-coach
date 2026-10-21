@@ -9,6 +9,10 @@
   /* D49: the glow box along the top edge; its bottom is the first text line (Presence text-safe mask). */
   --stage-reach: var(--presence-reach);
   --island-offset: var(--space-6);
+  /* D91: the transcript reaches up into the glow's lower part, fading out over --text-fade as it goes (owner: more
+   * room for the dialogue, «но не слишком сильно»). The glow's bright band stays clear of text. */
+  --text-top: calc(var(--stage-reach) * 0.4);
+  --text-fade: var(--space-16);
   /* Wide, panel open: the stage content shifts left by half of what the floating panel takes (V2.4, "Stage shift"). */
   --stage-shift: calc((var(--layout-panel) + var(--space-4)) / -2);
   position: relative;
@@ -35,18 +39,18 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  margin-top: var(--stage-reach);
+  margin-top: var(--text-top);
   overflow-y: auto;
   overscroll-behavior: contain;
   display: flex;
   justify-content: center;
   /* Top padding = the fade height, so the first turn is never faded when scrolled to the very top. */
-  padding: var(--space-8) var(--space-8) calc(var(--island-h) + var(--island-offset) + var(--space-8));
+  padding: var(--text-fade) var(--space-8) calc(var(--island-h) + var(--island-offset) + var(--space-8));
   --dock-top: calc(100% - var(--island-h) - var(--island-offset));
   mask-image: linear-gradient(
     to bottom,
     transparent,
-    black var(--space-8),
+    black var(--text-fade),
     black calc(var(--dock-top) - var(--space-8)),
     transparent var(--dock-top)
   );
@@ -98,7 +102,7 @@
 @container session (width < 768px) {
   .root { --island-offset: var(--space-4); }
   .body { --stage-reach: var(--presence-reach-sm); }
-  .scroll { padding: var(--space-8) var(--layout-gutter) calc(var(--island-h) + var(--island-offset) + var(--space-6)); }
+  .scroll { padding: var(--text-fade) var(--layout-gutter) calc(var(--island-h) + var(--island-offset) + var(--space-6)); }
   .flow { gap: var(--space-5); }
   .dock { gap: var(--space-2); }
   /* Two-row island: full width minus the gutter, above the home indicator (V2.7). */

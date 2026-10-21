@@ -7,7 +7,14 @@ import type { PresenceState, StatusPillState } from "../../ds";
 import { t } from "../../i18n";
 import type { SessionViewProps } from "./types";
 
-export interface Stage { presence: PresenceState; pill: StatusPillState; label: string; sub?: string; live: boolean }
+export interface Stage {
+  presence: PresenceState; pill: StatusPillState; label: string; sub?: string; live: boolean;
+  /** D91: the sub is a hint ("Take your time…"), folded away once read; a state's sub (muted, paused) stays. */
+  hint?: boolean;
+}
+
+/** How long a hint stays under the state text (D91). */
+export const HINT_MS = 6000;
 
 /** One state text (O5) and Mike's presence, from the phase. */
 export function stageFor(p: SessionViewProps): Stage {
@@ -20,18 +27,18 @@ export function stageFor(p: SessionViewProps): Stage {
     case "connecting":
       return { presence: "idle", pill: "connecting", label: t("session.status.connecting"), sub: t("session.sub.connecting"), live: false };
     case "mike-speaking":
-      return { presence: "speaking", pill: "speaking", label: t("session.status.speaking"), sub: voice ? t("session.sub.speaking") : undefined, live: false };
+      return { presence: "speaking", pill: "speaking", label: t("session.status.speaking"), sub: voice ? t("session.sub.speaking") : undefined, live: false, hint: true };
     case "thinking":
       return { presence: "thinking", pill: "thinking", label: t("session.status.thinking"), live: false };
     case "listening":
       return muted
         ? { presence: "idle", pill: "muted", label: t("session.status.muted"), sub: t("session.sub.muted"), live: false }
-        : { presence: "listening", pill: "listening", label: t("session.status.listening"), sub: sec > 0 ? t("session.sub.listening", { sec }) : t("session.sub.listeningManual"), live: true };
+        : { presence: "listening", pill: "listening", label: t("session.status.listening"), sub: sec > 0 ? t("session.sub.listening", { sec }) : t("session.sub.listeningManual"), live: true, hint: sec > 0 };
     case "your-turn":
       if (!voice) return { presence: "waiting", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurnText"), live: false };
       return muted
         ? { presence: "idle", pill: "muted", label: t("session.status.muted"), sub: t("session.sub.muted"), live: false }
-        : { presence: "waiting", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurn"), live: true };
+        : { presence: "waiting", pill: "your-turn", label: t("session.status.yourTurn"), sub: t("session.sub.yourTurn"), live: true, hint: true };
     case "preparing":
     case "rechecking":
       return { presence: "idle", pill: "between", label: t("session.status.preparingFeedback"), live: false };

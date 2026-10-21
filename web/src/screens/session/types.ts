@@ -152,6 +152,8 @@ export interface SessionViewProps {
   island?: "inline" | "stacked";
   /** Listen to the keyboard shortcuts on the window (the live app). Otherwise only while focus is inside the view. */
   globalKeys?: boolean;
+  /** D91: how long a hint ("Take your time…") stays under the state text; 0 keeps it (default stage.HINT_MS). */
+  hintMs?: number;
   /** Keep the dock's text-mode draft (live container owns the Composer value only inside the view). */
   autoFocusComposer?: boolean;
 }
