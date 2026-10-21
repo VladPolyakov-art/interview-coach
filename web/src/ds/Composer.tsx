@@ -9,11 +9,14 @@
  * The send button appears with a short rise when it becomes visible (D6); a new `send.icon` fades in (D52: the Home
  * start button morphs mic → arrow once there is text, like the Gemini input). `send.title` = a tooltip other than the
  * label (the quick start's "General questions · Unseen mix · 5 questions"); `send.busy` = a spinner in place of the icon.
+ * `onFiles` (D89): the composer also takes files: pasted (Cmd+V of a copied file) or dropped on it, with a drop
+ * highlight while a file is over it. Without `onFiles` a file isn't taken here (the app-wide guard stops the browser
+ * from opening it in place of the app).
  * Narrow parents: the toolbar wraps and the
  * end group drops to its own line (container query on the composer). */
 import {
-  forwardRef, useEffect, useId, useImperativeHandle, useRef, type CSSProperties, type InputEvent, type KeyboardEvent, type ReactNode,
-  type TextareaHTMLAttributes,
+  forwardRef, useEffect, useId, useImperativeHandle, useRef, useState, type ClipboardEvent, type CSSProperties, type DragEvent,
+  type InputEvent, type KeyboardEvent, type ReactNode, type TextareaHTMLAttributes,
 } from "react";
 import { Icon, type IconName } from "./icons";
 import { Spinner } from "./Spinner";
@@ -55,13 +58,18 @@ export interface ComposerProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaE
   /** `own` (default): the composer draws its own box (border, radius, shadow). `none` (v2): no own surface, it
    * lives inside another one (the Session island in text mode); the keyboard ring stays on the field area. */
   surface?: "own" | "none";
+  /** Files pasted into the field or dropped on the composer (D89). */
+  onFiles?: (files: File[]) => void;
   className?: string;
 }
+
+/** A drag that carries files (not text or a link dragged from the page). */
+export const carriesFiles = (e: { dataTransfer: DataTransfer | null }) => Boolean(e.dataTransfer?.types.includes("Files"));
 
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
   {
     label, attachment, toolbarStart, toolbarEnd, send, submitOnEnter, minRows = 2, maxRows = 8, hint, error, busy,
-    surface = "own", className, id, onKeyDown, onInput, disabled, value, ...rest
+    surface = "own", onFiles, className, id, onKeyDown, onInput, onPaste, disabled, value, ...rest
   },
   ref,
 ) {
@@ -85,6 +93,31 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
       if (canSend && !send?.busy) send?.onSend?.();
     }
   };
+  const [dropping, setDropping] = useState(false);
+  const takesFiles = Boolean(onFiles) && !disabled;
+  const paste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    onPaste?.(e);
+    const files = Array.from(e.clipboardData?.files ?? []);
+    if (e.defaultPrevented || !takesFiles || !files.length) return;
+    e.preventDefault();
+    onFiles?.(files);
+  };
+  const dragOver = (e: DragEvent<HTMLDivElement>) => {
+    if (!takesFiles || !carriesFiles(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDropping(true);
+  };
+  const dragLeave = (e: DragEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropping(false);
+  };
+  const drop = (e: DragEvent<HTMLDivElement>) => {
+    setDropping(false);
+    if (!takesFiles || !carriesFiles(e)) return;
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) onFiles?.(files);
+  };
   const describedBy = [hint ? `${fieldId}-h` : "", error ? `${fieldId}-e` : ""].filter(Boolean).join(" ") || undefined;
 
   const sendIcon: IconName = send?.icon ?? (sendVariant === "quiet" ? "arrowRight" : "send");
@@ -107,7 +140,14 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
 
   return (
     <div className={`${s.root} ${className ?? ""}`} data-review-id={`Composer/${sendVariant}${surface === "none" ? "-bare" : ""}`}>
-      <div className={`${s.box} ${surface === "none" ? s.bare : ""} ${disabled ? s.disabled : ""} ${error ? s.invalid : ""}`} aria-busy={busy || undefined}>
+      <div
+        className={`${s.box} ${surface === "none" ? s.bare : ""} ${disabled ? s.disabled : ""} ${error ? s.invalid : ""} ${dropping ? s.dropping : ""}`}
+        aria-busy={busy || undefined}
+        onDragEnter={takesFiles ? dragOver : undefined}
+        onDragOver={takesFiles ? dragOver : undefined}
+        onDragLeave={takesFiles ? dragLeave : undefined}
+        onDrop={takesFiles ? drop : undefined}
+      >
         {attachment ? <div className={s.attachment}>{attachment}</div> : null}
         <label htmlFor={fieldId} className="visually-hidden">{label}</label>
         <div className={s.row}>
@@ -122,6 +162,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
             aria-describedby={describedBy}
             aria-invalid={error ? true : undefined}
             onKeyDown={keyDown}
+            onPaste={paste}
             onInput={(e: InputEvent<HTMLTextAreaElement>) => {
               grow(e.currentTarget);
               onInput?.(e);

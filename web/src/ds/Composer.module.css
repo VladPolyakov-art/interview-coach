@@ -24,6 +24,8 @@
 .box.bare .field { padding-inline-start: var(--space-4); }
 .invalid { box-shadow: inset 0 0 0 var(--border-width) var(--color-text-error); }
 .disabled, .disabled:focus-within { background: var(--color-subtle); }
+/* D89: a file is dragged over the composer: the fill steps up and a selected-colour line shows where it lands. */
+.box.dropping { background: var(--color-surface-card-hover); box-shadow: inset 0 0 0 var(--border-width) var(--color-border-selected); }
 
 /* Borderless field; the ring is drawn on .box (see above). */
 .field {

@@ -54,6 +54,14 @@ export const SetupSavedJobPicked = desktop("savedJobPicked");
 export const SetupKeywordMatch = desktop("keywordMatch");
 export const SetupAskRound = desktop("askRound");
 export const SetupAskAnything = desktop("askAnything");
+/* D89: a file in the chat: + / paste / drop on the composer. At T3 it is the CV, at T1 the job. */
+export const SetupAskAnythingNoCv = desktop("askAnythingNoCv");
+export const SetupCvAttached = desktop("cvAttached");
+export const SetupCvAttachedMobile = mobile("cvAttached");
+export const SetupCvReading = desktop("cvReading");
+export const SetupCvAdded = desktop("cvAdded");
+export const SetupCvError = desktop("cvError");
+export const SetupJobFileInChat = desktop("jobFileInChat");
 export const SetupRoundNotCaught = desktop("roundNotCaught");
 export const SetupFreeTextNote = desktop("freeTextNote");
 export const SetupPlan = desktop("plan");

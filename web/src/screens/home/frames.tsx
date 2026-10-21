@@ -9,9 +9,9 @@ import { OverlayRoot } from "../../ds/OverlayRoot";
 import type { EditorSeed } from "./editorSeeds";
 import { HomeView } from "./HomeView";
 import { t } from "../../i18n";
-import { JOB_FILE, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
+import { CV_FILE, JOB_FILE, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
 import {
-  begin, change, pick, removeNote, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
+  attach, begin, change, pick, removeNote, resolveCv, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
   type JobResult, type ScriptContext, type SetupState,
 } from "./script";
 import { quickStartFor } from "./quickStart";
@@ -91,6 +91,8 @@ export function replay(ctx: ScriptContext, inputs: SceneInput[]): SetupState | n
     else if (step.do === "update") st = updateJob(st, step.job);
     else if (step.do === "skip") st = skip(ctx, st);
     else if (step.do === "change") st = change(ctx, st, step.row, step.value);
+    else if (step.do === "attach") st = attach(ctx, st, step.file);
+    else if (step.do === "resolveCv") st = resolveCv(ctx, st, step.result);
   }
   return st;
 }
@@ -117,6 +119,10 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
   const [held] = useState(() => Boolean(scene.hold));
   useEffect(() => {
     if (!pending || held) return;
+    if (pending.kind === "cv") {
+      const id = window.setTimeout(() => setSetup((st) => (st ? resolveCv(ctx, st, scene.cvWith ?? "ok") : st)), PENDING_MS);
+      return () => window.clearTimeout(id);
+    }
     const result: JobResult = scene.resolveWith ?? (pending.kind === "link" ? { ok: false } : { ok: true, job: KESTREL_PASTED });
     const id = window.setTimeout(() => {
       setSetup((st) => (st ? resolveJob(ctx, st, result) : st));
@@ -134,6 +140,11 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
     if (!setup) {
       if (!text && !composer.file) return;
       setSetup(begin(ctx, composer.file ? { kind: "file", ...composer.file } : { kind: "text", text }));
+    } else if (composer.file) {
+      if (setup.pending) return;
+      setSetup(attach(ctx, setup, composer.file));
+      setComposer({ text: composer.text });
+      return;
     } else if (text) {
       setSetup(say(ctx, setup, text));
     }
@@ -160,7 +171,11 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
       textMode={textMode}
       starting={starting}
       onComposerChange={(text) => setComposer((c) => ({ ...c, text }))}
-      onAddFile={() => setComposer((c) => ({ ...c, file: JOB_FILE }))}
+      onAddFile={() => setComposer((c) => ({ ...c, file: setup && setup.stage !== "job" ? CV_FILE : JOB_FILE }))}
+      onFiles={(files) => {
+        const f = files[0];
+        if (f) setComposer((c) => ({ ...c, file: { name: f.name, size: `${Math.max(1, Math.round(f.size / 1024))} KB` } }));
+      }}
       onRemoveFile={() => setComposer((c) => ({ text: c.text }))}
       onSend={send}
       onSuggestion={(id) => setSetup(begin(ctx, { kind: "suggestion", id }))}

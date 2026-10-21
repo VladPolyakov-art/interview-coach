@@ -66,7 +66,7 @@ export interface SetupState {
   /** Jobs added during this chat (pasted, linked, file) on top of the context's list. */
   jobs: JobItem[];
   /** A pending job read the container has to resolve. */
-  pending?: { turnId: string; kind: "job" | "link" | "file"; text?: string; url?: string; file?: string };
+  pending?: { turnId: string; kind: "job" | "link" | "file" | "cv"; text?: string; url?: string; file?: string; replies?: SetupReply[] };
   skipped?: boolean;
   seq: number;
 }
@@ -551,6 +551,30 @@ export function say(ctx: ScriptContext, s: SetupState, raw: string): SetupState 
     default:
       return next;
   }
+}
+
+/** A file sent in the chat (D89): at the job question it is the job; anywhere else it is the user's CV, saved to the
+ * profile. The open question's quick replies wait under Mike's answer, so the chat carries on where it was. */
+export function attach(_ctx: ScriptContext, s: SetupState, file: { name: string; size: string }): SetupState {
+  if (s.pending) return s;
+  const open = [...s.turns].reverse().find((x) => x.speaker === "mike" && x.replies?.length && !x.answered);
+  const sent = push(answerLast(s), { speaker: "user", attachment: { kind: "file", label: file.name, meta: file.size } });
+  if (s.stage === "job") return readJob(sent, "file", { file: file.name });
+  const next = push(sent, { speaker: "mike", state: "pending", pendingLabel: t("chat.setup.readingCv") });
+  return { ...next, pending: { turnId: next.turns[next.turns.length - 1]!.id, kind: "cv", file: file.name, replies: open?.replies } };
+}
+
+/** The CV was read, couldn't be read, or the profile has no room for another file: Mike says which, and the question
+ * that was open is open again under his answer. */
+export type CvResult = "ok" | "unreadable" | "full";
+export function resolveCv(_ctx: ScriptContext, s: SetupState, result: CvResult): SetupState {
+  const p = s.pending;
+  if (!p || p.kind !== "cv") return s;
+  const next = { ...s, turns: s.turns.filter((x) => x.id !== p.turnId), pending: undefined };
+  const ok = result === "ok";
+  let text = t(ok ? "chat.setup.cvGot" : result === "full" ? "chat.setup.cvFull" : "chat.setup.cvError");
+  if (ok && s.stage === "anything") text = `${text} ${t("chat.setup.askAnything")}`;
+  return mike(next, text, { state: ok ? "final" : "error", replies: p.replies });
 }
 
 /** "Skip questions": Mike fills the rest from the last session or the defaults and shows the plan. */

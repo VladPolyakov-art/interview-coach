@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CTX_ENGLISH, CTX_ENGLISH_FIRST, CTX_FIRST, CTX_NO_CV, CTX_RETURNING, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
-import { begin, change, pick, planFor, resolveJob, say, setupModel, skip, suggestionsFor } from "./script";
+import { CTX_ENGLISH, CTX_ENGLISH_FIRST, CTX_FIRST, CTX_NO_CV, CTX_RETURNING, CV_FILE, JOB_FILE, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
+import { attach, begin, change, pick, planFor, resolveCv, resolveJob, say, setupModel, skip, suggestionsFor } from "./script";
 
 const last = <T,>(xs: T[]) => xs[xs.length - 1]!;
 
@@ -125,5 +125,42 @@ describe("home setup script", () => {
     s = pick(CTX_FIRST, s, last(s.turns).id, "example:english");
     expect(s.track).toBe("english");
     expect(s.turns.length).toBeGreaterThan(before);
+  });
+
+  it("D89: a file sent at T3 is the CV: Mike reads it, confirms and asks T3 again with its replies", () => {
+    let s = begin(CTX_NO_CV, { kind: "text", text: "I want to practise for an interview" });
+    s = pick(CTX_NO_CV, s, last(s.turns).id, "job:v2");
+    s = pick(CTX_NO_CV, s, last(s.turns).id, "round:behavioural");
+    expect(s.stage).toBe("anything");
+    s = attach(CTX_NO_CV, s, CV_FILE);
+    expect(s.pending?.kind).toBe("cv");
+    expect(s.turns.at(-2)?.attachment).toEqual({ kind: "file", label: CV_FILE.name, meta: CV_FILE.size });
+    expect(last(s.turns)).toMatchObject({ state: "pending", pendingLabel: "Reading your CV…" });
+    expect(attach(CTX_NO_CV, s, CV_FILE)).toBe(s);                         // one read at a time
+    s = resolveCv(CTX_NO_CV, s, "ok");
+    expect(s.pending).toBeUndefined();
+    expect(s.stage).toBe("anything");
+    expect(last(s.turns).text).toMatch(/^Thanks, I added your CV.*Anything else I should know\?/);
+    expect(last(s.turns).replies?.map((r) => r.id)).toEqual(["anything:none", "anything:gentle", "anything:tough"]);
+    s = pick(CTX_RETURNING, s, last(s.turns).id, "anything:none");
+    expect(s.stage).toBe("plan");
+  });
+
+  it("D89: a CV that can't be read, or a full profile, says so and keeps the question open", () => {
+    let s = begin(CTX_NO_CV, { kind: "suggestion", id: "general" });
+    expect(s.stage).toBe("round");
+    s = resolveCv(CTX_NO_CV, attach(CTX_NO_CV, s, CV_FILE), "unreadable");
+    expect(last(s.turns)).toMatchObject({ state: "error" });
+    expect(last(s.turns).text).toMatch(/couldn't read this CV/);
+    expect(last(s.turns).replies).toHaveLength(4);
+    s = resolveCv(CTX_NO_CV, attach(CTX_NO_CV, s, CV_FILE), "full");
+    expect(last(s.turns).text).toMatch(/already has 10 files/);
+  });
+
+  it("D89: a file sent at T1 is the job", () => {
+    let s = begin(CTX_RETURNING, { kind: "text", text: "I want to practise for an interview" });
+    s = attach(CTX_RETURNING, s, JOB_FILE);
+    expect(s.pending).toMatchObject({ kind: "file", file: JOB_FILE.name });
+    expect(s.turns.find((x) => x.replies?.length)?.answered).toBe(true);
   });
 });

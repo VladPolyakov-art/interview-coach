@@ -159,6 +159,8 @@ export interface HomeViewProps {
   overlay?: ReactNode;
   onComposerChange?: (text: string) => void;
   onAddFile?: () => void;
+  /** Files pasted or dropped on the composer (D89): the first one is attached, as the + button does. */
+  onFiles?: (files: File[]) => void;
   onRemoveFile?: () => void;
   onSend?: () => void;
   onSuggestion?: (id: SuggestionId) => void;

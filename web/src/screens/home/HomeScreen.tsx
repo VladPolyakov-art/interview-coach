@@ -1,5 +1,6 @@
 /* Home v2, live: runs the scripted setup (script.ts) on real data and feeds HomeView. Real work behind a pending Mike
- * message: a pasted job / link / file is saved with api.createVacancy, then questions are prepared from it.
+ * message: a pasted job / link / file is saved with api.createVacancy, then questions are prepared from it. A file sent
+ * later in the chat (D89: +, paste or drop) is the job at the job question, otherwise the CV (api.uploadProfile).
  * Gaps the server has today (🟡, home.md §9): no "technical" round (runs as the mixed round, B2), no field for the
  * user's note (UI only, B3), no questions status (we track the prepare call, B5), the last interview's job and round
  * are not in SessionSummary (remembered job + remembered round, B8), Drill = a 3-question mixed session (B7), no
@@ -12,7 +13,7 @@ import { t, tMaybe, tp } from "../../i18n";
 import { VacancyEditor } from "../../components/VacancyEditor";
 import { splitTitle } from "../../components/vacancyTitle";
 import { browserSttSupported } from "../../audio/browserStt";
-import { api, fileToBase64 } from "../../lib/api";
+import { api, ApiError, fileToBase64 } from "../../lib/api";
 import { useInterval, useLoad } from "../../lib/hooks";
 import { prefs } from "../../lib/prefs";
 import { useApp } from "../../lib/store";
@@ -22,7 +23,7 @@ import { homePrefs, shortDate } from "./homePrefs";
 import { quickStartFor } from "./quickStart";
 import { HomeView } from "./HomeView";
 import {
-  begin, change, pick, planFor, removeNote, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
+  attach, begin, change, pick, planFor, removeNote, resolveCv, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
   type ScriptContext, type SetupState,
 } from "./script";
 import type { EnglishTopic, JobItem, PlanModel, Track, WeakItem } from "./types";
@@ -62,6 +63,8 @@ export function HomeScreen() {
   const [setup, setSetup] = useState<SetupState | null>(null);
   const [composer, setComposer] = useState<{ text: string; file?: { name: string; size: string } }>({ text: "" });
   const fileRef = useRef<File | null>(null);
+  /** The file of the message that was sent, read by the pending step (a new one may be attached meanwhile). */
+  const sentFile = useRef<File | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const [prep, setPrep] = useState<Record<string, "preparing" | "error">>({});
   const [textMode, setTextMode] = useState(prefs.input() === "text");
@@ -135,11 +138,21 @@ export function HomeScreen() {
     const p = setup?.pending;
     if (!p) return;
     let cancelled = false;
+    if (p.kind === "cv") {
+      const file = sentFile.current;
+      (file ? api.uploadProfile(file) : Promise.reject(new Error("no file")))
+        .then(() => { if (!cancelled) { profile.reload(); setSetup((st) => (st ? resolveCv(ctx, st, "ok") : st)); } })
+        .catch((e: unknown) => {
+          const full = e instanceof ApiError && e.code === "too_many_files";
+          if (!cancelled) setSetup((st) => (st ? resolveCv(ctx, st, full ? "full" : "unreadable") : st));
+        });
+      return () => { cancelled = true; };
+    }
     (async () => {
       const body: Parameters<typeof api.createVacancy>[0] = {};
       if (p.kind === "link") body.url = p.url;
       else if (p.kind === "job") body.text = p.text;
-      else if (fileRef.current) body.file = { name: fileRef.current.name, data: await fileToBase64(fileRef.current) };
+      else if (sentFile.current) body.file = { name: sentFile.current.name, data: await fileToBase64(sentFile.current) };
       const v: Vacancy = await api.createVacancy(body);
       return toJob(v, "preparing");
     })()
@@ -157,11 +170,23 @@ export function HomeScreen() {
 
   const run = (fn: (st: SetupState) => SetupState) => setSetup((st) => (st ? fn(st) : st));
 
+  const takeFile = (f: File) => {
+    fileRef.current = f;
+    setComposer((c) => ({ ...c, file: { name: f.name, size: `${Math.max(1, Math.round(f.size / 1024))} KB` } }));
+  };
   const onSend = () => {
     const text = composer.text.trim();
+    const file = composer.file;
+    if (file && setup?.pending) return;    // one read at a time: the file waits in the composer
+    if (file) { sentFile.current = fileRef.current; fileRef.current = null; }
     if (!setup) {
-      if (!text && !composer.file) return;
-      setSetup(begin(ctx, composer.file ? { kind: "file", ...composer.file } : { kind: "text", text }));
+      if (!text && !file) return;
+      setSetup(begin(ctx, file ? { kind: "file", ...file } : { kind: "text", text }));
+    } else if (file) {
+      // D89: the file goes now; text typed next to it stays in the field for the next message.
+      run((st) => attach(ctx, st, file));
+      setComposer({ text: composer.text });
+      return;
     } else if (text) {
       run((st) => say(ctx, st, text));
     }
@@ -243,6 +268,7 @@ export function HomeScreen() {
         layerOrder={settings?.layer_order}
         onComposerChange={(text) => setComposer((c) => ({ ...c, text }))}
         onAddFile={() => picker.current?.click()}
+        onFiles={(files) => { if (files[0]) takeFile(files[0]); }}
         onRemoveFile={() => { fileRef.current = null; setComposer((c) => ({ text: c.text })); }}
         onSend={onSend}
         onSuggestion={(id) => setSetup(begin(ctx, { kind: "suggestion", id }))}
@@ -290,9 +316,7 @@ export function HomeScreen() {
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = "";
-          if (!f) return;
-          fileRef.current = f;
-          setComposer((c) => ({ ...c, file: { name: f.name, size: `${Math.max(1, Math.round(f.size / 1024))} KB` } }));
+          if (f) takeFile(f);
         }}
       />
     </>

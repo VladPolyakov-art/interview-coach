@@ -3,10 +3,10 @@
  * read this one table, so a state is reachable by props and still playable (frames.tsx keeps it live). */
 import type { RecentState, ShellEngine } from "../../components/AppShell";
 import {
-  CTX_ENGLISH, CTX_ENGLISH_FIRST, CTX_FIRST, CTX_NO_CV, CTX_OVERFLOW, CTX_RETURNING, JOB_FILE, JOB_LINK, KESTREL_LONG,
+  CTX_ENGLISH, CTX_ENGLISH_FIRST, CTX_FIRST, CTX_NO_CV, CTX_OVERFLOW, CTX_RETURNING, CV_FILE, JOB_FILE, JOB_LINK, KESTREL_LONG,
   KESTREL_PASTED, LONG_NAME, PASTED_LONG, PASTED_TEXT,
 } from "./fixtures";
-import { suggestionsFor, type JobResult, type ScriptContext, type StartInput } from "./script";
+import { suggestionsFor, type CvResult, type JobResult, type ScriptContext, type StartInput } from "./script";
 import type { HomeViewProps, JobItem, PlanRow } from "./types";
 
 /** One step replayed through the script. `pick` answers the last open question with that reply id. */
@@ -17,7 +17,9 @@ export type SceneInput =
   | { do: "resolve"; result: JobResult }
   | { do: "update"; job: JobItem }
   | { do: "skip" }
-  | { do: "change"; row: PlanRow; value: string };
+  | { do: "change"; row: PlanRow; value: string }
+  | { do: "attach"; file: { name: string; size: string } }
+  | { do: "resolveCv"; result: CvResult };
 
 export interface HomeScene {
   label: string;
@@ -35,6 +37,8 @@ export interface HomeScene {
   hold?: boolean;
   /** How a pending read resolves when played live. */
   resolveWith?: JobResult;
+  /** How a CV sent in the chat resolves when played live (D89). */
+  cvWith?: CvResult;
 }
 
 export const ENGINE_READY: ShellEngine = { name: "Ollama · qwen3:4b", status: "ready" };
@@ -117,6 +121,16 @@ export const SCENES = {
   keywordMatch: { ...ret, label: "Keywords matched → T3", inputs: [{ do: "begin", input: { kind: "text", text: "I have an HR screen with Lumen tomorrow" } }] },
   askRound: { ...first, label: "T2: which round (first visit)", inputs: [{ do: "begin", input: { kind: "suggestion", id: "general" } }] },
   askAnything: { ...ret, label: "T3: anything else", inputs: ASK_ANYTHING },
+  /* D89: a file in the chat. At T3 without a CV it is the CV; at T1 it is the job. */
+  askAnythingNoCv: { ...ret, ctx: CTX_NO_CV, label: "T3, no CV yet", inputs: ASK_ANYTHING },
+  cvAttached: { ...ret, ctx: CTX_NO_CV, label: "CV attached in the chat", inputs: ASK_ANYTHING, props: { name: "Alex", composer: { text: "", file: CV_FILE } } },
+  cvReading: { ...ret, ctx: CTX_NO_CV, label: "Reading the CV", inputs: [...ASK_ANYTHING, { do: "attach", file: CV_FILE }], hold: true },
+  cvAdded: { ...ret, ctx: CTX_NO_CV, label: "CV added", inputs: [...ASK_ANYTHING, { do: "attach", file: CV_FILE }, { do: "resolveCv", result: "ok" }] },
+  cvError: {
+    ...ret, ctx: CTX_NO_CV, label: "CV can't be read", cvWith: "unreadable",
+    inputs: [...ASK_ANYTHING, { do: "attach", file: CV_FILE }, { do: "resolveCv", result: "unreadable" }],
+  },
+  jobFileInChat: { ...ret, label: "Job file at T1", inputs: [...ASK_JOB, { do: "attach", file: JOB_FILE }], hold: true },
   roundNotCaught: { ...first, label: "Round not caught", inputs: [{ do: "begin", input: { kind: "suggestion", id: "general" } }, { do: "say", text: "not sure honestly" }] },
   freeTextNote: { ...ret, label: "T3 answered in words", inputs: [...ASK_ANYTHING, { do: "say", text: NOTE }] },
   plan: { ...ret, label: "Plan", inputs: PLAN },

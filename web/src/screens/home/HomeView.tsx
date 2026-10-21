@@ -4,9 +4,10 @@
  * setup header and the bottom composer stay put while only the chat scrolls — no sticky inside a scaled review frame.
  * - start: banners · greeting · composer · suggestions, centred a little above the middle; footer line at the bottom.
  * - setup: header row · chat (scrolls) · composer + footer at the bottom. The composer moves from the middle to the
- *   bottom by FLIP (motion "Home → setup chat"); under reduced motion it simply appears there. */
+ *   bottom by FLIP (motion "Home → setup chat"); under reduced motion it simply appears there.
+ * - D89: the setup composer takes a file too (+, paste, drop): at the job question it's the job, later it's the CV. */
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Composer } from "../../ds";
+import { Composer, ComposerAttachment, IconButton } from "../../ds";
 import { durationMs } from "../../ds/motion";
 import { t } from "../../i18n";
 import { Banners } from "./parts/Banners";
@@ -74,6 +75,10 @@ export function HomeView(props: HomeViewProps) {
   const placeholder = setup?.stage === "plan"
     ? t("chat.setup.placeholderPlan")
     : setup?.stage === "job" ? t("chat.setup.placeholderJob") : t("chat.setup.placeholderReply");
+  const english = track === "english";
+  const addFile = english ? null : (
+    <IconButton icon="plus" size="sm" outlined label={t(setup?.stage === "job" ? "chat.setup.addJobFile" : "chat.setup.addCv")} onClick={props.onAddFile} />
+  );
   const rootClass = [s.home, leaving ? "motion-soft-out" : ""].filter(Boolean).join(" ");
 
   return (
@@ -109,7 +114,17 @@ export function HomeView(props: HomeViewProps) {
                 maxRows={6}
                 submitOnEnter
                 onChange={(e) => props.onComposerChange?.(e.target.value)}
-                send={{ label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !composer.text.trim(), onSend: props.onSend }}
+                onFiles={english ? undefined : props.onFiles}
+                attachment={composer.file ? (
+                  <ComposerAttachment
+                    icon="file"
+                    title={composer.file.name}
+                    meta={composer.file.size}
+                    actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} onClick={props.onRemoveFile} />}
+                  />
+                ) : undefined}
+                toolbarStart={addFile}
+                send={{ label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !composer.text.trim() && !composer.file, onSend: props.onSend }}
               />
               <Footer track={track} />
             </div>

@@ -92,6 +92,7 @@ export function StartScreen(props: StartScreenProps) {
           submitOnEnter
           busy={props.loading}
           onChange={(e) => props.onComposerChange?.(e.target.value)}
+          onFiles={english ? undefined : props.onFiles}
           attachment={composer.file ? (
             <ComposerAttachment
               icon="file"

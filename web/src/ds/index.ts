@@ -33,7 +33,7 @@ export {
 // Content components (stage 11, G1–G20)
 export { ChipGroup } from "./Badge";
 export { SelectableCardGroup } from "./Card";
-export { Composer, ComposerAttachment } from "./Composer";
+export { Composer, ComposerAttachment, carriesFiles } from "./Composer";
 export type { ComposerSend } from "./Composer";
 export { Checkbox } from "./Checkbox";
 export { FileDrop, FileRow } from "./FileDrop";

@@ -58,6 +58,8 @@ export const PASTED_TEXT = [
 ].join("\n");
 export const JOB_LINK = "https://jobs.lumenhealth.example/product-designer-design-systems";
 export const JOB_FILE = { name: "kestrel-pay-senior-pd.pdf", size: "184 KB" };
+/** D89: the CV sent later in the chat. */
+export const CV_FILE = { name: "alex-morgan-cv.pdf", size: "96 KB" };
 
 /** Returning user: 2 interviews, CV, three saved jobs, four weak spots, last time Kestrel Pay · Behavioural · Standard. */
 export const CTX_RETURNING: ScriptContext = {
