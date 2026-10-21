@@ -83,3 +83,17 @@ export const SessionTranscript: Story = {
     </div>
   ),
 };
+
+/** D71: the debrief conversation — user bubbles are buttons (`onPress`) that pick the answer for the breakdown; `pressed` marks the picked one. */
+export const PressableAnswers: Story = {
+  render: () => (
+    <div style={frame}>
+      <ChatLog label="Conversation with Mike" size="lg" live={false}>
+        <ChatMessage speaker="mike">Tell me about a time you had to change your plan late in a project. What happened?</ChatMessage>
+        <ChatMessage speaker="user" onPress={() => {}}>Two weeks before launch legal asked us to add a consent step to checkout.</ChatMessage>
+        <ChatMessage speaker="mike">What was the result for the merchants?</ChatMessage>
+        <ChatMessage speaker="user" onPress={() => {}} pressed>Support tickets about consent dropped, and we kept the launch date.</ChatMessage>
+      </ChatLog>
+    </div>
+  ),
+};

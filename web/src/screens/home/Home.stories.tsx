@@ -20,6 +20,9 @@ const mobile = (id: HomeSceneId): StoryObj => ({
 export const StartReturning = desktop("returning");
 export const StartReturningMobile = mobile("returning");
 export const StartFirstVisit = desktop("firstVisit");
+/** D73: after End — Home with the saving toast, then the "saved · Open debrief" toast. */
+export const AfterEndSaving = desktop("afterEndSaving");
+export const AfterEndSaved = desktop("afterEndSaved");
 export const StartNoName = desktop("noName");
 export const StartEnglish = desktop("english");
 export const StartModeMenu = desktop("modeMenu");

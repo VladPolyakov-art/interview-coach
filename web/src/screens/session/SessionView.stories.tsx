@@ -81,6 +81,7 @@ export const S13Overflow = scene("S13 · Overflow +30%", "overflow");
 export const S14aPreparing = scene("S14a · Preparing feedback", "preparing");
 export const S14bUnavailable = scene("S14b · Feedback unavailable", "unavailable");
 export const S14cMuted = scene("S14c · Muted", "muted");
+export const S14c2MutedTalking = scene("S14c2 · Talking while muted: tip over the mic", "muted-talking");
 export const S14dSuggester = scene("S14d · Answer suggester on", "suggester");
 
 /* The same feedback on a phone and in the mid layout: bottom sheet and right drawer. */

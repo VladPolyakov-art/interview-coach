@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { OverlayRoot } from "./OverlayRoot";
 import { Toast, ToastProvider, useToast } from "./Toast";
+import { t } from "../i18n";
 
 const meta: Meta = { title: "DS/Toast" };
 export default meta;
@@ -45,4 +46,14 @@ export const Interactive: StoryObj = {
       <ToastProvider><Buttons /></ToastProvider>
     </Frame>
   ),
+};
+
+/** D73/D74: after End the shell goes Home and says the session is being saved (stays, shimmer while real work runs)… */
+export const AfterEndSaving: StoryObj = {
+  render: () => <Toast inline message={<span className="shimmer-text">{t("session.afterEnd.saving")}</span>} onDismiss={() => {}} />,
+};
+
+/** …then that it is ready, with the way to the debrief. */
+export const AfterEndSaved: StoryObj = {
+  render: () => <Toast inline message={t("session.afterEnd.ready")} action={{ label: t("session.afterEnd.open"), onClick: () => {} }} onDismiss={() => {}} />,
 };

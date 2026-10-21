@@ -39,3 +39,12 @@ export const OnIconButton: StoryObj = {
     </Tooltip>
   ),
 };
+
+/** `size="lg"` (D75): a message the user must notice — the muted-speech tip over the mic in a session. One line, 16 px, rounded. */
+export const Large: StoryObj = {
+  render: () => (
+    <Tooltip content="You're talking, but the microphone is muted. Press M to unmute." open inline size="lg">
+      <IconButton icon="micOff" label="Unmute" />
+    </Tooltip>
+  ),
+};
