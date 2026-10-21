@@ -7,7 +7,7 @@ import { api } from "../../lib/api";
 import { formatBytes } from "../../lib/format";
 import { useLoad } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
-import type { EngineInfo } from "../../lib/types";
+import type { EngineId, EngineInfo } from "../../lib/types";
 import { DEFAULT_PULL, PRESETS } from "./meta";
 import s from "./engine.module.css";
 
@@ -20,27 +20,56 @@ export function StatusHint({ engine }: { engine: EngineInfo }) {
   );
 }
 
+/** "Connect" (D83): the server looks for the engine the user already installed (outside PATH too) and starts
+ * Ollama when it is installed but not running. `failed` once a press found nothing. */
+function useConnect(id: EngineId) {
+  const { refreshEngines } = useApp();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const connect = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      setFailed(!(await api.connectEngine(id)).status.ready);
+    } catch {
+      setFailed(true);
+    }
+    await refreshEngines();
+    setBusy(false);
+  };
+  return { connect: () => void connect(), busy, failed };
+}
+
+function ConnectButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
+  return <Button variant="primary" size="sm" loading={busy} onClick={onClick}>{t("engines.connect")}</Button>;
+}
+
 export function OllamaBody({ engine }: { engine: EngineInfo }) {
   const code = engine.status.code;
+  const { connect, busy, failed } = useConnect("ollama");
   if (code === "not_installed") {
     return (
-      <Callout tone="warning" title={t("engines.ollama.notInstalled")}
-        actions={<Button variant="primary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url || "https://ollama.com/download", "_blank", "noopener")}>{t("engines.ollama.download")}</Button>}>
-        {t("engines.ollama.afterInstall")}
+      <Callout tone="warning" title={t("engines.ollama.notInstalled")} live={failed ? "status" : undefined}
+        actions={(
+          <>
+            <ConnectButton busy={busy} onClick={connect} />
+            <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url || "https://ollama.com/download", "_blank", "noopener")}>{t("engines.ollama.download")}</Button>
+          </>
+        )}>
+        {failed ? t("engines.ollama.stillMissing") : t("engines.ollama.afterInstall")}
       </Callout>
     );
   }
   if (code === "not_running") {
     return (
-      <Callout tone="warning" title={t("engines.ollama.notRunning")}>
-        <p>{t("engines.ollama.startIt")}</p>
-        <ol className={s.steps}>
-          <li>{t("engines.ollama.openApp")}</li>
-          <li>
-            {t("engines.ollama.pasteCommand")}
+      <Callout tone="warning" title={t("engines.ollama.notRunning")} live={failed ? "status" : undefined}
+        actions={<ConnectButton busy={busy} onClick={connect} />}>
+        {failed ? (
+          <>
+            <p>{t("engines.ollama.connectFailed")}</p>
             <CopyField value={engine.status.hint_command || "ollama serve"} copyLabel={t("common.copyCommand")} copiedLabel={t("common.copied")} label={t("common.command")} />
-          </li>
-        </ol>
+          </>
+        ) : t("engines.ollama.startIt")}
       </Callout>
     );
   }
@@ -154,13 +183,19 @@ export function OpenAiBody({ engine }: { engine: EngineInfo }) {
 
 export function ClaudeBody({ engine }: { engine: EngineInfo }) {
   const found = engine.status.code !== "not_installed";
+  const { connect, busy, failed } = useConnect("claude_cli");
   return (
     <>
-      <Callout tone={found ? "success" : "info"} title={found ? t("engines.claude.detected") : t("engines.claude.notFound")}
-        actions={!found && engine.setup_url ? (
-          <Button size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.claude.install")}</Button>
+      <Callout tone={found ? "success" : "warning"} title={found ? t("engines.claude.detected") : t("engines.claude.notFound")}
+        live={failed ? "status" : undefined}
+        actions={!found ? (
+          <>
+            <ConnectButton busy={busy} onClick={connect} />
+            {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.claude.install")}</Button> : null}
+          </>
         ) : undefined}>
-        {!engine.status.ready && found ? engine.status.hint || engine.status.message : null}
+        {!found ? (failed ? t("engines.claude.stillMissing") : t("engines.claude.connectHint"))
+          : !engine.status.ready ? engine.status.hint || engine.status.message : null}
       </Callout>
       {engine.terms_note ? <p className={s.note}><Icon name="info" size="sm" /> {engine.terms_note}</p> : null}
     </>

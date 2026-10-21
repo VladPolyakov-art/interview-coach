@@ -17,9 +17,12 @@ export const setupReview: ReviewScreen = {
     }),
     state("engine-picked", "1 · Выбрана готовая Ollama", "enginePicked", { mobile: false, note: "Выбор подсвечен, отметка справа; Continue переключает на выбранный движок и ведёт на проверку." }),
     state("engine-no-ollama", "1 · Ollama не установлена", "engineNoOllama", {
-      note: "Выбрали Ollama, а её нет — под строкой сразу «Download Ollama» (открывает ollama.com/download) и что будет после установки. Статус перепроверяется каждые 5 с; когда станет Ready, Continue включится сама.",
+      note: "D83: Ollama не нашлась — две кнопки: «Connect» (уже установлена: сервер ищет её и вне PATH — Homebrew, Ollama.app — и запускает) и «Download Ollama». Если Connect ничего не нашёл — подсказка «открой её один раз и нажми Connect ещё раз».",
     }),
-    state("engine-not-running", "1 · Ollama не запущена", "engineNotRunning", { mobile: false, note: "Установлена, но не запущена: «открой приложение» или команда ollama serve с копированием." }),
+    state("engine-not-running", "1 · Ollama не запущена", "engineNotRunning", { mobile: false, note: "D83: установлена, но не запущена — «Connect» сам открывает Ollama и ждёт до 15 с (проверено вживую: ~2 с → Ready). Не получилось — открыть самому или команда ollama serve с копированием." }),
+    state("engine-no-claude", "1 · Claude Code не найден", "engineNoClaude", {
+      note: "D83: «Connect» ищет уже установленный claude (PATH, ~/.claude/local, Homebrew, ~/.local/bin) — без переустановки. «Install Claude Code» — запасной путь.",
+    }),
     state("check-idle", "2 · Проверка — старт", "checkIdle", {
       dark: true,
       note: "Сверху выбор голоса Майка и ▶ образец. Справа от голоса — кнопка «Listen» (D82: с подписью, не значок). Ниже — микрофон: «Press the microphone and say something like “Hi Mike, can you hear me?”». Справа внизу — «I'll type instead», без проверки микрофона.",

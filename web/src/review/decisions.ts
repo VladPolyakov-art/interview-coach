@@ -79,6 +79,7 @@ export const DECISIONS: Decision[] = [
   { id: "setup-d81-onboarding", screen: "Setup", question: "D81: онбординг — три шага: AI engine (готовый движок — одна строка «Ollama · Ready · Change») → Check (выбор голоса Майка + один настоящий обмен: фраза → распознано → Майк отвечает выбранным голосом; телеметрия — снятый чекбокс рядом с «It works») → About you (имя, файлы CV как в General, вакансия, голос/клавиатура; «Start the first round» сразу запускает раунд). Заново — Settings → About → «Run setup again». Так?", chosen: "три шага + выбор голоса; движок свёрнут в строку" },
   { id: "setup-d82-engine", screen: "Setup", question: "Шаг AI engine: выбор движка без предвыбора, нет Ollama → «Download Ollama»", chosen: "да (D82)" },
   { id: "shell-d82-settings-mobile", screen: "Settings", question: "Настройки на телефоне как в Claude: список разделов → раздел с «‹ All settings»", chosen: "да (D82)" },
+  { id: "setup-d83-connect", screen: "Setup", question: "Уже установленные Ollama / Claude Code подключаются кнопкой «Connect» (поиск вне PATH, запуск Ollama), скачать — запасной путь", chosen: "да (D83)" },
   { id: "session-o8", screen: "Session", question: "Подсказчик ответа выключен по умолчанию", chosen: "да" },
   { id: "session-o9", screen: "Session", question: "Разговорная практика заканчивается только кнопкой «End practice»", chosen: "да" },
   { id: "debrief-o2", screen: "Debrief", question: "Время начала каждого вопроса в разборе (нужно сохранять при записи)", chosen: "да" },

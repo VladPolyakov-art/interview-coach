@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import asyncio
 import json
-import shutil
 import tempfile
 from typing import AsyncIterator
 
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
+from .locate import find_program
 
 INSTALL_URL = "https://docs.claude.com/en/docs/claude-code/setup"
 TERMS_NOTE = ("Uses your own Claude subscription via the Claude Code CLI; check Anthropic's terms. "
@@ -31,7 +31,8 @@ BASE_FLAGS = ["--tools", "", "--setting-sources", "", "--strict-mcp-config", "--
 
 
 def find_claude() -> str | None:
-    return shutil.which("claude")
+    # ~/.claude/local is where the native installer and `claude migrate-installer` put it.
+    return find_program("claude", ("~/.claude/local/claude",))
 
 
 def build_command(binary: str, model: str, system: str, stream: bool) -> list[str]:
@@ -78,7 +79,7 @@ class ClaudeCLIEngine(LLMEngine):
 
     async def status(self) -> EngineStatus:
         if not (self._binary or find_claude()):
-            return EngineStatus(code="not_installed", message="The Claude Code CLI was not found on PATH.",
+            return EngineStatus(code="not_installed", message="The Claude Code CLI was not found on this computer.",
                                 hint="Install Claude Code, run `claude` once and sign in.", fix_url=INSTALL_URL,
                                 warnings=[TERMS_NOTE])
         # A real sign-in check costs a request, so it runs only from POST /api/engines/claude_cli/test.

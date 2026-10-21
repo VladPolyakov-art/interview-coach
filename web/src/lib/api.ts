@@ -1,6 +1,6 @@
 /* Typed REST client for app/server (all routes under /api). Errors become ApiError with the server's code. */
 import type {
-  Debrief, EngineId, EngineStatus, EnginesResponse, EngineTestResult, Health, MemorySummary, OllamaModelsResponse,
+  Debrief, EngineId, EngineStatus, EnginesResponse, EngineConnectResult, EngineTestResult, Health, MemorySummary, OllamaModelsResponse,
   Profile, Question, SessionRecord, SessionSummary, Settings, SettingsPatch, SttInfo, StrongerVersion, TelemetryInfo, VoiceCheckResult,
   TrashItem, Vacancy, VacancySummary, VoicesResponse, LanguageItem, LanguageLayer,
 } from "./types";
@@ -67,6 +67,7 @@ export const api = {
   engineStatus: (id: EngineId) => request<EngineStatus>(`/engines/${id}/status`),
   ollamaModels: () => request<OllamaModelsResponse>("/engines/ollama/models"),
   testEngine: (id: EngineId) => post<EngineTestResult>(`/engines/${id}/test`),
+  connectEngine: (id: EngineId) => post<EngineConnectResult>(`/engines/${id}/connect`),
   settings: () => request<Settings>("/settings"),
   saveSettings: (patch: SettingsPatch) => post<Settings>("/settings", patch),
   voices: () => request<VoicesResponse>("/voices"),

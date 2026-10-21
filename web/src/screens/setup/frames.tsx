@@ -29,6 +29,10 @@ export const SETUP_SCENES = {
     engines: makeEngines({ ollama: "not_installed", claude_cli: "not_installed" }), settings: SETTINGS,
     render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame>,
   },
+  engineNoClaude: {
+    engines: makeEngines({ ollama: "not_installed", claude_cli: "not_installed" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="claude_cli" /></SetupFrame>,
+  },
   engineNotRunning: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
   checkIdle: { render: check({ phase: "idle" }) },
   checkListening: { render: check({ phase: "listening" }, 0.55) },

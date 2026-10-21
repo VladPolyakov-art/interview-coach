@@ -1,6 +1,6 @@
 /* Fixtures for stories and the review page: a store value that works without a server (switching and saving change
- * local state) plus a small fetch stub for the two engine calls the forms make (model list, "Test the engine").
- * The stub only answers those two URLs, and only after a fixture provider has rendered; everything else goes to fetch. */
+ * local state) plus a small fetch stub for the engine calls the forms make (model list, "Test the engine", "Connect").
+ * The stub only answers those URLs and a few setup ones, and only after a fixture provider has rendered; everything else goes to fetch. */
 import { useMemo, useState, type ReactNode } from "react";
 import { AppStoreProvider, type AppStore } from "../../lib/store";
 import type { EngineId, EngineInfo, EngineStatus, EnginesResponse, OllamaModelsResponse, Settings, SettingsPatch, StatusCode } from "../../lib/types";
@@ -103,6 +103,9 @@ function installStub() {
   window.fetch = (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (url.endsWith("/api/engines/ollama/models")) return json(MODELS);
+    // "Connect" in stories: still not found, so the story shows the follow-up hint.
+    const connect = /\/api\/engines\/([a-z_]+)\/connect$/.exec(url);
+    if (connect) return json({ started: false, status: status(connect[1] === "claude_cli" ? "not_installed" : "not_running", "") });
     if (/\/api\/engines\/[a-z_]+\/test$/.test(url)) return json({ ok: true, latency_ms: 840, status: STATUS.ollama.ready });
     // Settings sections (D76 review frames): fictional voices, speech and data, no server.
     if (url.endsWith("/api/voices")) return json({ default: "am_eric", tts: { available: true }, voices: [

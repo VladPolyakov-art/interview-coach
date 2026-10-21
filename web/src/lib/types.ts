@@ -44,6 +44,12 @@ export interface OllamaModelsResponse {
   status?: EngineStatus;
 }
 
+/** POST /engines/{id}/connect (D83): the fresh status after looking for the installed engine (and starting Ollama). */
+export interface EngineConnectResult {
+  status: EngineStatus;
+  started: boolean;
+}
+
 export interface EngineTestResult {
   ok: boolean;
   status: EngineStatus;

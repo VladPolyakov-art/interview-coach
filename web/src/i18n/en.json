@@ -139,13 +139,11 @@
     "ollama": {
       "name": "Ollama",
       "tagline": "Runs the AI model on this computer.",
-      "notInstalled": "Ollama isn't installed on this computer.",
+      "notInstalled": "Ollama wasn't found on this computer.",
       "download": "Download Ollama",
-      "afterInstall": "Install it, open it once, then come back and press Check again.",
+      "afterInstall": "Already have it? Press Connect. If not, download it (it's free), install it, then press Connect.",
       "notRunning": "Ollama is installed but not running, so Mike can't think yet.",
-      "startIt": "Start it, pick one:",
-      "openApp": "Open the Ollama app (Applications), or",
-      "pasteCommand": "Paste this into Terminal:",
+      "startIt": "Connect starts it for you.",
       "noModel": "Ollama is running, but the model isn't downloaded yet.",
       "pullHint": "Paste this into Terminal. The download is about 2.5 GB.",
       "modelLabel": "Model for typed answers",
@@ -157,7 +155,9 @@
       "recommended": "recommended",
       "auto": "Automatic ({model})",
       "noModels": "No models installed yet.",
-      "pick": "Free, runs on this computer"
+      "pick": "Free, runs on this computer",
+      "connectFailed": "Ollama didn't start. Open the Ollama app yourself, or paste this into Terminal:",
+      "stillMissing": "Still can't find Ollama. If you've just installed it, open it once, then press Connect again."
     },
     "openai": {
       "name": "Other AI (OpenAI-compatible)",
@@ -189,8 +189,10 @@
       "tagline": "Uses the Claude Code app you already have, signed in with your own account.",
       "detected": "Claude Code was found on this computer.",
       "notFound": "Claude Code wasn't found on this computer.",
-      "install": "How to install Claude Code",
-      "pick": "Your own Claude plan"
+      "install": "Install Claude Code",
+      "pick": "Your own Claude plan",
+      "connectHint": "Already installed? Press Connect. If not, install it, run claude in Terminal once and sign in.",
+      "stillMissing": "Still can't find Claude Code. Run claude in Terminal once, then press Connect again."
     },
     "gemini": {
       "name": "Gemini Live",
@@ -229,7 +231,8 @@
     "choice": {
       "title": "Pick an engine",
       "hint": "Ollama is free and runs on this computer. The others need a key or a plan."
-    }
+    },
+    "connect": "Connect"
   },
   "setup": {
     "steps": "Setup steps",

@@ -1,13 +1,18 @@
 """Ollama adapter: any installed model, default chosen by RAM."""
 from __future__ import annotations
 
+import asyncio
 import json
-import shutil
+import os
+import subprocess
+import sys
+from pathlib import Path
 from typing import AsyncIterator
 
 import httpx
 
 from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg, ThinkFilter
+from .locate import find_program
 
 DOWNLOAD_URL = "https://ollama.com/download"
 # qwen3:4b on Ollama is the thinking variant: it ignores think:false. The instruct tag is the default
@@ -50,6 +55,53 @@ def is_thinking_only(model: str) -> bool:
     name = model.lower()
     return name in THINKING_ONLY_TAGS or any(name.startswith(tag + ":") for tag in THINKING_ONLY_TAGS
                                              if ":" not in tag)
+
+
+APP_PATHS = ("/Applications/Ollama.app", "~/Applications/Ollama.app")
+
+
+def find_app() -> Path | None:
+    """The macOS app bundle, which starts the server on open."""
+    for p in APP_PATHS:
+        path = Path(p).expanduser()
+        if path.is_dir():
+            return path
+    return None
+
+
+def find_ollama() -> str | None:
+    """The `ollama` binary: PATH, the common folders, or inside the app bundle (D83)."""
+    return find_program("ollama", tuple(f"{p}/Contents/Resources/ollama" for p in APP_PATHS))
+
+
+def installed() -> bool:
+    return bool(find_ollama() or find_app())
+
+
+async def start(url: str, wait_s: float = 15.0) -> bool:
+    """"Connect" (D83): open the Ollama app (macOS) or run `ollama serve` in the background, then wait for it."""
+    app = find_app() if sys.platform == "darwin" else None
+    try:
+        if app:
+            await (await asyncio.create_subprocess_exec("open", "-g", "-a", str(app))).wait()
+        else:
+            binary = find_ollama()
+            if not binary:
+                return False
+            host = url.split("://", 1)[-1]
+            subprocess.Popen([binary, "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True, env={**os.environ, "OLLAMA_HOST": host})
+    except OSError:
+        return False
+    async with httpx.AsyncClient(timeout=2) as client:
+        for _ in range(int(wait_s / 0.5)):
+            try:
+                if (await client.get(f"{url}/api/tags")).status_code == 200:
+                    return True
+            except httpx.HTTPError:
+                pass
+            await asyncio.sleep(0.5)
+    return False
 
 
 def install_hint(model: str) -> str:
@@ -116,7 +168,7 @@ class OllamaEngine(LLMEngine):
         try:
             model, names = await self._resolve()
         except httpx.HTTPError:
-            if shutil.which("ollama") is None:
+            if not installed():
                 return EngineStatus(code="not_installed", message="Ollama is not installed.",
                                     hint=install_hint(default), hint_command=f"ollama pull {default}",
                                     fix_url=DOWNLOAD_URL, model=default)

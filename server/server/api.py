@@ -71,6 +71,19 @@ async def engine_status(engine_id: str) -> dict:
     return (await engines.engine_status(engine_id)).model_dump()
 
 
+@router.post("/engines/{engine_id}/connect")
+async def engine_connect(engine_id: str, request: Request) -> dict:
+    """"Connect" (D83): find the engine the user already installed and, for Ollama, start it. The fresh status."""
+    check_origin(request)
+    if engine_id not in engines.DESCRIPTORS:
+        raise fail(404, "unknown_engine", "Unknown engine.")
+    settings = config.load_settings()
+    started = False
+    if engine_id == "ollama" and (await engines.engine_status("ollama", settings)).code == "not_running":
+        started = await ollama_engine.start(config.ollama_url(settings))
+    return {"status": (await engines.engine_status(engine_id, settings)).model_dump(), "started": started}
+
+
 @router.post("/engines/{engine_id}/test")
 async def engine_test(engine_id: str, request: Request) -> dict:
     """A tiny real request to the engine, with its latency."""

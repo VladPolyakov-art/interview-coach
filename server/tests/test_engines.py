@@ -33,11 +33,11 @@ async def test_ollama_ram_default():
 
 async def test_ollama_not_installed_and_not_running(monkeypatch):
     engine = ollama.OllamaEngine("http://127.0.0.1:1", transport=ollama_transport(fail=True), ram_gb=8)
-    monkeypatch.setattr(ollama.shutil, "which", lambda name: None)
+    monkeypatch.setattr(ollama, "installed", lambda: False)
     status = await engine.status()
     assert status.code == "not_installed"
     assert "ollama.com/download" in status.hint and status.hint_command == "ollama pull qwen3:4b-instruct"
-    monkeypatch.setattr(ollama.shutil, "which", lambda name: "/usr/local/bin/ollama")
+    monkeypatch.setattr(ollama, "installed", lambda: True)
     assert (await engine.status()).code == "not_running"
 
 
@@ -133,7 +133,7 @@ async def test_gemini_status_and_error_classification():
 
 
 async def test_engine_registry_lists_all_with_status(monkeypatch):
-    monkeypatch.setattr(ollama.shutil, "which", lambda name: None)
+    monkeypatch.setattr(ollama, "installed", lambda: False)
     monkeypatch.setattr(claude_cli, "find_claude", lambda: None)
     settings = {"engine": "ollama", "ollama": {"url": "http://127.0.0.1:9", "model": ""},
                 "openai_compatible": {"base_url": "", "api_key": "", "model": ""}, "claude_cli": {"model": "haiku"},
@@ -161,3 +161,41 @@ async def test_ollama_voice_default_falls_back_to_installed_large_model():
                                  default_model=ollama.VOICE_MODEL)
     status = await engine.status()
     assert status.ready and status.model == "qwen3:8b"
+
+
+def test_find_program_looks_outside_path(monkeypatch, tmp_path):
+    """D83: an installed binary outside this process's PATH is still found."""
+    from server.engines import locate
+    binary = tmp_path / "claude"
+    binary.write_text("#!/bin/sh\n")
+    binary.chmod(0o755)
+    monkeypatch.setattr(locate.shutil, "which", lambda name: None)
+    monkeypatch.setattr(locate, "COMMON_DIRS", (str(tmp_path),))
+    assert locate.find_program("claude") == str(binary)
+    assert locate.find_program("nothing-here") is None
+    assert locate.find_program("x", (str(binary),)) == str(binary)
+
+
+def test_connect_route_starts_ollama_when_not_running(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server import api
+    from server.main import create_app
+    from server.engines.base import EngineStatus
+    calls = []
+    codes = iter(["not_running", "ready"])
+
+    async def fake_status(engine_id, settings=None):
+        code = next(codes)
+        return EngineStatus(code=code, ready=code == "ready", message=code)
+
+    async def fake_start(url, wait_s=15.0):
+        calls.append(url)
+        return True
+    monkeypatch.setattr(api.engines, "engine_status", fake_status)
+    monkeypatch.setattr(api.ollama_engine, "start", fake_start)
+    same = {"Origin": "http://testserver"}
+    with TestClient(create_app()) as client:
+        r = client.post("/api/engines/ollama/connect", headers=same)
+        assert r.status_code == 200 and r.json()["started"] is True and r.json()["status"]["ready"] is True
+        assert len(calls) == 1
+        assert client.post("/api/engines/nope/connect", headers=same).status_code == 404
