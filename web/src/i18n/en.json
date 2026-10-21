@@ -139,7 +139,8 @@
       "recommended": "recommended",
       "auto": "Automatic ({model})",
       "modelSaved": "Model saved.",
-      "noModels": "No models installed yet."
+      "noModels": "No models installed yet.",
+      "pick": "Free, runs on this computer"
     },
     "openai": {
       "name": "Other AI (OpenAI-compatible)",
@@ -163,14 +164,16 @@
         "jan": "Jan",
         "openrouter": "OpenRouter",
         "openai": "OpenAI"
-      }
+      },
+      "pick": "LM Studio, OpenRouter, OpenAI…"
     },
     "claude": {
       "name": "Claude Code CLI",
       "tagline": "Uses the Claude Code app you already have, signed in with your own account.",
       "detected": "Claude Code was found on this computer.",
       "notFound": "Claude Code wasn't found on this computer.",
-      "install": "How to install Claude Code"
+      "install": "How to install Claude Code",
+      "pick": "Your own Claude plan"
     },
     "gemini": {
       "name": "Gemini Live",
@@ -178,7 +181,23 @@
       "apiKey": "Gemini API key",
       "apiKeyHint": "Create a free key in Google AI Studio. Stored only on this computer.",
       "getKey": "Get a free key",
-      "save": "Save and check"
+      "save": "Save and check",
+      "pick": "Google's live voice, free key"
+    },
+    "recommended": "Recommended",
+    "runs": "Runs",
+    "flow": {
+      "chooseTitle": "Choose how Mike runs",
+      "chooseSub": "Free and local by default. No key, no account.",
+      "chooseLabel": "AI engine",
+      "connect": "Connect",
+      "connectTitle": "Connect {name}",
+      "use": "Use {name}",
+      "useNote": "{name} works once its status says Ready.",
+      "change": "Change engine",
+      "models": "Models",
+      "costData": "Cost and your data",
+      "finish": "Finish setup"
     }
   },
   "setup": {
@@ -190,10 +209,6 @@
       "first": "First round"
     },
     "stepDone": "done",
-    "engine": {
-      "title": "Choose how Mike runs",
-      "subtitle": "Free and local by default. No key, no account."
-    },
     "test": {
       "title": "Let's check everything works",
       "subtitle": "A quick check of your microphone, the AI model and Mike's voice.",
@@ -732,7 +747,6 @@
       "shortcuts": "Keyboard shortcuts",
       "micHelp": "Microphone help",
       "voiceUnavailable": "Voice isn't available in this browser",
-      "thinking": "Thinking",
       "preparing": "Preparing feedback",
       "micDisabled": "The microphone is paused while the session is interrupted"
     },

@@ -73,6 +73,10 @@ try {
   if (!ollamaReady) throw new Error("Ollama is not ready");
   await both(page, "01-setup-engine");
 
+  // D54: step 1 is choose (Ollama preselected) → connect (Ollama is ready) → Continue switches and moves on.
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("heading", { name: "Connect Ollama" }).waitFor();
+  await both(page, "01b-setup-engine-connect");
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("heading", { name: "Let's check everything works" }).waitFor();
   await both(page, "02-setup-test");

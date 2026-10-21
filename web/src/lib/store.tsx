@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api, ApiError } from "./api";
 import type { EngineInfo, EnginesResponse, Settings, SettingsPatch } from "./types";
 
-interface AppStore {
+export interface AppStore {
   settings: Settings | null;
   engines: EnginesResponse | null;
   enginesLoading: boolean;
@@ -63,6 +63,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({ settings, engines, enginesLoading, selectedEngine, refreshEngines, updateSettings, reloadSettings }),
     [settings, engines, enginesLoading, selectedEngine, refreshEngines, updateSettings, reloadSettings],
   );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+/** Supplies a ready-made store value: stories and the review page (no network, no polling). */
+export function AppStoreProvider({ value, children }: { value: AppStore; children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

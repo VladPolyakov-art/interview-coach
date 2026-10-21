@@ -1,5 +1,5 @@
-/* First-run wizard: 1 engine → 2 test → 3 about you and the job → 4 first round. Sets prefs.setupDone at the end. */
-import { useEffect, useRef, useState } from "react";
+/* First-run wizard: 1 engine (choose, then connect: EnginePanel) → 2 test → 3 about you and the job → 4 first round. Sets prefs.setupDone at the end. */
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Callout, Card, Icon, Segmented, Spinner, Textarea, Toggle } from "../ds";
 import { t } from "../i18n";
@@ -25,6 +25,19 @@ export function SetupWizard() {
   const back = () => setStep(STEPS[Math.max(index - 1, 0)]!);
 
   return (
+    <SetupFrame step={step}>
+      {step === "engine" ? <EngineStep headingRef={headingRef} onNext={next} /> : null}
+      {step === "test" ? <TestStep headingRef={headingRef} onNext={next} onBack={back} /> : null}
+      {step === "about" ? <AboutStep headingRef={headingRef} onNext={next} onBack={back} /> : null}
+      {step === "first" ? <FirstStep headingRef={headingRef} onBack={back} /> : null}
+    </SetupFrame>
+  );
+}
+
+/** The wizard chrome: brand, step list, content column. Also used by the review page. */
+export function SetupFrame({ step, children }: { step: Step; children: ReactNode }) {
+  const index = STEPS.indexOf(step);
+  return (
     <div className={s.screen}>
       <header className={s.header}>
         <span className={s.brand}><span className={s.mark}><Icon name="mic" size="sm" /></span>{t("app.name")}</span>
@@ -41,10 +54,7 @@ export function SetupWizard() {
         </nav>
       </header>
       <main className={s.main} id="main">
-        {step === "engine" ? <EngineStep headingRef={headingRef} onNext={next} /> : null}
-        {step === "test" ? <TestStep headingRef={headingRef} onNext={next} onBack={back} /> : null}
-        {step === "about" ? <AboutStep headingRef={headingRef} onNext={next} onBack={back} /> : null}
-        {step === "first" ? <FirstStep headingRef={headingRef} onBack={back} /> : null}
+        {children}
       </main>
     </div>
   );
@@ -62,18 +72,7 @@ function Head({ headingRef, title, sub }: { headingRef: Ref; title: string; sub:
 }
 
 function EngineStep({ headingRef, onNext }: { headingRef: Ref; onNext: () => void }) {
-  const { selectedEngine } = useApp();
-  const ready = Boolean(selectedEngine?.status.ready);
-  return (
-    <>
-      <Head headingRef={headingRef} title={t("setup.engine.title")} sub={t("setup.engine.subtitle")} />
-      <EnginePanel />
-      <div className={s.footer}>
-        <span />
-        <Button variant="primary" iconRight="arrowRight" disabled={!ready} onClick={onNext}>{t("common.continue")}</Button>
-      </div>
-    </>
-  );
+  return <EnginePanel mode="setup" headingRef={headingRef} onDone={onNext} />;
 }
 
 function TestStep({ headingRef, onNext, onBack }: { headingRef: Ref; onNext: () => void; onBack: () => void }) {

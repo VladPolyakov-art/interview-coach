@@ -1,4 +1,4 @@
-/* Settings: engine (same panel as the setup wizard), voice and speech, practice, CV, appearance, privacy and data. */
+/* Settings: engine (same flow as the setup wizard, a summary card by default), voice and speech, practice, CV, appearance, privacy and data. */
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Button, Callout, Card, CopyField, Icon, Segmented, Select, Skeleton, Textarea, Toggle, Input, type IconName } from "../ds";
@@ -50,7 +50,7 @@ function SettingsLayout({ id }: { id: SectionId }) {
           </ul>
         </nav>
         <div key={id} className={`${s.content} ${id !== firstId.current ? "motion-rise-base" : ""}`}>
-          {id === "engine" ? <EnginePanel /> : null}
+          {id === "engine" ? <EnginePanel mode="settings" /> : null}
           {id === "voice" ? <VoiceSection /> : null}
           {id === "practice" ? <PracticeSection /> : null}
           {id === "profile" ? <ProfileSection /> : null}
