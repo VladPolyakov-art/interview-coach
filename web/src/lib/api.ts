@@ -78,6 +78,8 @@ export const api = {
   voices: () => request<VoicesResponse>("/voices"),
   voiceSampleUrl: (voice: string) => `/api/voices/sample?voice=${encodeURIComponent(voice)}`,
   stt: () => request<SttInfo>("/stt"),
+  /** D90: one dictated clip (16 kHz mono PCM16, base64) → its text, by the local STT. */
+  transcribe: (data: string) => post<{ text: string; duration_s: number }>("/stt/transcribe", { data }),
   /** Setup check (D81): what you said (recorded PCM or the browser's text) → what was heard → Mike's reply. */
   voiceCheck: (body: { audio?: string; text?: string; voice?: string }) => post<VoiceCheckResult>("/check/voice", body),
   profile: () => request<Profile>("/profile"),

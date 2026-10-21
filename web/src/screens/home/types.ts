@@ -158,6 +158,9 @@ export interface HomeViewProps {
   /** Rendered after the column (VacancyEditor dialog). */
   overlay?: ReactNode;
   onComposerChange?: (text: string) => void;
+  /** D90: the mic at the end of the chat composer: dictation into the field (none: no recogniser works here). */
+  dictation?: { available: boolean; state: "idle" | "listening" | "transcribing"; error?: string };
+  onDictate?: () => void;
   onAddFile?: () => void;
   /** Files pasted or dropped on the composer (D89): the first one is attached, as the + button does. */
   onFiles?: (files: File[]) => void;

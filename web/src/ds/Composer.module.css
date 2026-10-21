@@ -15,6 +15,8 @@
 .box:focus-within { background: var(--color-surface-card-hover); }
 /* Field + inline send (no toolbar): the button stays inside the box, bottom-right, as the text grows. */
 .row { display: flex; align-items: flex-end; gap: var(--space-2); min-width: 0; }
+/* D90: the control on the left sits on the last line, centred on the send button's height (both stay put as the text grows). */
+.leading { flex: none; display: flex; align-items: center; height: var(--control-h-md); }
 /* surface: none (v2) — inside the Island. D62: a rounded chip fill (like the End button), one step lighter on focus,
  * no blue ring (owner: "не светился настолько синим"); the round send sits inside it. 🟡 focus = the fill + the caret. */
 .box.bare { padding: var(--space-1); border: 0; border-radius: var(--radius-xl); background: var(--color-surface-chip); box-shadow: none; }

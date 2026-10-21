@@ -5,9 +5,12 @@
  * - start: banners · greeting · composer · suggestions, centred a little above the middle; footer line at the bottom.
  * - setup: header row · chat (scrolls) · composer + footer at the bottom. The composer moves from the middle to the
  *   bottom by FLIP (motion "Home → setup chat"); under reduced motion it simply appears there.
- * - D89: the setup composer takes a file too (+, paste, drop): at the job question it's the job, later it's the CV. */
+ * - D89: the setup composer takes a file too (+, paste, drop): at the job question it's the job, later it's the CV.
+ * - D90: the chat composer is one row, [+] [text] [mic → send], and keeps those controls while the chat runs; the mic
+ *   dictates into the field. The chat scrolls under the composer (it floats on a short fade), so messages stay in view
+ *   down to the composer instead of being cut off above it. */
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Composer, ComposerAttachment, IconButton } from "../../ds";
+import { Composer, ComposerAttachment, IconButton, type ComposerSend } from "../../ds";
 import { durationMs } from "../../ds/motion";
 import { t } from "../../i18n";
 import { Banners } from "./parts/Banners";
@@ -34,6 +37,7 @@ export function HomeView(props: HomeViewProps) {
   const root = useRef<HTMLDivElement>(null);
   const startComposer = useRef<HTMLDivElement>(null);
   const dock = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const startTop = useRef<number | null>(null);
   const narrow = useNarrow(root);
@@ -62,6 +66,25 @@ export function HomeView(props: HomeViewProps) {
     el.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: ms, easing: ease });
   }, [step, entering]);
 
+  // The chat leaves room under its last message for the floating composer (its height changes with the text, a file
+  // card, an error). Set before the chat scrolls to its end; a chat read to the end stays at the end when it grows.
+  useLayoutEffect(() => {
+    const el = dock.current;
+    const host = body.current;
+    const box = scroller.current;
+    if (!el || !host || !box) return;
+    const fit = () => {
+      const atEnd = box.scrollHeight - box.clientHeight - box.scrollTop < 4;
+      host.style.setProperty("--dock-h", `${el.offsetHeight}px`);
+      if (atEnd) box.scrollTop = box.scrollHeight;
+    };
+    fit();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [step]);
+
   const banners = (
     <Banners
       engine={props.engineBanner}
@@ -72,9 +95,23 @@ export function HomeView(props: HomeViewProps) {
       onDismissBrowser={props.onDismissBrowser}
     />
   );
-  const placeholder = setup?.stage === "plan"
-    ? t("chat.setup.placeholderPlan")
-    : setup?.stage === "job" ? t("chat.setup.placeholderJob") : t("chat.setup.placeholderReply");
+  const dictation = props.dictation;
+  const hearing = dictation?.state === "listening" || dictation?.state === "transcribing";
+  const placeholder = dictation?.state === "listening" ? t("chat.dictate.listening")
+    : dictation?.state === "transcribing" ? t("chat.dictate.working")
+      : setup?.stage === "plan" ? t("chat.setup.placeholderPlan")
+        : setup?.stage === "job" ? t("chat.setup.placeholderJob") : t("chat.setup.placeholderReply");
+  const hasInput = Boolean(composer.text.trim() || composer.file);
+  /* The end button: Send with text or a file, otherwise the mic (stop while it listens), as on the start screen. */
+  const send: ComposerSend = (hasInput && !hearing) || !dictation?.available
+    ? { label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, onSend: props.onSend }
+    : {
+      label: t(hearing ? "chat.dictate.stop" : "chat.dictate.start"),
+      icon: hearing ? "stop" : "mic",
+      variant: hearing ? "action" : "quiet",
+      busy: dictation.state === "transcribing",
+      onSend: props.onDictate,
+    };
   const english = track === "english";
   const addFile = english ? null : (
     <IconButton icon="plus" size="sm" outlined label={t(setup?.stage === "job" ? "chat.setup.addJobFile" : "chat.setup.addCv")} onClick={props.onAddFile} />
@@ -98,35 +135,39 @@ export function HomeView(props: HomeViewProps) {
           <div className={s.top}>
             <div className={s.column}><SetupHeader setup={setup} onSkip={props.onSkip} /></div>
           </div>
-          <div ref={scroller} className={s.scroller}>
-            <div className={`${s.column} ${s.chat}`}>
-              {banners}
-              <SetupChat {...props} entering={entering} scroller={scroller} />
+          <div ref={body} className={s.body}>
+            <div ref={scroller} className={s.scroller}>
+              <div className={`${s.column} ${s.chat}`}>
+                {banners}
+                <SetupChat {...props} entering={entering} scroller={scroller} />
+              </div>
             </div>
-          </div>
-          <div ref={dock} className={s.dock} data-review-id="Home/Setup/Composer" data-review-section="Home · Setup composer" data-comment-target>
-            <div className={s.column}>
-              <Composer
-                label={t("chat.setup.label")}
-                placeholder={placeholder}
-                value={composer.text}
-                minRows={1}
-                maxRows={6}
-                submitOnEnter
-                onChange={(e) => props.onComposerChange?.(e.target.value)}
-                onFiles={english ? undefined : props.onFiles}
-                attachment={composer.file ? (
-                  <ComposerAttachment
-                    icon="file"
-                    title={composer.file.name}
-                    meta={composer.file.size}
-                    actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} onClick={props.onRemoveFile} />}
-                  />
-                ) : undefined}
-                toolbarStart={addFile}
-                send={{ label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !composer.text.trim() && !composer.file, onSend: props.onSend }}
-              />
-              <Footer track={track} />
+            <div ref={dock} className={s.dock} data-review-id="Home/Setup/Composer" data-review-section="Home · Setup composer" data-comment-target>
+              <div className={s.column}>
+                <Composer
+                  label={t("chat.setup.label")}
+                  placeholder={placeholder}
+                  value={composer.text}
+                  minRows={1}
+                  maxRows={6}
+                  submitOnEnter={!hearing}
+                  readOnly={hearing}
+                  onChange={(e) => props.onComposerChange?.(e.target.value)}
+                  onFiles={english ? undefined : props.onFiles}
+                  attachment={composer.file ? (
+                    <ComposerAttachment
+                      icon="file"
+                      title={composer.file.name}
+                      meta={composer.file.size}
+                      actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} onClick={props.onRemoveFile} />}
+                    />
+                  ) : undefined}
+                  leading={addFile}
+                  error={dictation?.error}
+                  send={send}
+                />
+                <Footer track={track} />
+              </div>
             </div>
           </div>
         </>

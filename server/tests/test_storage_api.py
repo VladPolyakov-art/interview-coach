@@ -220,3 +220,35 @@ def test_voice_check_recognises_and_replies(client, monkeypatch, fake_llm):
     silent = client.post("/api/check/voice", json={"text": "  "}, headers=SAME).json()
     assert not silent["ok"] and silent["code"] == "not_heard"
     assert client.post("/api/check/voice", json={"text": "hi"}, headers=OTHER).status_code == 403
+
+
+def test_dictation_transcribes_one_clip_and_keeps_nothing(client, monkeypatch):
+    """D90: the chat's mic sends one clip; the text comes back from the local STT."""
+    from server import stt as stt_module
+
+    class FakeSTT:
+        available = True
+        seen: list[bytes] = []
+
+        def transcribe(self, pcm, words=True):
+            FakeSTT.seen.append(pcm)
+            assert words is False                                   # text only: no word timing for dictation
+            return stt_module.Transcript(text="I have a behavioural round", duration_s=len(pcm) / 32000, backend="fake")
+
+    monkeypatch.setattr(stt_module, "get_stt", lambda settings: FakeSTT())
+    pcm = b"\x01\x00" * 16000                                       # one second
+    before = sorted(p.name for p in config.data_dir().rglob("*"))
+    r = client.post("/api/stt/transcribe", headers=SAME, json={"data": base64.b64encode(pcm).decode()})
+    assert r.json() == {"text": "I have a behavioural round", "duration_s": 1.0} and FakeSTT.seen == [pcm]
+    assert sorted(p.name for p in config.data_dir().rglob("*")) == before
+    assert client.post("/api/stt/transcribe", headers=OTHER, json={"data": ""}).status_code == 403
+    assert client.post("/api/stt/transcribe", headers=SAME, json={"data": "not base64!"}).json()["detail"]["code"] == "bad_audio"
+    too_long = base64.b64encode(b"\x00\x00" * 16000 * 121).decode()
+    assert client.post("/api/stt/transcribe", headers=SAME, json={"data": too_long}).status_code == 422
+
+
+def test_dictation_without_local_stt_says_so(client, monkeypatch):
+    from server import stt as stt_module
+    monkeypatch.setattr(stt_module, "get_stt", lambda settings: stt_module.STT(None))
+    r = client.post("/api/stt/transcribe", headers=SAME, json={"data": ""})
+    assert r.status_code == 503 and r.json()["detail"]["code"] == "stt_unavailable"

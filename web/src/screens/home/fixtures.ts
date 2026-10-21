@@ -60,6 +60,8 @@ export const JOB_LINK = "https://jobs.lumenhealth.example/product-designer-desig
 export const JOB_FILE = { name: "kestrel-pay-senior-pd.pdf", size: "184 KB" };
 /** D89: the CV sent later in the chat. */
 export const CV_FILE = { name: "alex-morgan-cv.pdf", size: "96 KB" };
+/** What the fake dictation "hears" in stories (D90). */
+export const DICTATED = "They asked me last time about stakeholder pushback, I'd like to practise that";
 
 /** Returning user: 2 interviews, CV, three saved jobs, four weak spots, last time Kestrel Pay · Behavioural · Standard. */
 export const CTX_RETURNING: ScriptContext = {

@@ -324,6 +324,30 @@ async def stt_status() -> dict:
     return stt.get_stt(config.load_settings()).info()
 
 
+class TranscribeBody(BaseModel):
+    data: str = Field(max_length=5_200_000)         # base64 of 16 kHz mono PCM16, up to 2 minutes
+
+
+DICTATION_MAX_S = 120
+
+
+@router.post("/stt/transcribe")
+async def stt_transcribe(body: TranscribeBody, request: Request) -> dict:
+    """Dictation into a text field (D90): one clip of 16 kHz mono PCM16 → its text, on this computer. Nothing is kept."""
+    check_origin(request)
+    engine = stt.get_stt(config.load_settings())
+    if not engine.available:
+        raise fail(503, "stt_unavailable", "Speech recognition isn't set up on this computer.")
+    try:
+        pcm = base64.b64decode(body.data, validate=True)
+    except ValueError:
+        raise fail(422, "bad_audio", "The recording couldn't be read.")
+    if len(pcm) % 2 or len(pcm) / 2 / 16000 > DICTATION_MAX_S:
+        raise fail(422, "bad_audio", "The recording couldn't be read.")
+    result = await asyncio.to_thread(engine.transcribe, pcm, False)
+    return {"text": result.text, "duration_s": round(result.duration_s, 1)}
+
+
 # ---------- profile (CV / about me) ----------
 
 class ProfileBody(BaseModel):

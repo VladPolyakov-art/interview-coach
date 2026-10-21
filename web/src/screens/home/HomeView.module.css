@@ -26,10 +26,19 @@
 
 /* ---- setup ---- */
 .top { flex: none; background: var(--color-canvas); }
-.scroller { position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-.chat { display: flex; flex-direction: column; gap: var(--space-6); padding-top: var(--space-4); padding-bottom: var(--space-6); }
-.dock { flex: none; background: var(--color-canvas); padding-bottom: var(--space-4); }
-.dock > .column { display: flex; flex-direction: column; gap: var(--space-3); }
+/* D90: the chat takes the whole height below the header and scrolls under the composer, which floats at the bottom on a
+ * short fade (owner: «очень маленькая видимая область и очень рано пропадает текст»). `--dock-h` = the composer's
+ * height (HomeView measures it), so the last message can still scroll clear of it. */
+.body { --dock-h: 0px; position: relative; flex: 1 1 auto; min-height: 0; }
+.scroller { position: absolute; inset: 0; overflow-y: auto; }
+.chat { display: flex; flex-direction: column; gap: var(--space-6); padding-top: var(--space-4); padding-bottom: calc(var(--dock-h) + var(--space-4)); }
+.dock {
+  position: absolute; inset-inline: 0; bottom: 0;
+  padding-top: var(--space-6); padding-bottom: var(--space-4);
+  background: linear-gradient(to bottom, transparent, var(--color-canvas) var(--space-6));
+  pointer-events: none;
+}
+.dock > .column { display: flex; flex-direction: column; gap: var(--space-3); pointer-events: auto; }
 
 @container page (width < 560px) {
   /* The phone keyboard covers the lower half: the group starts near the top instead of the middle. */

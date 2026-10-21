@@ -9,7 +9,7 @@ import { OverlayRoot } from "../../ds/OverlayRoot";
 import type { EditorSeed } from "./editorSeeds";
 import { HomeView } from "./HomeView";
 import { t } from "../../i18n";
-import { CV_FILE, JOB_FILE, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
+import { CV_FILE, DICTATED, JOB_FILE, KESTREL_PASTED, PASTED_TEXT } from "./fixtures";
 import {
   attach, begin, change, pick, removeNote, resolveCv, resolveJob, say, setupModel, skip, suggestionsFor, updateJob,
   type JobResult, type ScriptContext, type SetupState,
@@ -110,6 +110,19 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
   const [textMode, setTextMode] = useState(Boolean(p.textMode));
   const [starting, setStarting] = useState(Boolean(p.starting));
   const [editor, setEditor] = useState({ open: false, seed: {} as EditorSeed, n: 0 });
+  // D90: a stand-in for the mic: listening until pressed again, then a pause, then DICTATED joins the field.
+  const [dictating, setDictating] = useState<"idle" | "listening" | "transcribing">(scene.dictate === "listening" ? "listening" : "idle");
+  const [dictateError, setDictateError] = useState(scene.dictate === "no_speech" ? t("chat.dictate.error.no_speech") : undefined);
+  const dictate = () => {
+    setDictateError(undefined);
+    if (dictating === "idle") { setDictating("listening"); return; }
+    if (dictating !== "listening") return;
+    setDictating("transcribing");
+    later(() => {
+      setDictating("idle");
+      setComposer((c) => ({ ...c, text: c.text.trim() ? `${c.text.trimEnd()} ${DICTATED}` : DICTATED }));
+    }, PENDING_MS);
+  };
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
@@ -170,7 +183,9 @@ export function HomeHarness({ scene }: { scene: HomeScene }) {
       jobs={setup ? [...setup.jobs, ...ctx.jobs.filter((j) => !setup.jobs.some((x) => x.id === j.id))] : ctx.jobs}
       textMode={textMode}
       starting={starting}
-      onComposerChange={(text) => setComposer((c) => ({ ...c, text }))}
+      onComposerChange={(text) => { setDictateError(undefined); setComposer((c) => ({ ...c, text })); }}
+      dictation={p.dictation ?? { available: true, state: dictating, error: dictateError }}
+      onDictate={dictate}
       onAddFile={() => setComposer((c) => ({ ...c, file: setup && setup.stage !== "job" ? CV_FILE : JOB_FILE }))}
       onFiles={(files) => {
         const f = files[0];

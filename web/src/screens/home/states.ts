@@ -39,6 +39,8 @@ export interface HomeScene {
   resolveWith?: JobResult;
   /** How a CV sent in the chat resolves when played live (D89). */
   cvWith?: CvResult;
+  /** D90: the mic in the chat starts listening / with this error under the composer; played live it writes DICTATED. */
+  dictate?: "listening" | "no_speech";
 }
 
 export const ENGINE_READY: ShellEngine = { name: "Ollama · qwen3:4b", status: "ready" };
@@ -130,6 +132,9 @@ export const SCENES = {
     ...ret, ctx: CTX_NO_CV, label: "CV can't be read", cvWith: "unreadable",
     inputs: [...ASK_ANYTHING, { do: "attach", file: CV_FILE }, { do: "resolveCv", result: "unreadable" }],
   },
+  /* D90: the chat composer is one row, [+] [text] [mic]; the mic dictates into the field. */
+  dictating: { ...ret, label: "Dictating a reply", inputs: ASK_ANYTHING, dictate: "listening" },
+  dictationError: { ...ret, label: "Dictation caught nothing", inputs: ASK_ANYTHING, dictate: "no_speech" },
   jobFileInChat: { ...ret, label: "Job file at T1", inputs: [...ASK_JOB, { do: "attach", file: JOB_FILE }], hold: true },
   roundNotCaught: { ...first, label: "Round not caught", inputs: [{ do: "begin", input: { kind: "suggestion", id: "general" } }, { do: "say", text: "not sure honestly" }] },
   freeTextNote: { ...ret, label: "T3 answered in words", inputs: [...ASK_ANYTHING, { do: "say", text: NOTE }] },

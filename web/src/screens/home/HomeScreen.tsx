@@ -5,7 +5,8 @@
  * user's note (UI only, B3), no questions status (we track the prepare call, B5), the last interview's job and round
  * are not in SessionSummary (remembered job + remembered round, B8), Drill = a 3-question mixed session (B7), no
  * recurring-phrases data (English phrases empty), no profile name (h1 without the name, US-08 AC3).
- * Quick start (D51 item 1, quickStart.ts): the round mic at the composer's end (D53) opens the session straight away with the last settings. */
+ * Quick start (D51 item 1, quickStart.ts): the round mic at the composer's end (D53) opens the session straight away with the last settings.
+ * D90: in the chat with Mike that mic dictates into the field instead (audio/dictation.ts); the words join what's typed. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { durationMs, motionMemory, shouldBuildUp } from "../../ds";
@@ -13,6 +14,7 @@ import { t, tMaybe, tp } from "../../i18n";
 import { VacancyEditor } from "../../components/VacancyEditor";
 import { splitTitle } from "../../components/vacancyTitle";
 import { browserSttSupported } from "../../audio/browserStt";
+import { useDictation } from "../../audio/dictation";
 import { api, ApiError, fileToBase64 } from "../../lib/api";
 import { useInterval, useLoad } from "../../lib/hooks";
 import { prefs } from "../../lib/prefs";
@@ -62,6 +64,7 @@ export function HomeScreen() {
 
   const [setup, setSetup] = useState<SetupState | null>(null);
   const [composer, setComposer] = useState<{ text: string; file?: { name: string; size: string } }>({ text: "" });
+  const dictation = useDictation(stt.data, (text) => setComposer((c) => ({ ...c, text: c.text.trim() ? `${c.text.trimEnd()} ${text}` : text })));
   const fileRef = useRef<File | null>(null);
   /** The file of the message that was sent, read by the pending step (a new one may be attached meanwhile). */
   const sentFile = useRef<File | null>(null);
@@ -266,7 +269,13 @@ export function HomeScreen() {
         buildUp={buildUp}
         leaving={leaving}
         layerOrder={settings?.layer_order}
-        onComposerChange={(text) => setComposer((c) => ({ ...c, text }))}
+        onComposerChange={(text) => { dictation.clearError(); setComposer((c) => ({ ...c, text })); }}
+        dictation={{
+          available: dictation.mode !== null,
+          state: dictation.state,
+          error: dictation.error ? t(`chat.dictate.error.${dictation.error}`) : undefined,
+        }}
+        onDictate={dictation.toggle}
         onAddFile={() => picker.current?.click()}
         onFiles={(files) => { if (files[0]) takeFile(files[0]); }}
         onRemoveFile={() => { fileRef.current = null; setComposer((c) => ({ text: c.text })); }}

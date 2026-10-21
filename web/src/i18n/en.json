@@ -1549,6 +1549,21 @@
       "phrases_one": "Practise my phrase",
       "phrases_other": "Practise my {n} phrases"
     },
+    "dictate": {
+      "start": "Dictate",
+      "stop": "Stop and add the words",
+      "listening": "Listening… press stop when you're done",
+      "working": "Writing down what you said…",
+      "error": {
+        "not_allowed": "Vukoli can't use the microphone. Allow it in the browser's site settings and try again.",
+        "not_found": "No microphone found. Plug one in and try again.",
+        "insecure": "The microphone works only on this computer's own address (localhost).",
+        "unsupported": "This browser can't record. Type your reply instead.",
+        "failed": "The microphone didn't start. Try again.",
+        "no_speech": "Didn't catch any words. Try again a little closer to the mic.",
+        "stt_failed": "Couldn't turn the recording into text. Try again or type your reply."
+      }
+    },
     "setup": {
       "title": "Setting up with Mike",
       "step": "Step {n} of {of}",

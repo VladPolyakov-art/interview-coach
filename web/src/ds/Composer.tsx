@@ -12,6 +12,8 @@
  * `onFiles` (D89): the composer also takes files: pasted (Cmd+V of a copied file) or dropped on it, with a drop
  * highlight while a file is over it. Without `onFiles` a file isn't taken here (the app-wide guard stops the browser
  * from opening it in place of the app).
+ * `leading` (D90): a control on the left of the field in the one-line chat row (the + of the chat with Mike), so the
+ * row reads [+] [text] [mic / send] like a messenger.
  * Narrow parents: the toolbar wraps and the
  * end group drops to its own line (container query on the composer). */
 import {
@@ -41,6 +43,8 @@ export interface ComposerProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaE
   /** Accessible label of the field (visually hidden): "Your answer", "Paste a job description or a link". */
   label: string;
   attachment?: ReactNode;
+  /** On the left of the field, in the chat row (no toolbar): the + (D90). */
+  leading?: ReactNode;
   toolbarStart?: ReactNode;
   toolbarEnd?: ReactNode;
   send?: ComposerSend;
@@ -68,7 +72,7 @@ export const carriesFiles = (e: { dataTransfer: DataTransfer | null }) => Boolea
 
 export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function Composer(
   {
-    label, attachment, toolbarStart, toolbarEnd, send, submitOnEnter, minRows = 2, maxRows = 8, hint, error, busy,
+    label, attachment, leading, toolbarStart, toolbarEnd, send, submitOnEnter, minRows = 2, maxRows = 8, hint, error, busy,
     surface = "own", onFiles, className, id, onKeyDown, onInput, onPaste, disabled, value, ...rest
   },
   ref,
@@ -151,6 +155,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
         {attachment ? <div className={s.attachment}>{attachment}</div> : null}
         <label htmlFor={fieldId} className="visually-hidden">{label}</label>
         <div className={s.row}>
+          {leading && !hasToolbar ? <div className={s.leading}>{leading}</div> : null}
           <textarea
             ref={field}
             id={fieldId}
