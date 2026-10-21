@@ -3,7 +3,8 @@
  * The stub only answers those URLs and a few setup ones, and only after a fixture provider has rendered; everything else goes to fetch. */
 import { useMemo, useState, type ReactNode } from "react";
 import { AppStoreProvider, type AppStore } from "../../lib/store";
-import type { EngineId, EngineInfo, EngineStatus, EnginesResponse, OllamaModelsResponse, Settings, SettingsPatch, StatusCode } from "../../lib/types";
+import type { EngineId, EngineInfo, EngineStatus, EnginesResponse, OllamaModelsResponse, OllamaPull, Settings, SettingsPatch, StatusCode } from "../../lib/types";
+import { OllamaPullPreview } from "./OllamaDownload";
 
 const status = (code: StatusCode, message = "", extra: Partial<EngineStatus> = {}): EngineStatus => ({
   code, ready: code === "ready", message, hint: "", hint_command: "", fix_url: "", model: "", warnings: [], ...extra,
@@ -36,7 +37,8 @@ const BASE: Record<EngineId, Omit<EngineInfo, "status" | "selected">> = {
 };
 
 export type EngineState =
-  | "ready" | "not_installed" | "not_running" | "no_model" | "not_configured" | "disconnected";
+  | "ready" | "not_installed" | "not_running" | "no_model" | "not_configured" | "disconnected"
+  | "unverified" | "signed_out";
 
 const STATUS: Record<EngineId, Record<EngineState, EngineStatus>> = {
   ollama: {
@@ -46,24 +48,27 @@ const STATUS: Record<EngineId, Record<EngineState, EngineStatus>> = {
     no_model: status("no_model", "No model is downloaded yet.", { hint_command: "ollama pull qwen3:4b-instruct" }),
     not_configured: status("not_configured", "Set up Ollama."),
     disconnected: status("disconnected", "Disconnected in Vukoli."),
+    unverified: status("not_configured"), signed_out: status("not_configured"),
   },
   openai_compatible: {
     ready: status("ready", "Connected.", { model: "qwen3-4b-instruct" }),
     not_installed: status("not_configured"), not_running: status("not_configured"), no_model: status("not_configured"),
     not_configured: status("not_configured", "Set the base URL of your AI server.", { hint: "For LM Studio use http://localhost:1234/v1; for OpenAI https://api.openai.com/v1" }),
-    disconnected: status("not_configured"),
+    disconnected: status("not_configured"), unverified: status("not_configured"), signed_out: status("not_configured"),
   },
   claude_cli: {
     ready: status("ready", "Claude Code is signed in.", { model: "sonnet" }),
     not_installed: status("not_installed", "Claude Code wasn't found."),
     not_running: status("not_installed"), no_model: status("not_installed"), not_configured: status("not_installed"),
     disconnected: status("disconnected", "Disconnected in Vukoli."),
+    unverified: status("unverified", "Claude Code was found. Connect checks that you're signed in."),
+    signed_out: status("unauthorized", "Claude Code isn't signed in.", { hint_command: "claude" }),
   },
   gemini_live: {
     ready: status("ready", "Gemini key works.", { model: "gemini-live" }),
     not_installed: status("not_configured"), not_running: status("not_configured"), no_model: status("not_configured"),
     not_configured: status("not_configured", "Add a Gemini API key.", { hint: "Create a free key in Google AI Studio." }),
-    disconnected: status("not_configured"),
+    disconnected: status("not_configured"), unverified: status("not_configured"), signed_out: status("not_configured"),
   },
 };
 
@@ -98,6 +103,16 @@ const MODELS: OllamaModelsResponse = {
   recommended: "qwen3:8b", recommended_voice: "qwen3:4b-instruct", ram_gb: 16,
 };
 
+/** The Ollama model download (D85): not started, halfway, failed. */
+const PULL_BASE: OllamaPull = {
+  model: "", state: "idle", phase: "", error: "", completed: 0, total: 0, recommended: "qwen3:8b",
+  options: [{ model: "qwen3:4b-instruct", size_gb: 2.5 }, { model: "qwen3:8b", size_gb: 5.2 }],
+};
+export const PULL_IDLE = PULL_BASE;
+export const PULL_DOWNLOADING: OllamaPull = { ...PULL_BASE, model: "qwen3:8b", state: "pulling", phase: "download", completed: 2_180_000_000, total: 5_225_000_000 };
+export const PULL_CANCELLED: OllamaPull = { ...PULL_BASE, model: "qwen3:4b-instruct", state: "cancelled" };
+export const PULL_FAILED: OllamaPull = { ...PULL_BASE, model: "qwen3:8b", state: "error", error: "no space left on device" };
+
 let stubbed = false;
 function installStub() {
   if (stubbed || typeof window === "undefined") return;
@@ -107,6 +122,7 @@ function installStub() {
   window.fetch = (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (url.endsWith("/api/engines/ollama/models")) return json(MODELS);
+    if (url.endsWith("/api/engines/ollama/pull")) return json(PULL_IDLE);
     // "Disconnect" in stories: the server answers; the fixture list stays as it is.
     if (/\/api\/engines\/[a-z_]+\/disconnect$/.test(url)) return json({ status: status("disconnected", "") });
     // "Connect" in stories: still not found, so the story shows the follow-up hint.
@@ -136,7 +152,7 @@ function installStub() {
 }
 
 /** Wraps a story / review state: live-looking store without a server. Switching and saving change local state only. */
-export function EngineFixture({ engines, settings = SETTINGS, children }: { engines: EnginesResponse; settings?: Settings; children: ReactNode }) {
+export function EngineFixture({ engines, settings = SETTINGS, pull, children }: { engines: EnginesResponse; settings?: Settings; pull?: OllamaPull; children: ReactNode }) {
   installStub();
   const [list, setList] = useState(engines);
   const [cfg, setCfg] = useState(settings);
@@ -174,5 +190,9 @@ export function EngineFixture({ engines, settings = SETTINGS, children }: { engi
       },
     };
   }, [list, cfg]);
-  return <AppStoreProvider value={value}>{children}</AppStoreProvider>;
+  return (
+    <AppStoreProvider value={value}>
+      <OllamaPullPreview.Provider value={pull ?? null}>{children}</OllamaPullPreview.Provider>
+    </AppStoreProvider>
+  );
 }

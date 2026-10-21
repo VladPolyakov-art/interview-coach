@@ -7,8 +7,9 @@ import { api } from "../../lib/api";
 import { formatBytes } from "../../lib/format";
 import { useLoad } from "../../lib/hooks";
 import { errorMessage, useApp } from "../../lib/store";
-import type { EngineId, EngineInfo } from "../../lib/types";
-import { DEFAULT_PULL, PRESETS, engineName } from "./meta";
+import type { EngineId, EngineInfo, EngineStatus } from "../../lib/types";
+import { PRESETS, engineName } from "./meta";
+import { OllamaDownload } from "./OllamaDownload";
 import s from "./engine.module.css";
 
 export function StatusHint({ engine }: { engine: EngineInfo }) {
@@ -20,19 +21,21 @@ export function StatusHint({ engine }: { engine: EngineInfo }) {
   );
 }
 
-/** "Connect" (D83): the server looks for the engine the user already installed (outside PATH too) and starts
- * Ollama when it is installed but not running. `failed` once a press found nothing. */
+/** "Connect" (D83): the server looks for the engine the user already installed (outside PATH too), starts
+ * Ollama when it is installed but not running, and sends Claude Code one real test request (D85). `failed` is the
+ * status a press came back with when it isn't ready (its message says why). */
 function useConnect(id: EngineId) {
   const { refreshEngines } = useApp();
   const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<EngineStatus | null>(null);
   const connect = async () => {
     setBusy(true);
-    setFailed(false);
+    setFailed(null);
     try {
-      setFailed(!(await api.connectEngine(id)).status.ready);
-    } catch {
-      setFailed(true);
+      const { status } = await api.connectEngine(id);
+      setFailed(status.ready ? null : status);
+    } catch (e) {
+      setFailed({ code: "error", ready: false, message: errorMessage(e), hint: "" } as EngineStatus);
     }
     await refreshEngines();
     setBusy(false);
@@ -50,7 +53,8 @@ export function DisconnectedBody({ engine }: { engine: EngineInfo }) {
   return (
     <Callout tone="info" live={failed ? "status" : undefined}
       actions={<ConnectButton busy={busy} onClick={connect} />}>
-      {failed && engine.id === "ollama" ? t("engines.ollama.stillMissing")
+      {busy && engine.id === "claude_cli" ? t("engines.claude.checking")
+        : failed && engine.id === "ollama" ? t("engines.ollama.stillMissing")
         : failed && engine.id === "claude_cli" ? t("engines.claude.stillMissing")
         : t("engines.disconnectedBody", { name: engineName(engine) })}
     </Callout>
@@ -102,14 +106,7 @@ export function OllamaBody({ engine }: { engine: EngineInfo }) {
       </Callout>
     );
   }
-  if (code === "no_model") {
-    return (
-      <Callout tone="warning" title={t("engines.ollama.noModel")}>
-        <p>{t("engines.ollama.pullHint")}</p>
-        <CopyField value={engine.status.hint_command || DEFAULT_PULL} copyLabel={t("common.copyCommand")} copiedLabel={t("common.copied")} label={t("common.command")} />
-      </Callout>
-    );
-  }
+  if (code === "no_model") return <OllamaDownload engine={engine} />;
   if (code === "ready") return <OllamaModelPicker />;
   return <StatusHint engine={engine} />;
 }
@@ -210,23 +207,48 @@ export function OpenAiBody({ engine }: { engine: EngineInfo }) {
   );
 }
 
+/** Claude Code (D85): found isn't enough — Connect sends one short real request on the user's plan, and only an
+ * answer makes it Ready. Not signed in → the command to sign in; any other failure shows Claude's own message. */
 export function ClaudeBody({ engine }: { engine: EngineInfo }) {
-  const found = engine.status.code !== "not_installed";
+  const code = engine.status.code;
   const { connect, busy, failed } = useConnect("claude_cli");
+  const terms = engine.terms_note ? <p className={s.note}><Icon name="info" size="sm" /> {engine.terms_note}</p> : null;
+  if (code === "ready") {
+    return <><Callout tone="success" title={t("engines.claude.signedIn")} />{terms}</>;
+  }
+  if (code === "not_installed") {
+    return (
+      <>
+        <Callout tone="warning" title={t("engines.claude.notFound")} live={failed ? "status" : undefined}
+          actions={(
+            <>
+              <ConnectButton busy={busy} onClick={connect} />
+              {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.claude.install")}</Button> : null}
+            </>
+          )}>
+          {failed ? t("engines.claude.stillMissing") : t("engines.claude.connectHint")}
+        </Callout>
+        {terms}
+      </>
+    );
+  }
+  const signedOut = code === "unauthorized";
+  const errored = Boolean(failed && failed.code !== "unauthorized");
   return (
     <>
-      <Callout tone={found ? "success" : "warning"} title={found ? t("engines.claude.detected") : t("engines.claude.notFound")}
-        live={failed ? "status" : undefined}
-        actions={!found ? (
-          <>
-            <ConnectButton busy={busy} onClick={connect} />
-            {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.claude.install")}</Button> : null}
-          </>
-        ) : undefined}>
-        {!found ? (failed ? t("engines.claude.stillMissing") : t("engines.claude.connectHint"))
-          : !engine.status.ready ? engine.status.hint || engine.status.message : null}
+      <Callout tone={errored ? "error" : signedOut ? "warning" : "info"} live={failed ? "alert" : undefined}
+        title={signedOut ? t("engines.claude.signedOut") : t("engines.claude.unverified")}
+        actions={<ConnectButton busy={busy} onClick={connect} />}>
+        {busy ? t("engines.claude.checking")
+          : errored ? t("engines.claude.failed", { message: failed?.message ?? "" })
+          : signedOut ? (
+            <>
+              <p>{t("engines.claude.signInHint")}</p>
+              <CopyField value="claude" copyLabel={t("common.copyCommand")} copiedLabel={t("common.copied")} label={t("common.command")} />
+            </>
+          ) : t("engines.claude.connectNote")}
       </Callout>
-      {engine.terms_note ? <p className={s.note}><Icon name="info" size="sm" /> {engine.terms_note}</p> : null}
+      {terms}
     </>
   );
 }

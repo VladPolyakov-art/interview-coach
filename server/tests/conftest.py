@@ -16,7 +16,10 @@ def isolated_data(tmp_path, monkeypatch):
     monkeypatch.delenv("OLLAMA_URL", raising=False)
     monkeypatch.setenv("IC_PRELOAD", "0")                                  # no Whisper/Kokoro loading in tests
     from server import tts
+    from server.engines import claude_cli
     monkeypatch.setattr(tts, "_kokoro", None)
+    # Never the real `claude` binary: Connect sends a real request on the user's plan (D85).
+    monkeypatch.setattr(claude_cli, "find_claude", lambda: None)
     yield tmp_path / "data"
 
 

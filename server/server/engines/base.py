@@ -12,6 +12,7 @@ Msg = dict  # {"role": "system" | "user" | "assistant", "content": str}
 
 StatusCode = Literal[
     "ready",
+    "unverified",         # found, but Connect hasn't checked it with a real request yet (Claude Code, D85)
     "not_installed",      # binary / package missing
     "not_running",        # installed but the service does not answer
     "no_model",           # running, but the chosen model is not available

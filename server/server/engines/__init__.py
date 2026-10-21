@@ -47,7 +47,8 @@ def make_llm(settings: dict | None = None, engine_id: str | None = None, *, voic
         return openai_compat.OpenAICompatibleEngine(block.get("base_url", ""), block.get("api_key", ""),
                                                     block.get("model", ""))
     if engine_id == "claude_cli":
-        return claude_cli.ClaudeCLIEngine(settings["claude_cli"].get("model", "haiku"))
+        block = settings["claude_cli"]
+        return claude_cli.ClaudeCLIEngine(block.get("model", "haiku"), verified=block.get("verified"))
     if engine_id == "gemini_live":
         block = settings["gemini_live"]
         return gemini_live.GeminiTextEngine(block.get("api_key", ""), block.get("text_model", ""),

@@ -26,6 +26,19 @@ export const setupReview: ReviewScreen = {
     state("engine-no-claude", "1 · Claude Code не найден", "engineNoClaude", {
       note: "D83: «Connect» ищет уже установленный claude (PATH, ~/.claude/local, Homebrew, ~/.local/bin) — без переустановки. «Install Claude Code» — запасной путь.",
     }),
+    state("engine-no-model", "1 · У Ollama нет модели", "engineNoModel", {
+      note: "D85: Ollama запущена, модели нет — скачивание прямо из приложения, без Терминала. Кнопка «Download qwen3:8b» (рекомендованная для 16 ГБ RAM, ~5,2 ГБ) и «Smaller one · 2.5 GB» (qwen3:4b-instruct — для медленного интернета или мало места). Команда для Терминала — под «Use Terminal instead».",
+    }),
+    state("engine-downloading", "1 · Модель скачивается", "engineDownloading", {
+      note: "D85: прогресс-бар (новый компонент ДС Progress) и «2.2 GB of 5.2 GB · 41%»; «Cancel» останавливает, повторное «Download» продолжает с места остановки. Скачивание идёт на сервере — не прерывается, если уйти со страницы. Когда готово — движок сам становится Ready, Continue включается.",
+    }),
+    state("engine-claude-connect", "1 · Claude Code найден, не проверен", "engineClaudeConnect", {
+      mobile: false,
+      note: "D85: найденный claude больше не «Ready» сразу. «Connect» отправляет один короткий настоящий запрос с плана пользователя (до минуты, «Sending a test request…») — Ready только если Claude ответил. Ответ запоминается; если позже сессия упрётся в «не вошёл» — статус сбрасывается.",
+    }),
+    state("engine-claude-signed-out", "1 · Claude Code не вошёл", "engineClaudeSignedOut", {
+      note: "D85: проверка вернула «Not logged in» — команда claude с копированием: открыть Терминал, войти, нажать Connect. Другая ошибка (лимит, сеть) — текст Claude как есть, красным.",
+    }),
     state("check-idle", "2 · Проверка — старт", "checkIdle", {
       dark: true,
       note: "Сверху выбор голоса Майка и ▶ образец. Справа от голоса — кнопка «Listen» (D82: с подписью, не значок). Ниже — микрофон: «Press the microphone and say something like “Hi Mike, can you hear me?”». Справа внизу — «I'll type instead», без проверки микрофона.",

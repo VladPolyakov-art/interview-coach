@@ -235,3 +235,93 @@ def test_disconnected_engine_never_runs():
 def config_defaults():
     from server import config
     return config.load_settings()
+
+
+async def test_claude_status_follows_the_real_sign_in_check():
+    """D85: found is not "Ready" until a real request answered; "not logged in" is remembered."""
+    engine = lambda verified: claude_cli.ClaudeCLIEngine(binary="/bin/claude", verified=verified)
+    assert (await engine(None).status()).code == "unverified"
+    assert (await engine(False).status()).code == "unauthorized"
+    assert (await engine(True).status()).ready is True
+
+
+async def test_claude_not_logged_in_forgets_the_sign_in(tmp_path):
+    from server import config
+    fake = tmp_path / "claude"
+    fake.write_text("#!/bin/sh\ncat >/dev/null\necho '" + json.dumps(
+        {"type": "result", "is_error": True, "result": "Not logged in · Please run /login"}) + "'\n")
+    fake.chmod(0o755)
+    config.update_settings({"claude_cli": {"verified": True}})
+    status = await claude_cli.ClaudeCLIEngine(binary=str(fake)).test()
+    assert status.code == "unauthorized" and not status.ready
+    assert config.load_settings()["claude_cli"]["verified"] is False
+
+
+def test_claude_connect_sends_one_real_request(monkeypatch):
+    from fastapi.testclient import TestClient
+    from server import config
+    from server.main import create_app
+    answers = iter([EngineStatus(code="error", message="usage limit"),
+                    EngineStatus(code="unauthorized", message="Not logged in"),
+                    EngineStatus(code="ready", ready=True, message="Claude answered.")])
+
+    async def fake_test(self):
+        return next(answers)
+    monkeypatch.setattr(claude_cli, "find_claude", lambda: "/bin/claude")
+    monkeypatch.setattr(claude_cli.ClaudeCLIEngine, "test", fake_test)
+    same = {"Origin": "http://testserver"}
+    with TestClient(create_app()) as client:
+        r = client.post("/api/engines/claude_cli/connect", headers=same).json()
+        assert r["status"]["message"] == "usage limit" and config.load_settings()["claude_cli"]["verified"] is None
+        r = client.post("/api/engines/claude_cli/connect", headers=same).json()
+        assert r["status"]["code"] == "unauthorized" and config.load_settings()["claude_cli"]["verified"] is False
+        r = client.post("/api/engines/claude_cli/connect", headers=same).json()
+        assert r["status"]["ready"] is True and config.load_settings()["claude_cli"]["verified"] is True
+        assert client.get("/api/engines/claude_cli/status").json()["code"] == "ready"
+
+
+def test_ollama_model_download_reports_progress_and_errors(monkeypatch):
+    """D85: the model downloads from the app; progress sums the layers; an Ollama error is shown as is."""
+    from fastapi.testclient import TestClient
+    from server.main import create_app
+    bodies = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if body["model"] == "nope:1b":
+            return httpx.Response(200, text=json.dumps({"error": "pull model manifest: file does not exist"}))
+        lines = [{"status": "pulling manifest"},
+                 {"status": "pulling a", "digest": "a", "total": 100, "completed": 100},
+                 {"status": "pulling b", "digest": "b", "total": 300, "completed": 150},
+                 {"status": "pulling b", "digest": "b", "total": 300, "completed": 300},
+                 {"status": "verifying sha256 digest"}, {"status": "success"}]
+        return httpx.Response(200, text="\n".join(json.dumps(x) for x in lines))
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(ollama.httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw))
+    monkeypatch.setattr(ollama, "pull", ollama.Pull())
+    same = {"Origin": "http://testserver"}
+    with TestClient(create_app()) as client:
+        idle = client.get("/api/engines/ollama/pull").json()
+        assert idle["state"] == "idle" and {o["model"] for o in idle["options"]} == {ollama.MODEL_SMALL, ollama.MODEL_LARGE}
+        client.post("/api/engines/ollama/pull", json={"model": ollama.MODEL_SMALL}, headers=same)
+        for _ in range(50):
+            done = client.get("/api/engines/ollama/pull").json()
+            if done["state"] != "pulling":
+                break
+        assert done["state"] == "done" and (done["completed"], done["total"]) == (400, 400)
+        assert bodies[0] == {"model": ollama.MODEL_SMALL, "stream": True}
+        client.post("/api/engines/ollama/pull", json={"model": "nope:1b"}, headers=same)
+        for _ in range(50):
+            failed = client.get("/api/engines/ollama/pull").json()
+            if failed["state"] != "pulling":
+                break
+        assert failed["state"] == "error" and "does not exist" in failed["error"]
+        assert client.post("/api/engines/ollama/pull", json={"model": "x; rm -rf"}, headers=same).status_code == 422
+
+
+def test_claude_gets_user_and_home_outside_a_terminal(monkeypatch):
+    monkeypatch.delenv("USER", raising=False)
+    monkeypatch.delenv("LOGNAME", raising=False)
+    env = claude_cli.child_env()
+    assert env["USER"] and env["LOGNAME"] == env["USER"] and env["HOME"]

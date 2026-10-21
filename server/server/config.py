@@ -66,7 +66,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     # "" url = env OLLAMA_URL or localhost; "" model = chosen by RAM; "" voice_model = qwen3:4b-instruct
     "ollama": {"url": "", "model": "", "voice_model": ""},
     "openai_compatible": {"base_url": "", "api_key": "", "model": ""},
-    "claude_cli": {"model": "haiku"},
+    # verified: None = not checked yet, True = a real request answered, False = Claude Code isn't signed in (D85)
+    "claude_cli": {"model": "haiku", "verified": None},
     "gemini_live": {"api_key": "", "model": "gemini-3.8-live", "text_model": "gemini-3.5-flash-lite",
                     "voice": "Puck"},
     "voice": "",                              # Kokoro voice id; "" = default male voice for Mike
@@ -132,6 +133,8 @@ def _validate(settings: dict) -> dict:
     settings["telemetry_opt_in"] = bool(settings.get("telemetry_opt_in"))
     # D80: one line, no control characters, at most 60 characters.
     settings["name"] = " ".join(str(settings.get("name") or "").split())[:60]
+    if settings["claude_cli"].get("verified") not in (True, False, None):
+        settings["claude_cli"]["verified"] = None
     raw = settings.get("disconnected")
     settings["disconnected"] = sorted({e for e in raw if e in LOCAL_ENGINES}) if isinstance(raw, list) else []
     if settings.get("stt", {}).get("backend") not in ("auto", "mlx", "faster_whisper", "none"):

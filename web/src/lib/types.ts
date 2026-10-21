@@ -2,7 +2,7 @@
 
 export type EngineId = "ollama" | "openai_compatible" | "claude_cli" | "gemini_live";
 export type StatusCode =
-  | "ready" | "not_installed" | "not_running" | "no_model" | "not_configured" | "unreachable"
+  | "ready" | "unverified" | "not_installed" | "not_running" | "no_model" | "not_configured" | "unreachable"
   | "unauthorized" | "billing_required" | "disconnected" | "error";
 
 export interface EngineStatus {
@@ -48,6 +48,18 @@ export interface OllamaModelsResponse {
 export interface EngineConnectResult {
   status: EngineStatus;
   started: boolean;
+}
+
+/** The Ollama model download (D85): one at a time, run by the server in the background. */
+export interface OllamaPull {
+  model: string;
+  state: "idle" | "pulling" | "done" | "error" | "cancelled";
+  phase: "" | "manifest" | "download" | "verify";
+  error: string;
+  completed: number;
+  total: number;
+  recommended: string;
+  options: { model: string; size_gb: number }[];
 }
 
 export interface EngineTestResult {

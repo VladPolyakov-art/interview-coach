@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from . import (DATA_VERSION, __version__, config, content, engines, feedback, memory, planner, storage, stt,
                telemetry, tts)
 from .documents import DocumentError, read_file, read_url
+from .engines import claude_cli
 from .engines import ollama as ollama_engine
 from .engines.base import EngineError
 
@@ -64,6 +65,38 @@ async def ollama_models() -> dict:
             "recommended_voice": ollama_engine.VOICE_MODEL, "selected_voice": settings["ollama"].get("voice_model", "")}
 
 
+class PullRequest(BaseModel):
+    model: str = Field(min_length=1, max_length=100, pattern=r"^[\w.\-/:]+$")
+
+
+def _pull_state() -> dict:
+    return {**ollama_engine.pull.snapshot(), "recommended": ollama_engine.recommended_model(),
+            "options": [{"model": m, "size_gb": gb} for m, gb in ollama_engine.MODEL_SIZES_GB.items()]}
+
+
+@router.get("/engines/ollama/pull")
+async def ollama_pull_state() -> dict:
+    """The model download (D85): idle | pulling | done | error | cancelled, bytes so far and in all."""
+    return _pull_state()
+
+
+@router.post("/engines/ollama/pull")
+async def ollama_pull(body: PullRequest, request: Request) -> dict:
+    check_origin(request)
+    current = ollama_engine.pull.snapshot()
+    if current["state"] == "pulling" and current["model"] != body.model:
+        raise fail(409, "pull_busy", f"{current['model']} is downloading. Wait for it or cancel it first.")
+    ollama_engine.pull.start(config.ollama_url(config.load_settings()), body.model)
+    return _pull_state()
+
+
+@router.delete("/engines/ollama/pull")
+async def ollama_pull_cancel(request: Request) -> dict:
+    check_origin(request)
+    await ollama_engine.pull.cancel()
+    return _pull_state()
+
+
 @router.get("/engines/{engine_id}/status")
 async def engine_status(engine_id: str) -> dict:
     if engine_id not in engines.DESCRIPTORS:
@@ -83,6 +116,13 @@ async def engine_connect(engine_id: str, request: Request) -> dict:
     started = False
     if engine_id == "ollama" and (await engines.engine_status("ollama", settings)).code == "not_running":
         started = await ollama_engine.start(config.ollama_url(settings))
+    if engine_id == "claude_cli" and claude_cli.find_claude():
+        # D85: one real short request proves the sign-in (it costs one request on the user's plan).
+        tested = await claude_cli.ClaudeCLIEngine(settings["claude_cli"].get("model", "haiku")).test()
+        if tested.code in ("ready", "unauthorized"):
+            settings = config.update_settings({"claude_cli": {"verified": tested.ready}})
+        if not tested.ready:
+            return {"status": tested.model_dump(), "started": False}
     return {"status": (await engines.engine_status(engine_id, settings)).model_dump(), "started": started}
 
 

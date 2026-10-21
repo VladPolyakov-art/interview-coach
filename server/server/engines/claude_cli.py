@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import pwd
 import tempfile
 from typing import AsyncIterator
 
@@ -35,6 +37,27 @@ def find_claude() -> str | None:
     return find_program("claude", ("~/.claude/local/claude",))
 
 
+def child_env() -> dict[str, str]:
+    """The environment for `claude`. Launched outside a terminal the app may have no USER / LOGNAME, and then
+    Claude Code can't find its sign-in and answers "Not logged in" (seen live with a bare env, D85)."""
+    env = dict(os.environ)
+    try:
+        user = pwd.getpwuid(os.getuid())
+    except KeyError:  # pragma: no cover - no passwd entry
+        return env
+    env.setdefault("USER", user.pw_name)
+    env.setdefault("LOGNAME", user.pw_name)
+    env.setdefault("HOME", user.pw_dir)
+    return env
+
+
+def remember_sign_in(ok: bool | None) -> None:
+    """Keep the last real answer about the sign-in in settings (claude_cli.verified, D85)."""
+    from .. import config
+    if config.load_settings()["claude_cli"].get("verified") is not ok:
+        config.update_settings({"claude_cli": {"verified": ok}})
+
+
 def build_command(binary: str, model: str, system: str, stream: bool) -> list[str]:
     cmd = [binary, "-p", "--model", model, *BASE_FLAGS]
     if system:
@@ -61,9 +84,10 @@ def to_prompt(messages: list[Msg]) -> tuple[str, str]:
 class ClaudeCLIEngine(LLMEngine):
     id = "claude_cli"
 
-    def __init__(self, model: str = "haiku", binary: str | None = None):
+    def __init__(self, model: str = "haiku", binary: str | None = None, verified: bool | None = True):
         self._model = model or "haiku"
         self._binary = binary
+        self._verified = verified
         self._proc: asyncio.subprocess.Process | None = None
 
     @property
@@ -82,8 +106,17 @@ class ClaudeCLIEngine(LLMEngine):
             return EngineStatus(code="not_installed", message="The Claude Code CLI was not found on this computer.",
                                 hint="Install Claude Code, run `claude` once and sign in.", fix_url=INSTALL_URL,
                                 warnings=[TERMS_NOTE])
-        # A real sign-in check costs a request, so it runs only from POST /api/engines/claude_cli/test.
-        return EngineStatus(code="ready", ready=True, message="Claude Code CLI found.", model=self._model,
+        # D85: found is not enough. A real request (Connect, one small request on the user's plan) proves the sign-in;
+        # the answer is remembered, and a session that hits "not logged in" forgets it.
+        if self._verified is None:
+            return EngineStatus(code="unverified", message="Claude Code was found. Connect checks that you're signed in.",
+                                hint="Press Connect: it sends one short request on your Claude plan.", model=self._model,
+                                warnings=[TERMS_NOTE])
+        if self._verified is False:
+            return EngineStatus(code="unauthorized", message="Claude Code isn't signed in.",
+                                hint="Run `claude` in Terminal and sign in, then press Connect.", hint_command="claude",
+                                model=self._model, warnings=[TERMS_NOTE])
+        return EngineStatus(code="ready", ready=True, message="Claude Code is signed in.", model=self._model,
                             warnings=[TERMS_NOTE])
 
     async def chat_stream(self, messages: list[Msg], *, temperature: float = 0.6, max_tokens: int = 300,
@@ -95,7 +128,7 @@ class ClaudeCLIEngine(LLMEngine):
             system += ("\n\nOUTPUT FORMAT: plain spoken text only. No markdown, no lists, no emojis, "
                        "no stage directions, no speaker name.")
         proc = await asyncio.create_subprocess_exec(
-            *build_command(self._bin(), self._model, system, True), cwd=tempfile.gettempdir(),
+            *build_command(self._bin(), self._model, system, True), cwd=tempfile.gettempdir(), env=child_env(),
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
             limit=4 * 1024 * 1024)
         self._proc = proc
@@ -126,6 +159,8 @@ class ClaudeCLIEngine(LLMEngine):
             if error and not text:
                 low = error.lower()
                 code = "unauthorized" if ("login" in low or "auth" in low) else "engine_error"
+                if code == "unauthorized":
+                    remember_sign_in(False)
                 raise EngineError(code, error[:300], "Run `claude` in a terminal and sign in.")
         finally:
             if proc.returncode is None:
@@ -140,5 +175,7 @@ class ClaudeCLIEngine(LLMEngine):
                                 message=exc.message, hint=exc.hint, warnings=[TERMS_NOTE])
         except (asyncio.TimeoutError, OSError) as exc:
             return EngineStatus(code="error", message=f"Claude CLI did not answer ({type(exc).__name__}).")
-        return EngineStatus(code="ready", ready=bool(reply.strip()), message="Claude answered.", model=self._model,
+        if not reply.strip():
+            return EngineStatus(code="error", message="Claude Code answered with nothing.", warnings=[TERMS_NOTE])
+        return EngineStatus(code="ready", ready=True, message="Claude answered.", model=self._model,
                             warnings=[TERMS_NOTE])

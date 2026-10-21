@@ -2,8 +2,8 @@
  * Fixtures: components/engine/fixtures.tsx (no server) and docs/ia.md §6 (Alex Morgan) — never the owner's data. */
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import { EngineFixture, NONE_READY, SETTINGS, makeEngines } from "../../components/engine/fixtures";
-import type { Settings } from "../../lib/types";
+import { EngineFixture, NONE_READY, PULL_CANCELLED, PULL_DOWNLOADING, PULL_FAILED, PULL_IDLE, SETTINGS, makeEngines } from "../../components/engine/fixtures";
+import type { OllamaPull, Settings } from "../../lib/types";
 import { AboutStep } from "./AboutStep";
 import { CheckStep } from "./CheckStep";
 import { EngineStep } from "./EngineStep";
@@ -17,7 +17,7 @@ const HEARD = "Hi Mike, can you hear me?";
 const REPLY = "Loud and clear, Alex. Let's get you ready for that interview.";
 
 type Engines = ReturnType<typeof makeEngines>;
-interface SetupSceneSpec { engines?: Engines; settings?: Settings; render: () => ReactNode }
+interface SetupSceneSpec { engines?: Engines; settings?: Settings; pull?: OllamaPull; render: () => ReactNode }
 
 const check = (initial: CheckState, level?: number, speaking?: boolean) => () =>
   <SetupFrame step="check"><CheckStep onNext={noop} onBack={noop} onEngine={noop} initial={initial} level={level} speaking={speaking} /></SetupFrame>;
@@ -37,6 +37,30 @@ export const SETUP_SCENES = {
     engines: makeEngines({ ollama: "not_installed", claude_cli: "not_installed" }), settings: SETTINGS,
     render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="claude_cli" /></SetupFrame>,
   },
+  engineNoModel: {
+    engines: makeEngines({ ollama: "no_model", claude_cli: "unverified" }), settings: SETTINGS, pull: PULL_IDLE,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame>,
+  },
+  engineDownloading: {
+    engines: makeEngines({ ollama: "no_model", claude_cli: "unverified" }), settings: SETTINGS, pull: PULL_DOWNLOADING,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame>,
+  },
+  engineDownloadCancelled: {
+    engines: makeEngines({ ollama: "no_model" }), settings: SETTINGS, pull: PULL_CANCELLED,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame>,
+  },
+  engineDownloadFailed: {
+    engines: makeEngines({ ollama: "no_model" }), settings: SETTINGS, pull: PULL_FAILED,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame>,
+  },
+  engineClaudeConnect: {
+    engines: makeEngines({ ollama: "no_model", claude_cli: "unverified" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="claude_cli" /></SetupFrame>,
+  },
+  engineClaudeSignedOut: {
+    engines: makeEngines({ ollama: "no_model", claude_cli: "signed_out" }), settings: SETTINGS,
+    render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="claude_cli" /></SetupFrame>,
+  },
   engineNotRunning: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
   checkIdle: { render: check({ phase: "idle" }) },
   checkListening: { render: check({ phase: "listening" }, 0.55) },
@@ -53,7 +77,7 @@ export type SetupSceneId = keyof typeof SETUP_SCENES;
 export function SetupScene({ id }: { id: SetupSceneId }) {
   const spec: SetupSceneSpec = SETUP_SCENES[id];
   return (
-    <EngineFixture engines={spec.engines ?? makeEngines()} settings={spec.settings ?? named}>
+    <EngineFixture engines={spec.engines ?? makeEngines()} settings={spec.settings ?? named} pull={spec.pull}>
       <MemoryRouter initialEntries={["/setup"]}>{spec.render()}</MemoryRouter>
     </EngineFixture>
   );

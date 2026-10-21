@@ -14,6 +14,7 @@ export type { PresenceState } from "./Presence";
 export { Panel } from "./Panel";
 export { EmptyState } from "./EmptyState";
 export { Spinner } from "./Spinner";
+export { Progress } from "./Progress";
 export { Dialog } from "./Dialog";
 export { SettingGroup, SettingRow } from "./SettingRow";
 export { CopyField } from "./CopyField";

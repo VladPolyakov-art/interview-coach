@@ -127,6 +127,7 @@
     "recheckNote": "We check again every 5 seconds while this page is open.",
     "status": {
       "ready": "Ready",
+      "unverified": "Not connected",
       "not_installed": "Not installed",
       "not_running": "Not running",
       "no_model": "No model",
@@ -146,7 +147,6 @@
       "notRunning": "Ollama is installed but not running, so Mike can't think yet.",
       "startIt": "Connect starts it for you.",
       "noModel": "Ollama is running, but the model isn't downloaded yet.",
-      "pullHint": "Paste this into Terminal. The download is about 2.5 GB.",
       "modelLabel": "Model for typed answers",
       "modelHint": "Recommended for this computer: {model}.",
       "voiceModelLabel": "Model for voice",
@@ -158,7 +158,22 @@
       "noModels": "No models installed yet.",
       "pick": "Free, runs on this computer",
       "connectFailed": "Ollama didn't start. Open the Ollama app yourself, or paste this into Terminal:",
-      "stillMissing": "Still can't find Ollama. If you've just installed it, open it once, then press Connect again."
+      "stillMissing": "Still can't find Ollama. If you've just installed it, open it once, then press Connect again.",
+      "pull": {
+        "body": "Mike thinks with {model}. It's about {size} GB, downloads once and then works offline.",
+        "start": "Download {model}",
+        "resume": "Continue {model}",
+        "smaller": "Smaller one · {size} GB",
+        "label": "Model download",
+        "downloading": "Downloading {model}",
+        "preparing": "Preparing the download…",
+        "progress": "{done} of {total} · {pct}%",
+        "verifying": "Checking the download…",
+        "keepsGoing": "It keeps downloading if you leave this page.",
+        "failed": "The download stopped: {message}",
+        "cancelled": "Download cancelled. Continue picks up from where it stopped.",
+        "terminal": "Use Terminal instead"
+      }
     },
     "openai": {
       "name": "Other AI (OpenAI-compatible)",
@@ -188,12 +203,18 @@
     "claude": {
       "name": "Claude Code CLI",
       "tagline": "Uses the Claude Code app you already have, signed in with your own account.",
-      "detected": "Claude Code was found on this computer.",
       "notFound": "Claude Code wasn't found on this computer.",
       "install": "Install Claude Code",
       "pick": "Your own Claude plan",
       "connectHint": "Already installed? Press Connect. If not, install it, run claude in Terminal once and sign in.",
-      "stillMissing": "Still can't find Claude Code. Run claude in Terminal once, then press Connect again."
+      "stillMissing": "Still can't find Claude Code. Run claude in Terminal once, then press Connect again.",
+      "unverified": "Claude Code is installed.",
+      "connectNote": "Connect sends one short test request on your Claude plan to check that you're signed in.",
+      "checking": "Sending a test request to Claude. This can take up to a minute.",
+      "signedOut": "Claude Code isn't signed in.",
+      "signInHint": "Open Terminal, run this and sign in. Then press Connect.",
+      "failed": "Claude didn't answer: {message}",
+      "signedIn": "Signed in to Claude Code."
     },
     "gemini": {
       "name": "Gemini Live",

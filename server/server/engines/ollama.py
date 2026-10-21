@@ -104,6 +104,73 @@ async def start(url: str, wait_s: float = 15.0) -> bool:
     return False
 
 
+# ---------- model download (D85) ----------
+# Download sizes from the Ollama registry (sum of the layers), shown before the download starts.
+MODEL_SIZES_GB = {MODEL_SMALL: 2.5, MODEL_LARGE: 5.2}
+
+
+class Pull:
+    """One model download at a time, run in the background; the app polls its progress."""
+
+    def __init__(self) -> None:
+        self.model, self.state, self.phase, self.error = "", "idle", "", ""
+        self._layers: dict[str, tuple[int, int]] = {}
+        self._task: asyncio.Task | None = None
+
+    def snapshot(self) -> dict:
+        done = sum(c for c, _ in self._layers.values())
+        total = sum(t for _, t in self._layers.values())
+        return {"model": self.model, "state": self.state, "phase": self.phase, "error": self.error,
+                "completed": done, "total": total}
+
+    def start(self, url: str, model: str) -> None:
+        if self.state == "pulling":
+            return
+        self.model, self.state, self.phase, self.error, self._layers = model, "pulling", "manifest", "", {}
+        self._task = asyncio.create_task(self._run(url, model))
+
+    async def cancel(self) -> None:
+        if self._task and not self._task.done():
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+
+    async def _run(self, url: str, model: str) -> None:
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=None)) as client:
+                async with client.stream("POST", f"{url}/api/pull", json={"model": model, "stream": True}) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if line.strip():
+                            self._step(json.loads(line))
+            if self.state == "pulling":
+                raise EngineError("pull_failed", "Ollama stopped before the model was ready.")
+        except asyncio.CancelledError:
+            self.state, self.phase = "cancelled", ""
+            raise
+        except EngineError as exc:
+            self.state, self.error = "error", exc.message
+        except (httpx.HTTPError, ValueError):
+            self.state, self.error = "error", "Ollama stopped answering. Check that it is running and try again."
+
+    def _step(self, event: dict) -> None:
+        if event.get("error"):
+            raise EngineError("pull_failed", str(event["error"])[:300])
+        status = str(event.get("status", ""))
+        if event.get("digest") and event.get("total"):
+            self._layers[event["digest"]] = (int(event.get("completed") or 0), int(event["total"]))
+            self.phase = "download"
+        elif status.startswith("verifying"):
+            self.phase = "verify"
+        elif status == "success":
+            self.state, self.phase = "done", ""
+
+
+pull = Pull()
+
+
 def install_hint(model: str) -> str:
     return f"Install Ollama from {DOWNLOAD_URL}, start it, then run: ollama pull {model}"
 
