@@ -75,9 +75,11 @@ export const setupReview: ReviewScreen = {
     state("check-mic-denied", "2 · Микрофон запрещён", "checkMicDenied", { mobile: false, note: "Причина и как разрешить в браузере; «Try again» и «I'll type instead»." }),
     state("check-not-heard", "2 · Ничего не услышали", "checkNotHeard", { mobile: false, note: "Тишина или слишком тихо: подсказка про микрофон, «Try again»." }),
     state("check-engine", "2 · Движок не ответил", "checkEngine", { mobile: false, note: "Распознали, но движок не ответил: текст ошибки и «Back to AI engine»." }),
+    state("check-save-error", "2 · Голос не сохранился", "checkSaveError", { mobile: false, note: "Q8: смена голоса не сохранилась — красная плашка «Couldn't save: …» над строками, как в Settings. Раньше ошибка глоталась молча." }),
     state("about", "3 · О вас — пусто", "about", {
       note: "Три блока, всё необязательно: имя (так Майк к вам обращается), резюме — тот же редактор, что в Settings → General, вакансия и «голос / клавиатура». «Not now» — на Home, «Start the first round» — сразу в раунд. Файлы в кадре — фикстура (Alex Morgan).",
     }),
+    state("about-save-error", "3 · Имя не сохранилось", "aboutSaveError", { mobile: false, note: "Q8: имя не сохранилось — плашка над строками, введённое имя остаётся в поле. «Start» остаётся на шаге один раз, повторное нажатие идёт дальше без имени." }),
     state("about-filled", "3 · О вас — заполнено", "aboutFilled", { note: "Имя Alex, два файла, вакансия «Product Designer · Lumen». Кнопка — «Start the first round» с иконкой выбранного способа ответа." }),
   ],
 };

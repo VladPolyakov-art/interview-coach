@@ -19,6 +19,23 @@ export type Phase =
   | "done" // debrief arrived, or nothing to save
   | "failed";
 
+/** US-13 AC5 / US-04: a live session the user can pick up again. `engine`: the AI engine stopped answering ("Resume"
+ * turns on when it is back); `voice`: the connection to the server dropped. */
+export interface Interruption {
+  kind: "engine" | "voice";
+  code: string;
+  message: string;
+  /** The server has finished with this socket (saving, closed): resuming needs a new socket and the saved record. */
+  ended: boolean;
+  /** A new socket is being opened to continue the saved session. */
+  resuming?: boolean;
+  /** The last try to continue failed (the server's words, or "" for a plain "could not connect"). */
+  failed?: string;
+}
+
+/** Codes of a dead engine / session: the user can wait for it and resume. `connection_lost`: the socket itself. */
+const ENDS_SOCKET = new Set(["connection_lost", "session_failed", "resume_unavailable"]);
+
 export interface TranscriptItem {
   key: string;
   speaker: "model" | "user";
@@ -85,6 +102,10 @@ export interface SessionState {
   pending: Record<string, { turnId: number | null; threadId: string }>;
   unavailable: Record<string, { code: string; message: string; threadId: string }>;
   stronger: Record<string, StrongerState>;
+  /** "Edit what I said": feedback ids being checked again (the old feedback stays until the new one is there). */
+  rechecking: Record<string, true>;
+  /** The last check-again that failed; the editor shows it. */
+  recheckError: { feedbackId: string; code: string; message: string } | null;
   suggestion: SuggestionState | null;
   notice: { code: string; message: string } | null;
   error: ServerError | null;
@@ -94,6 +115,8 @@ export interface SessionState {
   saveError: string;
   endedReason: string;
   lastTurnMs: number | null;
+  /** Set while the session is paused by a dropped connection or a dead engine (US-13 AC5). */
+  interrupted: Interruption | null;
 }
 
 export function initialState(input: InputMode, mode: "interview" | "english" = "interview"): SessionState {
@@ -102,8 +125,8 @@ export function initialState(input: InputMode, mode: "interview" | "english" = "
     suggesterAvailable: false, suggestOn: false, warnings: [], ready: false, mikeTurnOpen: false, awaitingReply: false,
     recording: false, recordingTurnId: null, preview: "", transcript: [], threadOrder: [], currentThreadId: "",
     followUps: [], currentQuestionText: "", closing: false, threadOfTurn: {}, feedback: {}, feedbackOrder: [],
-    pending: {}, unavailable: {}, stronger: {}, suggestion: null, notice: null, error: null, fatal: null,
-    savedSessionId: "", debrief: null, saveError: "", endedReason: "", lastTurnMs: null,
+    pending: {}, unavailable: {}, stronger: {}, rechecking: {}, recheckError: null, suggestion: null, notice: null, error: null, fatal: null,
+    savedSessionId: "", debrief: null, saveError: "", endedReason: "", lastTurnMs: null, interrupted: null,
   };
 }
 
@@ -113,10 +136,16 @@ export type LocalAction =
   | { type: "local/voice_turn_dropped" }
   | { type: "local/user_turn"; turnId: number; text: string }
   | { type: "local/stronger_requested"; feedbackId: string }
+  | { type: "local/recheck_requested"; feedbackIds: string[] }
+  | { type: "local/dismiss_recheck_error" }
   | { type: "local/suggest"; on: boolean }
   | { type: "local/end_requested" }
   | { type: "local/input_changed"; input: InputMode }
   | { type: "local/socket_closed" }
+  /** "Resume" with the socket still open (the engine was down, the connection was not). */
+  | { type: "local/resumed_in_place" }
+  /** "Resume" over a new socket that continues the saved session. */
+  | { type: "local/resume_requested"; input: InputMode }
   | { type: "local/client_error"; code: string; message: string }
   | { type: "local/dismiss_notice" }
   | { type: "local/dismiss_error" };
@@ -125,6 +154,17 @@ export type SessionAction = ServerMessage | LocalAction;
 
 let keySeq = 0;
 const nextKey = (prefix: string) => `${prefix}-${++keySeq}`;
+
+/** The user has answered at least once and the round is not over: there is something to pick up again. */
+function interruptible(state: SessionState): boolean {
+  return state.phase === "live" && !!state.sessionId && !state.closing && !state.fatal
+    && state.transcript.some((x) => x.speaker === "user");
+}
+
+/** The server finished with the socket while the session was interrupted. */
+function ended(state: SessionState): SessionState {
+  return state.interrupted && !state.interrupted.ended ? { ...state, interrupted: { ...state.interrupted, ended: true } } : state;
+}
 
 function upsertUser(transcript: TranscriptItem[], turnId: number | undefined | null, text: string, threadId: string,
   lowConf?: LowConfWord[]): TranscriptItem[] {
@@ -150,7 +190,11 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     /* ---------- lifecycle ---------- */
     case "session_started":
       return {
-        ...state, phase: "live", sessionId: action.session_id, mode: action.mode, engine: action.engine,
+        ...state,
+        // Continuing a saved session: the transcript and feedback stay, what the cut-off left behind goes.
+        ...(state.interrupted ? { interrupted: null, fatal: null, error: null, savedSessionId: "", debrief: null, saveError: "",
+          endedReason: "", mikeTurnOpen: false, awaitingReply: false, recording: false, notice: null } : null),
+        phase: "live", sessionId: action.session_id, mode: action.mode, engine: action.engine,
         model: action.model, speaks: action.speaks, questions: action.questions, stt: action.stt,
         suggesterAvailable: action.suggester_available, suggestOn: action.suggest, warnings: action.warnings ?? [],
       };
@@ -318,6 +362,29 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       };
     case "stronger_unavailable":
       return { ...state, stronger: { ...state.stronger, [action.feedback_id]: { status: "unavailable", message: action.message } } };
+    case "local/recheck_requested": {
+      const rechecking = { ...state.rechecking };
+      action.feedbackIds.forEach((id) => { rechecking[id] = true; });
+      return { ...state, rechecking, recheckError: null };
+    }
+    case "local/dismiss_recheck_error":
+      return { ...state, recheckError: null };
+    case "answer_edited": {
+      const rechecking = { ...state.rechecking };
+      delete rechecking[action.feedback_id];
+      const stronger = { ...state.stronger };
+      delete stronger[action.feedback_id];           // the old stronger answer was for the old words
+      return {
+        ...state, rechecking, stronger,
+        transcript: action.turn_id == null ? state.transcript
+          : state.transcript.map((t) => (t.speaker === "user" && t.turnId === action.turn_id ? { ...t, text: action.text, lowConf: undefined } : t)),
+      };
+    }
+    case "recheck_failed": {
+      const rechecking = { ...state.rechecking };
+      delete rechecking[action.feedback_id];
+      return { ...state, rechecking, recheckError: { feedbackId: action.feedback_id, code: action.code, message: action.message } };
+    }
     case "answer_reset": {
       const removed = new Set(action.removed_feedback_ids);
       const feedback = { ...state.feedback };
@@ -350,20 +417,42 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
 
     /* ---------- end ---------- */
     case "local/end_requested":
-      return state.phase === "live" || state.phase === "connecting" ? { ...state, phase: "ending" } : state;
+      return state.phase === "live" || state.phase === "connecting" ? { ...state, phase: "ending", interrupted: null } : { ...state, interrupted: null };
     case "saving":
-      return { ...state, phase: "saving", recording: false };
+      return { ...ended(state), phase: "saving", recording: false };
     case "session_saved":
-      return { ...state, savedSessionId: action.session_id };
+      return { ...ended(state), savedSessionId: action.session_id };
     case "debrief_pending":
-      return { ...state, phase: "debrief_pending", savedSessionId: action.session_id || state.savedSessionId };
+      return { ...ended(state), phase: "debrief_pending", savedSessionId: action.session_id || state.savedSessionId };
     case "debrief":
-      return { ...state, phase: "done", debrief: action.debrief, savedSessionId: action.session_id || state.savedSessionId };
+      return { ...ended(state), phase: "done", debrief: action.debrief, savedSessionId: action.session_id || state.savedSessionId };
     case "session_ended":
-      return { ...state, phase: "done", endedReason: action.reason };
+      return { ...ended(state), phase: "done", endedReason: action.reason };
     case "save_error":
-      return { ...state, saveError: action.message };
+      // Nothing was written (US-23 AC4: the data folder is not writable): the screen says so and offers the transcript.
+      return { ...state, saveError: action.message, phase: "done" };
     case "error": {
+      // A try to continue the saved session failed: back to the interrupted card, with the reason.
+      if (state.interrupted?.resuming) {
+        return {
+          ...state, phase: "live",
+          interrupted: {
+            ...state.interrupted, resuming: false, ended: true, failed: action.message || "",
+            kind: action.code === "connection_lost" || action.code === "resume_unavailable" ? state.interrupted.kind : "engine",
+            code: action.code,
+          },
+        };
+      }
+      // Mid-session, with at least one answer on record: pause and offer to resume instead of ending the screen.
+      if (FATAL_CODES.has(action.code) && interruptible(state)) {
+        return {
+          ...state, recording: false, mikeTurnOpen: false,
+          interrupted: {
+            kind: action.code === "connection_lost" ? "voice" : "engine", code: action.code,
+            message: [action.message, action.hint].filter(Boolean).join(" "), ended: ENDS_SOCKET.has(action.code),
+          },
+        };
+      }
       if (FATAL_CODES.has(action.code)) {
         // A fatal error after saving started is not a failure of the save itself.
         if (state.phase === "saving" || state.phase === "debrief_pending") return { ...state, error: action };
@@ -374,6 +463,13 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     case "local/client_error":
       return { ...state, error: { type: "error", code: action.code, message: action.message } };
     case "local/socket_closed": {
+      if (state.interrupted?.resuming) {
+        return { ...state, phase: "live", mikeTurnOpen: false, recording: false, interrupted: { ...state.interrupted, resuming: false, ended: true, failed: "" } };
+      }
+      if (state.interrupted || interruptible(state)) {
+        const interrupted = state.interrupted ?? { kind: "voice" as const, code: "connection_lost", message: "", ended: true };
+        return { ...state, mikeTurnOpen: false, recording: false, interrupted: { ...interrupted, ended: true } };
+      }
       if (state.phase === "done" || state.phase === "failed") return { ...state, mikeTurnOpen: false, recording: false };
       if (state.savedSessionId) return { ...state, phase: "done", mikeTurnOpen: false, recording: false };
       return {
@@ -381,6 +477,12 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         fatal: state.fatal ?? { type: "error", code: "connection_lost", message: "" },
       };
     }
+    case "local/resumed_in_place":
+      return { ...state, interrupted: null, error: null };
+    case "local/resume_requested":
+      return state.interrupted
+        ? { ...state, phase: "connecting", input: action.input, recording: false, preview: "", interrupted: { ...state.interrupted, resuming: true, failed: undefined } }
+        : state;
     case "local/input_changed":
       return { ...state, input: action.input, recording: false, preview: "" };
     case "local/dismiss_notice":

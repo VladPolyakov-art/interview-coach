@@ -332,7 +332,31 @@ def _band(value: float, s2: tuple, s3: tuple) -> int:
     return 0
 
 
+def audio_facts(transcript: Transcript | None) -> dict | None:
+    """What only the recording knows: length, pace and long pauses (None for a typed answer)."""
+    if transcript is None or not transcript.words:
+        return None
+    ws = transcript.words
+    span = max(0.1, ws[-1].end - ws[0].start)
+    return {"span": span, "wpm": round(len(ws) / (span / 60)),
+            "pauses": sum(1 for a, b in zip(ws, ws[1:]) if b.start - a.end >= 2.5)}
+
+
 def delivery_layer(text: str, transcript: Transcript | None, *, main_answer: bool = True) -> dict:
+    return _delivery(text, audio_facts(transcript), main_answer)
+
+
+def redo_delivery(old: dict | None, text: str, *, main_answer: bool = True) -> dict:
+    """Delivery for a corrected answer: length, pace and pauses stay as measured from the audio, the words and the
+    filler count come from the corrected text (US-18 AC3)."""
+    metrics = (old or {}).get("metrics") or {}
+    audio = None
+    if metrics.get("mode") == "voice" and metrics.get("seconds") and metrics.get("wpm") is not None:
+        audio = {"span": float(metrics["seconds"]), "wpm": metrics["wpm"], "pauses": metrics.get("long_pauses") or 0}
+    return _delivery(text, audio, main_answer)
+
+
+def _delivery(text: str, audio: dict | None, main_answer: bool) -> dict:
     words = WORD.findall(text)
     n_words = len(words)
     fillers = len(FILLERS.findall(text))
@@ -341,12 +365,9 @@ def delivery_layer(text: str, transcript: Transcript | None, *, main_answer: boo
     metrics: dict = {"words": n_words, "fillers": fillers, "fillers_per_100w": fillers_per_100,
                      "restarts": restarts, "fillers_note": "Fillers may be undercounted by the recogniser."}
     issues: list[tuple[int, str]] = []
-    voice = transcript is not None and bool(transcript.words)
-    if voice:
-        ws = transcript.words
-        span = max(0.1, ws[-1].end - ws[0].start)
-        pauses = sum(1 for a, b in zip(ws, ws[1:]) if b.start - a.end >= 2.5)
-        wpm = round(len(ws) / (span / 60))
+    voice = audio is not None
+    if audio is not None:
+        span, wpm, pauses = audio["span"], audio["wpm"], audio["pauses"]
         metrics.update({"seconds": round(span, 1), "wpm": wpm, "long_pauses": pauses, "mode": "voice"})
         if n_words >= 15:
             sev = _band(wpm, (95, 175), (80, 195))
@@ -524,3 +545,88 @@ def apply_flag_action(record: dict, flag_id: str, action: str) -> dict:
     extra = {k: v for k, v in layer.items() if k == "phrase_to_keep"}
     record["layers"]["language"] = {**language_layer(items), **extra}
     return flag
+
+
+# ---------- Recheck: "Edit what I said" (US-18 AC3) ----------
+
+MIN_RECHECK_WORDS = 5          # the same floor as for coaching an answer at all
+
+
+def replace_fragment(answer: str, fragment: str, said: str) -> str | None:
+    """The answer with the first occurrence of what the recogniser heard swapped for what the user says they said.
+    Whitespace in the answer may differ from the normalised fragment. None when the fragment is not in the answer."""
+    words = norm(fragment).split()
+    if not words:
+        return None
+    match = re.search(r"\s+".join(re.escape(w) for w in words), answer)
+    if not match:
+        return None
+    return answer[:match.start()] + norm(said) + answer[match.end():]
+
+
+class RecheckInputError(Exception):
+    """The edit cannot be checked: `code` and `message` go to the user as they are."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code, self.message = code, message
+
+
+def corrected_answer(record: dict, text: str, flag_id: str | None = None) -> str:
+    """The whole answer after an edit. `text` is the answer itself or, with `flag_id`, what the user really said
+    instead of that correction's "Heard as" fragment."""
+    text = (text or "").strip()
+    if flag_id:
+        flag = next((i for i in ((record.get("layers") or {}).get("language") or {}).get("items") or []
+                     if i.get("id") == flag_id), None)
+        if flag is None:
+            raise RecheckInputError("not_found", "Correction not found.")
+        swapped = replace_fragment(record.get("answer", ""), flag.get("heard_as") or flag.get("original", ""), text)
+        if swapped is None:
+            raise RecheckInputError("fragment_not_found", "That part is no longer in the answer.")
+        text = swapped.strip()
+    if len(WORD.findall(text)) < MIN_RECHECK_WORDS:
+        raise RecheckInputError("too_short", "Write at least a few words to check again.")
+    return text
+
+
+def ignored_fragments(records: Iterable[dict]) -> list[str]:
+    """Fragments the user dismissed in this session: they are not flagged again (US-17 AC2)."""
+    return [i["original"] for r in records
+            for i in ((r.get("layers") or {}).get("language") or {}).get("items") or []
+            if i.get("status") == "dismissed" and i.get("original")]
+
+
+async def recheck_answer(llm: LLMEngine, record: dict, text: str, *, mode: str, level: str, known: list[str],
+                         ignored: Iterable[str] = ()) -> dict:
+    """Feedback for one corrected answer: language and content are asked again, delivery keeps the audio's length and
+    pace and recounts the fillers, and a stronger answer that existed is written again. Returns the fields to put on
+    the record and touches nothing: a failure or a cancel leaves the record as it was."""
+    text = text.strip()
+    layers: dict = {"delivery": redo_delivery((record.get("layers") or {}).get("delivery"), text,
+                                              main_answer=record.get("answer_kind") == "main")}
+    layers["language"] = await analyze_language(llm, text, level=level, known=known, low=[],
+                                                english_track=mode == "english", ignored=ignored)
+    if mode == "interview":
+        layers["content"] = await analyze_content(llm, question=record.get("question", ""),
+                                                  competency=record.get("competency", ""), transcript=text, low=[])
+    fields: dict = {"answer": text, "layers": layers, "cascade": cascade_note(layers), "complete": True,
+                    "heard_as_words": [], "edited": True}
+    if mode == "interview" and record.get("stronger"):
+        try:
+            fields["stronger"] = await stronger_version(
+                llm, question=record.get("question", ""), missing=(layers.get("content") or {}).get("missing", []),
+                transcript=text)
+        except EngineError:
+            fields["stronger"] = None              # asked for again, on demand
+    return fields
+
+
+def apply_recheck(record: dict, fields: dict) -> dict:
+    """Put the result of `recheck_answer` on the record (one step, so nothing is half-updated)."""
+    stronger = fields.get("stronger")
+    record.update({k: v for k, v in fields.items() if k != "stronger"})
+    record.pop("stronger", None)
+    if stronger:
+        record["stronger"] = stronger
+    return record

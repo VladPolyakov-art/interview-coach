@@ -139,7 +139,7 @@ const FULL: TranscriptTurn[] = [...Q1_TURNS, Q2_ASK, Q2_ANSWER, Q2_FOLLOW, Q2_FO
 const typed = (turns: TranscriptTurn[]) => turns.map((x) => (x.speaker === "user" ? { ...x, name: "You typed" } : x));
 
 export type FixtureScene =
-  | "q1-start" | "follow-up" | "listening" | "thinking" | "feedback" | "that-not-said" | "edit" | "text" | "drill" | "english"
+  | "q1-start" | "follow-up" | "listening" | "thinking" | "feedback" | "that-not-said" | "edit" | "edit-failed" | "rechecking" | "text" | "drill" | "english"
   | "connecting" | "interrupted-engine" | "interrupted-voice" | "mic-help" | "storage" | "browser" | "overflow"
   | "preparing" | "unavailable" | "muted" | "muted-talking" | "suggester";
 
@@ -197,6 +197,13 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
       return withThread({ thread: q2({ openFlag: true, dismissedFlag: true }) }, { phase: "feedback", initialOpenHeard: "f1" });
     case "edit":
       return withThread({ thread: q2(), edit: { answer: ANSWER_Q2, followUp: ANSWER_FOLLOW } }, { phase: "editing" });
+    case "edit-failed":
+      return withThread({
+        thread: q2(),
+        edit: { answer: ANSWER_Q2, followUp: ANSWER_FOLLOW, error: "Your answer was not changed. Try again in a moment." },
+      }, { phase: "editing" });
+    case "rechecking":
+      return withThread({ thread: q2() }, { phase: "rechecking" });
     case "text": {
       const th = q2({ text: true });
       th.records = th.records.map((r) => ({ ...r, source: "text" }));

@@ -58,6 +58,11 @@ export const CheckDoneMobile = mobile("checkDone");
 export const CheckMicDenied = desktop("checkMicDenied");
 export const CheckNotHeard = desktop("checkNotHeard");
 export const CheckEngineError = desktop("checkEngine");
+/** Q8: changing the voice failed: "Couldn't save: …" above the rows, like Settings. */
+export const CheckSaveError = desktop("checkSaveError");
+export const CheckSaveErrorMobile = mobile("checkSaveError");
 export const About = desktop("about");
+/** Q8: the name could not be saved: the error shows above the rows. */
+export const AboutSaveError = desktop("aboutSaveError");
 export const AboutFilled = desktop("aboutFilled");
 export const AboutFilledMobile = mobile("aboutFilled");

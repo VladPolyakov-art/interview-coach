@@ -146,6 +146,12 @@ export function SessionView(props: SessionViewProps) {
   /* D66: the dialog always closes — ×, Esc, or either way forward; an `overlay="mic-help"` state opens it only once. */
   const [micHelpClosed, setMicHelpClosed] = useState(false);
   const closeMicHelp = () => { setMicHelp(false); setMicHelpClosed(true); handlers?.onCloseMicHelp?.(); };
+  /* Live (US-06 AC2): the dialog opens by itself when the mic fails; once the failure is gone it may open again for the next one. */
+  const [prevOverlay, setPrevOverlay] = useState(overlay);
+  if (prevOverlay !== overlay) {
+    setPrevOverlay(overlay);
+    if (overlay !== "mic-help") setMicHelpClosed(false);
+  }
   const [suggestOn, setSuggestOn] = useState(data.suggestOn ?? true);
   const showSuggester = props.suggester === "on" && variant === "interview";
 
@@ -284,7 +290,7 @@ export function SessionView(props: SessionViewProps) {
                   footer={showHeard ? t("session.heard") : undefined}
                 />
               ) : null}
-              {interrupted ? <Interrupted kind={overlay === "interrupted-voice" ? "voice" : "engine"} handlers={handlers} /> : null}
+              {interrupted ? <Interrupted kind={overlay === "interrupted-voice" ? "voice" : "engine"} handlers={handlers} info={data.interrupted} /> : null}
               {showTips ? <FirstTime input={input} pauseSec={data.pauseSec} /> : null}
               {showSuggester && suggestOn && !interrupted ? <Suggester suggestion={data.suggestion} /> : null}
             </div>
@@ -298,7 +304,7 @@ export function SessionView(props: SessionViewProps) {
           ) : null}
           <div className={`${s.islandWrap} ${s.shift}`} data-input={input}>
             <div ref={islandRef} className={s.dock}>
-              <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
+              <Banners overlay={overlay} browser={props.banners?.browser} storage={props.banners?.storage} typing={Boolean(props.banners?.browser) && input === "text"} notices={data.notices} handlers={handlers} />
               {showIsland ? (
                 <div className={s.islandBox} data-input={input} data-stacked={(props.island ?? (narrowIsland ? "stacked" : "inline")) === "stacked" || undefined}>
                   <SessionIsland
@@ -314,7 +320,7 @@ export function SessionView(props: SessionViewProps) {
                     model={model}
                     interrupted={interrupted}
                     voiceDown={overlay === "interrupted-voice"}
-                    noSpeech={overlay === "browser"}
+                    noSpeech={overlay === "browser" || Boolean(props.banners?.browser)}
                     layout={props.island ?? (narrowIsland ? "stacked" : "inline")}
                     panelOpen={panelOpen}
                     onToggleFeedback={() => setPanel(!panelOpen)}
@@ -371,6 +377,7 @@ export function SessionView(props: SessionViewProps) {
         </Drawer>
       ) : null}
       <MicHelpDialog
+        reason={props.micHelpReason}
         open={(overlay === "mic-help" && !micHelpClosed) || micHelp}
         handlers={{
           ...handlers,

@@ -14,6 +14,7 @@ const noop = () => {};
 const withModel: Settings = { ...SETTINGS, ollama: { ...SETTINGS.ollama, model: "qwen3:8b" } };
 const named: Settings = { ...withModel, name: "Alex", voice: "am_eric" };
 const HEARD = "Hi Mike, can you hear me?";
+const SAVE_ERROR = "The app server is not answering.";
 const REPLY = "Loud and clear, Alex. Let's get you ready for that interview.";
 
 type Engines = ReturnType<typeof makeEngines>;
@@ -101,7 +102,16 @@ export const SETUP_SCENES = {
   checkMicDenied: { render: check({ phase: "error", code: "mic_denied" }) },
   checkNotHeard: { render: check({ phase: "error", code: "not_heard" }) },
   checkEngine: { render: check({ phase: "error", code: "engine", heard: HEARD, message: "Ollama isn't running." }) },
+  /** Q8: changing the voice failed — the same error callout as Settings, above the rows. */
+  checkSaveError: {
+    render: () => <SetupFrame step="check"><CheckStep onNext={noop} onBack={noop} onEngine={noop} initial={{ phase: "idle" }} initialSaveError={SAVE_ERROR} /></SetupFrame>,
+  },
   about: { settings: { ...named, name: "" }, render: () => <SetupFrame step="about"><AboutStep onBack={noop} /></SetupFrame> },
+  /** Q8: the name could not be saved — Start stays on the step once, the typed name stays in the field. */
+  aboutSaveError: {
+    settings: { ...named, name: "" },
+    render: () => <SetupFrame step="about"><AboutStep onBack={noop} initialSaveError={SAVE_ERROR} /></SetupFrame>,
+  },
   aboutFilled: { settings: named, render: () => <SetupFrame step="about"><AboutStep onBack={noop} initialJob="Product Designer · Lumen" /></SetupFrame> },
 } satisfies Record<string, SetupSceneSpec>;
 export type SetupSceneId = keyof typeof SETUP_SCENES;

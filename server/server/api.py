@@ -39,7 +39,8 @@ def check_origin(request: Request) -> None:
 @router.get("/health")
 async def health() -> dict:
     return {"ok": True, "version": __version__, "data_version": DATA_VERSION, "data_dir": str(config.data_dir()),
-            "web_built": config.web_dist_dir().joinpath("index.html").is_file()}
+            "web_built": config.web_dist_dir().joinpath("index.html").is_file(),
+            "storage_ok": await asyncio.to_thread(config.data_dir_writable)}      # US-23 AC4
 
 
 @router.get("/engines")
@@ -51,6 +52,12 @@ async def list_engines() -> dict:
 @router.get("/engines/ollama/models")
 async def ollama_models() -> dict:
     settings = config.load_settings()
+    if config.e2e_enabled():                        # test mode: the scripted engine's one model, no real Ollama asked
+        from .engines import scripted
+        ready = (await engines.engine_status("ollama", settings)).ready
+        return {"models": [{"name": scripted.MODEL, "size": 1, "thinking_only": False}] if ready else [],
+                "recommended": ollama_engine.MODEL_SMALL, "ram_gb": 16.0, "selected": scripted.MODEL if ready else "",
+                "recommended_voice": ollama_engine.VOICE_MODEL, "selected_voice": ""}
     engine = ollama_engine.OllamaEngine(config.ollama_url(settings), settings["ollama"].get("model", ""))
     try:
         models = await engine.list_models()
@@ -126,7 +133,11 @@ async def engine_connect(engine_id: str, request: Request) -> dict:
         settings = config.update_settings({"disconnected": [e for e in settings["disconnected"] if e != engine_id]})
     started = False
     if engine_id == "ollama" and (await engines.engine_status("ollama", settings)).code == "not_running":
-        started = await ollama_engine.start(config.ollama_url(settings))
+        if config.e2e_enabled():                    # test mode: nothing real is launched
+            from .engines import scripted
+            started = scripted.start()
+        else:
+            started = await ollama_engine.start(config.ollama_url(settings))
     if engine_id == "claude_cli" and claude_cli.find_claude():
         # D85: one real short request proves the sign-in (it costs one request on the user's plan).
         tested = await claude_cli.ClaudeCLIEngine(settings["claude_cli"].get("model", "haiku")).test()
@@ -537,6 +548,17 @@ async def restore_session(trash_id: str, request: Request) -> dict:
     return {"ok": True, "id": data.get("id")}
 
 
+@router.delete("/sessions/trash/{trash_id}")
+async def purge_session(trash_id: str, request: Request) -> dict:
+    """Delete from the trash for good (US-23 AC2); the app asks first."""
+    check_origin(request)
+    try:
+        storage.purge_trashed("sessions", trash_id)
+    except FileNotFoundError:
+        raise fail(404, "not_found", "Not in the trash.")
+    return {"ok": True, "trash_id": trash_id}
+
+
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: str) -> dict:
     return _session_or_404(session_id)
@@ -644,6 +666,69 @@ async def session_stronger(session_id: str, body: StrongerBody, request: Request
     record["stronger"] = data
     storage.save_session(session)
     return data
+
+
+class RecheckBody(BaseModel):
+    model_config = {"extra": "forbid"}
+    feedback_id: str = Field(max_length=40)
+    text: str = Field(min_length=1, max_length=4000)
+    flag_id: Optional[str] = Field(default=None, max_length=40)
+
+
+def _swap_user_line(transcript: list[dict], record: dict, old: str, new: str) -> None:
+    """The saved transcript carries what the user said too: change that line, so the chat matches the answer."""
+    lines = [t for t in transcript if t.get("role") == "user" and feedback.norm(t.get("text", "")) == feedback.norm(old)]
+    line = next((t for t in lines if t.get("kind") == record.get("answer_kind")
+                 and t.get("question_id") == record.get("question_id")), lines[0] if lines else None)
+    if line is not None:
+        line["text"] = new
+
+
+@router.post("/sessions/{session_id}/recheck")
+async def session_recheck(session_id: str, body: RecheckBody, request: Request) -> dict:
+    """US-18 AC3, "Edit what I said" in the debrief. `text` is the whole corrected answer or, with `flag_id`, what the
+    user really said instead of that correction's "Heard as" fragment. Only this answer's feedback is made again
+    (language, content, delivery recounted, stronger answer if there was one); the session is saved."""
+    from .documents import known_terms
+    check_origin(request)
+    session = _session_or_404(session_id)
+    feedbacks = session.get("feedback", [])
+    record = next((r for r in feedbacks if r.get("id") == body.feedback_id), None)
+    if record is None:
+        raise fail(404, "not_found", "Feedback not found.")
+    try:
+        text = feedback.corrected_answer(record, body.text, body.flag_id)
+    except feedback.RecheckInputError as exc:
+        raise fail(404 if exc.code == "not_found" else 422, exc.code, exc.message)
+    settings = config.load_settings()
+    engine_id = session.get("engine") if session.get("engine") in config.ENGINES else settings["engine"]
+    llm = engines.make_llm(settings, engine_id)
+    if engine_id != settings["engine"] and not (await llm.status()).ready:
+        llm = engines.make_llm(settings)                      # the session's engine is gone: the one chosen now
+    vacancy_text = ""
+    if session.get("vacancy_id"):
+        try:
+            vacancy_text = storage.read_record("vacancies", session["vacancy_id"]).get("text", "")
+        except (OSError, ValueError):
+            pass
+    try:
+        fields = await asyncio.wait_for(feedback.recheck_answer(
+            llm, record, text, mode=session.get("mode", "interview"), level=session.get("level") or settings["level"],
+            known=known_terms(storage.read_profile().get("text", ""), vacancy_text),
+            ignored=feedback.ignored_fragments(feedbacks)), timeout=180)
+    except EngineError as exc:
+        raise fail(502, exc.code, exc.message)
+    except asyncio.TimeoutError:
+        raise fail(504, "timeout", "The AI engine did not answer in time. Your answer was not changed.")
+    session = _session_or_404(session_id)          # read again: a flag may have changed while the engine worked
+    record = next((r for r in session.get("feedback", []) if r.get("id") == body.feedback_id), None)
+    if record is None:
+        raise fail(404, "not_found", "Feedback not found.")
+    old = record.get("answer", "")
+    feedback.apply_recheck(record, fields)
+    _swap_user_line(session.get("transcript") or [], record, old, record["answer"])
+    storage.save_session(session)
+    return {"feedback": record, "transcript": session.get("transcript") or []}
 
 
 @router.get("/memory")

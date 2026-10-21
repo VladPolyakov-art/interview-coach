@@ -16,6 +16,8 @@ export interface CorrectionRowProps {
   leaving?: boolean;
   /** The inline editor replaces the row. */
   editing?: boolean;
+  /** Reopen the editor with this text (after a failed check) instead of what was heard. */
+  draft?: string;
   onEdit?: () => void;
   onDismiss?: () => void;
   onRestore?: () => void;
@@ -25,7 +27,7 @@ export interface CorrectionRowProps {
   focusEditor?: boolean;
 }
 
-export function CorrectionRow({ c, dismissed, leaving, editing, onEdit, onDismiss, onRestore, onSave, onCancel, focusEditor = true }: CorrectionRowProps) {
+export function CorrectionRow({ c, dismissed, leaving, editing, draft, onEdit, onDismiss, onRestore, onSave, onCancel, focusEditor = true }: CorrectionRowProps) {
   if (dismissed) {
     return (
       <p className={`${s.removed} motion-fade`} data-review-id="Debrief/CorrectionRow/dismissed">
@@ -34,7 +36,7 @@ export function CorrectionRow({ c, dismissed, leaving, editing, onEdit, onDismis
       </p>
     );
   }
-  if (editing) return <Editor start={plain(c.heard)} label={t("debrief.lang.editorLabel")} focus={focusEditor} onSave={onSave} onCancel={onCancel} />;
+  if (editing) return <Editor start={draft ?? plain(c.heard)} label={t("debrief.lang.editorLabel")} focus={focusEditor} onSave={onSave} onCancel={onCancel} />;
   return (
     <div className={`${s.row} ${leaving ? "motion-row-out" : ""}`} data-review-id="Debrief/CorrectionRow">
       {c.turn ? <p className={s.turn}>{c.turn.at ? t("debrief.english.turnAt", { n: c.turn.n, time: c.turn.at }) : t("debrief.english.turn", { n: c.turn.n })}</p> : null}

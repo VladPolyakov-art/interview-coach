@@ -38,6 +38,9 @@ def make_llm(settings: dict | None = None, engine_id: str | None = None, *, voic
     engine_id = engine_id or settings["engine"]
     if engine_id in settings.get("disconnected", []):
         return DisconnectedEngine(engine_id)
+    if engine_id == "ollama" and config.e2e_enabled():     # IC_E2E=1 only: the scripted engine takes the Ollama slot
+        from . import scripted
+        return scripted.ScriptedEngine()
     if engine_id == "ollama":
         block = settings["ollama"]
         if voice:

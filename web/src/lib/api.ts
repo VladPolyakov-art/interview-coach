@@ -2,7 +2,7 @@
 import type {
   Debrief, EngineId, EngineLimits, EngineStatus, EnginesResponse, EngineConnectResult, EngineTestResult, Health, MemorySummary, OllamaModelsResponse, OllamaPull,
   Profile, Question, SessionRecord, SessionSummary, Settings, SettingsPatch, SttInfo, StrongerVersion, TelemetryInfo, VoiceCheckResult,
-  TrashItem, Vacancy, VacancySummary, VoicesResponse, LanguageItem, LanguageLayer,
+  TrashItem, Vacancy, VacancySummary, VoicesResponse, LanguageItem, LanguageLayer, FeedbackRecord, TranscriptTurn,
 } from "./types";
 
 export class ApiError extends Error {
@@ -106,6 +106,8 @@ export const api = {
     }),
   deleteSession: (id: string) => request<{ id: string; trash_id: string }>(`/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   trash: () => request<{ items: TrashItem[] }>("/sessions/trash"),
+  /** US-23 AC2: delete a trashed session for good (the caller asks first). */
+  purgeSession: (trashId: string) => request<{ ok: boolean; trash_id: string }>(`/sessions/trash/${encodeURIComponent(trashId)}`, { method: "DELETE" }),
   restoreSession: (trashId: string) => post<{ ok: boolean; id: string }>(`/sessions/trash/${encodeURIComponent(trashId)}/restore`),
   rerunDebrief: (id: string) => post<Debrief>(`/sessions/${encodeURIComponent(id)}/debrief`),
   sessionFlag: (id: string, flagId: string, feedbackId: string, action: "confirm" | "dismiss" | "restore") =>
@@ -113,6 +115,10 @@ export const api = {
       `/sessions/${encodeURIComponent(id)}/flags/${encodeURIComponent(flagId)}`, { feedback_id: feedbackId, action }),
   sessionStronger: (id: string, feedbackId: string) =>
     post<StrongerVersion>(`/sessions/${encodeURIComponent(id)}/stronger`, { feedback_id: feedbackId }),
+  /** "Edit what I said": this answer's feedback again from the corrected text (or from `flagId`'s fragment replaced). */
+  sessionRecheck: (id: string, feedbackId: string, text: string, flagId?: string) =>
+    post<{ feedback: FeedbackRecord; transcript: TranscriptTurn[] }>(
+      `/sessions/${encodeURIComponent(id)}/recheck`, { feedback_id: feedbackId, text, ...(flagId ? { flag_id: flagId } : {}) }),
   memory: () => request<MemorySummary>("/memory"),
   telemetry: () => request<TelemetryInfo>("/telemetry"),
   setTelemetry: (optIn: boolean, clear = false) => post<TelemetryInfo>("/telemetry", { opt_in: optIn, clear }),

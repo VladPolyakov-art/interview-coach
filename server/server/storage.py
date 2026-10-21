@@ -138,6 +138,16 @@ def restore_record(kind: str, trash_id: str) -> dict:
     return data
 
 
+def purge_trashed(kind: str, trash_id: str) -> None:
+    """Delete a trashed record and its rendered Markdown for good (US-23 AC2). FileNotFoundError if not in trash."""
+    source = _folder(f"trash/{kind}") / f"{_check_id(trash_id)}.json"
+    with _lock:
+        if not source.exists():
+            raise FileNotFoundError(trash_id)
+        source.unlink()
+        source.with_suffix(".md").unlink(missing_ok=True)
+
+
 # ---------- Profile ----------
 
 def profile_path() -> Path:

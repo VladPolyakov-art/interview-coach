@@ -8,8 +8,8 @@ export default meta;
 export const Default: StoryObj = {
   render: () => (
     <nav aria-label="Main" style={{ width: 208, display: "flex", flexDirection: "column", gap: "var(--space-1)", padding: "var(--space-4)", background: "var(--color-sidebar)", borderRadius: "var(--radius-lg)" }}>
-      <NavRow href="#practice" label="Practice" icon="practice" current />
-      <NavRow href="#history" label="History" icon="history" />
+      <NavRow href="#practice" label="Home" icon="practice" current />
+      <NavRow href="#history" label="Archive" icon="history" />
       <NavRow href="#settings" label="Settings" icon="settings" />
     </nav>
   ),

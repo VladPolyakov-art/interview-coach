@@ -53,6 +53,7 @@ export function PanelBody({ mode, variant, input, data, layerOrder, withChecks, 
           input={input}
           answer={data.edit?.answer ?? ""}
           followUp={data.edit?.followUp}
+          error={data.edit?.error}
           withChecks={withChecks}
           handlers={handlers}
         />

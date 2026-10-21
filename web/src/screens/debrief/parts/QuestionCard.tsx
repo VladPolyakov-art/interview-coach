@@ -24,6 +24,8 @@ export interface QuestionCardProps {
   rechecking: boolean;
   /** The answer itself is being edited. */
   answerEditing: boolean;
+  /** Reopen the answer editor with this text (after a failed check). */
+  answerDraft?: string;
   onEditAnswer?: () => void;
   onSaveAnswer?: (text: string) => void;
   onCancelAnswer?: () => void;
@@ -47,7 +49,7 @@ function useClamped(ref: RefObject<HTMLElement | null>, expanded: boolean): bool
   return over;
 }
 
-function Answer({ q, answerEditing, onEditAnswer, onSaveAnswer, onCancelAnswer, focusEditor }: Pick<QuestionCardProps, "q" | "answerEditing" | "onEditAnswer" | "onSaveAnswer" | "onCancelAnswer" | "focusEditor">) {
+function Answer({ q, answerEditing, answerDraft, onEditAnswer, onSaveAnswer, onCancelAnswer, focusEditor }: Pick<QuestionCardProps, "q" | "answerEditing" | "answerDraft" | "onEditAnswer" | "onSaveAnswer" | "onCancelAnswer" | "focusEditor">) {
   const [expanded, setExpanded] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
   const clamped = useClamped(ref, expanded);
@@ -58,7 +60,7 @@ function Answer({ q, answerEditing, onEditAnswer, onSaveAnswer, onCancelAnswer, 
         {q.edited ? <Badge icon="edit">{t("debrief.q.edited")}</Badge> : null}
       </h4>
       {answerEditing ? (
-        <Editor start={plain(q.answer)} label={t("debrief.lang.editorLabel")} focus={focusEditor} onSave={onSaveAnswer} onCancel={onCancelAnswer} />
+        <Editor start={answerDraft ?? plain(q.answer)} label={t("debrief.lang.editorLabel")} focus={focusEditor} onSave={onSaveAnswer} onCancel={onCancelAnswer} />
       ) : (
         <>
           <p ref={ref} className={`${s.answer} ${expanded ? "" : s.clamp}`}><Marked parts={q.answer} /></p>
@@ -141,7 +143,7 @@ export function QuestionCard(p: QuestionCardProps) {
   const body = (
     <div className={s.body} data-review-id="Debrief/QuestionBody">
       {q.followUp && !p.fixed ? <p className={s.followUp}><span className={s.lead}>{t("debrief.q.followUp")}</span> {q.followUp}</p> : null}
-      <Answer q={q} answerEditing={p.answerEditing} onEditAnswer={p.onEditAnswer} onSaveAnswer={p.onSaveAnswer} onCancelAnswer={p.onCancelAnswer} focusEditor={p.focusEditor} />
+      <Answer q={q} answerEditing={p.answerEditing} answerDraft={p.answerDraft} onEditAnswer={p.onEditAnswer} onSaveAnswer={p.onSaveAnswer} onCancelAnswer={p.onCancelAnswer} focusEditor={p.focusEditor} />
       {q.followUpAnswer && !p.fixed ? (
         <section className={s.part}>
           <h4 className={s.label}>{t("debrief.q.yourFollowUp")}</h4>

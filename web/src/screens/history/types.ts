@@ -1,5 +1,6 @@
 /* View model of the History list (ds/screens/debrief.md §4). Pure data: the live container maps `SessionSummary` into
  * it, stories and the review page use the fixtures. */
+import type { HTMLAttributes } from "react";
 export type Track = "interview" | "english";
 export type TrackFilter = "all" | Track;
 export type HistoryState = "ready" | "loading" | "error";
@@ -59,4 +60,31 @@ export interface HistoryViewProps {
   onUnarchive?: (id: string) => void | Promise<boolean | void>;
   onRetry?: () => void;
   className?: string;
+}
+
+/* Trash (US-23 AC2): a deleted chat that can be restored or deleted for good. */
+export interface TrashRowModel {
+  /** The trash id (not the session id): what Restore and Delete forever address. */
+  id: string;
+  title: string;
+  /** Local ISO time the chat started, and the time it was deleted. */
+  startedAt: string;
+  deletedAt: string;
+}
+
+export interface TrashViewProps {
+  state: HistoryState;
+  rows: TrashRowModel[];
+  /** A success line above the list ("Restored.", "Deleted for good."). */
+  notice?: string;
+  /** An action failed: error callout above the list. */
+  error?: string;
+  /** Local UI a static state can start in: the row whose "Delete forever" confirm is open. */
+  ui?: { confirming?: string };
+  /** Per-row attributes: first-load stagger and the slide-out of a leaving row (the caller owns the motion). */
+  rowMotion?: (id: string, index: number) => HTMLAttributes<HTMLLIElement>;
+  /** `li` is the row element, so the caller can move focus before the row leaves. */
+  onRestore?: (id: string, li: HTMLElement | null) => void;
+  onPurge?: (id: string, li: HTMLElement | null) => void;
+  onRetry?: () => void;
 }

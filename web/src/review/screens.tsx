@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { sessionReview } from "../screens/session/review";
 import { homeReview } from "../screens/home/review";
-import { historyReview } from "../screens/history/review";
+import { historyReview, trashReview } from "../screens/history/review";
 import { debriefReview } from "../screens/debrief/review";
 import { engineReview } from "../screens/engine/review";
 import { setupReview } from "../screens/setup/review";
@@ -33,4 +33,4 @@ export interface ReviewScreen {
   states: ReviewState[];
 }
 
-export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, engineReview, setupReview, shellReview];
+export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, trashReview, engineReview, setupReview, shellReview];

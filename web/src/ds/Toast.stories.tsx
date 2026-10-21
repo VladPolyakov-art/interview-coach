@@ -25,7 +25,7 @@ function Buttons() {
   const toast = useToast();
   return (
     <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", padding: "var(--space-4)" }}>
-      <Button size="sm" onClick={() => toast.show({ message: "Moved to Trash.", action: { label: "Undo", onClick: () => toast.show({ message: "Restored to History." }) } })}>Move to Trash</Button>
+      <Button size="sm" onClick={() => toast.show({ message: "Moved to Trash.", action: { label: "Undo", onClick: () => toast.show({ message: "Restored." }) } })}>Move to Trash</Button>
       <Button size="sm" onClick={() => toast.show({ tone: "error", message: "Couldn't save the title. Try again." })}>Show an error</Button>
     </div>
   );

@@ -5,13 +5,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Callout, EmptyState, motionMemory } from "../ds";
 import { t, tMaybe } from "../i18n";
+import { api } from "../lib/api";
 import { useElapsed } from "../lib/hooks";
 import { pendingSave } from "../lib/pendingSave";
+import { useStorageWritable } from "../lib/storageProbe";
 import { useApp } from "../lib/store";
+import type { EngineId } from "../lib/types";
 import { selectThreads, type SessionState } from "../session/reducer";
+import { editTargets, heardEdit, recheckEdits } from "../session/recheck";
 import { useSession, type SessionConfig } from "../session/useSession";
 import { SessionView } from "./session/SessionView";
-import type { PanelMode, SessionData, SessionHandlers, SessionPhase, TranscriptTurn } from "./session/types";
+import type { PanelMode, SessionData, SessionHandlers, SessionOverlay, SessionPhase, TranscriptTurn } from "./session/types";
 import s from "./Session.module.css";
 
 interface LocationState { config?: SessionConfig; title?: string }
@@ -33,6 +37,19 @@ export function SessionScreen() {
 
 const ENGINE_CODES = new Set(["not_installed", "not_running", "no_model", "not_configured", "unreachable", "unauthorized", "billing_required"]);
 const STRICT = { 1: "gentle", 2: "standard", 3: "tough" } as const;
+/** The mic problems that open the help dialog by themselves (US-06 AC2); the rest are plain notices. */
+const MIC_HELP: Record<string, "blocked" | "none"> = { not_allowed: "blocked", not_found: "none" };
+
+/** The transcript as a Markdown file for the user to keep when the session could not be saved (US-23 AC4). */
+function downloadTranscript(title: string, items: SessionState["transcript"]) {
+  const body = items.map((x) => `**${x.speaker === "user" ? t("session.you") : t("session.interviewer")}:** ${x.text}`).join("\n\n");
+  const url = URL.createObjectURL(new Blob([`# ${title}\n\n${body}\n`], { type: "text/markdown" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "transcript.md";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 /** The reducer's flags -> the view's phase (ds/screens/session.md §4). The live app never shows "between": Mike goes on
  * by himself after an answer, so the feedback panel simply updates beside the stage. */
@@ -51,6 +68,8 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   const { state, playing, muted, micError, actions, getLevel } = useSession(config);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [readyMsg, setReadyMsg] = useState("");
+  const [browserDismissed, setBrowserDismissed] = useState(false);
+  const storageOk = useStorageWritable();
   const live = state.phase === "live";
   const voice = state.input !== "text";
   const english = state.mode === "english";
@@ -62,18 +81,31 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
 
   /* Done and saved while still here (the server ended the session): go to the debrief. */
   useEffect(() => {
-    if (state.phase === "done" && state.savedSessionId) navigate(`/sessions/${state.savedSessionId}`, { replace: true });
-  }, [state.phase, state.savedSessionId, navigate]);
+    if (state.phase === "done" && state.savedSessionId && !state.interrupted) navigate(`/sessions/${state.savedSessionId}`, { replace: true });
+  }, [state.phase, state.savedSessionId, state.interrupted, navigate]);
 
   const threads = useMemo(() => selectThreads(state), [state]);
   const userTurns = state.transcript.filter((x) => x.speaker === "user").length;
+
+  /* "Edit what I said" (US-18 AC3): the editor lives in the feedback panel; saving sends only the changed answers to
+   * be checked again over the socket. The draft stays until the check succeeds, so a failure opens the editor again
+   * with the user's words and the reason (nothing is lost, the old feedback is untouched). */
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<{ answer: string; followUp?: string } | null>(null);
+  const recheckBusy = Object.keys(state.rechecking).length > 0;
+  const threadKey = threads.at(-1)?.key;
+  useEffect(() => { setEditing(false); setDraft(null); }, [threadKey]);
+  useEffect(() => {
+    if (state.recheckError && draft && !recheckBusy) setEditing(true);
+    else if (!state.recheckError && !recheckBusy && draft && !editing) setDraft(null);
+  }, [state.recheckError, recheckBusy, draft, editing]);
 
   /* D73: with an answer on record the server saves the session and writes the debrief by itself (the socket is not
    * needed), so End goes Home at once and the shell's toast says when it is ready (lib/pendingSave). Without an
    * answer nothing is saved: stay for that message. */
   const end = () => {
     const id = state.sessionId;
-    const leave = !!id && userTurns > 0 && (state.phase === "live" || state.phase === "connecting");
+    const leave = !!id && userTurns > 0 && storageOk && (state.phase === "live" || state.phase === "connecting" || !!state.interrupted);
     actions.end();
     if (!leave) return;
     pendingSave.start(id);
@@ -81,7 +113,32 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   };
   const questionIndex = state.threadOrder.indexOf(state.currentThreadId);
   const total = state.questions.length;
-  const phase = phaseOf(state, playing);
+  const phase: SessionPhase = state.interrupted ? "interrupted" : phaseOf(state, playing);
+
+  /* US-13 AC5 (D94): Resume on the interrupted card turns on once the engine answers again (checked every few seconds
+   * while the card shows); a dropped connection can always be tried again. Gemini Live cannot pick a session up again. */
+  const paused = state.interrupted;
+  const engineWait = paused?.kind === "engine" && !paused.resuming ? state.engine : "";
+  const [engineReady, setEngineReady] = useState(false);
+  useEffect(() => {
+    if (!engineWait) { setEngineReady(false); return; }
+    let alive = true;
+    const check = () => { api.engineStatus(engineWait as EngineId).then((r) => { if (alive) setEngineReady(r.ready); }).catch(() => { if (alive) setEngineReady(false); }); };
+    check();
+    const id = window.setInterval(check, 5000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, [engineWait]);
+  const geminiGone = paused?.ended && state.engine === "gemini_live";
+  const canResume = !geminiGone && (paused?.kind === "voice" || engineReady || !!paused?.ended);
+
+  /* US-23 AC1 / D73 guard: closing the tab mid-session would lose the unsaved answers' feedback; ask first. */
+  const guard = live && userTurns > 0 && !state.interrupted;
+  useEffect(() => {
+    if (!guard) return;
+    const onLeave = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, [guard]);
 
   /* Announce when a thread's feedback is complete (polite live region, not while the user talks). */
   const announced = useRef(new Set<string>());
@@ -116,7 +173,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   }, [live, title, english, userTurns, total, questionIndex]);
 
   /* ---------- terminal states ---------- */
-  if (state.phase === "failed") {
+  if (state.phase === "failed" && !state.interrupted) {
     const code = state.fatal?.code ?? "session_failed";
     const engine = ENGINE_CODES.has(code);
     return (
@@ -137,20 +194,25 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
       </main>
     );
   }
-  if (state.phase === "done" && !state.savedSessionId) {
+  if (state.phase === "done" && !state.savedSessionId && !state.interrupted) {
     return (
       <main className={s.center} id="main">
         <EmptyState
           icon="info"
           title={t("session.orb.ended")}
-          actions={<Button variant="primary" onClick={() => navigate("/")}>{t("session.backHome")}</Button>}
+          actions={(
+            <>
+              {state.saveError && state.transcript.length ? <Button variant="secondary" icon="download" onClick={() => downloadTranscript(title, state.transcript)}>{t("session.errors.downloadTranscript")}</Button> : null}
+              <Button variant="primary" onClick={() => navigate("/")}>{t("session.backHome")}</Button>
+            </>
+          )}
         >
           {state.saveError ? t("session.errors.saveFailed") + " " + state.saveError : t("session.notSaved")}
         </EmptyState>
       </main>
     );
   }
-  if (state.phase === "ending" || state.phase === "saving" || state.phase === "debrief_pending" || state.phase === "done") {
+  if (!state.interrupted && (state.phase === "ending" || state.phase === "saving" || state.phase === "debrief_pending" || state.phase === "done")) {
     return (
       <main className={s.center} id="main">
         <p className="shimmer-text" role="status" aria-busy="true">
@@ -195,7 +257,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
 
   const notices: NonNullable<SessionData["notices"]> = [];
   if (!state.recording) {
-    if (micError) notices.push({ id: "mic", tone: "warning", text: tMaybe(`session.mic.${micError}`, t("session.mic.failed")) });
+    if (micError && micError !== "stt_unsupported" && !MIC_HELP[micError]) notices.push({ id: "mic", tone: "warning", text: tMaybe(`session.mic.${micError}`, t("session.mic.failed")) });
     if (state.notice && state.notice.code !== "muted_speech") notices.push({ id: "notice", tone: "info", text: state.notice.message, onDismiss: actions.dismissNotice });
     if (state.error) notices.push({ id: "error", tone: "error", text: [state.error.message, state.error.hint].filter(Boolean).join(" "), onDismiss: actions.dismissError });
     if (state.closing) notices.push({ id: "closing", tone: "info", title: t("session.closing.title"), text: t("session.closing.body"), action: { label: t("session.closing.debrief"), onClick: end } });
@@ -226,14 +288,36 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     pauseSec: config.pauseSec,
     notices,
     closing: state.closing,
+    interrupted: paused
+      ? { engine: state.engine as EngineId, input: state.input === "text" ? "text" : "voice", canResume, resuming: paused.resuming, failed: paused.failed }
+      : undefined,
   };
+  if (editing && current) {
+    const { main, follow } = editTargets(current.records);
+    data.edit = {
+      answer: draft?.answer ?? main?.answer ?? "",
+      followUp: draft ? draft.followUp : follow?.answer,
+      error: state.recheckError ? tMaybe(`session.edit.err.${state.recheckError.code}`, t("session.edit.failed")) : undefined,
+    };
+  }
+  // A failed "No, I said..." has no editor to come back to: say so as a notice.
+  if (state.recheckError && !draft && !editing && !state.recording) {
+    notices.push({ id: "recheck", tone: "error", text: tMaybe(`session.edit.err.${state.recheckError.code}`, t("session.edit.failed")), onDismiss: actions.dismissRecheckError });
+  }
 
   /* The panel keeps the latest feedback while Mike asks the next question; nothing new appears while the user speaks. */
+  const rechecking = Boolean(current?.records.some((r) => state.rechecking[r.id]));
+  const canEdit = Boolean(current && !state.recording && !rechecking && current.records.length && !current.pendingIds.length && current.records.every((r) => r.complete));
   const panel: PanelMode = state.recording ? "p1"
+    : editing ? "edit"
+    : rechecking ? "recheck"
     : !current ? (userTurns > 0 ? "p1" : "p0")
     : current.records.length ? "p3"
     : current.pendingIds.length ? "p2"
     : current.unavailable.length ? "p4" : "p0";
+
+  const micHelp = micError ? MIC_HELP[micError] : undefined;
+  const overlay: SessionOverlay = paused ? (paused.kind === "engine" ? "interrupted-engine" : "interrupted-voice") : micHelp ? "mic-help" : "none";
 
   const handlers: SessionHandlers = {
     onEnd: end,
@@ -244,13 +328,29 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     onTypeInstead: actions.switchToText,
     onUseVoice: actions.switchToVoice,
     // D66: the mic help dialog's ways forward (they did nothing in the live app).
-    onUseText: actions.switchToText,
+    onUseText: () => (state.interrupted ? actions.resume("text") : actions.switchToText()),
+    onResume: () => actions.resume(),
+    onDismissBanner: () => setBrowserDismissed(true),
+    onFixSettings: () => { window.open("/settings/privacy", "_blank", "noopener"); },
     onTryAgain: actions.retryMic,
     onSendText: actions.sendText,
     onFlag: actions.flag,
     onStronger: actions.stronger,
     onSetSuggest: actions.setSuggest,
     onSeeDebrief: end,
+    onEdit: canEdit ? () => { actions.dismissRecheckError(); setEditing(true); } : undefined,
+    onSaveEdit: (answer, followUp) => {
+      const edits = recheckEdits(current?.records ?? [], answer, followUp);
+      setEditing(false);
+      if (!edits.length) { setDraft(null); return; }
+      setDraft({ answer, followUp });
+      actions.recheck(edits);
+    },
+    onCancelEdit: () => { actions.dismissRecheckError(); setEditing(false); setDraft(null); },
+    onSaveHeard: (feedbackId, flagId, said) => {
+      const edit = heardEdit(state.feedback[feedbackId], flagId, said);
+      if (edit) actions.recheck([edit]);
+    },
   };
 
   return (
@@ -260,7 +360,9 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
         variant={english ? "english" : "interview"}
         input={voice ? "voice" : "text"}
         phase={phase}
-        overlay="none"
+        overlay={overlay}
+        micHelpReason={micHelp}
+        banners={{ browser: micError === "stt_unsupported" && !browserDismissed, storage: !storageOk }}
         firstTime={userTurns === 0 && !state.closing}
         muted={muted}
         micLevel={0}
@@ -271,6 +373,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
         data={data}
         handlers={handlers}
         panel={panel}
+        panelOpen={editing || rechecking ? true : undefined}
         entering
         autoFocusComposer
         globalKeys

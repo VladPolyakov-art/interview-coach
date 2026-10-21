@@ -49,7 +49,7 @@ function Contained() {
         title="Delete Kestrel Pay?"
         actions={<><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button variant="danger" onClick={() => setOpen(false)}>Delete job</Button></>}
       >
-        <p>Your two sessions for this job stay in History.</p>
+        <p>Your two sessions for this job stay in Recents and Archive.</p>
       </Dialog>
     </Frame>
   );

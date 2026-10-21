@@ -8,5 +8,6 @@
   "small_talk": "I'm good, thanks. {question}",
   "long_silence": "Take your time.",
   "redo_ack": "Sure, go ahead.",
+  "resume_opening": "Sorry about that, we got cut off. Let's pick up where we left off. {question}",
   "voice_sample": "Hi, I'm Mike. Can you walk me through a project you're proud of?"
 }

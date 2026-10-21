@@ -45,6 +45,18 @@ def data_dir() -> Path:
     return path
 
 
+def data_dir_writable() -> bool:
+    """US-23 AC4: can sessions be written? A real write and remove of a small file in the data folder (a read-only
+    mount, a full disk and a missing permission all show up here; os.access does not catch them all)."""
+    try:
+        probe = data_dir() / f".write-test-{os.getpid()}-{threading.get_ident()}"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
+
 def content_dir() -> Path:
     override = os.getenv("IC_CONTENT_DIR", "").strip()
     return Path(override).expanduser() if override else SERVER_ROOT / "content"
@@ -53,6 +65,11 @@ def content_dir() -> Path:
 def web_dist_dir() -> Path:
     override = os.getenv("IC_WEB_DIST", "").strip()
     return Path(override).expanduser() if override else APP_ROOT / "web" / "dist"
+
+
+def e2e_enabled() -> bool:
+    """IC_E2E=1: the end-to-end test mode (scripted engine, /api/_e2e/*). Off everywhere else, and invisible when off."""
+    return os.getenv("IC_E2E", "").strip() == "1"
 
 
 HOST = os.getenv("IC_HOST", "127.0.0.1").strip() or "127.0.0.1"

@@ -117,7 +117,7 @@ export interface SettingsPatch {
   questions_per_session?: number;
 }
 
-export interface Health { ok: boolean; version: string; data_version: number; data_dir: string; web_built: boolean }
+export interface Health { ok: boolean; version: string; data_version: number; data_dir: string; web_built: boolean; /** US-23 AC4: a probe write into the data folder worked. */ storage_ok?: boolean }
 
 export interface Voice { id: string; label: string; locale: string; gender: string }
 /** POST /api/check/voice (D81). `audio`: Mike's reply as base64 WAV, null when speech is off. */
@@ -292,6 +292,8 @@ export interface FeedbackRecord {
   cascade?: string;
   heard_as_words?: LowConfWord[];
   stronger?: StrongerVersion;
+  /** The user corrected what they said ("Edit what I said"): the feedback was made again from this text. */
+  edited?: boolean;
   layers: { delivery?: DeliveryLayer; language?: LanguageLayer; content?: ContentLayer };
 }
 
@@ -323,6 +325,8 @@ export interface StartMessage {
   suggest: boolean;
   topic?: string;
   engine?: EngineId;
+  /** US-13 AC5: continue this saved session (after a dropped connection) instead of starting a new one. */
+  resume_session_id?: string;
 }
 
 export type ClientMessage =
@@ -333,6 +337,7 @@ export type ClientMessage =
   | { type: "redo_answer" }
   | { type: "suggest"; on: boolean }
   | { type: "request_stronger"; feedback_id: string }
+  | { type: "recheck"; feedback_id: string; text: string; flag_id?: string }
   | { type: "flag_action"; feedback_id: string; flag_id: string; action: "confirm" | "dismiss" | "restore" }
   | { type: "input_mode"; input: InputMode }
   | { type: "silence" }
@@ -395,6 +400,8 @@ export type ServerMessage =
   | { type: "stronger_version"; feedback_id: string; rewrite: string; placeholders: string[] }
   | { type: "stronger_unavailable"; feedback_id: string; code: string; message: string }
   | { type: "answer_reset"; question: string; removed_feedback_ids: string[] }
+  | { type: "answer_edited"; feedback_id: string; turn_id: number | null; text: string }
+  | { type: "recheck_failed"; feedback_id: string; code: string; message: string }
   | { type: "suggestion_pending"; question: string }
   | { type: "suggestion"; question: string; story: string; answer: string; points: string[] }
   | { type: "suggestion_unavailable"; question: string; code: string; message: string }

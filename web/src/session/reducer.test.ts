@@ -150,4 +150,32 @@ describe("sessionReducer", () => {
       { type: "feedback", feedback: record("fb-2", "", { answer_kind: "turn" }) }], initialState("text", "english"));
     expect(selectThreads(s).map((t) => t.number)).toEqual([1, 2]);
   });
+  it("checks an answer again: the old feedback stays until the new one is there, then the words and the stronger answer follow", () => {
+    let s = run([started, ...askQ("B1"), { type: "local/user_turn", turnId: 1, text: "Last year we has redesigned it." },
+      { type: "feedback", feedback: record("fb-1", "B1", { answer: "Last year we has redesigned it." }) },
+      { type: "stronger_version", feedback_id: "fb-1", rewrite: "old", placeholders: [] }]);
+    s = run([{ type: "local/recheck_requested", feedbackIds: ["fb-1"] }], s);
+    expect(s.rechecking).toEqual({ "fb-1": true });
+    expect(s.feedback["fb-1"]!.answer).toBe("Last year we has redesigned it.");
+    s = run([{ type: "feedback", feedback: record("fb-1", "B1", { answer: "Last year we redesigned it.", edited: true }) },
+      { type: "answer_edited", feedback_id: "fb-1", turn_id: 1, text: "Last year we redesigned it." }], s);
+    expect(s.rechecking).toEqual({});
+    expect(s.feedback["fb-1"]).toMatchObject({ answer: "Last year we redesigned it.", edited: true });
+    expect(s.transcript.find((t) => t.speaker === "user")!.text).toBe("Last year we redesigned it.");
+    expect(s.stronger["fb-1"]).toBeUndefined();
+  });
+
+  it("keeps the old answer when the check fails and remembers the error until it is dismissed", () => {
+    let s = run([started, ...askQ("B1"), { type: "feedback", feedback: record("fb-1", "B1") },
+      { type: "local/recheck_requested", feedbackIds: ["fb-1"] },
+      { type: "recheck_failed", feedback_id: "fb-1", code: "timeout", message: "The engine did not answer." }]);
+    expect(s.rechecking).toEqual({});
+    expect(s.recheckError).toEqual({ feedbackId: "fb-1", code: "timeout", message: "The engine did not answer." });
+    expect(s.feedback["fb-1"]!.answer).toBe("answer text");
+    s = run([{ type: "local/dismiss_recheck_error" }], s);
+    expect(s.recheckError).toBeNull();
+    // A new request clears an old error too.
+    s = run([{ type: "recheck_failed", feedback_id: "fb-1", code: "busy", message: "x" }, { type: "local/recheck_requested", feedbackIds: ["fb-1"] }], s);
+    expect(s.recheckError).toBeNull();
+  });
 });

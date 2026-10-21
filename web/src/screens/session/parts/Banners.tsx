@@ -7,12 +7,15 @@ import { t } from "../../../i18n";
 import type { SessionData, SessionHandlers, SessionOverlay } from "../types";
 import s from "./parts.module.css";
 
-export function Banners({ overlay, notices, handlers }: {
-  overlay: SessionOverlay; notices: SessionData["notices"]; handlers?: SessionHandlers;
+export function Banners({ overlay, browser, storage, typing, notices, handlers }: {
+  overlay: SessionOverlay; browser?: boolean; storage?: boolean;
+  /** Live: the session already runs by typing (it fell back when speech was unavailable), so "Use text mode" is moot. */
+  typing?: boolean;
+  notices: SessionData["notices"]; handlers?: SessionHandlers;
 }) {
   const [dismissed, setDismissed] = useState(false);
-  const showBrowser = overlay === "browser" && !dismissed;
-  const showStorage = overlay === "storage";
+  const showBrowser = (overlay === "browser" || browser) && !dismissed;
+  const showStorage = overlay === "storage" || storage;
   if (!showBrowser && !showStorage && !notices?.length) return null;
   return (
     <div className={s.banners} data-review-id="Session/Banner" data-review-section="Session · Banners" data-comment-target>
@@ -23,7 +26,7 @@ export function Banners({ overlay, notices, handlers }: {
           title={t("session.banner.browserTitle")}
           actions={
             <>
-              <Button variant="secondary" size="sm" icon="keyboard" onClick={handlers?.onUseText}>{t("session.banner.useText")}</Button>
+              {typing ? null : <Button variant="secondary" size="sm" icon="keyboard" onClick={handlers?.onUseText}>{t("session.banner.useText")}</Button>}
               <IconButton icon="x" size="sm" label={t("session.banner.dismiss")} onClick={() => { setDismissed(true); handlers?.onDismissBanner?.(); }} />
             </>
           }

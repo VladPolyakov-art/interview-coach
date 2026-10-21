@@ -8,9 +8,10 @@ import { captureErrorCode, VoiceCapture, type CaptureError } from "../audio/capt
 import { micLevel } from "../audio/level";
 import { Playback } from "../audio/playback";
 import { prefs } from "../lib/prefs";
-import type { ClientMessage, ServerMessage, StartMessage } from "../lib/types";
+import type { ClientMessage, InputMode, ServerMessage, StartMessage } from "../lib/types";
 import { t } from "../i18n";
 import { initialState, sessionReducer } from "./reducer";
+import type { RecheckEdit } from "./recheck";
 
 export interface SessionConfig {
   start: StartMessage;
@@ -160,9 +161,15 @@ export function useSession(config: SessionConfig) {
   }, []);
 
   /* ---------- socket lifecycle ---------- */
-  useEffect(() => {
-    const start = configRef.current.start;
-    if (start.speak || start.input !== "text") ensureAudio();
+  /** Open the session socket and send `start`. Also the way back after a dropped connection: a `start` with
+   * `resume_session_id` makes the server continue the saved session on a new socket (US-13 AC5). */
+  const openSocket = useCallback((start: StartMessage) => {
+    const previous = ws.current;
+    if (previous) {
+      previous.onmessage = null;
+      previous.onclose = null;
+      if (previous.readyState === WebSocket.OPEN || previous.readyState === WebSocket.CONNECTING) previous.close();
+    }
     const socket = new WebSocket(socketUrl());
     socket.binaryType = "arraybuffer";
     ws.current = socket;
@@ -170,7 +177,7 @@ export function useSession(config: SessionConfig) {
     socket.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
       if (ws.current !== socket) return;
       if (event.data instanceof ArrayBuffer) {
-        if (!stateRef.current.recording) playback.current?.enqueue(event.data);
+        if (!stateRef.current.recording && !stateRef.current.interrupted) playback.current?.enqueue(event.data);
         return;
       }
       let msg: ServerMessage;
@@ -187,11 +194,20 @@ export function useSession(config: SessionConfig) {
       if (ws.current !== socket) return;
       dispatch({ type: "local/socket_closed" });
     };
+  }, []);
+
+  useEffect(() => {
+    const start = configRef.current.start;
+    if (start.speak || start.input !== "text") ensureAudio();
+    openSocket(start);
     return () => {
+      const socket = ws.current;
       ws.current = null;
-      socket.onmessage = null;
-      socket.onclose = null;
-      if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.close();
+      if (socket) {
+        socket.onmessage = null;
+        socket.onclose = null;
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) socket.close();
+      }
       stopMic();
       playback.current?.stop();
       playback.current = null;
@@ -199,18 +215,23 @@ export function useSession(config: SessionConfig) {
       ctx.current = null;
       if (context && context.state !== "closed") void context.close().catch(() => {});
     };
-  }, [stopMic, ensureAudio]);
+  }, [stopMic, ensureAudio, openSocket]);
 
-  /* Start the mic once the session is live (voice input only). */
+  /* Start the mic once the session is live (voice input only), not while it is paused by an interruption. */
   useEffect(() => {
-    if (state.phase === "live" && state.input !== "text" && !capture.current) void startMic();
-  }, [state.phase, state.input, startMic]);
+    if (state.phase === "live" && state.input !== "text" && !state.interrupted && !capture.current) void startMic();
+  }, [state.phase, state.input, state.interrupted, startMic]);
 
   /* Voice turns are allowed only while the session is live and before Mike's closing line. */
   useEffect(() => {
-    capture.current?.setEnabled(state.phase === "live" && !state.closing);
-    if (state.phase !== "live" && state.phase !== "connecting") stopMic();
-  }, [state.phase, state.closing, stopMic]);
+    capture.current?.setEnabled(state.phase === "live" && !state.closing && !state.interrupted);
+    if ((state.phase !== "live" && state.phase !== "connecting") || state.interrupted) stopMic();
+  }, [state.phase, state.closing, state.interrupted, stopMic]);
+
+  /* An interruption stops Mike's voice at once (the dialogue stays on screen, nothing new is said until Resume). */
+  useEffect(() => {
+    if (state.interrupted) playback.current?.stop();
+  }, [state.interrupted]);
 
   /* Close the socket once the session is over. */
   useEffect(() => {
@@ -220,7 +241,7 @@ export function useSession(config: SessionConfig) {
   /* ---------- actions ---------- */
   const end = useCallback(() => {
     const s = stateRef.current;
-    if (s.phase !== "live" && s.phase !== "connecting") return;
+    if (s.phase !== "live" && s.phase !== "connecting" && !s.interrupted) return;
     capture.current?.cancel();
     playback.current?.stop();
     dispatch({ type: "local/end_requested" });
@@ -266,6 +287,19 @@ export function useSession(config: SessionConfig) {
       dispatch({ type: "local/stronger_requested", feedbackId });
       send({ type: "request_stronger", feedback_id: feedbackId });
     },
+    /** "Edit what I said": each changed answer is checked again on the server (the old feedback stays until it is there). */
+    recheck(edits: RecheckEdit[]) {
+      if (!edits.length) return;
+      if (ws.current?.readyState !== WebSocket.OPEN) {
+        dispatch({ type: "recheck_failed", feedback_id: edits[0]!.feedbackId, code: "connection_lost", message: t("session.edit.failed") });
+        return;
+      }
+      dispatch({ type: "local/recheck_requested", feedbackIds: edits.map((e) => e.feedbackId) });
+      edits.forEach((e) => send({ type: "recheck", feedback_id: e.feedbackId, text: e.text, ...(e.flagId ? { flag_id: e.flagId } : {}) }));
+    },
+    dismissRecheckError() {
+      dispatch({ type: "local/dismiss_recheck_error" });
+    },
     setSuggest(on: boolean) {
       dispatch({ type: "local/suggest", on });
       send({ type: "suggest", on });
@@ -297,6 +331,30 @@ export function useSession(config: SessionConfig) {
         dispatch({ type: "local/input_changed", input });
       } else void startMic();
     },
+    /** US-13 AC5: pick the session up again. The engine came back with the socket still open: just carry on. The
+     * connection is gone: a new socket continues the saved session, by voice or (`"text"`) by typing. */
+    resume(wanted?: "text") {
+      const s = stateRef.current;
+      const paused = s.interrupted;
+      if (!paused || paused.resuming) return;
+      const socketOpen = ws.current?.readyState === WebSocket.OPEN && !paused.ended;
+      if (wanted === "text") {
+        stopMic();
+        if (socketOpen) send({ type: "input_mode", input: "text" });
+      }
+      if (socketOpen) {
+        if (wanted === "text") dispatch({ type: "local/input_changed", input: "text" });
+        dispatch({ type: "local/resumed_in_place" });
+        return;
+      }
+      const input: InputMode = wanted === "text" || s.input === "text" ? "text" : browserRef.current ? "browser_stt" : "voice";
+      if (input !== "text") {
+        ensureAudio();
+        setMicError(null);
+      }
+      dispatch({ type: "local/resume_requested", input });
+      openSocket({ ...configRef.current.start, input, resume_session_id: s.sessionId });
+    },
     dismissNotice() {
       dispatch({ type: "local/dismiss_notice" });
     },
@@ -304,7 +362,7 @@ export function useSession(config: SessionConfig) {
       dispatch({ type: "local/dismiss_error" });
     },
     end,
-  }), [send, stopMic, startMic, ensureAudio, end, muted]);
+  }), [send, stopMic, startMic, ensureAudio, openSocket, end, muted]);
 
   const getLevel = useCallback(() => level.current, []);
 

@@ -47,6 +47,9 @@ def create_app() -> FastAPI:
                   openapi_url="/api/openapi.json", lifespan=lifespan)
     app.include_router(api.router)
     app.include_router(ws.router)
+    if config.e2e_enabled():                             # IC_E2E=1 (browser tests) only: reset, steer the scripted engine, seed
+        from . import e2e
+        app.include_router(e2e.router)
 
     @app.middleware("http")
     async def no_store(request, call_next):

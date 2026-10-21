@@ -60,6 +60,8 @@ export interface RowContext {
   isDismissed: (id: string, base?: boolean) => boolean;
   isLeaving: (id: string) => boolean;
   editing: string | null;
+  /** The text to reopen the editor with after a failed check. */
+  draft?: string;
   focusEditor: boolean;
   onEdit?: (id: string) => void;
   onDismiss?: (id: string) => void;
@@ -82,6 +84,7 @@ export function LanguageLayer({ block, ctx }: { block: LanguageBlock; ctx: RowCo
           dismissed={ctx.isDismissed(c.id, c.dismissed)}
           leaving={ctx.isLeaving(c.id)}
           editing={ctx.editing === c.id}
+          draft={ctx.editing === c.id ? ctx.draft : undefined}
           focusEditor={ctx.focusEditor}
           onEdit={ctx.onEdit ? () => ctx.onEdit?.(c.id) : undefined}
           onDismiss={ctx.onDismiss ? () => ctx.onDismiss?.(c.id) : undefined}

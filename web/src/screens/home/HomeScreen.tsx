@@ -4,7 +4,7 @@
  * Gaps the server has today (🟡, home.md §9): no "technical" round (runs as the mixed round, B2), no field for the
  * user's note (UI only, B3), no questions status (we track the prepare call, B5), the last interview's job and round
  * are not in SessionSummary (remembered job + remembered round, B8), Drill = a 3-question mixed session (B7), no
- * recurring-phrases data (English phrases empty), no profile name (h1 without the name, US-08 AC3).
+ * recurring-phrases data (English phrases empty). The greeting uses `settings.name` (Q4, US-08 AC3).
  * Quick start (D51 item 1, quickStart.ts): the round mic at the composer's end (D53) opens the session straight away with the last settings.
  * D90: in the chat with Mike that mic dictates into the field instead (audio/dictation.ts); the words join what's typed. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -248,6 +248,7 @@ export function HomeScreen() {
       <HomeView
         step={setup ? "setup" : "start"}
         track={setup?.track ?? track}
+        name={settings?.name?.trim() || undefined}
         loading={loading}
         engineReady={engineReady}
         engineBanner={selectedEngine && !engineReady

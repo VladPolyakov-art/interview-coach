@@ -61,7 +61,7 @@ class TextDriver:
                  on_audio_chunk: Optional[Callable] = None, on_notice: Optional[Callable] = None,
                  on_preview: Optional[Callable] = None, on_error: Optional[Callable] = None,
                  on_user_transcript: Optional[Callable] = None, on_metrics: Optional[Callable] = None,
-                 gate: ModelGate | None = None, **_ignored) -> None:
+                 gate: ModelGate | None = None, resume: dict | None = None, **_ignored) -> None:
         self.llm = llm
         self.mode = mode
         self.plan = list(plan or [])
@@ -95,6 +95,12 @@ class TextDriver:
         self.q_index = 0
         self.follow_ups: list[str] = []
         self.finished = False
+        self._resume = resume                   # a saved session being continued (ws.py loads it): history, position
+        if resume:
+            self.transcript_history = list(resume["history"])
+            self.q_index = min(int(resume.get("q_index", 0)), max(len(self.plan) - 1, 0))
+            self.follow_ups = list(resume.get("follow_ups", []))
+            self.finished = bool(resume.get("finished"))
         self._repeat_offered = False            # the last line was "Would you like me to repeat the question?"
         self._snapshots: list[tuple[int, list[str], bool]] = []
         self._running = False
@@ -128,7 +134,7 @@ class TextDriver:
             await asyncio.to_thread(tts.kokoro_model, self.settings)
         if self.on_ready:
             self.on_ready()
-        self._reply_task = self._spawn(self._opening())
+        self._reply_task = self._spawn(self._resume_opening() if self._resume else self._opening())
         async for chunk in audio_input_stream:
             if not self._running:
                 break
@@ -282,6 +288,28 @@ class TextDriver:
                     if self.topic else content.copy("english_opening", name=self.settings.get("name", "")))
             meta = {"kind": "turn"}
         self._metrics = {"turn_id": None, "t0": time.perf_counter(), "stt_ms": None, "opening": True}
+        await self._deliver(self._from_list(_sentences(text)), lambda: meta)
+
+    async def _resume_opening(self) -> None:
+        """US-13 AC5: the session was cut off and is continued from its saved transcript. An answer without a reply
+        gets its reply now; otherwise Mike says sorry and asks again what he was waiting for."""
+        self._metrics = {"turn_id": None, "t0": time.perf_counter(), "stt_ms": None, "opening": True}
+        last = self.transcript_history[-1] if self.transcript_history else None
+        if last and last["role"] == "user":
+            self._hold()
+            await self._respond(last["text"], None)
+            return
+        if self.finished:
+            await self._deliver(self._from_list([content.copy("interview_closing")]), lambda: {"kind": "closing"})
+            return
+        question = self.current_question()
+        if question:
+            asked = self.follow_ups[-1] if self.follow_ups else question.text
+            meta = {"kind": "repeat", "question_id": question.id, "thread_id": question.id}
+        else:
+            asked = last["text"] if last else ""
+            meta = {"kind": "turn"}
+        text = content.copy("resume_opening", question=asked)
         await self._deliver(self._from_list(_sentences(text)), lambda: meta)
 
     async def _respond(self, answer: str, transcript: Transcript | None) -> None:

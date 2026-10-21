@@ -10,8 +10,8 @@ export default meta;
 
 const railBody = (
   <nav aria-label="Main" style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-    <NavRow href="#practice" label="Practice" icon="practice" current />
-    <NavRow href="#history" label="History" icon="history" />
+    <NavRow href="#practice" label="Home" icon="practice" current />
+    <NavRow href="#history" label="Archive" icon="history" />
     <NavRow href="#settings" label="Settings" icon="settings" />
   </nav>
 );

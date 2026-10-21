@@ -5,7 +5,7 @@ import storybook from "eslint-plugin-storybook";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "storybook-static", "node_modules", "public", ".screens"] },
+  { ignores: ["dist", "storybook-static", "node_modules", "public", ".screens", ".e2e-dist", ".e2e-data", "playwright-report", "test-results"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

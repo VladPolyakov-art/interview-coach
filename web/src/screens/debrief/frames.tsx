@@ -50,8 +50,16 @@ export interface DebriefSceneSpec {
   layerOrder?: LayerOrder;
   ui?: DebriefUi;
   storageError?: boolean;
+  /** An action failed: the error callout under the header. */
+  notice?: string;
   route?: string;
 }
+
+/** Q2 after a recheck: the answer carries the "Edited by you" badge. */
+const interviewEdited: DebriefModel = {
+  ...interviewS2,
+  questions: interviewS2.questions.map((q) => (q.n === 2 ? { ...q, edited: true } : q)),
+};
 
 const base = { variant: "interview", state: "ready" } as const;
 
@@ -64,6 +72,10 @@ export const DEBRIEF_SCENES = {
   interviewRename: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, renaming: true } },
   interviewRecheck: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, editing: { question: 2, correction: "q2-led" } } },
   interviewRechecking: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, rechecking: 2 } },
+  /** Q2 checked again from the corrected text: the badge says the answer is the user's version. */
+  interviewEdited: { ...base, model: interviewEdited, ui: { open: DEFAULT_OPEN.s2 } },
+  /** The check failed: the old feedback stays and a callout says so. */
+  interviewRecheckFailed: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2 }, notice: "Couldn't check that answer again. It was not changed. The model took too long to answer." },
   english: { variant: "english", state: "ready", model: englishS3, route: "/sessions/s3" },
   exampleContentFirst: { variant: "example", state: "ready", model: exampleSam, ui: { open: DEFAULT_OPEN.example }, route: "/sessions/example" },
   exampleDeliveryFirst: { variant: "example", state: "ready", model: exampleSam, layerOrder: "delivery-first", ui: { open: DEFAULT_OPEN.example }, route: "/sessions/example" },
@@ -92,6 +104,7 @@ export function DebriefScene({ id }: { id: DebriefSceneId }) {
           layerOrder={spec.layerOrder ?? "content-first"}
           ui={spec.ui}
           storageError={spec.storageError}
+          notice={spec.notice}
         />
       </AppShellView>
     </MemoryRouter>

@@ -1,6 +1,8 @@
 /* History fixtures: docs/ia.md §6 (Alex Morgan, Product Designer; sessions S1–S3). All fictional. The overflow set is
  * separate from the S1–S3 mock so `data` keeps invariant 1 (ds/screens/_index.md §2). "Today" is fixed. */
-import type { HistoryRowModel } from "./types";
+import type { HistoryRowModel, TrashRowModel } from "./types";
+
+const LONG_TITLE_TRASH = "Northwind Logistics International · Senior Product Designer, Platform and Internal Tools";
 
 /** Tue Oct 20, 2026: S2 (Oct 19) is "This week", S1 and S3 are "Last week". */
 export const HISTORY_NOW = new Date(2026, 9, 20, 12, 0);
@@ -20,6 +22,12 @@ export const S1: HistoryRowModel = {
   startedAt: "2026-10-17T19:10:00", durationS: 14 * 60, result: "Not ready yet",
   question: "Why do you want to move from agency work to a product team?",
 };
+
+/** Trash: two deleted chats, one with a long title. Fictional (Alex Morgan, Kestrel Pay). */
+export const trashData: TrashRowModel[] = [
+  { id: "t2", title: "Kestrel Pay · Senior Product Designer", startedAt: "2026-10-16T18:30:00", deletedAt: "2026-10-19T09:12:00" },
+  { id: "t1", title: LONG_TITLE_TRASH, startedAt: "2026-10-12T20:00:00", deletedAt: "2026-10-18T22:40:00" },
+];
 
 export const historyData: HistoryRowModel[] = [S2, S3, S1];
 

@@ -63,6 +63,28 @@ def test_trash_restore_and_conflicts(client):
     assert client.get("/api/sessions/..%2F.env").status_code == 404
 
 
+def test_purge_from_trash_is_permanent_and_checked(client):
+    record = session_record()
+    storage.save_session(record)
+    sid = record["id"]
+    other = {**session_record(), "id": "keep-me"}
+    storage.save_session(other)
+    client.delete(f"/api/sessions/{sid}", headers=SAME)
+    trash_id = client.get("/api/sessions/trash").json()["items"][0]["trash_id"]
+    trashed = storage.data_dir() / "trash" / "sessions"
+    assert (trashed / f"{trash_id}.json").exists()
+    endpoint = f"/api/sessions/trash/{trash_id}"
+    assert client.delete(endpoint, headers=OTHER).status_code == 403          # origin-checked like restore
+    assert (trashed / f"{trash_id}.json").exists()
+    assert client.delete(endpoint, headers=SAME).status_code == 200
+    assert not list(trashed.glob(f"{trash_id}.*"))                            # the record and its Markdown are gone
+    assert client.get("/api/sessions/trash").json()["items"] == []
+    assert client.delete(endpoint, headers=SAME).status_code == 404           # already gone
+    assert client.post(f"{endpoint}/restore", headers=SAME).status_code == 404
+    assert client.delete("/api/sessions/trash/not.an.id", headers=SAME).status_code == 404
+    assert client.get(f"/api/sessions/{other['id']}").status_code == 200       # live records untouched
+
+
 def test_settings_mask_keys_and_validate(client):
     response = client.post("/api/settings", headers=SAME,
                            json={"engine": "openai_compatible",

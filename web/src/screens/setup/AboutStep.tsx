@@ -1,6 +1,6 @@
 /* Setup → About you (D81). Everything optional (US-02 AC3): the name Mike calls you by (D80), the CV files (D79, the
  * same editor as Settings → General), the job, voice or keyboard — then the first round starts right here. */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Icon, Input, Segmented, SettingGroup, SettingRow } from "../../ds";
 import { t } from "../../i18n";
@@ -13,6 +13,7 @@ import { useApp } from "../../lib/store";
 import type { InputMode } from "../../lib/types";
 import { buildSessionConfig } from "../../session/startConfig";
 import { StepFooter, StepHead, type HeadingRef } from "./SetupFrame";
+import { useSetupSave } from "./useSetupSave";
 import s from "./Setup.module.css";
 
 const NAME_MAX = 60;
@@ -23,11 +24,15 @@ export interface AboutStepProps {
   onBack: () => void;
   /** Review and stories: a job already added. */
   initialJob?: string;
+  /** Review and stories: a failed save of the name (Q8). */
+  initialSaveError?: string;
 }
 
-export function AboutStep({ headingRef, onBack, initialJob = "" }: AboutStepProps) {
+export function AboutStep({ headingRef, onBack, initialJob = "", initialSaveError }: AboutStepProps) {
   const navigate = useNavigate();
-  const { settings, updateSettings } = useApp();
+  const { settings } = useApp();
+  const { save, view: saveView } = useSetupSave(initialSaveError);
+  const blocked = useRef(false);
   const stt = useLoad(() => api.stt());
   const [name, setName] = useState<string | null>(null);
   const [job, setJob] = useState(initialJob);
@@ -35,14 +40,18 @@ export function AboutStep({ headingRef, onBack, initialJob = "" }: AboutStepProp
   const [answer, setAnswer] = useState<Answer>(prefs.input() === "text" ? "text" : "voice");
   const value = name ?? settings?.name ?? "";
 
-  const saveName = () => {
-    if (name === null) return Promise.resolve();
+  /** Resolves `false` when the save failed: the typed name stays in the field and the error shows above the rows. */
+  const saveName = async () => {
+    if (name === null) return true;
     const next = name.split(/\s+/).filter(Boolean).join(" ").slice(0, NAME_MAX);
-    setName(null);
-    return next !== settings?.name ? updateSettings({ name: next }).then(() => {}, () => {}) : Promise.resolve();
+    if (next === (settings?.name ?? "")) { setName(null); return true; }
+    const ok = await save({ name: next });
+    if (ok) setName(null);
+    return ok;
   };
-  const finish = (start: boolean) => {
-    void saveName();
+  const finish = async (start: boolean) => {
+    // A failed save keeps the step open once so the error can be read; pressing again goes on without the name.
+    if (!(await saveName()) && !blocked.current) { blocked.current = true; return; }
     prefs.setSetupDone(true);
     prefs.setInput(answer);
     if (!start) {
@@ -57,6 +66,7 @@ export function AboutStep({ headingRef, onBack, initialJob = "" }: AboutStepProp
   return (
     <>
       <StepHead headingRef={headingRef} title={t("setup.about.title")} sub={t("setup.about.subtitle")} />
+      {saveView}
       <div className={s.body}>
         <div data-review-id="Setup/About/Name" data-review-section="Setup · About you · Name" data-comment-target>
           <SettingGroup title={t("setup.about.nameGroup")}>
@@ -88,8 +98,8 @@ export function AboutStep({ headingRef, onBack, initialJob = "" }: AboutStepProp
         </div>
       </div>
       <StepFooter back={<Button variant="ghost" icon="chevronLeft" onClick={onBack}>{t("common.back")}</Button>}>
-        <Button variant="ghost" onClick={() => finish(false)}>{t("setup.about.later")}</Button>
-        <Button variant="primary" icon={answer === "voice" ? "mic" : "keyboard"} onClick={() => finish(true)}>{t("setup.about.start")}</Button>
+        <Button variant="ghost" onClick={() => void finish(false)}>{t("setup.about.later")}</Button>
+        <Button variant="primary" icon={answer === "voice" ? "mic" : "keyboard"} onClick={() => void finish(true)}>{t("setup.about.start")}</Button>
       </StepFooter>
       <VacancyEditor open={editor} onClose={() => setEditor(false)}
         onSaved={(v) => { setEditor(false); setJob(v.title); prefs.setVacancy(v.id); void api.vacancyQuestions(v.id).catch(() => {}); }} />

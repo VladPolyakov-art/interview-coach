@@ -202,6 +202,7 @@ function questionModel(record: SessionRecord, th: Thread, opts: MapOptions): Que
     duration: main?.layers.delivery?.metrics?.seconds != null && !typedAnswer ? formatClock(main.layers.delivery.metrics.seconds) : undefined,
     followUps: follow.length,
     misheard: dismissed || undefined,
+    edited: main?.edited || undefined,
     unavailable,
     followUp: followUpText(record, th.key),
     answer: main ? answerSegments(main.answer, main.heard_as_words) : [],

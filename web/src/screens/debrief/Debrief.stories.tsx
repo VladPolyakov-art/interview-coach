@@ -28,6 +28,10 @@ export const InterviewRename = desktop("interviewRename");
 export const InterviewRecheck = desktop("interviewRecheck");
 /** Q2 after Save and check again: shimmer line and skeleton, the rest unchanged. */
 export const InterviewRechecking = desktop("interviewRechecking");
+/** Q2 checked again from the corrected text: "Edited by you" on the card. */
+export const InterviewEdited = desktop("interviewEdited");
+/** The check failed (engine slow or down): nothing changed, a callout says why. */
+export const InterviewRecheckFailed = desktop("interviewRecheckFailed");
 /** §3.6: summary, corrections in order with their turn, phrases to review. */
 export const English = desktop("english");
 export const EnglishMobile = mobile("english");

@@ -68,12 +68,78 @@ def parse_start(data: dict, settings: dict) -> dict:
     if vacancy_id and not storage.RECORD_ID.fullmatch(str(vacancy_id)):
         raise ValueError("vacancy_id")
     topic = str(data.get("topic") or "")[:80]
+    resume_id = str(data.get("resume_session_id") or "")
+    if resume_id and not storage.RECORD_ID.fullmatch(resume_id):
+        raise ValueError("resume_session_id")
     voice = str(data.get("voice") or settings.get("voice") or "")
     return {"mode": mode, "round_type": round_type, "engine": engine, "questions": questions,
             "strictness": strictness, "input": input_mode, "vacancy_id": vacancy_id, "topic": topic,
             "level": config.normalize_level(data.get("level") or settings["level"]),
             "voice": voice, "speak": data.get("speak", True) is not False,
-            "suggest": bool(data.get("suggest", False))}
+            "suggest": bool(data.get("suggest", False)), "resume": resume_id}
+
+
+# US-13 AC5: a session cut off by the connection can be picked up again from its saved record.
+SAVED: dict[str, asyncio.Event] = {}      # session id -> set once the cut-off socket has written its record
+OWNER: dict[str, object] = {}             # session id -> the socket that runs it now (a resumed one replaces the old)
+
+
+class ResumeError(Exception):
+    def __init__(self, message: str, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.message = message
+        self.retryable = retryable
+
+
+def resume_state(saved: dict) -> tuple[list[content.Question], dict]:
+    """The plan and the interviewer's position (question, follow-ups, round over) rebuilt from a saved record."""
+    plan = [content.Question(id=q["id"], competency=q.get("competency", ""), text=q["text"],
+                             follow_ups={f["tag"]: f["text"] for f in q.get("follow_ups", [])},
+                             source=q.get("source", "bank"), anchor=q.get("anchor", ""))
+            for q in saved.get("questions", [])]
+    history = [{k: v for k, v in turn.items()} for turn in saved.get("transcript", [])]
+    q_index, follow_ups, finished = 0, [], False
+    for turn in history:
+        if turn["role"] != "model":
+            continue
+        kind = turn.get("kind")
+        if kind == "question" and turn.get("question_id"):
+            q_index = next((i for i, q in enumerate(plan) if q.id == turn["question_id"]), q_index)
+            follow_ups = []
+        elif kind == "follow_up":
+            follow_ups.append(turn["text"])
+        elif kind == "closing":
+            finished = True
+    return plan, {"history": history, "q_index": q_index, "follow_ups": follow_ups, "finished": finished}
+
+
+def resume_records(saved: dict, history: list[dict]) -> list[dict]:
+    """Saved feedback records with their history index back (it is not stored): matched by the answer text."""
+    used: set[int] = set()
+    records = []
+    for record in saved.get("feedback", []):
+        record = dict(record)
+        index = next((i for i, turn in enumerate(history)
+                      if turn["role"] == "user" and i not in used and turn["text"] == record.get("answer")),
+                     len(history) - 1)
+        used.add(index)
+        record["history_index"] = index
+        records.append(record)
+    return records
+
+
+async def load_resume(session_id: str) -> dict:
+    """The saved record to continue. The cut-off socket may still be writing it (feedback in progress): wait for it."""
+    waiting = SAVED.get(session_id)
+    if waiting is not None:
+        try:
+            await asyncio.wait_for(waiting.wait(), timeout=100)
+        except asyncio.TimeoutError:
+            raise ResumeError("Your answers are still being saved. Try again in a few seconds.", retryable=True)
+    try:
+        return await asyncio.to_thread(storage.read_record, "sessions", session_id)
+    except (OSError, ValueError):
+        raise ResumeError("This session isn't saved on this computer, so it can't be continued.")
 
 
 @router.websocket("/ws/session")
@@ -88,10 +154,14 @@ async def session_socket(websocket: WebSocket) -> None:
     feedback_queue: asyncio.Queue = asyncio.Queue(maxsize=16)
     suggest_queue: asyncio.Queue = asyncio.Queue(maxsize=1)
     overflow = asyncio.Event()
-    state = {"suggest": False, "voice_turn": 0, "pending_voice": False, "connected": True, "normal": False}
+    saved_event = asyncio.Event()      # set once this socket's session is written (a resume waits for it)
+    state = {"suggest": False, "voice_turn": 0, "pending_voice": False, "connected": True, "normal": False,
+             "saved": saved_event, "owner": object()}
+    resume_saved: dict | None = None
     records: list[dict] = []           # feedback records, in answer order
     dropped: set[str] = set()          # feedback ids removed by "redo answer"
     ignored_terms: set[str] = set()
+    rechecking: set[str] = set()       # feedback ids being checked again after "Edit what I said"
     side_tasks: set[asyncio.Task] = set()
     driver = None
     opts: dict = {}
@@ -287,6 +357,30 @@ async def session_socket(websocket: WebSocket) -> None:
             emit("stronger_unavailable", feedback_id=record["id"], code=getattr(exc, "code", "internal"),
                  message="Could not write a stronger version of this answer.")
 
+    async def recheck_task(record: dict, text: str) -> None:
+        """"Edit what I said" (US-18 AC3): this answer's feedback again from the corrected text. The record, the
+        history Mike answers from and the client change only when everything is ready."""
+        try:
+            fields = await asyncio.wait_for(in_background(lambda: feedback.recheck_answer(
+                llm, record, text, mode=opts["mode"], level=opts["level"], known=opts.get("context_terms", []),
+                ignored=ignored_terms | set(feedback.ignored_fragments(records)))), timeout=180)
+            feedback.apply_recheck(record, fields)
+            history = driver.transcript_history
+            if 0 <= record.get("history_index", -1) < len(history):
+                history[record["history_index"]]["text"] = record["answer"]
+            emit("feedback", feedback=public_record(record))
+            emit("answer_edited", feedback_id=record["id"], turn_id=record["turn_id"], text=record["answer"])
+            if record.get("stronger"):
+                emit("stronger_version", feedback_id=record["id"], **record["stronger"])
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            emit("recheck_failed", feedback_id=record["id"],
+                 code="timeout" if isinstance(exc, asyncio.TimeoutError) else getattr(exc, "code", "internal"),
+                 message=getattr(exc, "message", "") or "Could not check this answer again. Your answer was not changed.")
+        finally:
+            rechecking.discard(record["id"])
+
     async def mic_generator():
         while True:
             chunk = await audio_queue.get()
@@ -364,6 +458,28 @@ async def session_socket(websocket: WebSocket) -> None:
                     task = asyncio.create_task(stronger_task(record))
                     side_tasks.add(task)
                     task.add_done_callback(side_tasks.discard)
+            elif kind == "recheck":
+                record = next((r for r in records if r["id"] == data.get("feedback_id")), None)
+                text = data.get("text")
+                flag_id = data.get("flag_id")
+                if record is None or not record.get("complete"):
+                    emit("recheck_failed", feedback_id=data.get("feedback_id"), code="not_found",
+                         message="That feedback is not ready yet.")
+                elif not isinstance(text, str) or len(text) > MAX_TEXT_TURN or not (flag_id is None or isinstance(flag_id, str)):
+                    raise ValueError("invalid_recheck")
+                elif record["id"] in rechecking:
+                    emit("recheck_failed", feedback_id=record["id"], code="busy",
+                         message="This answer is already being checked.")
+                else:
+                    try:
+                        corrected = feedback.corrected_answer(record, text, flag_id)
+                    except feedback.RecheckInputError as exc:
+                        emit("recheck_failed", feedback_id=record["id"], code=exc.code, message=exc.message)
+                    else:
+                        rechecking.add(record["id"])
+                        task = asyncio.create_task(recheck_task(record, corrected))
+                        side_tasks.add(task)
+                        task.add_done_callback(side_tasks.discard)
             elif kind == "flag_action":
                 record = next((r for r in records if r["id"] == data.get("feedback_id")), None)
                 try:
@@ -412,6 +528,20 @@ async def session_socket(websocket: WebSocket) -> None:
             error(status.code, status.message or "The AI engine is not ready.", status.hint, retryable=True,
                   hint_command=status.hint_command, fix_url=status.fix_url, engine=engine_id)
             return
+        if opts["resume"]:
+            if engine_id == "gemini_live":
+                error("resume_unavailable", "Gemini Live can't pick a session up again. Your answers are saved: "
+                      "see the debrief or start a new session.", retryable=False)
+                return
+            try:
+                resume_saved = await load_resume(opts["resume"])
+            except ResumeError as exc:
+                error("resume_unavailable", exc.message, retryable=exc.retryable)
+                return
+            opts.update(mode=resume_saved.get("mode", opts["mode"]), round_type=resume_saved.get("round_type", "mix"),
+                        level=resume_saved.get("level", opts["level"]),
+                        strictness=resume_saved.get("strictness", opts["strictness"]),
+                        vacancy_id=resume_saved.get("vacancy_id", ""))
         llm = get_llm(settings, engine_id, voice)
         usage.start_session(engine_id)              # D88: this session's requests, and the plan's limit around it
         if engine_id == "gemini_live":
@@ -433,8 +563,12 @@ async def session_socket(websocket: WebSocket) -> None:
                 opts["vacancy_id"] = ""
         from .documents import known_terms
         opts.update(profile=profile, jd=jd, context_terms=known_terms(profile, jd))
-        plan = planner.plan_questions(opts["round_type"], opts["questions"], extra=extra) \
-            if opts["mode"] == "interview" else []
+        resume_info = None
+        if resume_saved:
+            plan, resume_info = resume_state(resume_saved)
+        else:
+            plan = planner.plan_questions(opts["round_type"], opts["questions"], extra=extra) \
+                if opts["mode"] == "interview" else []
         state["suggest"] = opts["suggest"] and settings["answer_suggester"]
         callbacks = dict(
             on_audio_chunk=audio,
@@ -470,7 +604,7 @@ async def session_socket(websocket: WebSocket) -> None:
                 on_notice=lambda code, text: emit("notice", code=code, message=text),
                 on_preview=lambda text: emit("speech_preview", turn_id=state["voice_turn"], text=text),
                 on_error=lambda code, message, hint, retryable: error(code, message, hint, retryable),
-                on_user_transcript=user_transcript, on_metrics=metrics, gate=gate, **callbacks)
+                on_user_transcript=user_transcript, on_metrics=metrics, gate=gate, resume=resume_info, **callbacks)
             stt_info = recogniser.info() if recogniser else {"available": False, "backend": "none"}
         session = {"id": storage.new_id("s-"), "mode": opts["mode"], "round_type": opts["round_type"],
                    "engine": engine_id, "model": status.model or llm.model, "level": opts["level"],
@@ -479,6 +613,12 @@ async def session_socket(websocket: WebSocket) -> None:
                    "questions": [q.public() for q in plan],
                    "title": ("English practice" if opts["mode"] == "english" else
                              f"Interview practice{(' · ' + vacancy_title) if vacancy_title else ''}")}
+        if resume_saved:                                # continue the saved record: same id, same start, time adds up
+            session.update({k: resume_saved[k] for k in ("id", "started_at", "title", "questions", "vacancy_title",
+                                                         "archived") if k in resume_saved})
+            t_start = time.perf_counter() - float(resume_saved.get("duration_s") or 0)
+        SAVED[session["id"]] = saved_event
+        OWNER[session["id"]] = state["owner"]
         emit("session_started", session_id=session["id"], mode=opts["mode"], engine=engine_id,
              model=session["model"], questions=session["questions"], speaks=bool(driver.produces_audio),
              audio={"sample_rate_out": tts.SAMPLE_RATE, "sample_rate_in": stt.SAMPLE_RATE},
@@ -486,6 +626,12 @@ async def session_socket(websocket: WebSocket) -> None:
              warnings=status.warnings)
         telemetry.record("session_started", settings, engine=engine_id, mode=opts["mode"],
                          round_type=opts["round_type"], input=opts["input"], level=opts["level"])
+        if resume_saved:
+            records[:] = resume_records(resume_saved, driver.transcript_history)
+            for record in records:
+                emit("feedback", feedback=public_record(record))        # the page may have missed the last ones
+                if not record.get("complete"):
+                    feedback_queue.put_nowait((record, None))
         live_task = asyncio.create_task(driver.run(mic_generator()))
         reader_task = asyncio.create_task(reader())
         tasks = [live_task, reader_task, asyncio.create_task(feedback_worker()),
@@ -521,6 +667,11 @@ async def session_socket(websocket: WebSocket) -> None:
             await save_and_debrief(session, history, records, llm, settings, emit, state, t_start)
         elif session:
             emit("session_ended", saved=False, reason="no_answers")
+        saved_event.set()
+        if SAVED.get(session.get("id", "")) is saved_event:
+            SAVED.pop(session["id"], None)
+        if OWNER.get(session.get("id", "")) is state["owner"]:
+            OWNER.pop(session["id"], None)
         if state["connected"] and not writer_task.done():
             try:
                 await asyncio.wait_for(outgoing.join(), timeout=5)
@@ -551,9 +702,11 @@ async def save_and_debrief(session: dict, history: list[dict], records: list[dic
         await asyncio.to_thread(storage.save_session, session)
     except Exception as exc:
         log.warning("Save failed: %s", type(exc).__name__)
+        state["saved"].set()
         emit("save_error", code="save_failed",
              message="Could not save the session. Copy the transcript before leaving this page.")
         return
+    state["saved"].set()                               # a resume may read the record now
     emit("session_saved", session_id=session["id"])
     emit("debrief_pending", session_id=session["id"])
     try:
@@ -564,6 +717,8 @@ async def save_and_debrief(session: dict, history: list[dict], records: list[dic
     except Exception as exc:
         log.warning("Debrief failed: %s", type(exc).__name__)
         result = feedback.fallback_debrief(session["feedback"], settings["layer_order"])
+    if OWNER.get(session["id"]) is not state["owner"]:
+        return                                         # the session was continued on a new socket: it writes the record now
     session["debrief"] = result
     if (meter := usage.SESSION.get()) is not None:
         if session["engine"] == "codex_cli" and (binary := codex_binary(llm)):

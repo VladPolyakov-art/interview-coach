@@ -60,6 +60,24 @@ function scene(name: string, sceneId: FixtureOptions["scene"], extra: Partial<St
   };
 }
 
+/* A scene with a patch on top of its fixture props, for the live-only states (D94): the interrupted card for another
+ * engine, Resume in flight or failed, both banners together. */
+function patched(name: string, sceneId: FixtureOptions["scene"], patch: (p: SessionViewProps) => SessionViewProps): Story {
+  return {
+    name,
+    render: ({ frame, layerOrder, withChecks }) => {
+      const [w, h] = SIZE[frame];
+      return (
+        <Scaled key={`${frame}:${sceneId}:${layerOrder}:${withChecks}:${name}`} width={w} height={h}>
+          <SessionPreview {...patch(fixtureProps({ scene: sceneId, layerOrder, withChecks }))} />
+        </Scaled>
+      );
+    },
+  };
+}
+const withInterrupted = (p: SessionViewProps, interrupted: NonNullable<SessionViewProps["data"]["interrupted"]>): SessionViewProps =>
+  ({ ...p, data: { ...p.data, interrupted } });
+
 export const S1QuestionOne = scene("S1 · Question 1, tips, Mike speaking", "q1-start");
 export const S2FollowUp = scene("S2 · Mike asks the follow-up", "follow-up");
 export const S3Listening = scene("S3 · You are speaking (quiet mode)", "listening");
@@ -70,15 +88,23 @@ export const S5aFeedbackContentFirst = scene("S5a · Feedback, content first, wi
 export const S5bFeedbackDeliveryFirst = scene("S5b · Feedback, delivery first", "feedback", { args: { layerOrder: "delivery-first" } });
 export const S5cThatsNotWhatISaid = scene("S5c · That's not what I said", "that-not-said");
 export const S5dEditWhatISaid = scene("S5d · Edit what I said", "edit");
+export const S5eEditFailed = scene("S5e · Edit what I said, the check failed", "edit-failed");
+export const S5fRechecking = scene("S5f · Checking the edited answer again", "rechecking");
 export const S6TextMode = scene("S6 · Text mode", "text", { args: { withChecks: false } });
 export const S7Drill = scene("S7 · Drill, Question 1 of 3", "drill");
 export const S8English = scene("S8 · English, Turn 4", "english");
 export const S9Connecting = scene("S9 · Connecting", "connecting");
 export const S10aInterruptedEngine = scene("S10a · Interrupted: engine", "interrupted-engine");
 export const S10bInterruptedVoice = scene("S10b · Interrupted: voice", "interrupted-voice");
+export const S10cInterruptedOtherEngine = patched("S10c · Interrupted: Claude, ready to resume", "interrupted-engine", (p) => withInterrupted(p, { engine: "claude_cli", input: "voice", canResume: true }));
+export const S10dResuming = patched("S10d · Interrupted: resuming", "interrupted-voice", (p) => withInterrupted(p, { input: "voice", canResume: true, resuming: true }));
+export const S10eResumeFailed = patched("S10e · Interrupted: resume failed", "interrupted-voice", (p) => withInterrupted(p, { input: "voice", canResume: true, failed: "" }));
+export const S10fInterruptedGemini = patched("S10f · Interrupted: Gemini Live, text only", "interrupted-voice", (p) => withInterrupted(p, { engine: "gemini_live", input: "voice", canResume: false }));
 export const S11MicHelp = scene("S11 · Mic help dialog", "mic-help");
 export const S12aStorageBanner = scene("S12a · Storage not writable", "storage");
 export const S12bBrowserBanner = scene("S12b · Browser can't recognise speech", "browser");
+export const S11bMicHelpNoMic = scene("S11b · Mic help: no microphone found (opens by itself)", "mic-help", {}, { micHelpReason: "none" });
+export const S12cBothBanners = patched("S12c · Storage and browser banners together", "storage", (p) => ({ ...p, overlay: "none", banners: { browser: true, storage: true } }));
 export const S13Overflow = scene("S13 · Overflow +30%", "overflow");
 export const S14aPreparing = scene("S14a · Preparing feedback", "preparing");
 export const S14bUnavailable = scene("S14b · Feedback unavailable", "unavailable");

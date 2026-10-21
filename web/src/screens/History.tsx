@@ -1,19 +1,17 @@
 /* Archive (D80; was History): archived chats, the live container of `history/HistoryView`, and the trash (soft
- * delete with restore). Recents in the sidebar hold every other chat. */
+ * delete with restore, Delete forever after a confirm: US-23 AC2; the view is `history/TrashView`). Recents in the sidebar hold every other chat. */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Button, Callout, durationMs, EmptyState, Skeleton, useFreshOnce, useToast } from "../ds";
+import { useSearchParams } from "react-router-dom";
+import { durationMs, useFreshOnce, useToast } from "../ds";
 import { t, tp } from "../i18n";
-import { Page } from "../components/Page";
 import { api } from "../lib/api";
-import { formatDate, formatDateTime } from "../lib/format";
 import { useLoad } from "../lib/hooks";
 import { errorMessage } from "../lib/store";
 import type { SessionSummary } from "../lib/types";
 import { renameSession, SESSIONS_CHANGED } from "./debrief/rename";
 import { HistoryView } from "./history/HistoryView";
-import type { HistoryRowModel, TrackFilter } from "./history/types";
-import s from "./History.module.css";
+import { TrashView } from "./history/TrashView";
+import type { HistoryRowModel, TrackFilter, TrashRowModel } from "./history/types";
 
 /* ---------- row motion (docs/motion.md 3.4: rows enter staggered once, a removed row slides out) ---------- */
 
@@ -163,49 +161,36 @@ export function TrashScreen() {
   const list = useLoad(() => api.trash());
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const items = list.data?.items ?? [];
   const enter = useFirstLoadStagger(Boolean(list.data));
-  const rows = useRowExit((id) => list.setData((d) => (d ? { ...d, items: d.items.filter((x) => x.trash_id !== id) } : d)));
+  const exits = useRowExit((id) => list.setData((d) => (d ? { ...d, items: d.items.filter((x) => x.trash_id !== id) } : d)));
+  const rows = useMemo<TrashRowModel[]>(
+    () => (list.data?.items ?? []).map((x) => ({ id: x.trash_id, title: x.title || t("debrief.title"), startedAt: x.started_at, deletedAt: x.deleted_at })),
+    [list.data],
+  );
 
-  const restore = async (trashId: string, li: HTMLElement | null) => {
+  /** Restore and Delete forever: the row leaves on success, an error shows above the list otherwise. */
+  const act = (call: (id: string) => Promise<unknown>, done: string) => async (trashId: string, li: HTMLElement | null) => {
     setError("");
+    setNotice("");
     try {
-      await api.restoreSession(trashId);
-      setNotice(t("history.restored"));
-      rows.exit(trashId, li);
+      await call(trashId);
+      setNotice(done);
+      exits.exit(trashId, li);
     } catch (e) {
       setError(errorMessage(e));
     }
   };
 
   return (
-    <Page title={t("history.trashTitle")} actions={<Link to="/archive">{t("history.backToHistory")}</Link>}>
-      {notice ? <Callout tone="success" live="status">{notice}</Callout> : null}
-      {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
-      {list.loading && !list.data ? <Skeleton variant="row" rows={4} /> : null}
-      {list.data && !items.length ? <EmptyState icon="trash" title={t("history.trashEmpty")} compact /> : null}
-      {items.length ? (
-        <ul className={s.list}>
-          {items.map((x, i) => {
-            const motion = { ...enter(i), ...rows.rowProps(x.trash_id) };
-            return (
-            <li key={x.trash_id} {...motion} className={`${s.row} ${motion.className ?? ""}`}>
-              <div className={s.main}>
-                <span className={s.titleLink}>{x.title}</span>
-                <span className={s.meta}>
-                  <span>{formatDate(x.started_at)}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{t("history.deletedAt", { date: formatDateTime(x.deleted_at) })}</span>
-                </span>
-              </div>
-              <div className={s.side}>
-                <Button variant="secondary" size="sm" icon="redo" onClick={(e) => void restore(x.trash_id, e.currentTarget.closest("li"))}>{t("history.restore")}</Button>
-              </div>
-            </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </Page>
+    <TrashView
+      state={list.error && !list.data ? "error" : list.loading && !list.data ? "loading" : "ready"}
+      rows={rows}
+      notice={notice}
+      error={error}
+      rowMotion={(id, i) => ({ ...enter(i), ...exits.rowProps(id) })}
+      onRestore={act((id) => api.restoreSession(id).then(() => window.dispatchEvent(new Event(SESSIONS_CHANGED))), t("history.restored"))}
+      onPurge={act((id) => api.purgeSession(id), t("history.purged"))}
+      onRetry={list.reload}
+    />
   );
 }

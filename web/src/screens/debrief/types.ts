@@ -180,8 +180,9 @@ export interface DebriefActions {
   /** Dismiss / restore a correction ("Not counted"). Without them the buttons are not shown. */
   onDismiss?: (question: number, correction: string) => void;
   onRestore?: (question: number, correction: string) => void;
-  /** "Not what you said?" → save and check again. Without it the editor is not offered. */
-  onRecheck?: (question: number, correction: string, text: string) => void;
+  /** "Not what you said?" → save and check again. Without it the editor is not offered. Resolving false means the
+   * check failed: the editor opens again with the text the user typed. */
+  onRecheck?: (question: number, correction: string, text: string) => void | Promise<boolean>;
   onStronger?: (question: number) => void;
 }
 
@@ -199,6 +200,8 @@ export interface DebriefViewProps extends DebriefActions {
   rerunning?: boolean;
   /** Live: an action failed (flag, stronger answer, trash); shown as an error callout under the header. */
   notice?: string;
+  /** Live: the question being checked again (the container knows when it is done); undefined = the view's own state. */
+  rechecking?: number | null;
   className?: string;
 }
 

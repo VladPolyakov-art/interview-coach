@@ -1,6 +1,6 @@
 /* Archive on the review page (D80; was History, ds/screens/debrief.md §4) as static scenes. Fixture: docs/ia.md §6. */
 import type { ReviewScreen, ReviewState } from "../../review/screens";
-import { HistoryScene, type HistorySceneId } from "./frames";
+import { HistoryScene, TrashScene, type HistorySceneId, type TrashSceneId } from "./frames";
 
 const state = (id: string, label: string, scene: HistorySceneId, extra: Partial<ReviewState> = {}): ReviewState => ({
   id, label, render: () => <HistoryScene id={scene} />, ...extra,
@@ -24,5 +24,24 @@ export const historyReview: ReviewScreen = {
     state("error", "Error", "error", { note: "Не прочитали папку с данными: Try again и «Open storage settings»." }),
     state("toast", "After Move back to Recents", "toast", { mobile: false, note: "Ряд ушёл из архива обратно в Recents, тост «Moved back to Recents. Undo» (не зелёная плашка)." }),
     state("failed", "Action failed", "failed", { mobile: false, note: "Переименование не сохранилось: ошибка над списком, старое название вернулось." }),
+  ],
+};
+
+const trash = (id: string, label: string, scene: TrashSceneId, extra: Partial<ReviewState> = {}): ReviewState => ({
+  id, label, render: () => <TrashScene id={scene} />, ...extra,
+});
+
+export const trashReview: ReviewScreen = {
+  id: "trash",
+  title: "Trash",
+  note: "US-23 AC2 (12d, Q9): удалённые сессии лежат в Trash. У ряда — Restore и «Delete forever» (с подтверждением, без отмены). Ошибка чтения папки — Try again и «Open storage settings».",
+  states: [
+    trash("data", "Data", "data", { dark: true, note: "Длинное название переносится внутри ряда; справа Restore и Delete forever." }),
+    trash("confirm", "Delete forever · confirm", "confirm", { note: "Диалог: удалить насовсем нельзя отменить; красная кнопка." }),
+    trash("restored", "After Restore", "restored", { mobile: false, note: "Ряд ушёл, строка «Restored.»; Recents в сайдбаре обновились." }),
+    trash("failed", "Action failed", "failed", { mobile: false, note: "Сервер не ответил: ошибка над списком, ряды на месте." }),
+    trash("empty", "Empty", "empty"),
+    trash("loading", "Loading", "loading"),
+    trash("error", "Load error", "error", { note: "Не прочитали корзину: Try again и ссылка на настройки хранилища." }),
   ],
 };

@@ -1,6 +1,6 @@
 /* Setup (D81): brand + three steps on top, one narrow column, the same SettingGroup blocks as Settings. */
 /* A container, so a 375 frame on the review page narrows like a phone does. */
-.screen { position: relative; isolation: isolate; container: setup / inline-size; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-canvas); }
+.screen { position: relative; isolation: isolate; container: setup / inline-size; min-height: 100dvh; display: flex; flex-direction: column; background: var(--color-canvas); }
 .header {
   display: flex;
   align-items: center;

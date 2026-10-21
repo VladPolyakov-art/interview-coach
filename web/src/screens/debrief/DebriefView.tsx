@@ -36,10 +36,11 @@ export function DebriefView(props: DebriefViewProps) {
   const [strongerOpen, setStrongerOpen] = useState<ReadonlySet<number>>(() => new Set(ui?.strongerOpen ?? []));
   const [renaming, setRenaming] = useState(ui?.renaming ?? false);
   const [titleOverride, setTitleOverride] = useState<string | null>(null);
-  const [editing, setEditing] = useState<{ q: number; target: string } | null>(
+  const [editing, setEditing] = useState<{ q: number; target: string; draft?: string } | null>(
     ui?.editing ? { q: ui.editing.question, target: ui.editing.correction } : null,
   );
-  const [rechecking, setRechecking] = useState<number | null>(ui?.rechecking ?? null);
+  const [recheckingOwn, setRechecking] = useState<number | null>(ui?.rechecking ?? null);
+  const rechecking = props.rechecking !== undefined ? props.rechecking : recheckingOwn;
   const [verdictOpen, setVerdictOpen] = useState(ui?.verdictOpen ?? false);
   const [dismissed, setDismissed] = useState<Readonly<Record<string, boolean>>>({});
   const [leaving, setLeaving] = useState<ReadonlySet<string>>(() => new Set());
@@ -115,13 +116,14 @@ export function DebriefView(props: DebriefViewProps) {
   const save = (q: number, target: string, text: string) => {
     setEditing(null);
     setRechecking(q);
-    props.onRecheck?.(q, target, text);
+    void props.onRecheck?.(q, target, text)?.then((ok) => { if (!ok) setEditing({ q, target, draft: text }); });
   };
 
   const rowsFor = (q: number): RowContext => ({
     isDismissed: (id, base) => dismissed[key(q, id)] ?? Boolean(base),
     isLeaving: (id) => leaving.has(key(q, id)),
     editing: editing && editing.q === q && editing.target !== "answer" ? editing.target : null,
+    draft: editing?.q === q ? editing.draft : undefined,
     focusEditor: userOpened,
     onEdit: canEdit ? (id) => { setUserOpened(true); setEditing({ q, target: id }); } : undefined,
     onDismiss: props.onDismiss ? (id) => dismiss(q, id) : undefined,
@@ -242,6 +244,7 @@ export function DebriefView(props: DebriefViewProps) {
                   rows={rowsFor(current.n)}
                   rechecking={rechecking === current.n}
                   answerEditing={editing?.q === current.n && editing.target === "answer"}
+                  answerDraft={editing?.q === current.n ? editing.draft : undefined}
                   onEditAnswer={canEdit ? () => { setUserOpened(true); setEditing({ q: current.n, target: "answer" }); } : undefined}
                   onSaveAnswer={(text) => save(current.n, "answer", text)}
                   onCancelAnswer={() => setEditing(null)}

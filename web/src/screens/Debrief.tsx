@@ -6,8 +6,9 @@ import { useFreshOnce, useToast } from "../ds";
 import { t } from "../i18n";
 import { api, ApiError } from "../lib/api";
 import { useInterval, useLoad } from "../lib/hooks";
+import { useStorageWritable } from "../lib/storageProbe";
 import { errorMessage, useApp } from "../lib/store";
-import type { FeedbackRecord } from "../lib/types";
+import type { FeedbackRecord, SessionRecord } from "../lib/types";
 import type { StrongerState } from "../session/reducer";
 import { DebriefView } from "./debrief/DebriefView";
 import { DEFAULT_OPEN, exampleSam } from "./debrief/fixtures";
@@ -45,14 +46,19 @@ function LiveDebrief() {
   const navigate = useNavigate();
   const toast = useToast();
   const { settings } = useApp();
+  const storageWritable = useStorageWritable();
   const session = useLoad(() => api.session(id), [id]);
   const [stronger, setStronger] = useState<Record<string, StrongerState>>({});
   const [rerunning, setRerunning] = useState(false);
   const [notice, setNotice] = useState("");
+  /** The question being checked again after "Edit what I said" (the view shows its skeleton until it is back). */
+  const [rechecking, setRechecking] = useState<number | null>(null);
   const [polls, setPolls] = useState(0);
   /** Bumped when an optimistic change failed: the view starts again from the saved data. */
   const [epoch, setEpoch] = useState(0);
   const record = session.data;
+  const latest = useRef<SessionRecord | null>(null);
+  latest.current = record;
   const fresh = useFreshOnce(seen, `debrief:${id}`);
   const loadedOnce = useRef(false);
   if (record) loadedOnce.current = true;
@@ -63,7 +69,7 @@ function LiveDebrief() {
     setPolls((n) => n + 1);
     api.session(id).then((r) => session.setData(r)).catch(() => {});
   }, 3000, waiting);
-  useEffect(() => { setPolls(0); setStronger({}); setNotice(""); }, [id]);
+  useEffect(() => { setPolls(0); setStronger({}); setNotice(""); setRechecking(null); }, [id]);
 
   const model = useMemo(
     () => (record ? mapRecord(record, { obsidian: Boolean(settings?.obsidian_dir), stronger, waiting }) : undefined),
@@ -93,6 +99,26 @@ function LiveDebrief() {
     api.sessionFlag(record.id, flagId, fb.id, action)
       .then(({ language }) => replaceFeedback({ ...fb, layers: { ...fb.layers, language } }))
       .catch(fail);
+  };
+  /* "Edit what I said" (US-18 AC3): the server swaps in the corrected text, regenerates this answer's feedback and
+   * saves the session; the answer shows its skeleton meanwhile. A failure leaves everything as it was and reopens
+   * the editor with the typed text. */
+  const recheck = (n: number, target: string, text: string) => {
+    const th = threadsFromRecord(record).find((x) => x.number === n);
+    const whole = target === "answer";
+    const fb = whole ? th?.records.find((r) => r.answer_kind === "main") ?? th?.records[0] : feedbackOfFlag(record, target);
+    if (!fb) return Promise.resolve(false);
+    setRechecking(n);
+    setNotice("");
+    return api.sessionRecheck(record.id, fb.id, text, whole ? undefined : target)
+      .then(({ feedback, transcript }) => {
+        const cur = latest.current ?? record;
+        session.setData({ ...cur, transcript, feedback: cur.feedback.map((x) => (x.id === feedback.id ? feedback : x)) });
+        setStronger((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== fb.id)));
+        return true;
+      })
+      .catch((e: unknown) => { setNotice(`${t("debrief.q.recheckFailed")} ${errorMessage(e)}`); return false; })
+      .finally(() => setRechecking(null));
   };
   const askStronger = (n: number) => {
     const th = threadsFromRecord(record).find((x) => x.number === n);
@@ -158,11 +184,14 @@ function LiveDebrief() {
       key={epoch}
       variant={record.mode === "english" ? "english" : "interview"}
       state="ready"
+      storageError={!storageWritable}
       model={model}
       layerOrder={settings?.layer_order ?? "content-first"}
       buildUp={fresh}
       rerunning={rerunning}
       notice={notice || undefined}
+      rechecking={rechecking}
+      onRecheck={recheck}
       onRename={rename}
       onRerun={rerun}
       onDownload={download}

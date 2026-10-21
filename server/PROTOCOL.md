@@ -57,6 +57,7 @@ Source of truth: `server/ws.py` (socket loop), `server/session.py` (local interv
 | `suggest` | turn the answer suggester on (only if settings `answer_suggester` is true) | `false` |
 | `topic` | English mode: conversation topic, up to 80 characters | none |
 | `engine` | override the selected engine for this session | settings `engine` |
+| `resume_session_id` | continue a saved session after a dropped connection (US-13 AC5): same record, transcript and feedback kept; Mike says sorry and asks again (or replies to the last answer). `mode`, `round_type`, `level`, `strictness`, `vacancy_id` come from the record. Not for Gemini Live | none |
 
 ### Voice answer (`input: "voice"`)
 
@@ -85,6 +86,8 @@ cut-off line). `turn_id` is a non-negative integer chosen by the client; it is e
 {"type": "input_mode", "input": "voice"}
 {"type": "request_stronger", "feedback_id": "fb-1a2b3c4d"}
 {"type": "flag_action", "feedback_id": "fb-1a2b3c4d", "flag_id": "f9e8d7c6", "action": "confirm"}
+{"type": "recheck", "feedback_id": "fb-1a2b3c4d", "text": "Last year we redesigned the onboarding ..."}
+{"type": "recheck", "feedback_id": "fb-1a2b3c4d", "flag_id": "f9e8d7c6", "text": "we redesigned"}
 {"type": "silence"}
 {"type": "ping", "t": 1771234567890}
 {"type": "end_session"}
@@ -94,6 +97,12 @@ cut-off line). `turn_id` is a non-negative integer chosen by the client; it is e
   is open again. Feedback for the dropped answer is removed.
 - `flag_action` `action`: `confirm` (I did say that: the item now counts), `dismiss` (not an error, or misheard:
   never counted, and the same phrase is not flagged again this session), `restore`.
+- `recheck` ("Edit what I said", US-18 AC3): `text` is the whole corrected answer or, with `flag_id`, what the user
+  really said instead of that correction's "Heard as" fragment (at least 5 words after the swap). Only this answer
+  is checked again: language and content are asked again, delivery keeps the audio's length and pace and recounts
+  the fillers, a stronger version that existed is written again. The server answers with `feedback` (the record,
+  `"edited": true`) and `answer_edited`, or with `recheck_failed`; a failure changes nothing. Needs a complete
+  feedback record. The history Mike answers from and the saved transcript carry the corrected text.
 - `input_mode`: the user switched how they answer mid-session (`voice`, `browser_stt` or `text`). A session that
   started with `text` gets server speech recognition on `voice`; Mike's speech stays as the session started.
 - `silence`: the user has been quiet for a long time; Mike says only "Take your time." (local engines).
@@ -206,7 +215,10 @@ asked the next question (see Turns). Times are measured from the moment the serv
  "placeholders": ["[result]"]}
 {"type": "stronger_unavailable", "feedback_id": "fb-1a2b3c4d", "code": "invented_number", "message": "..."}
 {"type": "answer_reset", "question": "Tell me about a project you owned.", "removed_feedback_ids": ["fb-1a2b3c4d"]}
+{"type": "answer_edited", "feedback_id": "fb-1a2b3c4d", "turn_id": 3, "text": "Last year we redesigned ..."}
+{"type": "recheck_failed", "feedback_id": "fb-1a2b3c4d", "code": "timeout", "message": "..."}
 ```
+`recheck_failed` codes: `not_found`, `too_short`, `fragment_not_found`, `busy`, `timeout`, `internal`, or an engine code.
 
 ### Answer suggester (practice only, when enabled)
 
@@ -250,6 +262,7 @@ asked the next question (see Turns). Times are measured from the moment the serv
 | `reply_failed` | unexpected failure while replying |
 | `flag_not_found`, `already_started` | invalid client action (session continues) |
 | `connection_lost`, `session_failed` | the session ended; the transcript is saved |
+| `resume_unavailable` | `resume_session_id` cannot be continued (not saved, still being saved: `retryable`, or Gemini Live); the socket closes |
 
 `pong` answers `ping`: `{"type": "pong", "t": 1771234567890}`.
 

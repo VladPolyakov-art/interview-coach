@@ -48,6 +48,14 @@ export const debriefReview: ReviewScreen = {
       mobile: false,
       note: "Поле «What you actually said» под строкой Language; перепроверяется только этот вопрос.",
     }),
+    state("edited", "After recheck · «Edited by you»", "interviewEdited", {
+      mobile: false,
+      note: "12d (Q3): сервер подставил исправленный текст, пересчитал разбор этого ответа и сохранил сессию; у ответа — бейдж «Edited by you».",
+    }),
+    state("recheck-failed", "Recheck failed", "interviewRecheckFailed", {
+      mobile: false,
+      note: "12d (Q3): «Couldn't check that answer again. It was not changed.» с причиной; редактор открывается снова с вашим текстом.",
+    }),
     state("not-found", "Not found", "notFound", { mobile: false, note: "Сессии нет (удалена из Trash или ссылка неверна)." }),
     state("error", "Error", "error", { mobile: false, note: "Файл сессии не открылся: Try again / Open Archive." }),
     state("overflow", "Overflow +30%", "longText", {

@@ -37,8 +37,8 @@
   "nav": {
     "main": "Main",
     "newPractice": "New practice",
-    "practice": "Practice",
-    "history": "History",
+    "practice": "Home",
+    "history": "Archive",
     "settings": "Settings"
   },
   "rail": {
@@ -105,7 +105,7 @@
   "notFound": {
     "title": "This page doesn't exist",
     "body": "The link may be old, or the session was deleted.",
-    "home": "Go to Practice"
+    "home": "Go to home"
   },
   "engines": {
     "title": "AI engine",
@@ -456,7 +456,7 @@
       "add": "Add a job",
       "added": "Added {date}",
       "delete": "Delete {title}",
-      "deleteConfirm": "Delete {title}? Sessions stay in History.",
+      "deleteConfirm": "Delete {title}? Sessions stay in Recents and Archive.",
       "questionsReady_one": "{n} question from this job",
       "questionsReady_other": "{n} questions from this job",
       "preparing": "Preparing questions…",
@@ -666,7 +666,7 @@
     "delete": "Delete job",
     "saveAndStart": "Save and start",
     "deleteTitle": "Delete {name}?",
-    "deleteBody": "Your sessions with this job stay in History."
+    "deleteBody": "Your sessions with this job stay in Recents and Archive."
   },
   "session": {
     "title": "Interview session",
@@ -759,7 +759,7 @@
     "saving": "Saving your session…",
     "debriefPending": "Writing your debrief…",
     "notSaved": "Nothing was saved: you didn't answer any questions.",
-    "backHome": "Back to Practice",
+    "backHome": "Back to home",
     "newSession": "Start again",
     "transcript": "Conversation",
     "you": "You",
@@ -786,9 +786,10 @@
       "engineTitle": "Mike can't start: the AI engine isn't ready",
       "fixEngine": "Fix the engine",
       "dismiss": "Dismiss",
-      "saveFailed": "Couldn't save the session."
+      "saveFailed": "Couldn't save the session.",
+      "downloadTranscript": "Download the transcript"
     },
-    "missing": "This session wasn't started from Practice.",
+    "missing": "This session wasn't started from home.",
     "warnings": "Notes from the engine",
     "titleDrill": "Drill",
     "elapsedAria": "Elapsed time {m} minutes {s} seconds",
@@ -852,7 +853,13 @@
       "answer": "Your answer",
       "followUp": "Your follow-up",
       "underlined": "Words we weren't sure about are underlined.",
-      "save": "Save and check again"
+      "save": "Save and check again",
+      "failedTitle": "Couldn't check this answer again",
+      "failed": "Your answer was not changed. Try again in a moment.",
+      "err": {
+        "too_short": "That is too short to check. Write a few words more.",
+        "connection_lost": "The connection to Mike was lost. Your answer was not changed."
+      }
     },
     "banner": {
       "browserTitle": "This browser can't recognise speech",
@@ -864,16 +871,27 @@
       "fixSettings": "Fix in Settings"
     },
     "interrupted": {
-      "engineTitle": "The AI model (Ollama) stopped responding",
-      "engineBody": "Your answers so far are saved. Open the Ollama app, or paste this into Terminal:",
+      "engineTitle": "{engine} stopped responding",
+      "body": {
+        "ollama": "Your answers so far are saved. Open the Ollama app, or paste this into Terminal:",
+        "openai": "Your answers so far are saved. Check that your AI server is still running and that its address is right.",
+        "claude": "Your answers so far are saved. Check that Claude Code is still signed in: run claude in Terminal once.",
+        "codex": "Your answers so far are saved. Check that Codex is still signed in: run codex login in Terminal.",
+        "antigravity": "Your answers so far are saved. Check that Antigravity is still signed in: run agy in Terminal and sign in with Google.",
+        "gemini": "Your answers so far are saved. Check your Gemini key, your internet connection and Google's free limit. Gemini Live can't pick a session up again, so see your debrief or start a new one."
+      },
       "command": "ollama serve",
       "engineRetry": "We check again every 5 seconds. Resume turns on when it's back.",
       "resume": "Resume",
+      "resuming": "Reconnecting…",
       "endDebrief": "End and see debrief",
       "voiceTitle": "The voice connection dropped",
-      "voiceBody": "Your answers so far are saved. Mike is still running, so you can carry on by typing.",
+      "voiceBody": "Your answers so far are saved. Pick up where you left off, by voice or by typing.",
+      "voiceBodyText": "Your answers so far are saved. Pick up where you left off.",
       "resumeVoice": "Resume voice",
-      "continueText": "Continue in text"
+      "continueText": "Continue in text",
+      "resumeFailed": "We couldn't reconnect. Check that Vukoli is still running, then try again.",
+      "resumeFailedWith": "We couldn't continue this session: {message}"
     },
     "micHelp": {
       "title": "Mike can't hear you",
@@ -930,7 +948,7 @@
       "saving": "Saving your session… It'll be ready in a moment",
       "ready": "Your session is saved",
       "open": "Open debrief",
-      "failed": "Couldn't find the saved session yet. Check History in a minute."
+      "failed": "Couldn't find the saved session yet. Check Recents in a minute."
     }
   },
   "feedback": {
@@ -1182,7 +1200,8 @@
       "edited": "Edited by you",
       "suggestion": "Answered with a suggestion",
       "unavailable": "Feedback wasn't available for this answer. It isn't counted in the verdict.",
-      "rechecking": "Checking this answer again…"
+      "rechecking": "Checking this answer again…",
+      "recheckFailed": "Couldn't check that answer again. It was not changed."
     },
     "sum": {
       "contentNothing": "Nothing major to fix",
@@ -1280,6 +1299,16 @@
     "trash": "Trash",
     "trashTitle": "Trash",
     "trashEmpty": "The trash is empty.",
+    "trashSub": "Deleted chats wait here. Bring one back, or delete it for good.",
+    "trashError": {
+      "title": "We couldn't read the trash.",
+      "body": "The data folder may have moved or lost permissions."
+    },
+    "purge": "Delete forever",
+    "purgeRow": "Delete forever: {title}",
+    "purgeTitle": "Delete this chat forever?",
+    "purgeBody": "“{title}” and its debrief will be gone for good. This can't be undone.",
+    "purged": "Deleted for good.",
     "restore": "Restore",
     "restored": "Restored.",
     "deletedAt": "Deleted {date}",

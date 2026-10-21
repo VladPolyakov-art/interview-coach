@@ -3,7 +3,7 @@
  * fixtures.ts. Handlers are all optional: an action is drawn only when its handler exists, so the live app never shows
  * a button the backend can't honour (e.g. "Edit what I said"). */
 import type { CaptionTurn, IconName } from "../../ds";
-import type { LayerOrder } from "../../lib/types";
+import type { EngineId, LayerOrder } from "../../lib/types";
 import type { StrongerState, Thread } from "../../session/reducer";
 
 export type SessionVariant = "interview" | "drill" | "english";
@@ -62,7 +62,7 @@ export interface SessionData {
   /** Question number the next press of "Next question" starts; null = this was the last one. */
   nextNumber: number | null;
   /** Edit what I said: texts to prefill. */
-  edit?: { answer: string; followUp?: string };
+  edit?: { answer: string; followUp?: string; /** The last check-again failed: shown above the fields, the texts stay. */ error?: string };
   suggestion?: SessionSuggestion;
   /** The suggester toggle starts on (default true). */
   suggestOn?: boolean;
@@ -73,6 +73,16 @@ export interface SessionData {
   notices?: { id: string; tone: "info" | "warning" | "error"; text: string; title?: string; onDismiss?: () => void; action?: { label: string; onClick: () => void } }[];
   /** The round is over: Mike said goodbye. */
   closing?: boolean;
+  /** Live only (the interrupted card, D94): which engine stopped, whether Resume works now, the last try's result.
+   * Fixtures leave it out: the designed frames (Ollama, Resume off for the engine, on for the voice). */
+  interrupted?: {
+    engine?: EngineId;
+    input?: "voice" | "text";
+    canResume?: boolean;
+    resuming?: boolean;
+    /** The last try to continue failed: the server's reason, or "" for a plain "could not connect". */
+    failed?: string;
+  };
   /** D72: a short alert shown as a tooltip over the mic ("You're talking, but the microphone is muted…"). */
   micTip?: string;
 }
@@ -123,6 +133,10 @@ export interface SessionViewProps {
   withChecks: boolean;
   suggester: "off" | "on";
   data: SessionData;
+  /** Live: banners that can show together (the single `overlay` enum shows one). Storage: US-23 AC4; browser: US-06 AC1. */
+  banners?: { browser?: boolean; storage?: boolean };
+  /** Live: why the mic help dialog is open ("blocked" in the browser, or "none": no input device). */
+  micHelpReason?: "blocked" | "none";
   handlers?: SessionHandlers;
   /** Override the panel mode (the live container keeps showing the latest feedback while Mike speaks). */
   panel?: PanelMode;

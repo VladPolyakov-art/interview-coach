@@ -9,6 +9,7 @@ import { useLoad } from "../../lib/hooks";
 import { prefs } from "../../lib/prefs";
 import { useApp } from "../../lib/store";
 import { StepFooter, StepHead, type HeadingRef } from "./SetupFrame";
+import { useSetupSave } from "./useSetupSave";
 import type { CheckState } from "./types";
 import { useVoiceCheck } from "./useVoiceCheck";
 import s from "./Setup.module.css";
@@ -24,10 +25,13 @@ export interface CheckStepProps {
   level?: number;
   /** Review and stories: Mike's reply is playing (the glow speaks). */
   speaking?: boolean;
+  /** Review and stories: a failed save of the voice (Q8). */
+  initialSaveError?: string;
 }
 
-export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level, speaking: initialSpeaking }: CheckStepProps) {
-  const { settings, updateSettings } = useApp();
+export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level, speaking: initialSpeaking, initialSaveError }: CheckStepProps) {
+  const { settings } = useApp();
+  const { save, view: saveView } = useSetupSave(initialSaveError);
   const voices = useLoad(() => api.voices());
   const stt = useLoad(() => api.stt());
   const [share, setShare] = useState(false);
@@ -70,12 +74,13 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
           getLevel={presence === "listening" && !initial ? check.getLevel : undefined} />
       </div>
       <StepHead headingRef={headingRef} title={t("setup.check.title")} sub={t("setup.check.subtitle")} />
+      {saveView}
       <div data-review-id="Setup/Check" data-review-section="Setup · Check" data-comment-target>
         <SettingGroup title={t("setup.check.group")}>
           {ttsOk ? (
             <SettingRow id="setup-voice" label={t("setup.check.voice")} description={t("setup.check.voiceHint")}>
               <Select label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
-                onChange={(v) => void updateSettings({ voice: v }).catch(() => {})}
+                onChange={(v) => void save({ voice: v })}
                 options={(voices.data?.voices ?? []).map((v) => ({ value: v.id, label: `${v.label} · ${v.locale}` }))} />
               <Button variant="secondary" icon="play" onClick={playSample} disabled={!voice}>{t("setup.check.sample")}</Button>
             </SettingRow>

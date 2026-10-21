@@ -7,6 +7,10 @@ import { SessionPreview } from "./SessionPreview";
 import type { SessionViewProps } from "./types";
 
 const show = (opts: FixtureOptions, extra: Partial<SessionViewProps> = {}) => () => <SessionPreview {...fixtureProps(opts)} {...extra} />;
+/** A fixture with its live data patched (12d states: interrupted variants, both banners). */
+const patch = (opts: FixtureOptions, fn: (p: SessionViewProps) => SessionViewProps) => () => <SessionPreview {...fn(fixtureProps(opts))} />;
+const interrupted = (i: NonNullable<SessionViewProps["data"]["interrupted"]>) => (p: SessionViewProps): SessionViewProps =>
+  ({ ...p, data: { ...p.data, interrupted: i } });
 
 const states: ReviewState[] = [
   {
@@ -46,7 +50,7 @@ const states: ReviewState[] = [
   },
   {
     id: "s4", label: "S4 · Майк думает", dark: true,
-    note: "D49: одна широкая волна ходит из стороны в сторону (2,8 с на проход), не шарик. D55: индикатор один — свечение сверху плюс одна подпись «Thinking» над островком; точек в транскрипте и в островке больше нет. D61: нажатая кнопка не пропадает — в островке остаётся неактивная «Sent» с галочкой, пока Майк не заговорит (тогда — Interrupt).",
+    note: "D49: одна широкая волна ходит из стороны в сторону (2,8 с на проход), не шарик. D55: индикатор один — свечение сверху; точек в транскрипте и в островке больше нет. D92/D93: подпись состояния («Thinking») — вверху, в свечении, в прозрачной капсуле с синей точкой, а не над островком. D61: нажатая кнопка не пропадает — в островке остаётся неактивная «Sent» с галочкой, пока Майк не заговорит (тогда — Interrupt).",
     render: show({ scene: "thinking" }),
   },
   {
@@ -73,9 +77,11 @@ const states: ReviewState[] = [
     note: "Исправить только своё слово; перепроверяется один ответ. «Next question» в островке становится вторичной.",
     render: show({ scene: "edit" }),
   },
+  { id: "s5e", label: "S5e · Edit what I said: перепроверка не удалась", note: "12d (Q3): редактор открыт снова с вашим текстом и ошибкой; старый ответ не изменился.", render: show({ scene: "edit-failed" }) },
+  { id: "s5f", label: "S5f · Проверяем исправленный ответ", note: "12d (Q3): панель остаётся открытой, скелет «Checking question N again…»; потом приходит новый разбор.", render: show({ scene: "rechecking" }) },
   {
     id: "s6", label: "S6 · Текстовый режим: островок превращается в поле ввода",
-    note: "Сверху поле «Type your answer» без своей рамки (Composer surface none), под линией — та же строка управления без микрофона. «Switch to voice» неактивна: сессию, начатую текстом, нельзя переключить на голос (ограничение движка).",
+    note: "Сверху поле «Type your answer» без своей рамки (Composer surface none), под линией — та же строка управления без микрофона. D64: «Switch to voice» активна — голос и текст переключаются в одной сессии в обе стороны.",
     render: show({ scene: "text", withChecks: false }),
   },
   {
@@ -111,9 +117,15 @@ const states: ReviewState[] = [
     render: show({ scene: "interrupted-engine" }),
   },
   { id: "s10b", label: "S10b · Сессия прервана: пропал голосовой канал", note: "Микрофон неактивен, «Type instead» работает (продолжить текстом).", render: show({ scene: "interrupted-voice" }) },
+  { id: "s10c", label: "S10c · Прервано: Claude снова отвечает — Resume", note: "12d (Q1, Q6): текст под движок сессии, Resume включается, когда движок снова готов (опрос раз в 5 с); Майк продолжает с той же истории.", render: patch({ scene: "interrupted-engine" }, interrupted({ engine: "claude_cli", input: "voice", canResume: true })) },
+  { id: "s10d", label: "S10d · Прервано: подключаемся снова", note: "12d: Resume открывает новое соединение и продолжает ту же сохранённую сессию (тот же id, ответы и разборы на месте).", render: patch({ scene: "interrupted-voice" }, interrupted({ input: "voice", canResume: true, resuming: true })) },
+  { id: "s10e", label: "S10e · Прервано: не получилось продолжить", note: "12d: Resume можно нажать ещё раз; рядом — «Continue in text» и End.", render: patch({ scene: "interrupted-voice" }, interrupted({ input: "voice", canResume: true, failed: "" })) },
+  { id: "s10f", label: "S10f · Прервано: Gemini Live — только текстом", note: "12d: голосовую сессию Gemini Live сервер продолжить не может — предлагаем «Continue in text» или End and debrief.", render: patch({ scene: "interrupted-voice" }, interrupted({ engine: "gemini_live", input: "voice", canResume: false })) },
   { id: "s11", label: "S11 · Mic help: микрофон заблокирован", render: show({ scene: "mic-help" }) },
+  { id: "s11b", label: "S11b · Mic help открылась сама: микрофон не найден", note: "12d (Q17): при отказе или отсутствии микрофона подсказка открывается сама (US-06 AC2).", render: show({ scene: "mic-help" }, { micHelpReason: "none" } as Partial<SessionViewProps>) },
   { id: "s12a", label: "S12a · StorageNotWritable между вопросами", note: "D61: плашки — прямо над строкой статуса и островком, а не у верхнего края; транскрипт уступает им место, свечение не перекрыто.", render: show({ scene: "storage" }) },
   { id: "s12b", label: "S12b · Браузер не распознаёт речь", note: "Микрофон неактивен с причиной; в More — «Switch to voice» неактивная с пояснением.", render: show({ scene: "browser" }) },
+  { id: "s12c", label: "S12c · Обе плашки сразу: хранилище и браузер", note: "12d (Q2): папка с данными не пишется (проверка в /api/health) и браузер не распознаёт речь — плашки стопкой.", render: patch({ scene: "storage" }, (p) => ({ ...p, overlay: "none", banners: { browser: true, storage: true } })) },
   {
     id: "s13", label: "S13 · Переполнение +30%: длинный заголовок, вопрос, таймер больше часа",
     note: "Таймер «1:02:14» помещается в свой слот, островок не расширяется. Длинное название — в подсказке у статуса.",
