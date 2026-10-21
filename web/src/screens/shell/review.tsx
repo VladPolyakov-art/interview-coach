@@ -6,6 +6,7 @@ import { AppShellView, type AppShellViewProps, type RecentState } from "../../co
 import { Page } from "../../components/Page";
 import { SettingsScreen } from "../Settings";
 import { Card } from "../../ds";
+import { EngineFixture, makeEngines } from "../../components/engine/fixtures";
 import type { ReviewScreen, ReviewState } from "../../review/screens";
 
 const RECENT: RecentState = {
@@ -67,8 +68,25 @@ export const shellReview: ReviewScreen = {
       <Scene at="/settings/about" current="settings" currentSessionId={undefined}
         page={<Routes><Route path="/settings/:section" element={<SettingsScreen />} /></Routes>} />
     ), {
-      dark: true, tall: true,
-      note: "D58: пункт «Help & what's free» в меню аккаунта и ссылка «What's free» на Home ведут сюда (/settings/about#free). Одна таблица US-30: бесплатно навсегда — практика, английский, подготовка по CV и вакансии, банк вопросов, разбор, память ошибок, дрилл; Premium помечен «Coming later», цены нет. Ниже — «Practice only» и лицензия AGPL-3.0-or-later.",
+      dark: true,
+      note: "D58: пункт «Help & what's free» в меню аккаунта и ссылка «What's free» на Home ведут сюда (/settings/about#free); с D76 — в попапе настроек. Одна таблица US-30: бесплатно навсегда — практика, английский, подготовка по CV и вакансии, банк вопросов, разбор, память ошибок, дрилл; Premium помечен «Coming later», цены нет. Ниже — «Practice only» и лицензия AGPL-3.0-or-later.",
+    }),
+    state("settings-voice", "Settings · попап, строки", () => (
+      <EngineFixture engines={makeEngines()}>
+        <Scene at="/settings/voice" current="settings" currentSessionId={undefined}
+          page={<Routes><Route path="/settings/:section" element={<SettingsScreen />} /></Routes>} />
+      </EngineFixture>
+    ), {
+      dark: true, mobile: true,
+      note: "D76: настройки открываются попапом поверх страницы, как у Claude: слева поиск и разделы, справа раздел. Каждая настройка — одна строка: название и пояснение слева, контрол справа (переключатель, список, сегменты, кнопка); строки разделены тонкой линией. На телефоне попап на весь экран, широкий контрол уходит под текст, переключатель остаётся справа. Переключатели синие (D76), остальной выбор — нейтральный. Ссылки /settings/<раздел> работают как раньше: открывают попап поверх Home или текущей страницы, Esc и × возвращают назад.",
+    }),
+    state("settings-search", "Settings · поиск", () => (
+      <EngineFixture engines={makeEngines()}>
+        <Scene at="/settings/engine" current="settings" currentSessionId={undefined}
+          page={<Routes><Route path="/settings/:section" element={<SettingsScreen initialQuery="voice" />} /></Routes>} />
+      </EngineFixture>
+    ), {
+      note: "D76: поиск по настройкам ищет по названиям, пояснениям и ключевым словам (например, «dark», «mic», «resume»). Результат — строка «название · раздел · пояснение»; клик или Enter открывает раздел и подсвечивает строку мягкой заливкой, она гаснет за ~2,5 с. Собственная кнопка очистки вместо синего крестика браузера.",
     }),
     state("account-menu-collapsed", "Меню аккаунта в узкой полосе", () => <Scene collapsed initialMenu="account" />, {
       note: "То же меню от аватара, пока полоса свёрнута.",

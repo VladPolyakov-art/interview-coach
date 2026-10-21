@@ -14,6 +14,7 @@ export { Panel } from "./Panel";
 export { EmptyState } from "./EmptyState";
 export { Spinner } from "./Spinner";
 export { Dialog } from "./Dialog";
+export { SettingRow } from "./SettingRow";
 export { CopyField } from "./CopyField";
 export { Kbd } from "./Kbd";
 export { Icon } from "./icons";

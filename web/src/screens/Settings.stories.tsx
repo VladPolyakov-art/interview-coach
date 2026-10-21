@@ -1,0 +1,28 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { MemoryRouter } from "react-router-dom";
+import { EngineFixture, makeEngines } from "../components/engine/fixtures";
+import { OverlayRoot } from "../ds";
+import { SettingsScreen, type SectionId } from "./Settings";
+
+/* D76: Settings as a popup with search; every setting is a row (text left, control right). Fictional data, no server. */
+const meta: Meta = { title: "Screens/Settings", parameters: { layout: "fullscreen" } };
+export default meta;
+
+function Scene({ section, query, width = 1440, height = 900 }: { section: SectionId; query?: string; width?: number; height?: number }) {
+  return (
+    <EngineFixture engines={makeEngines()}>
+      <MemoryRouter initialEntries={[`/settings/${section}`]}>
+        <div style={{ width, maxWidth: "100%", height, position: "relative", background: "var(--color-canvas)" }}>
+          <OverlayRoot><SettingsScreen initialQuery={query} /></OverlayRoot>
+        </div>
+      </MemoryRouter>
+    </EngineFixture>
+  );
+}
+
+export const Voice: StoryObj = { render: () => <Scene section="voice" /> };
+export const Practice: StoryObj = { render: () => <Scene section="practice" /> };
+export const Privacy: StoryObj = { render: () => <Scene section="privacy" /> };
+export const Search: StoryObj = { render: () => <Scene section="engine" query="voice" /> };
+export const SearchEmpty: StoryObj = { render: () => <Scene section="engine" query="billing" /> };
+export const Phone: StoryObj = { render: () => <Scene section="voice" width={375} height={812} /> };

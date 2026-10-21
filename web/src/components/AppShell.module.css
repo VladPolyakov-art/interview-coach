@@ -165,7 +165,7 @@
   justify-content: center;
   width: var(--control-h-md);
   height: var(--control-h-md);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   background: var(--color-warning-tint);
   color: var(--color-text-warning);
   transition: background-color var(--duration-fast) var(--ease-standard);

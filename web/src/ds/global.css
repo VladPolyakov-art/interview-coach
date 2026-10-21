@@ -125,7 +125,10 @@ kbd {
 @keyframes panel-in-y { from { transform: translateY(var(--space-4)); } }
 @keyframes word-in { from { opacity: 0; filter: blur(3px); } }
 @keyframes skeleton { from { background-position: 100% 0; } to { background-position: -100% 0; } }
-@keyframes shimmer-text { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+/* D76: one loop moves the (repeating) gradient by exactly one tile — 200% wide, 100% → -100% is a 2× width shift —
+ * so the highlight sweeps once, rests while the next tile comes round, and the loop has no jump. (It was 240% wide and
+ * moved 336%: every loop after the first started with the band jumping.) */
+@keyframes shimmer-text { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @keyframes dots { 30% { opacity: 1; transform: translateY(-4px); } 60% { opacity: 0.35; transform: none; } }
 @keyframes pulse-dot { 50% { opacity: 0.3; transform: scale(0.65); } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -168,7 +171,7 @@ kbd {
 /* Text shimmer for "preparing…" lines: a grey gradient clipped to the text. */
 .shimmer-text {
   color: transparent;
-  background: linear-gradient(90deg, var(--color-text-tertiary) 30%, var(--color-text-primary) 50%, var(--color-text-tertiary) 70%) 0 0 / 240% 100%;
+  background: linear-gradient(90deg, var(--color-text-tertiary) 30%, var(--color-text-primary) 50%, var(--color-text-tertiary) 70%) 0 0 / 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   animation: shimmer-text var(--duration-loop-shimmer) linear infinite;

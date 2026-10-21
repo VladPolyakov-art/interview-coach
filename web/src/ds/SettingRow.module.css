@@ -1,0 +1,34 @@
+/* The row pulls into the list's side padding by --space-3, so a found row's tint has room and the text stays aligned. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-3);
+  margin-inline: calc(var(--space-3) * -1);
+  scroll-margin-block: var(--space-6);
+}
+.row + .row { border-top: var(--border-width) solid var(--color-border-subtle); }
+/* The text gives way first, so a control (a segmented row, a select) keeps its one-line width. */
+.text { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.label { font-size: var(--text-md); font-weight: var(--weight-medium); color: var(--color-text-primary); }
+.desc { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.control { flex: 0 0 auto; min-width: 0; max-width: 65%; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+/* A field in the control column has one width for all rows, so selects line up. */
+.control > [data-field] { width: 15rem; max-width: 100%; }
+.stack { flex-direction: column; align-items: stretch; gap: var(--space-3); }
+.stack .control { max-width: none; justify-content: flex-start; }
+.stack .control > [data-field] { width: 100%; }
+/* Narrow container (a phone): a wide control drops under the text and fills the row; a switch stays on the right.
+ * 30rem is a container width, not a design value. */
+@container (width < 30rem) {
+  .row:not(:has(> .control [role="switch"])) { flex-direction: column; align-items: stretch; gap: var(--space-3); }
+  .row:not(:has(> .control [role="switch"])) .control { max-width: none; justify-content: flex-start; flex-wrap: nowrap; }
+  .control > [data-field] { flex: 1 1 auto; width: auto; }
+}
+/* Found from settings search or a deep link: a soft tint that fades, so the eye lands on the row. */
+.row[data-found] { border-radius: var(--radius-md); animation: found calc(var(--duration-slow) * 6) var(--ease-standard); }
+@keyframes found {
+  from, 40% { background: var(--color-hover); }
+  to { background: transparent; }
+}

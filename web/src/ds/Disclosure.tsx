@@ -3,12 +3,13 @@
  * Anatomy: header <button aria-expanded aria-controls> with slots `leading` · `title` · `meta` (second line) ·
  * chevron at the end; region role="region" labelled by the header. Optional heading wrapper (`headingLevel`)
  * so card titles stay in the document outline (accordion pattern).
- * Motion (docs/motion.md 3.7 "Disclosure"): chevron rotates (base); the region rises in on open and soft-outs on
- * close, kept mounted by usePresence for --duration-exit only; no height animation (rule 6).
+ * Motion (docs/motion.md 3.7 "Disclosure", D76): chevron rotates (base); the region grows open and folds shut (height
+ * via grid rows 0fr ↔ 1fr, with opacity, --duration-base) so what is below slides instead of jumping; kept mounted by
+ * usePresence until it has folded. Content is clipped only while it moves (focus rings stay whole once open).
  * Controlled (`open` + `onOpenChange`, for "Open all" and evidence-link jumps) or uncontrolled (`defaultOpen`). */
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode, type TransitionEvent } from "react";
 import { Icon } from "./icons";
-import { usePresence } from "./motion";
+import { durationMs, usePresence } from "./motion";
 import s from "./Disclosure.module.css";
 
 export interface DisclosureProps {
@@ -43,7 +44,16 @@ export function Disclosure({
   const auto = useId();
   const headerId = id ?? `${auto}h`;
   const regionId = `${auto}r`;
-  const { mounted, leaving } = usePresence(open);
+  const { mounted, leaving } = usePresence(open, "--duration-base");
+  // Open and done growing: stop clipping. Without motion there is no transition to wait for.
+  const [settled, setSettled] = useState(open);
+  useEffect(() => {
+    if (!open) setSettled(false);
+    else if (durationMs("--duration-base") <= 0) setSettled(true);
+  }, [open]);
+  const onGrown = (e: TransitionEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && e.propertyName === "grid-template-rows" && open) setSettled(true);
+  };
 
   const toggle = () => {
     const next = !open;
@@ -81,10 +91,13 @@ export function Disclosure({
         id={regionId}
         role="region"
         aria-labelledby={headerId}
-        className={`${s.region} ${leaving ? "motion-soft-out" : "motion-rise-base"}`}
+        className={`${s.region} ${leaving ? s.folding : ""} ${settled && !leaving ? s.settled : ""}`}
         hidden={!mounted}
+        onTransitionEnd={onGrown}
       >
-        {mounted ? children : null}
+        <div className={s.clip}>
+          <div className={s.body}>{mounted ? children : null}</div>
+        </div>
       </div>
     </Root>
   );

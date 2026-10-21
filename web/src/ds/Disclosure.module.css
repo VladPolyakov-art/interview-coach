@@ -41,6 +41,21 @@
 }
 .card .chevron { margin-top: calc(var(--space-1) / 2); }
 .chevronOpen { transform: rotate(180deg); }
+/* D76: grows open / folds shut. Rows 0fr ↔ 1fr animate the height without measuring; @starting-style gives the
+ * opening its 0fr start (the region comes out of display: none). Padding and the divider live on .body, so nothing
+ * is left showing at 0fr. */
+.region {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard);
+}
+@starting-style {
+  .region { grid-template-rows: 0fr; opacity: 0; }
+}
+.region.folding { grid-template-rows: 0fr; opacity: 0; pointer-events: none; }
 .region[hidden] { display: none; }
-.card .region { padding: var(--space-4) var(--space-5) var(--space-5); border-top: var(--border-width) solid var(--color-border-subtle); }
-.plain .region { padding-top: var(--space-2); }
+.clip { min-height: 0; overflow: hidden; }
+.settled > .clip { overflow: visible; }
+.card .body { padding: var(--space-4) var(--space-5) var(--space-5); border-top: var(--border-width) solid var(--color-border-subtle); }
+.plain .body { padding-top: var(--space-2); }

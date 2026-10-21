@@ -351,10 +351,6 @@ function navFor(pathname: string): NavKey | null {
   return null;
 }
 
-/** Page identity for scroll reset: Settings sections are one page (same rule as the route transition in App.tsx). */
-function pageKey(pathname: string) {
-  return pathname.startsWith("/settings") ? "/settings" : pathname;
-}
 
 /** The collapsed state of the rail, remembered per browser (`ic.railCollapsed`, D57). */
 function useRailCollapsed(): [boolean, (next: boolean) => void] {
@@ -458,8 +454,10 @@ function LiveShell({ children }: { children: ReactNode }) {
   }, [location.pathname, loadRecent]);
 
 
-  // A new page starts at the top (<main> is the scroll container).
-  const page = pageKey(location.pathname);
+  // A new page starts at the top (<main> is the scroll container). Settings is a popup over the page (D76): opening and
+  // closing it keeps the page where it was.
+  const [page, setPage] = useState(location.pathname);
+  if (!location.pathname.startsWith("/settings") && page !== location.pathname) setPage(location.pathname);
   useEffect(() => {
     mainRef.current?.scrollTo?.({ top: 0 });
   }, [page]);

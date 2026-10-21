@@ -103,6 +103,15 @@ function installStub() {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (url.endsWith("/api/engines/ollama/models")) return json(MODELS);
     if (/\/api\/engines\/[a-z_]+\/test$/.test(url)) return json({ ok: true, latency_ms: 840, status: STATUS.ollama.ready });
+    // Settings sections (D76 review frames): fictional voices, speech and data, no server.
+    if (url.endsWith("/api/voices")) return json({ default: "am_eric", tts: { available: true }, voices: [
+      { id: "am_eric", label: "Eric · US, male", locale: "en-US", gender: "m" },
+      { id: "af_heart", label: "Heart · US, female", locale: "en-US", gender: "f" },
+    ] });
+    if (url.endsWith("/api/stt")) return json({ available: true, backend: "mlx" });
+    if (url.endsWith("/api/telemetry")) return json({ opt_in: false, events: 0, file: "", remote: false, what: "" });
+    if (url.endsWith("/api/sessions/trash")) return json({ items: [] });
+    if (url.endsWith("/api/health")) return json({ ok: true, data_dir: "~/Library/Application Support/Vukoli" });
     return real(input, init);
   };
 }

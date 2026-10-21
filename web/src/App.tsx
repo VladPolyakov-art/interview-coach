@@ -12,7 +12,7 @@ import { HomeScreen } from "./screens/Home";
 import { NotFound } from "./screens/NotFound";
 import { ServerUnavailable } from "./screens/ServerUnavailable";
 import { SessionScreen } from "./screens/Session";
-import { SettingsScreen } from "./screens/Settings";
+import { useSettingsRoute } from "./screens/Settings";
 import { SetupWizard } from "./screens/Setup";
 import s from "./App.module.css";
 
@@ -42,41 +42,37 @@ export function App() {
   );
 }
 
-function FirstRunGate({ children }: { children: React.ReactNode }) {
+function FirstRunGate({ children, off }: { children: React.ReactNode; off?: boolean }) {
   const location = useLocation();
-  if (!prefs.setupDone() && location.pathname === "/") return <Navigate to="/setup" replace />;
+  if (!off && !prefs.setupDone() && location.pathname === "/") return <Navigate to="/setup" replace />;
   return <>{children}</>;
 }
 
 /** Route change (docs/motion.md 3.1, New): the outgoing page fades out (`exit`), the incoming page content rises in
  * (`slow`, `--ease-enter`). The rail stays put: AppShell is shared by every shell route, only <main>'s content swaps.
- * Settings sections and query changes (Home track) are not page changes. Focus left inside the old page moves to <main>. */
-function routeKey(pathname: string) {
-  if (pathname.startsWith("/settings")) return "/settings";
-  return pathname;
-}
-
+ * Query changes (Home track) are not page changes. Focus left inside the old page moves to <main>.
+ * Settings (D76) is a popup over the page you came from (Home on a direct visit), so it never swaps the page. */
 function ShellRoutes() {
-  const location = useLocation();
+  const settings = useSettingsRoute();
+  const location = settings.pageLocation;
   return (
     <AppShell>
       <Swap
-        swapKey={routeKey(location.pathname)}
+        swapKey={location.pathname}
         enterClass="motion-page-in"
         exitClass="motion-fade-out"
         className={s.routeSwap}
         focusTarget={() => document.getElementById("main")}
       >
         <Routes location={location}>
-          <Route path="/" element={<FirstRunGate><HomeScreen /></FirstRunGate>} />
+          <Route path="/" element={<FirstRunGate off={settings.open}><HomeScreen /></FirstRunGate>} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/history/trash" element={<TrashScreen />} />
           <Route path="/sessions/:id" element={<DebriefScreen />} />
-          <Route path="/settings" element={<Navigate to="/settings/engine" replace />} />
-          <Route path="/settings/:section" element={<SettingsScreen />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Swap>
+      {settings.dialog}
     </AppShell>
   );
 }

@@ -28,9 +28,10 @@
   transition: transform calc(var(--duration-base) + var(--duration-stagger) / 2) var(--ease-standard),
     background-color var(--duration-base) var(--ease-standard);
 }
-.switch[aria-checked="true"] { background: var(--color-checked); border-color: var(--color-checked); }
+/* Owner (D76): the switch is blue when on; other selection (checkbox, chips) stays neutral. */
+.switch[aria-checked="true"] { background: var(--color-toggle-on); border-color: var(--color-toggle-on); }
 .switch[aria-checked="true"]::after {
-  background: var(--color-text-on-checked);
+  background: var(--color-text-on-toggle);
   transform: translateX(calc(var(--toggle-w) - var(--toggle-h)));
 }
 .switch:disabled { opacity: 0.5; cursor: not-allowed; }

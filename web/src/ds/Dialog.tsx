@@ -9,8 +9,8 @@ export interface DialogProps {
   open: boolean;
   title: ReactNode;
   children?: ReactNode;
-  /** End-aligned actions (the primary last). On a narrow dialog they stack, primary on top. */
-  actions: ReactNode;
+  /** End-aligned actions (the primary last). On a narrow dialog they stack, primary on top. A `lg` panel may have none. */
+  actions?: ReactNode;
   /** Start-aligned actions, e.g. "Delete job" in the vacancy editor (edit mode). */
   actionsStart?: ReactNode;
   onClose: () => void;
@@ -18,6 +18,8 @@ export interface DialogProps {
   closeLabel?: string;
   /** Render open in the document flow: no portal, no scrim, no focus move. For stories and the review gallery. */
   inline?: boolean;
+  /** `md` (default): a decision. `lg` (D76): a tall panel with its own layout in the body, e.g. Settings; full screen on a phone. */
+  size?: "md" | "lg";
 }
 
 /** Modal decision. Three render modes, one look:
@@ -41,13 +43,13 @@ interface BoxProps extends DialogProps {
   ref?: Ref<HTMLDialogElement>;
 }
 
-function DialogBox({ title, children, actions, actionsStart, onClose, closeLabel, mode, open, className, ref }: BoxProps) {
+function DialogBox({ title, children, actions, actionsStart, onClose, closeLabel, mode, open, className, ref, size }: BoxProps) {
   const id = useId();
   return (
     <dialog
       ref={ref}
       open
-      className={`${s.dialog} ${mode === "inline" ? s.inline : s.contained} ${className ?? ""}`}
+      className={`${s.dialog} ${mode === "inline" ? s.inline : s.contained} ${size === "lg" ? s.lg : ""} ${className ?? ""}`}
       aria-labelledby={`${id}-t`}
       aria-modal={mode === "contained" ? true : undefined}
       tabIndex={-1}
@@ -67,7 +69,7 @@ function DialogBox({ title, children, actions, actionsStart, onClose, closeLabel
 }
 
 function Inner({ id, title, children, actions, actionsStart, onClose, closeLabel }: {
-  id: string; title: ReactNode; children?: ReactNode; actions: ReactNode; actionsStart?: ReactNode;
+  id: string; title: ReactNode; children?: ReactNode; actions?: ReactNode; actionsStart?: ReactNode;
   onClose: () => void; closeLabel?: string;
 }) {
   return (
@@ -77,10 +79,12 @@ function Inner({ id, title, children, actions, actionsStart, onClose, closeLabel
         {closeLabel ? <IconButton icon="x" size="sm" label={closeLabel} className={s.close} onClick={onClose} /> : null}
       </div>
       {children ? <div className={s.body}>{children}</div> : null}
-      <div className={s.actionsRow}>
-        {actionsStart ? <div className={s.actionsStart}>{actionsStart}</div> : null}
-        <div className={s.actions}>{actions}</div>
-      </div>
+      {actions || actionsStart ? (
+        <div className={s.actionsRow}>
+          {actionsStart ? <div className={s.actionsStart}>{actionsStart}</div> : null}
+          <div className={s.actions}>{actions}</div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -101,7 +105,7 @@ function ContainedDialog(props: DialogProps) {
   );
 }
 
-function ModalDialog({ open, title, children, actions, actionsStart, onClose, closeLabel }: DialogProps) {
+function ModalDialog({ open, title, children, actions, actionsStart, onClose, closeLabel, size }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const cancelExit = useRef<(() => void) | null>(null);
@@ -137,7 +141,7 @@ function ModalDialog({ open, title, children, actions, actionsStart, onClose, cl
   return (
     <dialog
       ref={ref}
-      className={`${s.dialog} ${s.modal}`}
+      className={`${s.dialog} ${s.modal} ${size === "lg" ? s.lg : ""}`}
       aria-labelledby={`${id}-t`}
       onClose={() => { if (open) onClose(); }}
       onCancel={(e) => { e.preventDefault(); onClose(); }}

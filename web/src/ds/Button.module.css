@@ -88,7 +88,8 @@
   height: var(--control-h-md);
   padding: 0;
   border: var(--border-width) solid transparent;
-  border-radius: var(--radius-md);
+  /* Owner (D76): every icon button is round — its hover and pressed fills too. */
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;

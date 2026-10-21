@@ -5,10 +5,9 @@ import { MemoryRouter } from "react-router-dom";
 import { AppShellView } from "../../components/AppShell";
 import { EnginePanel, type EnginePanelProps } from "../../components/EnginePanel";
 import { EngineFixture, NONE_READY, SETTINGS, makeEngines } from "../../components/engine/fixtures";
-import { Page } from "../../components/Page";
-import { t } from "../../i18n";
 import type { ReviewScreen, ReviewState } from "../../review/screens";
 import { SHELL_ENGINE, SHELL_RECENT } from "../debrief/frames";
+import { SettingsScreen } from "../Settings";
 import { SetupFrame } from "../Setup";
 
 type Engines = ReturnType<typeof makeEngines>;
@@ -26,7 +25,7 @@ function SettingsScene({ engines, props, settings }: { engines: Engines; props: 
     <EngineFixture engines={engines} settings={settings}>
       <MemoryRouter initialEntries={["/settings/engine"]}>
         <AppShellView current="settings" recent={SHELL_RECENT} engine={SHELL_ENGINE}>
-          <Page title={t("settings.title")}><EnginePanel {...props} /></Page>
+          <SettingsScreen content={<EnginePanel {...props} />} />
         </AppShellView>
       </MemoryRouter>
     </EngineFixture>

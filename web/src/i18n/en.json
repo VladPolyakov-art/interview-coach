@@ -1221,6 +1221,7 @@
       "speak": "Mike speaks aloud",
       "speakHint": "Off: Mike only writes. Useful in a quiet office.",
       "stt": "Speech recognition",
+      "sttWhere": "Recognise my speech",
       "sttServer": "On this computer",
       "sttBrowser": "In the browser",
       "sttServerHint": "Local recognition ({backend}). Audio stays on this computer.",
@@ -1251,7 +1252,8 @@
       "source": "Source: {source}",
       "remove": "Remove CV",
       "removed": "CV removed.",
-      "empty": "No CV yet."
+      "empty": "No CV yet.",
+      "cv": "CV text"
     },
     "appearance": {
       "title": "Appearance",
@@ -1270,7 +1272,8 @@
       "obsidianHint": "Optional. Each finished session is also saved as a Markdown note in this folder.",
       "obsidianSave": "Save folder",
       "trash": "Trash",
-      "trashHint": "Sessions you moved to Trash stay here until you delete them for good."
+      "trashHint": "Sessions you moved to Trash stay here until you delete them for good.",
+      "trashOpen": "Open Trash"
     },
     "saved": "Saved",
     "saveError": "Couldn't save: {message}",
@@ -1306,6 +1309,15 @@
       "practiceTitle": "Practice only",
       "licenceTitle": "Open source",
       "licence": "The app is open source under AGPL-3.0-or-later. Your sessions stay on this computer."
+    },
+    "search": {
+      "label": "Search settings",
+      "placeholder": "Search settings",
+      "results_one": "{n} setting found",
+      "results_other": "{n} settings found",
+      "empty": "No settings match “{q}”.",
+      "engine": "Choose and connect the model Mike runs on.",
+      "clear": "Clear search"
     }
   },
   "errors": {
