@@ -30,15 +30,9 @@
 .tipsList { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-text-secondary); }
 
 /* ---------- suggester ---------- */
-/* D91: a sample, not part of the dialogue or a tip: no fill (darker than the tips card, the stage shows through), a
- * dashed outline, like a draft. */
-.suggest {
-  width: 100%;
-  max-width: var(--layout-narrow);
-  border-radius: var(--radius-md);
-  background: transparent;
-  border: var(--border-width) dashed var(--color-border-control);
-}
+/* D92: a sample, not part of the dialogue: the card fill (darker than the chip fill of the tips and the bubbles in the
+ * dark theme), no outline. */
+.suggest { width: 100%; max-width: var(--layout-narrow); border-radius: var(--radius-md); }
 .suggestInner { display: flex; flex-direction: column; gap: var(--space-3); }
 .suggestBody { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); }
 .suggestStory { color: var(--color-text-secondary); }

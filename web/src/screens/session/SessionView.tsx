@@ -8,7 +8,7 @@
  * portal); every other rule is a CSS container query on the root (`session`).
  * V2.1 (D49): the centre is the running transcript of the whole dialogue (newest at the bottom, follows unless the user
  * scrolled up → "Jump to latest"). Mike's presence is a glow along the top edge (ds/Presence), only while someone talks
- * or Mike thinks; the transcript starts under it (--presence-reach). The one state text sits right above the island. */
+ * or Mike thinks; the transcript starts in its lower part (D91). The one state text sits in the glow, top centre (D92). */
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button, Drawer, IconButton, Panel, Presence, scrollBehavior, StatusPill, usePresence } from "../../ds";
 import { t } from "../../i18n";
@@ -270,6 +270,10 @@ export function SessionView(props: SessionViewProps) {
               reducedMotion={props.reducedMotion}
             />
           </div>
+          {/* D92: the state text sits in the glow at the top (the glow is the same state), not in a row above the island. */}
+          <div className={`${s.status} ${s.shift}`} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
+            <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} subFadeMs={stage.hint ? (props.hintMs ?? HINT_MS) : undefined} surface="none" className={data.micTip && muted ? s.statusQuiet : undefined} />
+          </div>
           <div className={s.scroll} ref={scrollRef} onScroll={onScroll}>
             <div className={`${s.flow} ${s.shift}`}>
               {showTranscript ? (
@@ -295,9 +299,6 @@ export function SessionView(props: SessionViewProps) {
           <div className={`${s.islandWrap} ${s.shift}`} data-input={input}>
             <div ref={islandRef} className={s.dock}>
               <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
-              <div className={s.status} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
-                <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} subFadeMs={stage.hint ? (props.hintMs ?? HINT_MS) : undefined} surface="none" className={data.micTip && muted ? s.statusQuiet : undefined} />
-              </div>
               {showIsland ? (
                 <div className={s.islandBox} data-input={input} data-stacked={(props.island ?? (narrowIsland ? "stacked" : "inline")) === "stacked" || undefined}>
                   <SessionIsland

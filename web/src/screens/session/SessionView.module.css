@@ -3,9 +3,8 @@
  * the viewport. No top bar, no dock: one floating island at the bottom centre of the stage. */
 .root {
   container: session / inline-size;
-  /* Height of the dock (state text + island), measured by the view (ResizeObserver); this default is the one-row pill
-   * plus one line of state text. */
-  --island-h: calc(var(--control-h-lg) + var(--space-2) * 2 + var(--space-10));
+  /* Height of the dock (notices + island), measured by the view (ResizeObserver); this default is the one-row pill. */
+  --island-h: calc(var(--control-h-lg) + var(--space-2) * 2);
   /* D49: the glow box along the top edge; its bottom is the first text line (Presence text-safe mask). */
   --stage-reach: var(--presence-reach);
   --island-offset: var(--space-6);
@@ -84,7 +83,18 @@
 /* D62: the voice pill hugs its content and may run wider than the text column (it squeezed the mic at 704px); the
  * text-mode box and the notices keep the column width. */
 .dock { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; max-width: 100%; min-width: 0; }
-.status { display: flex; justify-content: center; max-width: 100%; pointer-events: auto; }
+/* D92: the state text in the glow, top centre, above where the transcript fades in (owner: the line above the island
+ * «очень много пространства занимает»). It takes no room from the dialogue. */
+.status {
+  position: absolute;
+  inset-inline: 0;
+  top: var(--space-6);
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--space-8);
+  pointer-events: none;
+}
 .islandBox { display: flex; justify-content: center; width: 100%; max-width: 100%; min-width: 0; }
 .islandBox[data-input="text"] { max-width: var(--layout-narrow); }
 .islandBox > * { pointer-events: auto; }
@@ -104,6 +114,7 @@
   .body { --stage-reach: var(--presence-reach-sm); }
   .scroll { padding: var(--text-fade) var(--layout-gutter) calc(var(--island-h) + var(--island-offset) + var(--space-6)); }
   .flow { gap: var(--space-5); }
+  .status { top: var(--space-4); padding-inline: var(--layout-gutter); }
   .dock { gap: var(--space-2); }
   /* Two-row island: full width minus the gutter, above the home indicator (V2.7). */
   .islandWrap { padding-inline: var(--layout-gutter); bottom: calc(var(--island-offset) + env(safe-area-inset-bottom)); }

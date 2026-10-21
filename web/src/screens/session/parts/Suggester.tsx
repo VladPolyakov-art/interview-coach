@@ -8,7 +8,7 @@ import s from "./parts.module.css";
 
 export function Suggester({ suggestion }: { suggestion?: SessionSuggestion }) {
   return (
-    <Card tone="subtle" padding="sm" className={s.suggest}>
+    <Card padding="sm" className={s.suggest}>
       <div data-review-id="Session/Suggester" data-review-section="Session · Answer suggester" data-comment-target className={s.suggestInner}>
         <div className={s.suggestBody}>
           <strong>{t("session.suggest.title")}</strong>
