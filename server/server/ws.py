@@ -11,7 +11,7 @@ import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from . import __version__, config, content, engines, feedback, memory, planner, storage, stt, telemetry, tts
-from .engines.base import EngineError, LLMEngine
+from .engines.base import BACKGROUND, EngineError, LLMEngine
 from .engines.gemini_live import GeminiLiveDriver, basic_status
 from .priority import ModelGate
 from .session import TextDriver
@@ -190,7 +190,11 @@ async def session_socket(websocket: WebSocket) -> None:
         """Feedback and suggestions: after Mike (one local model serves both, D33). Cancelled and re-run if
         Mike needs the model while the call is running."""
         await wait_for_interviewer()
-        return await gate.background(job)
+        mark = BACKGROUND.set(True)
+        try:
+            return await gate.background(job)
+        finally:
+            BACKGROUND.reset(mark)
 
     def public_record(record: dict) -> dict:
         return {k: v for k, v in record.items() if k != "history_index"}

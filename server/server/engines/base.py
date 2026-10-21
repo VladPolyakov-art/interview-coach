@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from typing import AsyncIterator, Literal
 
 from pydantic import BaseModel, Field
@@ -107,6 +108,9 @@ class LLMEngine(ABC):
         so feedback must wait until the interviewer finished speaking."""
         return False
 
+
+# Set while a call runs in the background (feedback, suggestions): an engine keeps its fast path for Mike's reply (D87).
+BACKGROUND: ContextVar[bool] = ContextVar("vukoli_background", default=False)
 
 THINK_BLOCK = re.compile(r"^\s*<think>.*?(</think>\s*|$)", re.S)
 

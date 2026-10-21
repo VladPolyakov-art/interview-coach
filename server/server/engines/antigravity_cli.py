@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 from typing import AsyncIterator
 
-from .base import EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
+from .base import BACKGROUND, EngineDescriptor, EngineError, EngineStatus, LLMEngine, Msg
 from .claude_cli import child_env, to_prompt
 from .locate import find_program
 
@@ -113,20 +113,181 @@ async def stop_and_wait(proc: asyncio.subprocess.Process, seconds: float = 5.0) 
     waiter.cancel()
 
 
-async def _lines(stream: asyncio.StreamReader, gone: asyncio.Event) -> AsyncIterator[bytes]:
-    """Output lines until the stream ends or `gone` is set (then nothing waits for a pipe a child may still hold)."""
-    while True:
-        read = asyncio.ensure_future(stream.readline())
-        halt = asyncio.ensure_future(gone.wait())
-        await asyncio.wait({read, halt}, return_when=asyncio.FIRST_COMPLETED)
-        halt.cancel()
-        if not read.done():
-            read.cancel()
+class Run:
+    """One started `agy`: its process, its empty folder and the chats it made. It can start before its message is
+    ready (a spare, D87), so its output is read from the start: the chat ids are known even if it is never used."""
+
+    def __init__(self, proc: asyncio.subprocess.Process, workdir: str):
+        self.proc, self.workdir = proc, workdir
+        self.loop = asyncio.get_running_loop()
+        self.ids: set[str] = set()
+        self.signed_out = asyncio.Event()
+        self.events: asyncio.Queue[dict | None] = asyncio.Queue()
+        self._tasks = [asyncio.ensure_future(self._read()), asyncio.ensure_future(self._watch())]
+
+    def _note(self, event: dict) -> None:
+        step = event.get("step_update") or {}
+        found = [event.get("conversation_id"), step.get("conversation_id"), (event.get("result") or {}).get("conversation_id")]
+        found += [agent.get("conversation_id") for agent in (step.get("subagent_info") or {}).get("subagents") or []]
+        new = {str(cid) for cid in found if cid} - self.ids
+        if new:
+            self.ids |= new
+            _open_runs(new)
+
+    async def _read(self) -> None:
+        try:
+            async for raw in self.proc.stdout:
+                try:
+                    event = json.loads(raw)
+                except ValueError:
+                    continue
+                if isinstance(event, dict):
+                    self._note(event)
+                    self.events.put_nowait(event)
+        except (ValueError, OSError):
+            pass
+        self.events.put_nowait(None)
+
+    async def _watch(self) -> None:
+        # Signed out, print mode prints a sign-in link and waits a minute for a code: stop at once.
+        async for line in self.proc.stderr:
+            if "authentication" in line.decode(errors="replace").lower():
+                self.signed_out.set()
+                stop(self.proc)
+                self.events.put_nowait(None)    # a child may still hold the output open: don't wait for it
+                return
+
+    @property
+    def alive(self) -> bool:
+        return self.proc.returncode is None and not self.signed_out.is_set()
+
+    async def finish(self) -> None:
+        """Stop it, then delete its folder and its chats from Antigravity's history (they're written until it's gone)."""
+        if self.proc.returncode is None:
+            await stop_and_wait(self.proc)
+        for task in self._tasks:
+            task.cancel()
+        forget(self.ids)
+        _open_runs(self.ids, add=False)
+        shutil.rmtree(self.workdir, ignore_errors=True)
+
+    def discard(self) -> None:
+        """The same without waiting, for a run that belongs to another event loop (or a test's cleanup)."""
+        try:
+            os.killpg(self.proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+        forget(self.ids)
+        _open_runs(self.ids, add=False)
+        shutil.rmtree(self.workdir, ignore_errors=True)
+
+
+async def start_run(binary: str, model: str) -> Run:
+    workdir = tempfile.mkdtemp(prefix="vukoli-agy-")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *build_command(binary, model), cwd=workdir, env=child_env(),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            limit=4 * 1024 * 1024, start_new_session=True)
+    except OSError:
+        shutil.rmtree(workdir, ignore_errors=True)
+        raise
+    return Run(proc, workdir)
+
+
+# A spare (D87): starting `agy` takes ~2-3 s of the ~5.5 s a reply takes, so during a session one more is started
+# ahead and waits for the next message (checked live: 2.2 s instead of 5.5 s). Each run still gets one message only,
+# so turns never share a chat. Kept only while a session uses the engine; idle for SPARE_IDLE, it's stopped.
+SPARE_IDLE = 300.0
+_spares: dict[tuple[str, str], Run] = {}
+_wanted: dict[tuple[str, str], float] = {}
+_filling: set[tuple[str, str]] = set()
+
+
+def want_spares(binary: str, model: str) -> None:
+    _wanted[(binary, model)] = time.monotonic()
+    refill(binary, model)
+
+
+def refill(binary: str, model: str) -> None:
+    key = (binary, model)
+    if key in _spares or key in _filling or time.monotonic() - _wanted.get(key, -SPARE_IDLE * 2) > SPARE_IDLE:
+        return
+    _filling.add(key)
+
+    async def fill() -> None:
+        try:
+            run = await start_run(binary, model)
+        except OSError:
             return
-        line = read.result()
-        if not line:
-            return
-        yield line
+        finally:
+            _filling.discard(key)
+        _spares[key] = run
+        await asyncio.sleep(SPARE_IDLE)
+        if _spares.get(key) is run:             # nobody needed it: the session is over
+            del _spares[key]
+            await run.finish()
+
+    asyncio.ensure_future(fill())
+
+
+async def take_run(binary: str, model: str) -> Run:
+    """The spare if one is waiting (and still fine), else a new run; then a new spare for the turn after."""
+    run = _spares.pop((binary, model), None)
+    if run is not None and not (run.alive and run.loop is asyncio.get_running_loop()):
+        if run.loop is asyncio.get_running_loop():
+            await run.finish()
+        else:
+            run.discard()
+        run = None
+    if run is None:
+        run = await start_run(binary, model)
+    if (binary, model) in _wanted:
+        _wanted[(binary, model)] = time.monotonic()
+    refill(binary, model)
+    return run
+
+
+async def close_spares() -> None:
+    """On shutdown: stop the waiting spares and delete their (empty) chats."""
+    _wanted.clear()
+    while _spares:
+        _, run = _spares.popitem()
+        if run.loop is asyncio.get_running_loop():
+            await run.finish()
+        else:
+            run.discard()
+
+
+def _open_runs_file() -> Path:
+    from .. import config
+    return config.data_dir() / "antigravity-runs.json"
+
+
+def _open_runs(change: set[str] | None = None, *, add: bool = True) -> set[str]:
+    """Chats of runs not finished yet, kept on disk: if Vukoli is killed, a waiting spare quits on its own but leaves
+    its chat behind, so the next start deletes it (D87)."""
+    path = _open_runs_file()
+    try:
+        ids = set(json.loads(path.read_text()))
+    except (OSError, ValueError, TypeError):
+        ids = set()
+    if change:
+        ids = ids | change if add else ids - change
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(sorted(ids)))
+        except OSError:
+            pass
+    return ids
+
+
+def forget_left_over() -> None:
+    """On start: delete the chats a previous Vukoli left behind (killed with a spare waiting)."""
+    left = _open_runs()
+    if left:
+        forget(left)
+        _open_runs(left, add=False)
 
 
 def build_command(binary: str, model: str) -> list[str]:
@@ -187,69 +348,46 @@ class AntigravityCLIEngine(LLMEngine):
         # Print mode has no system-prompt flag: the instructions lead the message, the turn follows.
         system = NO_TOOLS + ("\n\n" + system.strip() if system.strip() else "")
         message = {"event": "user", "message": {"content": f"{system}\n\n---\n\n{prompt}"}}
-        ran: set[str] = set()
-        with tempfile.TemporaryDirectory(prefix="vukoli-agy-") as workdir:
-            proc = await asyncio.create_subprocess_exec(
-                *build_command(self._bin(), self._model), cwd=workdir, env=child_env(),
-                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-                limit=4 * 1024 * 1024, start_new_session=True)
-            signed_out = asyncio.Event()
+        # A background call (feedback) starts its own: the spare is kept for Mike's reply, which runs alongside it.
+        run = await (start_run if BACKGROUND.get() else take_run)(self._bin(), self._model)
+        text, error, blocked = "", "", False
+        try:
+            run.proc.stdin.write((json.dumps(message) + "\n").encode())
+            await run.proc.stdin.drain()
+            run.proc.stdin.close()
+            while (event := await run.events.get()) is not None:
+                step = event.get("step_update") or {}
+                if step.get("step_type") == "tool" or step.get("tool_name") or step.get("subagent_info"):
+                    name = step.get("tool_name") or "subagent"
+                    error, blocked = f"Antigravity tried to use a tool ({name}); Vukoli stopped it.", True
+                    break
+                if event.get("event") == "result":
+                    result = event.get("result") or {}
+                    if result.get("status") == "SUCCESS":
+                        text = str(result.get("response") or "")
+                    else:
+                        error = str(result.get("error") or f"Antigravity CLI ended with {result.get('status')}")
+                    break
+        except (BrokenPipeError, ConnectionResetError):
+            pass                                # it ended before reading the message: told below
+        finally:
+            await run.finish()
+        if run.signed_out.is_set():
+            error = "Antigravity isn't signed in."
+        if blocked:
+            raise EngineError("engine_error", error, "Try again. If it repeats, pick another engine.")
+        if not text.strip():
+            error = error or "Antigravity answered with nothing."
+            code = "unauthorized" if run.signed_out.is_set() or is_auth_error(error) else "engine_error"
+            if code == "unauthorized":
+                remember_sign_in(False)
+            raise EngineError(code, error[:300], f"Run `{LOGIN}` in a terminal and sign in with Google.")
+        yield text.strip()
 
-            async def watch_stderr() -> None:
-                # Signed out, print mode prints a sign-in link and waits a minute for a code: stop at once.
-                async for line in proc.stderr:
-                    if "authentication" in line.decode(errors="replace").lower():
-                        signed_out.set()
-                        stop(proc)
-                        return
-
-            watcher = asyncio.create_task(watch_stderr())
-            text, error, blocked = "", "", False
-            try:
-                proc.stdin.write((json.dumps(message) + "\n").encode())
-                await proc.stdin.drain()
-                proc.stdin.close()
-                async for raw in _lines(proc.stdout, signed_out):
-                    try:
-                        event = json.loads(raw)
-                    except ValueError:
-                        continue
-                    if event.get("conversation_id"):
-                        ran.add(str(event["conversation_id"]))
-                    step = event.get("step_update") or {}
-                    if step.get("conversation_id"):
-                        ran.add(str(step["conversation_id"]))
-                    for agent in (step.get("subagent_info") or {}).get("subagents") or []:
-                        ran.add(str(agent.get("conversation_id", "")))
-                    if step.get("step_type") == "tool" or step.get("tool_name") or step.get("subagent_info"):
-                        name = step.get("tool_name") or "subagent"
-                        error, blocked = f"Antigravity tried to use a tool ({name}); Vukoli stopped it.", True
-                        break
-                    if event.get("event") == "result":
-                        result = event.get("result") or {}
-                        ran.add(str(result.get("conversation_id", "")))
-                        if result.get("status") == "SUCCESS":
-                            text = str(result.get("response") or "")
-                        else:
-                            error = str(result.get("error") or f"Antigravity CLI ended with {result.get('status')}")
-                        break
-                await stop_and_wait(proc)
-                if signed_out.is_set():
-                    error = "Antigravity isn't signed in."
-                if blocked:
-                    raise EngineError("engine_error", error, "Try again. If it repeats, pick another engine.")
-                if not text.strip():
-                    error = error or "Antigravity answered with nothing."
-                    code = "unauthorized" if signed_out.is_set() or is_auth_error(error) else "engine_error"
-                    if code == "unauthorized":
-                        remember_sign_in(False)
-                    raise EngineError(code, error[:300], f"Run `{LOGIN}` in a terminal and sign in with Google.")
-                yield text.strip()
-            finally:
-                if proc.returncode is None:
-                    await stop_and_wait(proc)
-                watcher.cancel()
-                forget(ran)
+    async def warm_up(self, messages: list[Msg]) -> None:
+        """A session starts: keep a spare `agy` ready from now on, so Mike's replies skip the start-up (D87)."""
+        if binary := self._binary or find_agy():
+            want_spares(binary, self._model)
 
     async def test(self) -> EngineStatus:
         """Real round trip: costs one small request on the user's Google account."""

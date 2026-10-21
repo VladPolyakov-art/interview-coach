@@ -544,6 +544,112 @@ async def test_antigravity_signed_out_stops_at_once_and_forgets_the_sign_in(tmp_
     assert config.load_settings()["antigravity_cli"]["verified"] is False
 
 
+def spare_agy(tmp_path, cid: str = AGY_ID):
+    """A stand-in `agy` that notes each start and keeps each message in its own file (one run = one message)."""
+    fake = tmp_path / "agy"
+    out = "\n".join(json.dumps(x) for x in agy_turn("Hello.", cid))
+    fake.write_text(f"""#!/bin/sh
+echo $$ >> "{tmp_path}/starts"
+pwd >> "{tmp_path}/dirs"
+cat > "{tmp_path}/prompt.$$"
+cat <<'JSONL'
+{out}
+JSONL
+""")
+    fake.chmod(0o755)
+    return str(fake)
+
+
+async def wait_for(check, seconds: float = 3.0):
+    import asyncio
+    for _ in range(int(seconds / 0.02)):
+        if check():
+            return True
+        await asyncio.sleep(0.02)
+    return False
+
+
+async def test_antigravity_session_keeps_one_spare_ready(tmp_path):
+    """D87: starting `agy` is half of a reply's wait, so a session keeps one started ahead; each still gets one
+    message only (turns never share a chat), and on shutdown nothing is left: no process, folder or chat."""
+    history = tmp_path / "agy-history" / "conversations"
+    history.mkdir(parents=True)
+    binary = spare_agy(tmp_path)
+    engine = antigravity_cli.AntigravityCLIEngine(binary=binary)
+    starts = lambda: (tmp_path / "starts").read_text().split() if (tmp_path / "starts").exists() else []
+    await engine.warm_up([])
+    assert await wait_for(lambda: len(starts()) == 1 and antigravity_cli._spares)
+    (history / f"{AGY_ID}.db").write_text("x")
+    assert await engine.complete([{"role": "user", "content": "One"}]) == "Hello."
+    assert await wait_for(lambda: len(starts()) == 2 and antigravity_cli._spares)   # the next one is waiting
+    assert await engine.complete([{"role": "user", "content": "Two"}]) == "Hello."
+    assert await wait_for(lambda: len(starts()) == 3 and antigravity_cli._spares)
+    first, second, third = starts()
+    for pid, word in ((first, "One"), (second, "Two")):
+        sent = (tmp_path / f"prompt.{pid}").read_text().strip().splitlines()
+        assert len(sent) == 1 and json.loads(sent[0])["message"]["content"].endswith(word)
+    assert not (history / f"{AGY_ID}.db").exists()
+    await antigravity_cli.close_spares()
+    assert not antigravity_cli._spares
+    assert not any(Path(d).exists() for d in (tmp_path / "dirs").read_text().split())
+
+
+async def test_antigravity_background_call_leaves_the_spare_for_mike(tmp_path):
+    """D87: feedback on an answer runs alongside Mike's reply; it must not take the started agy (live: 5-6 s → 2 s)."""
+    from server.engines.base import BACKGROUND
+    binary = spare_agy(tmp_path)
+    engine = antigravity_cli.AntigravityCLIEngine(binary=binary)
+    await engine.warm_up([])
+    assert await wait_for(lambda: antigravity_cli._spares)
+    spare = next(iter(antigravity_cli._spares.values()))
+    mark = BACKGROUND.set(True)
+    try:
+        assert await engine.complete([{"role": "user", "content": "Feedback"}]) == "Hello."
+    finally:
+        BACKGROUND.reset(mark)
+    assert next(iter(antigravity_cli._spares.values())) is spare and spare.alive
+    assert await engine.complete([{"role": "user", "content": "Reply"}]) == "Hello."
+    assert spare.proc.returncode is not None                      # Mike's reply used it
+    await antigravity_cli.close_spares()
+
+
+async def test_antigravity_keeps_no_spare_outside_a_session(tmp_path):
+    """D87: Connect or the setup check run alone; a spare only lives while a session uses the engine."""
+    binary = spare_agy(tmp_path)
+    assert await antigravity_cli.AntigravityCLIEngine(binary=binary).complete([{"role": "user", "content": "Hi"}]) == "Hello."
+    assert not await wait_for(lambda: antigravity_cli._spares, 0.5)
+    assert len((tmp_path / "starts").read_text().split()) == 1
+
+
+async def test_antigravity_spare_stops_when_the_session_is_over(tmp_path, monkeypatch):
+    monkeypatch.setattr(antigravity_cli, "SPARE_IDLE", 0.3)
+    binary = spare_agy(tmp_path)
+    await antigravity_cli.AntigravityCLIEngine(binary=binary).warm_up([])
+    assert await wait_for(lambda: antigravity_cli._spares)
+    run = next(iter(antigravity_cli._spares.values()))
+    assert await wait_for(lambda: not antigravity_cli._spares and run.proc.returncode is not None)
+    assert await wait_for(lambda: not Path(run.workdir).exists())
+
+
+def test_antigravity_start_deletes_chats_a_killed_vukoli_left(tmp_path):
+    """D87: killed with a spare waiting, Vukoli can't delete that spare's chat; the next start does (its own only)."""
+    from fastapi.testclient import TestClient
+    from server import config
+    from server.main import create_app
+    history = tmp_path / "agy-history"
+    (history / "conversations").mkdir(parents=True)
+    (history / "brain" / AGY_ID).mkdir(parents=True)
+    (history / "conversations" / f"{AGY_ID}.db").write_text("x")
+    (history / "conversations" / "user-own.db").write_text("y")
+    config.data_dir().mkdir(parents=True, exist_ok=True)
+    (config.data_dir() / "antigravity-runs.json").write_text(json.dumps([AGY_ID]))
+    with TestClient(create_app()):
+        pass
+    assert not (history / "conversations" / f"{AGY_ID}.db").exists() and not (history / "brain" / AGY_ID).exists()
+    assert (history / "conversations" / "user-own.db").exists()
+    assert json.loads((config.data_dir() / "antigravity-runs.json").read_text()) == []
+
+
 def test_antigravity_connect_checks_sign_in_then_sends_one_request(monkeypatch):
     from fastapi.testclient import TestClient
     from server import config

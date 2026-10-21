@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__, api, config, stt, tts, ws
+from .engines import antigravity_cli
 
 log = logging.getLogger("uvicorn.error")
 
@@ -31,11 +32,13 @@ def preload_speech() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = None
+    antigravity_cli.forget_left_over()                   # D87: chats a killed Vukoli left in Antigravity's history
     if os.getenv("IC_PRELOAD", "1") != "0":
         task = asyncio.ensure_future(asyncio.to_thread(preload_speech))
     yield
     if task is not None and not task.done():
         task.cancel()
+    await antigravity_cli.close_spares()                 # D87: no `agy` left waiting after Vukoli quits
 
 
 def create_app() -> FastAPI:

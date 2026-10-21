@@ -25,6 +25,11 @@ def isolated_data(tmp_path, monkeypatch):
     monkeypatch.setattr(antigravity_cli, "history_dir", lambda: tmp_path / "agy-history")
     monkeypatch.setattr(antigravity_cli, "_signed_in_cache", {})
     yield tmp_path / "data"
+    for run in list(antigravity_cli._spares.values()):                   # no spare `agy` outlives its test
+        run.discard()
+    antigravity_cli._spares.clear()
+    antigravity_cli._wanted.clear()
+    antigravity_cli._filling.clear()
 
 
 class FakeLLM(LLMEngine):
