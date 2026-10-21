@@ -38,26 +38,9 @@
 .suggestList { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-1); }
 
 /* ---------- banners ---------- */
-.banners {
-  position: absolute;
-  top: 0;
-  inset-inline: 0;
-  z-index: var(--z-sticky);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  width: 100%;
-  max-width: var(--layout-narrow);
-  margin-inline: auto;
-  padding: var(--space-4) var(--space-8) 0;
-  pointer-events: none;
-  transition: transform var(--duration-slow) var(--ease-standard);
-}
-/* The wrapper lets clicks through to the stage; the notices themselves float (a shadow, since they sit over the glow). */
-.banners > * { pointer-events: auto; box-shadow: var(--shadow-overlay); }
-@container session (width < 768px) {
-  .banners { padding: var(--space-3) var(--layout-gutter) 0; }
-}
+/* D61: the notices sit in the dock, right above the state text and the island (the dock is measured, so the
+ * transcript keeps its room above them; nothing covers the glow). */
+.banners { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; pointer-events: auto; }
 
 /* ---------- interrupted ---------- */
 .interrupted { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-5); width: 100%; max-width: var(--layout-narrow); }

@@ -256,7 +256,6 @@ export function SessionView(props: SessionViewProps) {
       style={islandH ? ({ "--island-h": `${islandH}px` } as CSSProperties) : undefined}
       onKeyDown={props.globalKeys ? undefined : onKey}
     >
-      <Banners className={s.notices} overlay={overlay} notices={data.notices} handlers={handlers} />
       <div className={s.body}>
         <main className={s.stage} id="main" data-review-id="Session/Stage" data-review-section="Session · Stage" data-comment-target>
           <div className={s.presenceBox} data-review-id="Session/Presence" data-review-section="Session · Presence" data-comment-target>
@@ -291,6 +290,7 @@ export function SessionView(props: SessionViewProps) {
           ) : null}
           <div className={`${s.islandWrap} ${s.shift}`} data-input={input}>
             <div ref={islandRef} className={s.dock}>
+              <Banners overlay={overlay} notices={data.notices} handlers={handlers} />
               <div className={s.status} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
                 <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} />
               </div>

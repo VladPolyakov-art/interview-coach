@@ -45,8 +45,9 @@ export function islandModel(p: {
   else if (phase === "mike-speaking") main = voice ? { kind: "button", id: "interrupt", label: t("session.controls.interrupt"), icon: "hand", variant: "secondary", onClick: h?.onInterrupt } : null;
   else if (phase === "listening") main = { kind: "button", id: "send", label: t("session.controls.sendNow"), icon: "send", variant: "primary", onClick: h?.onSendNow };
   else if (yourTurn) main = voice ? { kind: "button", id: "talk", label: t("session.controls.talk"), icon: "mic", variant: "secondary", disabled: muted, onClick: h?.onInterrupt } : null;
-  // Thinking (D55): no dots here — the glow and the one state text above the island already say it.
-  else if (phase === "thinking") main = null;
+  // Thinking (D55: no dots, the glow and the state text say it). D61: the button you pressed stays, as a disabled
+  // "Sent", so the slot never goes empty after a send.
+  else if (phase === "thinking") main = { kind: "button", id: "sent", label: t("session.controls.sent"), icon: "check", variant: "secondary", disabled: true };
   else if (phase === "preparing" || phase === "rechecking") main = { kind: "dots", label: t("session.island.preparing") };
   else if (AFTER.has(phase)) {
     const last = data.nextNumber === null;
@@ -118,11 +119,11 @@ function Status({ data, variant, entering }: Pick<SessionIslandProps, "data" | "
 }
 
 /** The slot keeps the width of its longest label (V2.1: the island never changes width). Ghost copies of every label
- * this variant can show sit in the same grid cell, invisible and inert. */
+ * this variant can show sit in the same grid cell, invisible and inert; the visible button stretches to it (D61). */
 function MainSlot({ main, variant, stacked, sized = true }: { main: Main; variant: SessionVariant; stacked: boolean; sized?: boolean }) {
   const labels = variant === "english"
-    ? [t("session.controls.interrupt"), t("session.controls.sendNow"), t("session.controls.talk")]
-    : [t("session.controls.interrupt"), t("session.controls.sendNow"), t("session.controls.talk"), t("session.panel.nextQuestion"), t("session.panel.seeDebrief")];
+    ? [t("session.controls.interrupt"), t("session.controls.sendNow"), t("session.controls.talk"), t("session.controls.sent")]
+    : [t("session.controls.interrupt"), t("session.controls.sendNow"), t("session.controls.talk"), t("session.controls.sent"), t("session.panel.nextQuestion"), t("session.panel.seeDebrief")];
   const size = stacked ? "lg" : "md";
   return (
     <span className={`${s.slot} ${stacked ? s.slotGrow : ""}`} data-review-id="Session/Island/Main">
@@ -140,7 +141,8 @@ function MainSlot({ main, variant, stacked, sized = true }: { main: Main; varian
           size={size}
           icon={main.iconRight ? undefined : main.icon}
           iconRight={main.iconRight ? main.icon : undefined}
-          fullWidth={stacked}
+          // D61: the button fills the sized slot, so a short label leaves no gap before the next group.
+          fullWidth={stacked || sized}
           disabled={main.disabled}
           onClick={main.onClick}
         >

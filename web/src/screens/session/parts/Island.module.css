@@ -11,7 +11,7 @@
 
 /* Main action slot: every label this variant can show is stacked in one grid cell (the visible one on top), so the
  * slot is as wide as the longest label and the island never changes width (V2.1). */
-.slot { display: inline-grid; align-items: center; justify-items: start; }
+.slot { display: inline-grid; align-items: center; justify-items: stretch; }
 .slot > * { grid-area: 1 / 1; }
 .sizer { display: grid; visibility: hidden; pointer-events: none; }
 .sizer > * { grid-area: 1 / 1; }

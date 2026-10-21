@@ -574,6 +574,7 @@
       "sendNow": "Send now",
       "interrupt": "Interrupt",
       "talk": "Talk now",
+      "sent": "Sent",
       "typeInstead": "Type instead",
       "pauseHelp": "Pause to think: your answer is sent after {sec} s of quiet.",
       "manualHelp": "Your answer is sent when you press Send now (Enter).",

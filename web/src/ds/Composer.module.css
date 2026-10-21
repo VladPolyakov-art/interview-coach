@@ -16,8 +16,9 @@
 .box:has(.field:focus-visible) { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: calc(var(--border-width) * -1); }
 /* Field + inline send (no toolbar): the button stays inside the box, bottom-right, as the text grows. */
 .row { display: flex; align-items: flex-end; gap: var(--space-2); min-width: 0; }
-/* surface: none (v2) — no own surface; the parent (Island) draws it. The focus ring stays, with the inner radius. */
-.box.bare, .box.bare:focus-within { padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; box-shadow: none; }
+/* surface: none (v2) — no own surface; the parent (Island) draws it. The focus ring stays. D61: a small inset, so the
+ * round send sits inside the ring instead of running over its corner. */
+.box.bare, .box.bare:focus-within { padding: var(--space-1); border: 0; border-radius: var(--radius-lg); background: transparent; box-shadow: none; }
 .box.bare.disabled { background: transparent; }
 .invalid { box-shadow: inset 0 0 0 var(--border-width) var(--color-text-error); }
 .disabled, .disabled:focus-within { background: var(--color-subtle); }
