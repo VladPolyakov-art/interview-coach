@@ -1262,7 +1262,7 @@
     },
     "profile": {
       "title": "Your CV and files",
-      "hint": "Mike uses it to ask about your own experience. It stays on this computer.",
+      "hint": "Mike uses them to ask about your own experience. They stay on this computer.",
       "remove": "Remove {name}",
       "drop": "Drop your CV and other files here, or",
       "browse": "choose files",
