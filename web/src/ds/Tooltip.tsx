@@ -24,6 +24,8 @@ export interface TooltipProps {
   className?: string;
   /** Never show (and hide at once): the rail's collapsed account button while its menu is open. */
   disabled?: boolean;
+  /** `lg`: a message the user must notice (D75: the muted-speech tip over the mic) — larger text, rounded. */
+  size?: "sm" | "lg";
 }
 
 function isTruncated(anchor: HTMLElement): boolean {
@@ -31,7 +33,7 @@ function isTruncated(anchor: HTMLElement): boolean {
   return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
 }
 
-export function Tooltip({ content, children, onlyWhenTruncated, placement = "top-start", block, open: forced, inline, className, disabled }: TooltipProps) {
+export function Tooltip({ content, children, onlyWhenTruncated, placement = "top-start", block, open: forced, inline, className, disabled, size = "sm" }: TooltipProps) {
   const [shown, setShown] = useState(false);
   const anchorRef = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
@@ -92,7 +94,7 @@ export function Tooltip({ content, children, onlyWhenTruncated, placement = "top
       ref={tipRef}
       id={id}
       role="tooltip"
-      className={`${s.tip} ${inline ? s.inline : s.floating} ${positioned.side === "top" ? s.top : s.bottom}`}
+      className={`${s.tip} ${size === "lg" ? s.lg : ""} ${inline ? s.inline : s.floating} ${positioned.side === "top" ? s.top : s.bottom}`}
       style={inline ? undefined : positioned.style}
       onPointerEnter={clear}
       onPointerLeave={forced === undefined ? hide : undefined}

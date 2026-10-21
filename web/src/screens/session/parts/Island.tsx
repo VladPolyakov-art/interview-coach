@@ -250,7 +250,7 @@ export function SessionIsland(p: SessionIslandProps) {
   ) : null;
   // D72: "you're talking while muted" points at the mic itself instead of a banner over the stage.
   const mic = micButton && p.data.micTip && p.muted
-    ? <Tooltip content={p.data.micTip} open placement="top-start">{micButton}</Tooltip>
+    ? <Tooltip content={p.data.micTip} open placement="top-start" size="lg">{micButton}</Tooltip>
     : micButton;
 
   const redo = (

@@ -21,6 +21,15 @@
   overflow-wrap: anywhere;
   animation: global(fade-in) var(--duration-fast) var(--ease-enter) backwards;
 }
+/* D75: larger text, a pill on one line (soft corners if it wraps), same inverted surface. */
+.lg {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-md);
+  /* One line where it fits (the panel width cuts a sentence in two), never wider than the screen. */
+  width: max-content;
+  max-width: min(var(--layout-dialog), calc(100vw - 2 * var(--layout-gutter)));
+}
 .floating { position: fixed; z-index: var(--z-toast); pointer-events: auto; }
 :global([data-overlay-root]) > .floating { position: absolute; }
 .floating.bottom { margin-top: var(--space-1); }
