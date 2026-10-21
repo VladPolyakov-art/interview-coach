@@ -997,6 +997,7 @@
       "why": "Why",
       "grammarLevel": "{level} grammar",
       "saidRight": "I said it right",
+      "typedRight": "I wrote it right",
       "nameOrTerm": "It's a name or term",
       "notWhatISaid": "That's not what I said",
       "checkTitle": "Not counted until you confirm",

@@ -489,7 +489,7 @@ function LanguageBody({ data, record, live, onFlag, onSaveHeard, initialOpenHear
             </div>
             {onFlag && item.status === "active" ? (
               <div className={s.itemActions}>
-                <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss")}>{t("feedback.language.saidRight")}</Button>
+                <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss")}>{t(voiced ? "feedback.language.saidRight" : "feedback.language.typedRight")}</Button>
                 <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss")}>{t("feedback.language.nameOrTerm")}</Button>
                 {voiced ? <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss", true)}>{t("feedback.language.notWhatISaid")}</Button> : null}
               </div>
