@@ -57,16 +57,23 @@ function useRowExit(remove: (id: string) => void) {
   return { exit, rowProps };
 }
 
-/** The saved summary carries a verdict sentence and an answer count, nothing else; the row shows what it has. */
+/** The saved summary carries a verdict sentence, an answer count and the first question; the row shows what it has.
+ * D69: a session with fewer than 3 answers is "short": no verdict sentence, "2 of 5 answered", folded in its week. */
 export function rowFromSummary(x: SessionSummary): HistoryRowModel {
-  const result = x.verdict || (x.answers > 0 ? tp("history.result.answered", x.answers) : t("history.result.noDebrief"));
+  const english = x.mode === "english";
+  const short = !english && (Boolean(x.too_short) || (x.answers < 3 && !x.verdict));
+  const result = short
+    ? x.planned ? t("history.result.partial", { answered: x.answers, total: x.planned }) : tp("history.result.answered", x.answers)
+    : x.verdict || (x.answers > 0 ? tp("history.result.answered", x.answers) : t("history.result.noDebrief"));
   return {
     id: x.id,
     title: x.title || t("debrief.title"),
-    track: x.mode === "english" ? "english" : "interview",
+    track: english ? "english" : "interview",
     startedAt: x.started_at,
     durationS: x.duration_s ?? undefined,
     result,
+    question: x.first_question || undefined,
+    short,
   };
 }
 

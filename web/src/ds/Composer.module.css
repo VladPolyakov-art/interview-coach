@@ -6,21 +6,19 @@
   gap: var(--space-2);
   padding: var(--space-3);
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--color-surface-card);
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
-/* D51: no stroke; the fill steps one level on focus (keyboard focus adds the ring below). */
+/* D51: no stroke; the fill steps one level on focus. D70: no focus ring either, for mouse or keyboard (owner: «давай
+ * вообще без этого строка… и так очевидно, что он выбрал чат»): focus = the lighter fill + the caret. Radius 24px. */
 .box:focus-within { background: var(--color-surface-card-hover); }
-/* The box is the input: the keyboard ring goes around it, not around the textarea (D47a). */
-.box:has(.field:focus-visible) { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: calc(var(--border-width) * -1); }
 /* Field + inline send (no toolbar): the button stays inside the box, bottom-right, as the text grows. */
 .row { display: flex; align-items: flex-end; gap: var(--space-2); min-width: 0; }
 /* surface: none (v2) — inside the Island. D62: a rounded chip fill (like the End button), one step lighter on focus,
  * no blue ring (owner: "не светился настолько синим"); the round send sits inside it. 🟡 focus = the fill + the caret. */
 .box.bare { padding: var(--space-1); border: 0; border-radius: var(--radius-xl); background: var(--color-surface-chip); box-shadow: none; }
 .box.bare:focus-within { background: var(--color-surface-chip-hover); }
-.box.bare:has(.field:focus-visible) { outline: none; }
 .box.bare.disabled { background: var(--color-surface-chip); }
 /* D64: the text starts a little further in from the rounded edge (owner: «двинуть текст в правую сторону»). */
 .box.bare .field { padding-inline-start: var(--space-4); }

@@ -8,6 +8,7 @@ export const HISTORY_NOW = new Date(2026, 9, 20, 12, 0);
 export const S2: HistoryRowModel = {
   id: "s2", title: "Kestrel Pay · Senior Product Designer", track: "interview", round: "Behavioural · Standard",
   startedAt: "2026-10-19T20:40:00", durationS: 24 * 60, result: "Getting there",
+  question: "Tell me about a design decision you changed after seeing the data.",
 };
 export const S3: HistoryRowModel = {
   id: "s3", title: "English · Talk about your work", track: "english", round: "B2",
@@ -17,6 +18,7 @@ export const S3: HistoryRowModel = {
 export const S1: HistoryRowModel = {
   id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview", round: "HR screen · Gentle",
   startedAt: "2026-10-17T19:10:00", durationS: 14 * 60, result: "Not ready yet",
+  question: "Why do you want to move from agency work to a product team?",
 };
 
 export const historyData: HistoryRowModel[] = [S2, S3, S1];
@@ -32,6 +34,7 @@ export const historyOverflow: HistoryRowModel[] = [
   {
     id: "o1", title: "Kestrel Pay · Senior Product Designer", track: "interview", round: "Behavioural · Standard",
     startedAt: "2026-10-20T08:15:00", durationS: 6 * 60, result: "No verdict — 2 of 5 answered",
+    question: "Walk me through your career so far.", short: true,
   },
   S2,
   S3,

@@ -241,10 +241,24 @@ async def create_vacancy(body: VacancyBody, request: Request) -> dict:
         raise fail(422, exc.code, exc.message)
     if len(text) < 80:
         raise fail(422, "too_short", "Paste the job posting text (at least a few sentences).")
-    title = body.title.strip() or next((line.strip() for line in text.splitlines() if line.strip()), "Job posting")[:80]
+    title = body.title.strip() or posting_title(text)
     record = {"id": storage.new_id("v-"), "title": title, "text": text, "source": source[:300],
               "created_at": storage.now_iso(), "questions": []}
     return storage.save_record("vacancies", record)
+
+
+# Section headers job boards put above the posting (LinkedIn's "About the job"): never a title (D69).
+POSTING_HEADERS = {"about the job", "about the role", "about this role", "job description", "description",
+                   "job details", "the role", "overview", "about us", "about the company"}
+
+
+def posting_title(text: str) -> str:
+    """The first line of a pasted posting that is not a board's section header; "Job posting" when there is none."""
+    for line in text.splitlines():
+        clean = line.strip().rstrip(":").strip()
+        if clean and clean.lower() not in POSTING_HEADERS:
+            return clean[:80]
+    return "Job posting"
 
 
 @router.get("/vacancies/{vacancy_id}")
@@ -297,7 +311,19 @@ async def list_sessions() -> dict:
     return {"sessions": [{"id": s["id"], "title": s.get("title", ""), "mode": s.get("mode", ""),
                           "started_at": s.get("started_at", ""), "duration_s": s.get("duration_s"),
                           "engine": s.get("engine", ""), "answers": (s.get("stats") or {}).get("answers", 0),
-                          "verdict": (s.get("debrief") or {}).get("verdict", "")} for s in items]}
+                          "verdict": (s.get("debrief") or {}).get("verdict", ""),
+                          "too_short": bool((s.get("debrief") or {}).get("too_short")),
+                          "planned": len(s.get("questions") or []),
+                          "first_question": _first_question(s)} for s in items]}
+
+
+def _first_question(record: dict) -> str:
+    """D69: the first main question asked, so History rows with the same title can be told apart."""
+    asked = next((t.get("question_id") for t in record.get("transcript") or [] if t.get("kind") == "question"), None)
+    for q in record.get("questions") or []:
+        if isinstance(q, dict) and (asked is None or q.get("id") == asked):
+            return str(q.get("text") or "")
+    return ""
 
 
 @router.get("/sessions/trash")

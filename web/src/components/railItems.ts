@@ -13,13 +13,15 @@ export function railTitle(title: string, untitled: string): string {
   return raw.startsWith(GENERIC_PREFIX) && raw.length > GENERIC_PREFIX.length ? raw.slice(GENERIC_PREFIX.length) : raw;
 }
 
-/** Every session, newest first (D52: the rail list is the history; no cap). */
+/** Every session, newest first (D52: the rail list is the history; no cap). D69: short sessions (the debrief said
+ * too short) stay in History only; a session with the bare generic title shows its first question instead. */
 export function railSessions(sessions: SessionSummary[], untitled: string): RailSession[] {
   return [...sessions]
+    .filter((x) => !x.too_short)
     .sort((a, b) => b.started_at.localeCompare(a.started_at))
     .map((x) => ({
       id: x.id,
-      title: railTitle(x.title, untitled),
+      title: x.title.trim() === GENERIC_PREFIX.slice(0, -3) && x.first_question ? x.first_question : railTitle(x.title, untitled),
       track: x.mode === "english" ? "english" : "interview",
     }));
 }

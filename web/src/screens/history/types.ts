@@ -15,6 +15,10 @@ export interface HistoryRowModel {
   durationS?: number;
   /** Verdict word, "5 corrections", "No verdict — 2 of 5 answered". Plain text, never coloured. */
   result: string;
+  /** D69: the first question asked, one line under the title (same-titled sessions read apart). */
+  question?: string;
+  /** D69: fewer than 3 answers — folded into "N short sessions" at the end of its week. */
+  short?: boolean;
 }
 
 export interface HistoryToast { message: string; undoLabel?: string; onUndo?: () => void }
@@ -27,6 +31,8 @@ export interface HistoryUi {
   menuOpen?: string;
   /** The row whose title tooltip starts open (truncated titles). */
   tooltipOpen?: string;
+  /** Week groups whose short sessions start unfolded. */
+  shortOpen?: string[];
 }
 
 export interface HistoryViewProps {

@@ -18,6 +18,8 @@ export interface ListRowProps {
   href: string;
   icon?: IconName;
   density?: "default" | "compact";
+  /** One quiet line right under the title (default density), e.g. the first question asked (D69). Truncates. */
+  sub?: ReactNode;
   /** Meta line under the title (default density): badges, round, date, length. */
   meta?: ReactNode;
   /** Result text on the right: verdict word, "5 corrections". */
@@ -45,6 +47,7 @@ export function ListRow({
   href,
   icon = "briefcase",
   density = "default",
+  sub,
   meta,
   result,
   actions,
@@ -96,6 +99,7 @@ export function ListRow({
             <span className={s.title} data-truncate="">{title}</span>
           </LinkAs>
         </Tooltip>
+        {sub ? <span className={s.sub}>{sub}</span> : null}
         {meta ? <div className={s.meta}>{meta}</div> : null}
       </div>
       {result ? <span className={s.result}>{result}</span> : null}

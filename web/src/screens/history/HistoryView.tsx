@@ -9,7 +9,7 @@ import {
 } from "../../ds";
 import { RouterLink } from "../../components/AppShell";
 import { Page } from "../../components/Page";
-import { t } from "../../i18n";
+import { t, tp } from "../../i18n";
 import { formatDateTime, formatDuration } from "../../lib/format";
 import { groupByWeek } from "./groupByWeek";
 import type { HistoryRowModel, HistoryViewProps, Track, TrackFilter } from "./types";
@@ -59,6 +59,12 @@ export function HistoryView(props: HistoryViewProps) {
 
   const [renaming, setRenaming] = useState<string | null>(ui?.renaming ?? null);
   const [menuOpen, setMenuOpen] = useState<string | null>(ui?.menuOpen ?? null);
+  const [shortOpen, setShortOpen] = useState<ReadonlySet<string>>(() => new Set(ui?.shortOpen ?? []));
+  const toggleShort = (key: string) => setShortOpen((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
   const [titles, setTitles] = useState<Readonly<Record<string, string>>>({});
   const [leaving, setLeaving] = useState<ReadonlySet<string>>(() => new Set());
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
@@ -132,6 +138,52 @@ export function HistoryView(props: HistoryViewProps) {
 
   const section = (label: string, id: string) => `${id}-${label}`;
 
+  const renderRow = (row: HistoryRowModel, ri: number, gi: number) => {
+    const index = groups.slice(0, gi).reduce((n, x) => n + x.rows.length, 0) + ri;
+    const items: MenuEntry[] = [
+      { id: "rename", label: t("history.row.menuRename"), icon: "edit", onSelect: () => { setRenaming(row.id); } },
+      { id: "trash", label: t("history.row.menuTrash"), icon: "trash", onSelect: () => trash(row.id) },
+    ];
+    const before = rows.find((r) => r.id === row.id)?.title ?? row.title;
+    return (
+      <ListRow
+        key={row.id}
+        title={row.title}
+        href={`/sessions/${row.id}`}
+        icon={icon(row.track)}
+        linkAs={RouterLink}
+        sub={row.question}
+        meta={<Meta row={row} />}
+        result={<span className={s.result}>{row.result}</span>}
+        leaving={leaving.has(row.id)}
+        enterIndex={enterStagger && !leaving.size ? Math.min(index, STAGGER_CAP) : undefined}
+        tooltipOpen={ui?.tooltipOpen === row.id}
+        rename={renaming === row.id ? {
+          value: row.title,
+          onSave: (title) => save(row.id, title, before),
+          onCancel: () => setRenaming(null),
+          autoFocus: ui?.renaming !== row.id,
+        } : undefined}
+        actions={(
+          <>
+            <IconButton icon="edit" size="sm" label={t("history.row.rename", { title: row.title })} onClick={() => setRenaming(row.id)} />
+            <IconButton icon="trash" size="sm" label={t("history.row.trash", { title: row.title })} onClick={() => trash(row.id)} />
+          </>
+        )}
+        compactActions={(
+          <Menu
+            label={t("history.row.more", { title: row.title })}
+            items={items}
+            placement="bottom-end"
+            open={ui?.menuOpen === row.id ? menuOpen === row.id : undefined}
+            onOpenChange={(o) => setMenuOpen(o ? row.id : null)}
+            trigger={(p) => <IconButton icon="more" size="sm" label={t("history.row.more", { title: row.title })} {...p} />}
+          />
+        )}
+      />
+    );
+  };
+
   let body;
   if (state === "loading") {
     body = (
@@ -184,55 +236,32 @@ export function HistoryView(props: HistoryViewProps) {
             <div className={s.groups}>
               {groups.map((g, gi) => {
                 const gid = section(g.key, headId);
+                const full = g.rows.filter((r) => !r.short);
+                const short = g.rows.filter((r) => r.short);
                 return (
                   <section key={g.key} className={s.group} aria-labelledby={gid} data-review-id={`History/Group/${g.key}`}>
                     <h2 id={gid} className={s.groupLabel}>{g.label}</h2>
-                    <ListRows>
-                      {g.rows.map((row, ri) => {
-                        const index = groups.slice(0, gi).reduce((n, x) => n + x.rows.length, 0) + ri;
-                        const items: MenuEntry[] = [
-                          { id: "rename", label: t("history.row.menuRename"), icon: "edit", onSelect: () => { setRenaming(row.id); } },
-                          { id: "trash", label: t("history.row.menuTrash"), icon: "trash", onSelect: () => trash(row.id) },
-                        ];
-                        const before = rows.find((r) => r.id === row.id)?.title ?? row.title;
-                        return (
-                          <ListRow
-                            key={row.id}
-                            title={row.title}
-                            href={`/sessions/${row.id}`}
-                            icon={icon(row.track)}
-                            linkAs={RouterLink}
-                            meta={<Meta row={row} />}
-                            result={<span className={s.result}>{row.result}</span>}
-                            leaving={leaving.has(row.id)}
-                            enterIndex={enterStagger && !leaving.size ? Math.min(index, STAGGER_CAP) : undefined}
-                            tooltipOpen={ui?.tooltipOpen === row.id}
-                            rename={renaming === row.id ? {
-                              value: row.title,
-                              onSave: (title) => save(row.id, title, before),
-                              onCancel: () => setRenaming(null),
-                              autoFocus: ui?.renaming !== row.id,
-                            } : undefined}
-                            actions={(
-                              <>
-                                <IconButton icon="edit" size="sm" label={t("history.row.rename", { title: row.title })} onClick={() => setRenaming(row.id)} />
-                                <IconButton icon="trash" size="sm" label={t("history.row.trash", { title: row.title })} onClick={() => trash(row.id)} />
-                              </>
-                            )}
-                            compactActions={(
-                              <Menu
-                                label={t("history.row.more", { title: row.title })}
-                                items={items}
-                                placement="bottom-end"
-                                open={ui?.menuOpen === row.id ? menuOpen === row.id : undefined}
-                                onOpenChange={(o) => setMenuOpen(o ? row.id : null)}
-                                trigger={(p) => <IconButton icon="more" size="sm" label={t("history.row.more", { title: row.title })} {...p} />}
-                              />
-                            )}
-                          />
-                        );
-                      })}
-                    </ListRows>
+                    <ListRows>{full.map((row) => renderRow(row, g.rows.indexOf(row), gi))}</ListRows>
+                    {short.length ? (
+                      <div className={s.short} data-review-id="History/Short">
+                        <button
+                          type="button"
+                          className={s.shortToggle}
+                          aria-expanded={shortOpen.has(g.key)}
+                          aria-controls={`${gid}-short`}
+                          onClick={() => toggleShort(g.key)}
+                        >
+                          <Icon name={shortOpen.has(g.key) ? "chevronDown" : "chevronRight"} size="sm" />
+                          {shortOpen.has(g.key) ? t("history.short.hide") : tp("history.short.show", short.length)}
+                          <span className={s.shortHint}>{t("history.short.hint")}</span>
+                        </button>
+                        {shortOpen.has(g.key) ? (
+                          <div id={`${gid}-short`}>
+                            <ListRows>{short.map((row) => renderRow(row, g.rows.indexOf(row), gi))}</ListRows>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </section>
                 );
               })}

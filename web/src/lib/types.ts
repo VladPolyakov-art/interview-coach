@@ -120,6 +120,12 @@ export interface SessionSummary {
   engine: string;
   answers: number;
   verdict: string;
+  /** D69: the debrief said the session was too short (fewer than 3 answers). */
+  too_short?: boolean;
+  /** Main questions planned for the session. */
+  planned?: number;
+  /** The first main question asked — tells apart sessions with the same title. */
+  first_question?: string;
 }
 export interface TrashItem { trash_id: string; id: string; title: string; started_at: string; deleted_at: string }
 

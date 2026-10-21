@@ -130,3 +130,20 @@ def test_profile_and_vacancy_endpoints(client):
 def test_known_terms():
     terms = documents.known_terms("Built dashboards in Figma and JavaScript for HubSpot. The team grew.")
     assert {"Figma", "HubSpot"} <= set(terms) and "The" not in terms
+
+
+def test_session_list_names_the_first_question_and_short_sessions(client):
+    record = session_record()
+    record["questions"] = [{"id": "A5", "text": "Where do you want to be in two years?"}, {"id": "B1", "text": "Tell me about a conflict."}]
+    record["transcript"][0].update({"kind": "question", "question_id": "A5"})
+    record["debrief"] = {"verdict": "This session was too short for a full debrief.", "too_short": True}
+    storage.save_session(record)
+    row = client.get("/api/sessions").json()["sessions"][0]
+    assert row["first_question"] == "Where do you want to be in two years?"
+    assert row["too_short"] is True and row["planned"] == 2
+
+
+def test_posting_title_skips_board_headers():
+    from server.api import posting_title
+    assert posting_title("About the job\n\nSenior Product Designer at Kestrel Pay\nWe build...") == "Senior Product Designer at Kestrel Pay"
+    assert posting_title("Job description:\n") == "Job posting"

@@ -1177,6 +1177,12 @@
     "toast": {
       "trashed": "Moved to Trash.",
       "renameFailed": "Couldn't rename this session. Try again."
+    },
+    "short": {
+      "show_one": "{n} short session",
+      "show_other": "{n} short sessions",
+      "hint": "Fewer than 3 answers, so no verdict",
+      "hide": "Hide short sessions"
     }
   },
   "settings": {
