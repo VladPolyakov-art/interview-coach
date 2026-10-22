@@ -22,8 +22,8 @@ export function EditAnswer({ number, input, answer, followUp, error, withChecks,
       {followUp !== undefined ? <Textarea label={t("session.edit.followUp")} value={f} rows={3} onChange={(e) => setF(e.target.value)} /> : null}
       {withChecks && input === "voice" ? <p className={s.editHint}>{t("session.edit.underlined")}</p> : null}
       <div className={s.editActions}>
-        <Button variant="primary" onClick={() => handlers?.onSaveEdit?.(a, f)}>{t("session.edit.save")}</Button>
-        <Button variant="ghost" onClick={handlers?.onCancelEdit}>{t("common.cancel")}</Button>
+        <Button variant="primary" data-track="recheck" onClick={() => handlers?.onSaveEdit?.(a, f)}>{t("session.edit.save")}</Button>
+        <Button variant="ghost" data-track="edit-cancel" onClick={handlers?.onCancelEdit}>{t("common.cancel")}</Button>
       </div>
     </div>
   );

@@ -73,7 +73,7 @@ export function Drawer({
       {title ? (
         <div className={s.header}>
           <h2 id={`${id}-t`} className={s.title}>{title}</h2>
-          <IconButton icon="x" size="sm" label={closeLabel ?? t("common.close")} onClick={onClose} />
+          <IconButton icon="x" size="sm" label={closeLabel ?? t("common.close")} data-track="drawer-close" onClick={onClose} />
         </div>
       ) : null}
       <div className={s.body} {...bodyFocus}>{children}</div>

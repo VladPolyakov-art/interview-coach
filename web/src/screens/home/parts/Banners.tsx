@@ -37,8 +37,8 @@ export function Banners({ engine, browser, storage, onRetryEngine, onUseTextMode
             title={t("home.engineBanner.title")}
             actions={(
               <span className={s.bannerActions}>
-                <Button variant="secondary" size="sm" icon="refresh" onClick={onRetryEngine}>{t("home.engine.tryNow")}</Button>
-                <TextLink to="/settings/engine">{t("home.engineBanner.settings")}</TextLink>
+                <Button variant="secondary" size="sm" icon="refresh" data-track="banner-engine-retry" onClick={onRetryEngine}>{t("home.engine.tryNow")}</Button>
+                <TextLink to="/settings/engine" track="banner-engine-settings">{t("home.engineBanner.settings")}</TextLink>
               </span>
             )}
           >
@@ -57,8 +57,8 @@ export function Banners({ engine, browser, storage, onRetryEngine, onUseTextMode
             live="status"
             actions={(
               <span className={s.bannerActions}>
-                <Button variant="secondary" size="sm" icon="keyboard" onClick={onUseTextMode}>{t("home.browser.useText")}</Button>
-                <IconButton icon="x" size="sm" label={t("home.browser.dismiss")} onClick={onDismissBrowser} />
+                <Button variant="secondary" size="sm" icon="keyboard" data-track="banner-use-text" onClick={onUseTextMode}>{t("home.browser.useText")}</Button>
+                <IconButton icon="x" size="sm" label={t("home.browser.dismiss")} data-track="banner-browser-dismiss" onClick={onDismissBrowser} />
               </span>
             )}
           >
@@ -71,7 +71,7 @@ export function Banners({ engine, browser, storage, onRetryEngine, onUseTextMode
           <Callout
             tone="error"
             live="alert"
-            actions={<Button variant="secondary" size="sm" onClick={() => navigate("/settings/storage")}>{t("home.storage.open")}</Button>}
+            actions={<Button variant="secondary" size="sm" data-track="banner-storage-open" onClick={() => navigate("/settings/storage")}>{t("home.storage.open")}</Button>}
           >
             {t("home.storage.body")}
           </Callout>

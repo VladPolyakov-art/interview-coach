@@ -40,6 +40,8 @@ export interface ListRowProps {
   /** Force the truncation tooltip open (review states). */
   tooltipOpen?: boolean;
   className?: string;
+  /** User-test label on the row's link (`data-track`, kebab-case, never the title: titles hold company names). */
+  track?: string;
 }
 
 export function ListRow({
@@ -59,6 +61,7 @@ export function ListRow({
   linkAs: LinkAs = PlainLink,
   tooltipOpen,
   className,
+  track,
 }: ListRowProps) {
   const compact = density === "compact";
   const motion = leaving ? "motion-row-out" : enterIndex !== undefined ? "motion-row" : "";
@@ -81,7 +84,7 @@ export function ListRow({
     return (
       <li className={cls} style={style} data-review-id={`ListRow/compact/${state}`}>
         <Tooltip content={title} onlyWhenTruncated block placement="bottom-start" open={tooltipOpen} inline={tooltipOpen}>
-          <LinkAs href={href} className={s.compactLink} aria-current={current ? "page" : undefined}>
+          <LinkAs href={href} className={s.compactLink} aria-current={current ? "page" : undefined} data-track={track}>
             <Icon name={icon} size="sm" />
             <span className={s.compactTitle} data-truncate="">{title}</span>
           </LinkAs>
@@ -95,7 +98,7 @@ export function ListRow({
       <Lead icon={icon} />
       <div className={s.body}>
         <Tooltip content={title} onlyWhenTruncated block placement="top-start" open={tooltipOpen} inline={tooltipOpen}>
-          <LinkAs href={href} className={s.link} aria-current={current ? "page" : undefined}>
+          <LinkAs href={href} className={s.link} aria-current={current ? "page" : undefined} data-track={track}>
             <span className={s.title} data-truncate="">{title}</span>
           </LinkAs>
         </Tooltip>

@@ -25,7 +25,7 @@ export function EngineTest({ id, children }: { id: EngineId; children?: ReactNod
   };
   return (
     <div className={s.actions}>
-      <Button size="sm" icon="play" loading={busy} onClick={() => void run()}>{t("engines.test")}</Button>
+      <Button size="sm" icon="play" data-track="engine-test" loading={busy} onClick={() => void run()}>{t("engines.test")}</Button>
       {children}
       <span className={s.result} role="status">
         {busy ? t("engines.testing") : null}

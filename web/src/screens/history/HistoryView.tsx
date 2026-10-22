@@ -123,7 +123,7 @@ export function HistoryView(props: HistoryViewProps) {
   };
 
   const trashLink = (
-    <Link to="/archive/trash" className={s.trashLink} data-review-id="History/TrashLink">
+    <Link to="/archive/trash" className={s.trashLink} data-track="archive-trash-link" data-review-id="History/TrashLink">
       <Icon name="trash" size="sm" />
       {trashCount > 0 ? t("history.trashCount", { n: trashCount }) : t("history.trash")}
     </Link>
@@ -132,7 +132,7 @@ export function HistoryView(props: HistoryViewProps) {
   const chips = (disabled?: boolean) => (
     <ChipGroup label={t("history.filter.label")} role="radio" className={s.filter}>
       {(["all", "interview", "english"] as const).map((k) => (
-        <Chip key={k} role="radio" selected={track === k} count={state === "ready" ? counts[k] : undefined} disabled={disabled} onClick={() => setTrack(k)}>
+        <Chip key={k} role="radio" data-track={`archive-filter-${k}`} selected={track === k} count={state === "ready" ? counts[k] : undefined} disabled={disabled} onClick={() => setTrack(k)}>
           {t(`history.filter.${k}`)}
         </Chip>
       ))}
@@ -144,10 +144,10 @@ export function HistoryView(props: HistoryViewProps) {
   const renderRow = (row: HistoryRowModel, ri: number, gi: number) => {
     const index = groups.slice(0, gi).reduce((n, x) => n + x.rows.length, 0) + ri;
     const items: MenuEntry[] = [
-      { id: "rename", label: t("history.row.menuRename"), icon: "edit", onSelect: () => { setRenaming(row.id); } },
-      ...(props.onUnarchive ? [{ id: "unarchive", label: t("history.row.menuUnarchive"), icon: "archive" as const, onSelect: () => unarchive(row.id) }] : []),
+      { id: "rename", track: "archive-row-rename", label: t("history.row.menuRename"), icon: "edit", onSelect: () => { setRenaming(row.id); } },
+      ...(props.onUnarchive ? [{ id: "unarchive", track: "archive-row-unarchive", label: t("history.row.menuUnarchive"), icon: "archive" as const, onSelect: () => unarchive(row.id) }] : []),
       { id: "sep", separator: true },
-      { id: "trash", label: t("history.row.menuTrash"), icon: "trash", onSelect: () => setConfirming(row.id) },
+      { id: "trash", track: "archive-row-trash", label: t("history.row.menuTrash"), icon: "trash", onSelect: () => setConfirming(row.id) },
     ];
     const before = rows.find((r) => r.id === row.id)?.title ?? row.title;
     return (
@@ -157,6 +157,7 @@ export function HistoryView(props: HistoryViewProps) {
         href={`/sessions/${row.id}`}
         icon={icon(row.track)}
         linkAs={RouterLink}
+        track="archive-row"
         sub={row.question}
         meta={<Meta row={row} />}
         result={<span className={s.result}>{row.result}</span>}
@@ -171,9 +172,9 @@ export function HistoryView(props: HistoryViewProps) {
         } : undefined}
         actions={(
           <>
-            <IconButton icon="edit" size="sm" label={t("history.row.rename", { title: row.title })} onClick={() => setRenaming(row.id)} />
-            {props.onUnarchive ? <IconButton icon="archive" size="sm" label={t("history.row.unarchive", { title: row.title })} onClick={() => unarchive(row.id)} /> : null}
-            <IconButton icon="trash" size="sm" label={t("history.row.trash", { title: row.title })} onClick={() => setConfirming(row.id)} />
+            <IconButton icon="edit" size="sm" label={t("history.row.rename", { title: row.title })} data-track="archive-row-rename" onClick={() => setRenaming(row.id)} />
+            {props.onUnarchive ? <IconButton icon="archive" size="sm" label={t("history.row.unarchive", { title: row.title })} data-track="archive-row-unarchive" onClick={() => unarchive(row.id)} /> : null}
+            <IconButton icon="trash" size="sm" label={t("history.row.trash", { title: row.title })} data-track="archive-row-trash" onClick={() => setConfirming(row.id)} />
           </>
         )}
         compactActions={(
@@ -183,7 +184,7 @@ export function HistoryView(props: HistoryViewProps) {
             placement="bottom-end"
             open={ui?.menuOpen === row.id ? menuOpen === row.id : undefined}
             onOpenChange={(o) => setMenuOpen(o ? row.id : null)}
-            trigger={(p) => <IconButton icon="more" size="sm" label={t("history.row.more", { title: row.title })} {...p} />}
+            trigger={(p) => <IconButton icon="more" size="sm" label={t("history.row.more", { title: row.title })} data-track="archive-row-more" {...p} />}
           />
         )}
       />
@@ -207,8 +208,8 @@ export function HistoryView(props: HistoryViewProps) {
           title={t("history.error.title")}
           actions={(
             <>
-              <Button variant="secondary" size="sm" icon="refresh" onClick={props.onRetry}>{t("history.error.retry")}</Button>
-              <Link to="/settings/storage" className={s.inlineLink}>{t("history.error.storage")}</Link>
+              <Button variant="secondary" size="sm" icon="refresh" data-track="archive-retry" onClick={props.onRetry}>{t("history.error.retry")}</Button>
+              <Link to="/settings/storage" className={s.inlineLink} data-track="archive-storage-link">{t("history.error.storage")}</Link>
             </>
           )}
         >
@@ -224,8 +225,8 @@ export function HistoryView(props: HistoryViewProps) {
           title={t("history.emptyState.title")}
           actions={(
             <>
-              <Button variant="primary" icon="practice" onClick={() => navigate("/")}>{t("history.emptyState.start")}</Button>
-              <Button variant="link" onClick={() => navigate("/sessions/example")}>{t("history.emptyState.example")}</Button>
+              <Button variant="primary" icon="practice" data-track="archive-empty-start" onClick={() => navigate("/")}>{t("history.emptyState.start")}</Button>
+              <Button variant="link" data-track="archive-empty-example" onClick={() => navigate("/sessions/example")}>{t("history.emptyState.example")}</Button>
             </>
           )}
         >
@@ -252,6 +253,7 @@ export function HistoryView(props: HistoryViewProps) {
                       <div className={s.short} data-review-id="History/Short">
                         <button
                           type="button"
+                          data-track="archive-short-toggle"
                           className={s.shortToggle}
                           aria-expanded={shortOpen.has(g.key)}
                           aria-controls={`${gid}-short`}
@@ -279,7 +281,7 @@ export function HistoryView(props: HistoryViewProps) {
                 icon={track === "english" ? "chat" : "briefcase"}
                 title={t(`history.none.${track === "english" ? "english" : "interview"}.title`)}
                 actions={(
-                  <Button variant="secondary" onClick={() => navigate(track === "english" ? "/?track=english" : "/")}>
+                  <Button variant="secondary" data-track="archive-filtered-start" onClick={() => navigate(track === "english" ? "/?track=english" : "/")}>
                     {t(`history.none.${track === "english" ? "english" : "interview"}.start`)}
                   </Button>
                 )}
@@ -304,8 +306,8 @@ export function HistoryView(props: HistoryViewProps) {
           onClose={() => setConfirming(null)}
           actions={(
             <>
-              <Button onClick={() => setConfirming(null)}>{t("common.cancel")}</Button>
-              <Button variant="danger" onClick={() => { const id = confirming; setConfirming(null); if (id) trash(id); }}>{t("rail.deleteConfirm")}</Button>
+              <Button data-track="archive-trash-cancel" onClick={() => setConfirming(null)}>{t("common.cancel")}</Button>
+              <Button variant="danger" data-track="archive-trash-confirm" onClick={() => { const id = confirming; setConfirming(null); if (id) trash(id); }}>{t("rail.deleteConfirm")}</Button>
             </>
           )}
         >

@@ -26,8 +26,8 @@ export function Banners({ overlay, browser, storage, typing, notices, handlers }
           title={t("session.banner.browserTitle")}
           actions={
             <>
-              {typing ? null : <Button variant="secondary" size="sm" icon="keyboard" onClick={handlers?.onUseText}>{t("session.banner.useText")}</Button>}
-              <IconButton icon="x" size="sm" label={t("session.banner.dismiss")} onClick={() => { setDismissed(true); handlers?.onDismissBanner?.(); }} />
+              {typing ? null : <Button variant="secondary" size="sm" icon="keyboard" data-track="banner-use-text" onClick={handlers?.onUseText}>{t("session.banner.useText")}</Button>}
+              <IconButton icon="x" size="sm" label={t("session.banner.dismiss")} data-track="banner-browser-dismiss" onClick={() => { setDismissed(true); handlers?.onDismissBanner?.(); }} />
             </>
           }
         >
@@ -39,7 +39,7 @@ export function Banners({ overlay, browser, storage, typing, notices, handlers }
           tone="warning"
           icon="folder"
           title={t("session.banner.storageTitle")}
-          actions={<Button variant="secondary" size="sm" onClick={handlers?.onFixSettings}>{t("session.banner.fixSettings")}</Button>}
+          actions={<Button variant="secondary" size="sm" data-track="banner-storage-fix" onClick={handlers?.onFixSettings}>{t("session.banner.fixSettings")}</Button>}
         >
           {t("session.banner.storageBody")}
         </Callout>
@@ -51,8 +51,8 @@ export function Banners({ overlay, browser, storage, typing, notices, handlers }
           title={n.title}
           live={n.tone === "error" ? "alert" : "status"}
           actions={
-            n.action ? <Button variant="primary" size="sm" iconRight="arrowRight" onClick={n.action.onClick}>{n.action.label}</Button>
-              : n.onDismiss ? <Button variant="ghost" size="sm" onClick={n.onDismiss}>{t("session.errors.dismiss")}</Button> : undefined
+            n.action ? <Button variant="primary" size="sm" iconRight="arrowRight" data-track="see-debrief" onClick={n.action.onClick}>{n.action.label}</Button>
+              : n.onDismiss ? <Button variant="ghost" size="sm" data-track="notice-dismiss" onClick={n.onDismiss}>{t("session.errors.dismiss")}</Button> : undefined
           }
         >
           {n.text}

@@ -86,20 +86,20 @@ export function AboutStep({ headingRef, onBack, initialJob = "", initialSaveErro
         <div data-review-id="Setup/About/Job" data-review-section="Setup · About you · Job and round" data-comment-target>
           <SettingGroup title={t("setup.about.job")} description={t("setup.about.jobHint")} headingLevel={2}>
             <SettingRow id="setup-job" label={job ? <span className={s.job}><Icon name="briefcase" size="sm" /><span className={s.jobTitle}>{job}</span></span> : t("setup.about.job")}>
-              <Button size="sm" variant="secondary" icon={job ? undefined : "plus"} onClick={() => setEditor(true)}>
+              <Button size="sm" variant="secondary" icon={job ? undefined : "plus"} data-track={job ? "setup-job-change" : "setup-job-add"} onClick={() => setEditor(true)}>
                 {job ? t("setup.about.jobChange") : t("setup.about.jobAdd")}
               </Button>
             </SettingRow>
             <SettingRow id="setup-answer" label={t("setup.about.how")} description={t("setup.about.roundHint")}>
               <Segmented label={t("setup.about.how")} hideLabel value={answer} onChange={setAnswer}
-                options={[{ value: "voice", label: t("home.voice"), icon: "mic" }, { value: "text", label: t("home.keyboard"), icon: "keyboard" }]} />
+                options={[{ value: "voice", label: t("home.voice"), icon: "mic", track: "setup-answer-voice" }, { value: "text", label: t("home.keyboard"), icon: "keyboard", track: "setup-answer-text" }]} />
             </SettingRow>
           </SettingGroup>
         </div>
       </div>
-      <StepFooter back={<Button variant="ghost" icon="chevronLeft" onClick={onBack}>{t("common.back")}</Button>}>
-        <Button variant="ghost" onClick={() => void finish(false)}>{t("setup.about.later")}</Button>
-        <Button variant="primary" icon={answer === "voice" ? "mic" : "keyboard"} onClick={() => void finish(true)}>{t("setup.about.start")}</Button>
+      <StepFooter back={<Button variant="ghost" icon="chevronLeft" data-track="setup-back" onClick={onBack}>{t("common.back")}</Button>}>
+        <Button variant="ghost" data-track="setup-skip" onClick={() => void finish(false)}>{t("setup.about.later")}</Button>
+        <Button variant="primary" icon={answer === "voice" ? "mic" : "keyboard"} data-track="setup-start-round" onClick={() => void finish(true)}>{t("setup.about.start")}</Button>
       </StepFooter>
       <VacancyEditor open={editor} onClose={() => setEditor(false)}
         onSaved={(v) => { setEditor(false); setJob(v.title); prefs.setVacancy(v.id); void api.vacancyQuestions(v.id).catch(() => {}); }} />

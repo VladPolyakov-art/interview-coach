@@ -46,7 +46,7 @@ export function ChatMessage({
       {state === "pending" ? (
         <TextShimmer as="p" size="md" status>{pendingLabel ?? children}</TextShimmer>
       ) : children && onPress && speaker === "user" ? (
-        <button type="button" className={`${s.bubble} ${s.press}`} aria-pressed={pressed ?? false} onClick={onPress}>
+        <button type="button" data-track="answer-bubble" className={`${s.bubble} ${s.press}`} aria-pressed={pressed ?? false} onClick={onPress}>
           <span className={s.body}>{children}</span>
         </button>
       ) : children ? (

@@ -35,7 +35,7 @@ export function Interrupted({ kind, handlers, info }: { kind: "engine" | "voice"
           {fail}
           {key === "gemini" ? null : <p className={s.interruptedNote}>{t("session.interrupted.engineRetry")}</p>}
           <div className={s.interruptedActions}>
-            <Button variant="primary" disabled={!info?.canResume} loading={resuming} onClick={handlers?.onResume}>
+            <Button variant="primary" data-track="session-resume" disabled={!info?.canResume} loading={resuming} onClick={handlers?.onResume}>
               {resuming ? t("session.interrupted.resuming") : t("session.interrupted.resume")}
             </Button>
           </div>
@@ -47,11 +47,11 @@ export function Interrupted({ kind, handlers, info }: { kind: "engine" | "voice"
           </Callout>
           {fail}
           <div className={s.interruptedActions}>
-            <Button variant="primary" loading={resuming} onClick={handlers?.onResume}>
+            <Button variant="primary" data-track="session-resume" loading={resuming} onClick={handlers?.onResume}>
               {resuming ? t("session.interrupted.resuming") : info?.input === "text" ? t("session.interrupted.resume") : t("session.interrupted.resumeVoice")}
             </Button>
             {info?.input === "text" ? null : (
-              <Button variant="secondary" icon="keyboard" disabled={resuming} onClick={handlers?.onUseText}>{t("session.interrupted.continueText")}</Button>
+              <Button variant="secondary" icon="keyboard" data-track="session-resume-text" disabled={resuming} onClick={handlers?.onUseText}>{t("session.interrupted.continueText")}</Button>
             )}
           </div>
         </>

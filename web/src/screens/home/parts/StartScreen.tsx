@@ -16,7 +16,7 @@ import s from "./parts.module.css";
 export function Footer({ track }: { track: Track }) {
   return (
     <p className={s.footer} data-review-id="Home/Footer">
-      {track === "english" ? t("english.free") : t("home.disclaimer")} <TextLink to="/settings/about#free">{t("home.free")}</TextLink>
+      {track === "english" ? t("english.free") : t("home.disclaimer")} <TextLink to="/settings/about#free" track="home-free-link">{t("home.free")}</TextLink>
     </p>
   );
 }
@@ -28,11 +28,11 @@ function ModeMenu({ track, open, onChange }: { track: Track; open?: boolean; onC
       label={t("chat.start.mode.menu")}
       defaultOpen={open}
       items={[
-        { id: "interview", label: t("chat.start.mode.interview"), description: t("chat.start.mode.interviewDesc"), icon: "briefcase", checked: track === "interview", onSelect: () => onChange?.("interview") },
-        { id: "english", label: t("chat.start.mode.english"), description: t("chat.start.mode.englishDesc"), icon: "chat", checked: track === "english", onSelect: () => onChange?.("english") },
+        { id: "interview", track: "mode-interview", label: t("chat.start.mode.interview"), description: t("chat.start.mode.interviewDesc"), icon: "briefcase", checked: track === "interview", onSelect: () => onChange?.("interview") },
+        { id: "english", track: "mode-english", label: t("chat.start.mode.english"), description: t("chat.start.mode.englishDesc"), icon: "chat", checked: track === "english", onSelect: () => onChange?.("english") },
       ]}
       trigger={(p) => (
-        <Button {...p} variant="secondary" size="sm" icon={track === "english" ? "chat" : "briefcase"} iconRight="chevronDown" aria-label={t("chat.start.mode.aria", { mode: label })}>
+        <Button {...p} variant="secondary" size="sm" icon={track === "english" ? "chat" : "briefcase"} iconRight="chevronDown" data-track="mode-menu" aria-label={t("chat.start.mode.aria", { mode: label })}>
           {label}
         </Button>
       )}
@@ -57,7 +57,7 @@ export function StartScreen(props: StartScreenProps) {
   const placeholder = english ? t("chat.start.placeholderEnglish") : narrow ? t("chat.start.placeholderNarrow") : t("chat.start.placeholder");
   const hasInput = Boolean(composer.text.trim() || composer.file);
   const quick = props.quickStart;
-  const sendMessage: ComposerSend = { label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, onSend: props.onSend };
+  const sendMessage: ComposerSend = { label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, track: "composer-send", onSend: props.onSend };
   /* With nothing typed the end button is the quick start (no label; the name and tooltip say what it starts). */
   const typed = (quick?.answer ?? (props.textMode ? "text" : "voice")) === "text";
   const send: ComposerSend = quick && !hasInput
@@ -69,6 +69,7 @@ export function StartScreen(props: StartScreenProps) {
       variant: "quiet",
       disabled: props.loading || !props.engineReady || quick.wait,
       busy: props.starting,
+      track: "quick-start",
       onSend: props.onQuickStart,
     }
     : sendMessage;
@@ -76,7 +77,7 @@ export function StartScreen(props: StartScreenProps) {
   const holdEnter = quick && !hasInput
     ? (e: KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === "Enter" && !e.shiftKey) e.preventDefault(); }
     : undefined;
-  const addFile = english ? null : <IconButton icon="plus" size="sm" outlined label={t("chat.start.addFile")} onClick={props.onAddFile} />;
+  const addFile = english ? null : <IconButton icon="plus" size="sm" outlined label={t("chat.start.addFile")} data-track="composer-add-file" onClick={props.onAddFile} />;
   const modeMenu = <ModeMenu track={track} open={props.initialOverlay === "mode"} onChange={props.onModeChange} />;
 
   return (
@@ -98,7 +99,7 @@ export function StartScreen(props: StartScreenProps) {
               icon="file"
               title={composer.file.name}
               meta={composer.file.size}
-              actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} onClick={props.onRemoveFile} />}
+              actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} data-track="composer-remove-file" onClick={props.onRemoveFile} />}
             />
           ) : undefined}
           onKeyDown={holdEnter}
@@ -115,7 +116,7 @@ export function StartScreen(props: StartScreenProps) {
         ) : suggestions.length ? (
           <ChipGroup label={t("chat.start.suggestions")} hideLabel align="center">
             {suggestions.map((x) => (
-              <Chip key={x.id} icon={x.icon} title={x.label.length > CHIP_CLAMP ? x.label : undefined} disabled={props.loading} onClick={() => props.onSuggestion?.(x.id)}>
+              <Chip key={x.id} icon={x.icon} data-track={`suggestion-${x.id}`} title={x.label.length > CHIP_CLAMP ? x.label : undefined} disabled={props.loading} onClick={() => props.onSuggestion?.(x.id)}>
                 <span className={s.chipLabel}>{x.label}</span>
               </Chip>
             ))}

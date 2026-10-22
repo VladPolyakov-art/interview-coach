@@ -40,7 +40,7 @@ export function CopyField({ value, copyLabel, copiedLabel, label }: CopyFieldPro
       {/* QA-09: the box scrolls sideways, so the keyboard must be able to reach it; role + name make the focus stop meaningful. */}
       <code id={codeId} className={s.code} tabIndex={0} role="group" aria-label={label ?? copyLabel}>{value}</code>
       <span aria-live="polite" className={s.done}>{copied ? copiedLabel : ""}</span>
-      <IconButton icon={copied ? "check" : "copy"} label={copyLabel} size="sm" onClick={() => void copy()} />
+      <IconButton icon={copied ? "check" : "copy"} label={copyLabel} size="sm" data-track="copy-command" onClick={() => void copy()} />
     </div>
   );
 }

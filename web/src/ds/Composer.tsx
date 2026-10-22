@@ -36,6 +36,8 @@ export interface ComposerSend {
   title?: string;
   /** The action is running: a spinner replaces the icon, aria-busy (D52 quick start). */
   busy?: boolean;
+  /** User-test label (`data-track`, kebab-case, never user data); read by tools/dashboard/tracker/track.js. */
+  track?: string;
   onSend?: () => void;
 }
 
@@ -132,6 +134,7 @@ export const Composer = forwardRef<HTMLTextAreaElement, ComposerProps>(function 
       aria-label={send.label}
       title={send.title ?? send.label}
       aria-busy={send.busy || undefined}
+      data-track={send.track}
       disabled={send.disabled || disabled}
       onClick={send.busy ? undefined : send.onSend}
     >

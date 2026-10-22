@@ -33,7 +33,7 @@ export function ExampleCard({ order = "content-first" }: { order?: "content-firs
             </li>
           ))}
         </ul>
-        <Link to="/sessions/example" className={s.link}>{t("home.example.open")}</Link>
+        <Link to="/sessions/example" className={s.link} data-track="home-example-open">{t("home.example.open")}</Link>
       </div>
     </Card>
   );

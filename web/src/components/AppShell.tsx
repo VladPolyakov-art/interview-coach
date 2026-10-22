@@ -124,7 +124,7 @@ export function AppShellView({
 
   return (
     <div ref={rootRef} className={s.shell} data-review-id="AppShell">
-      <a href="#main" className={s.skip}>{t("app.skipToContent")}</a>
+      <a href="#main" className={s.skip} data-track="skip-to-content">{t("app.skipToContent")}</a>
       <div className={s.frame} data-collapsed={isCollapsed || undefined}>
         <aside className={s.rail} data-review-id="AppShell/rail" aria-label={t("rail.menu")}>
           <Rail
@@ -139,13 +139,14 @@ export function AppShellView({
           <IconButton
             icon="menu"
             label={t("rail.openMenu")}
+            data-track="topbar-menu"
             aria-expanded={open}
             aria-controls={open ? drawerId : undefined}
             onClick={() => setOpen(true)}
           />
-          <Link to="/" className={s.topbarName}><Wordmark /></Link>
+          <Link to="/" className={s.topbarName} data-track="topbar-brand"><Wordmark /></Link>
           {engine.status === "notReady" ? (
-            <Link to="/settings/engine" className={s.topbarEngine} aria-label={`${t("rail.engineWarning")}: ${t("rail.notReady")}`}>
+            <Link to="/settings/engine" className={s.topbarEngine} data-track="rail-engine-warning" aria-label={`${t("rail.engineWarning")}: ${t("rail.notReady")}`}>
               <EngineBadge status="notReady" />
             </Link>
           ) : null}
@@ -167,7 +168,7 @@ export function AppShellView({
 
 function Brand() {
   return (
-    <Link to="/" className={s.brand} data-review-id="AppShell/brand">
+    <Link to="/" className={s.brand} data-track="rail-brand" data-review-id="AppShell/brand">
       <Wordmark />
     </Link>
   );
@@ -193,11 +194,11 @@ function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, on
   const toggleLabel = drawer || !collapsed ? t("rail.toggleClose") : t("rail.toggleOpen");
   // D78: collapsed, the toggle is the app mark; pointing at it (or focusing it) turns it into the "open sidebar" icon.
   const toggle = collapsed && !drawer ? (
-    <button type="button" className={s.markToggle} aria-label={toggleLabel} onClick={onToggle} data-review-id="AppShell/toggle">
+    <button type="button" className={s.markToggle} aria-label={toggleLabel} onClick={onToggle} data-track="rail-toggle" data-review-id="AppShell/toggle">
       <LogoMark className={s.markGlyph} />
       <span className={s.markOpen} aria-hidden="true"><Icon name="sidebar" /></span>
     </button>
-  ) : <IconButton icon="sidebar" size="sm" label={toggleLabel} onClick={onToggle} title={undefined} data-review-id="AppShell/toggle" />;
+  ) : <IconButton icon="sidebar" size="sm" label={toggleLabel} onClick={onToggle} title={undefined} data-track="rail-toggle" data-review-id="AppShell/toggle" />;
   return (
     <div className={s.railBody} data-collapsed={collapsed || undefined}>
       <div className={s.top}>
@@ -223,7 +224,7 @@ function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, on
       <div className={s.foot} data-review-id="AppShell/account">
         {engine.status === "notReady" ? (collapsed ? (
           <Tooltip content={`${t("rail.engineWarning")}: ${t("rail.notReady")}`} placement="top-start">
-            <Link to="/settings/engine" className={s.engineIcon} aria-label={`${t("rail.engineWarning")}: ${t("rail.notReady")}`} data-review-id="AppShell/engine">
+            <Link to="/settings/engine" className={s.engineIcon} data-track="rail-engine-warning" aria-label={`${t("rail.engineWarning")}: ${t("rail.notReady")}`} data-review-id="AppShell/engine">
               <Icon name="alert" />
             </Link>
           </Tooltip>
@@ -235,6 +236,7 @@ function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, on
             end={<EngineBadge status="notReady" />}
             current={false}
             linkAs={RouterLink}
+            track="rail-engine-warning"
             className={s.engineWarn}
           />
         )) : null}
@@ -247,7 +249,7 @@ function Rail({ current, currentSessionId, recent, engine, collapsed, drawer, on
 /** "New practice": a grey circle with the plus, then the label, like Claude's "New chat" (D59: no white fill). Collapsed: the circle alone. */
 function NewPractice({ current, collapsed }: { current: boolean; collapsed: boolean }) {
   const link = (
-    <Link to="/" className={s.newRow} aria-current={current ? "page" : undefined} data-review-id="AppShell/new">
+    <Link to="/" className={s.newRow} aria-current={current ? "page" : undefined} data-track="nav-new" data-review-id="AppShell/new">
       <span className={s.plus}><Icon name="plus" size="sm" /></span>
       <span className={collapsed ? "visually-hidden" : s.newLabel}>{t("nav.newPractice")}</span>
     </Link>
@@ -258,7 +260,7 @@ function NewPractice({ current, collapsed }: { current: boolean; collapsed: bool
 /** D80: the Archive (chats moved out of Recents), under New practice. Collapsed: the icon alone, with a Tooltip. */
 function ArchiveLink({ current, collapsed }: { current: boolean; collapsed: boolean }) {
   const link = (
-    <Link to="/archive" className={s.newRow} aria-current={current ? "page" : undefined} data-review-id="AppShell/archive">
+    <Link to="/archive" className={s.newRow} aria-current={current ? "page" : undefined} data-track="nav-archive" data-review-id="AppShell/archive">
       <span className={s.navIcon}><Icon name="archive" size="sm" /></span>
       <span className={collapsed ? "visually-hidden" : s.newLabel}>{t("rail.archive")}</span>
     </Link>
@@ -307,13 +309,13 @@ function ChatRow({ item, current, menuOpen, actions, onNavigate }: {
   const [renaming, setRenaming] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const items: MenuEntry[] = actions ? [
-    { id: "rename", label: t("rail.rowRename"), icon: "edit", onSelect: () => setRenaming(true) },
-    { id: "download", label: t("rail.rowDownload"), icon: "download", onSelect: () => actions.download(item.id) },
-    { id: "archive", label: t("rail.rowArchive"), icon: "archive", onSelect: () => actions.archive(item.id) },
+    { id: "rename", track: "rail-row-rename", label: t("rail.rowRename"), icon: "edit", onSelect: () => setRenaming(true) },
+    { id: "download", track: "rail-row-download", label: t("rail.rowDownload"), icon: "download", onSelect: () => actions.download(item.id) },
+    { id: "archive", track: "rail-row-archive", label: t("rail.rowArchive"), icon: "archive", onSelect: () => actions.archive(item.id) },
     { id: "sep", separator: true },
-    { id: "delete", label: t("rail.rowDelete"), icon: "trash", onSelect: () => setConfirm(true) },
+    { id: "delete", track: "rail-row-delete", label: t("rail.rowDelete"), icon: "trash", onSelect: () => setConfirm(true) },
   ] : [
-    { id: "open", label: t("rail.rowOpen"), icon: "chat", onSelect: () => { navigate(`/sessions/${encodeURIComponent(item.id)}`); onNavigate?.(); } },
+    { id: "open", track: "rail-row-open", label: t("rail.rowOpen"), icon: "chat", onSelect: () => { navigate(`/sessions/${encodeURIComponent(item.id)}`); onNavigate?.(); } },
   ];
   const label = t("rail.rowActions", { title: item.title });
   if (renaming && actions) {
@@ -333,6 +335,7 @@ function ChatRow({ item, current, menuOpen, actions, onNavigate }: {
         end={item.track === "english" ? <span className={s.track} title={t("rail.english")}>EN</span> : undefined}
         current={current}
         linkAs={RouterLink}
+        track="rail-session"
         className={s.chat}
       />
       <Menu
@@ -341,7 +344,7 @@ function ChatRow({ item, current, menuOpen, actions, onNavigate }: {
         defaultOpen={menuOpen}
         className={s.chatActions}
         items={items}
-        trigger={(p) => <IconButton {...p} icon="more" size="sm" label={label} title={undefined} data-review-id="AppShell/rowMenu" />}
+        trigger={(p) => <IconButton {...p} icon="more" size="sm" label={label} title={undefined} data-track="rail-row-more" data-review-id="AppShell/rowMenu" />}
       />
       {actions ? (
         <Dialog
@@ -350,8 +353,8 @@ function ChatRow({ item, current, menuOpen, actions, onNavigate }: {
           onClose={() => setConfirm(false)}
           actions={(
             <>
-              <Button onClick={() => setConfirm(false)}>{t("common.cancel")}</Button>
-              <Button variant="danger" onClick={() => { setConfirm(false); actions.remove(item.id); }}>{t("rail.deleteConfirm")}</Button>
+              <Button data-track="rail-delete-cancel" onClick={() => setConfirm(false)}>{t("common.cancel")}</Button>
+              <Button variant="danger" data-track="rail-delete-confirm" onClick={() => { setConfirm(false); actions.remove(item.id); }}>{t("rail.deleteConfirm")}</Button>
             </>
           )}
         >
@@ -374,10 +377,10 @@ function Account({ collapsed, defaultOpen, onNavigate, name, engine }: {
   const who = name?.trim() || t("rail.you");
   const sub = engine.name || t("rail.local");
   const items: MenuEntry[] = [
-    { id: "settings", label: t("settings.title"), icon: "settings", onSelect: go("/settings") },
+    { id: "settings", track: "nav-settings", label: t("settings.title"), icon: "settings", onSelect: go("/settings") },
     { id: "sep", separator: true },
-    { id: "privacy", label: t("settings.section.privacy"), icon: "lock", onSelect: go("/settings/privacy") },
-    { id: "help", label: t("rail.help"), icon: "info", onSelect: go("/settings/about#free") },
+    { id: "privacy", track: "nav-privacy", label: t("settings.section.privacy"), icon: "lock", onSelect: go("/settings/privacy") },
+    { id: "help", track: "nav-help", label: t("rail.help"), icon: "info", onSelect: go("/settings/about#free") },
   ];
   return (
     <Menu
@@ -390,7 +393,7 @@ function Account({ collapsed, defaultOpen, onNavigate, name, engine }: {
       header={<><span className={s.menuName}>{who}</span><span className={s.menuSub}>{t("rail.storage")}</span></>}
       trigger={(p) => {
         const button = (
-          <button {...p} type="button" className={s.account} aria-label={collapsed ? `${who}. ${t("rail.accountMenu")}` : undefined} data-review-id="AppShell/accountButton">
+          <button {...p} type="button" className={s.account} data-track="account-menu" aria-label={collapsed ? `${who}. ${t("rail.accountMenu")}` : undefined} data-review-id="AppShell/accountButton">
             <span className={s.avatar}>{name?.trim() ? <span className={s.initial} aria-hidden="true">{initial(who)}</span> : <Icon name="user" size="sm" />}</span>
             {collapsed ? null : (
               <>

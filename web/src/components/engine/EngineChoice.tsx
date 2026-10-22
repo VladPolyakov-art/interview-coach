@@ -27,7 +27,7 @@ export function EngineChoice({ value, onChange }: EngineChoiceProps) {
   useInterval(() => { void refreshEngines(); }, 5000, Boolean(picked && !picked.status.ready));
   if (!engines) return <Skeleton variant="row" rows={4} label={t("common.checking")} />;
 
-  const recheck = <IconButton icon="refresh" size="sm" label={t("common.checkAgain")} disabled={enginesLoading} onClick={() => void refreshEngines()} />;
+  const recheck = <IconButton icon="refresh" size="sm" label={t("common.checkAgain")} data-track="engine-recheck" disabled={enginesLoading} onClick={() => void refreshEngines()} />;
   return (
     <SettingGroup title={t("engines.choice.title")} description={t("engines.choice.hint")} action={recheck} headingLevel={2} flush>
       <div role="radiogroup" aria-label={t("engines.choice.title")}>
@@ -36,7 +36,7 @@ export function EngineChoice({ value, onChange }: EngineChoiceProps) {
           const model = e.status.ready ? engineModel(e, settings) : "";
           return (
             <div key={e.id} className={`${s.item} ${s.choiceItem}`} data-picked={on || undefined}>
-              <button type="button" role="radio" aria-checked={on} className={`${s.itemHead} ${s.choiceHead}`} onClick={() => onChange(e.id)}>
+              <button type="button" role="radio" aria-checked={on} data-track={`engine-${e.id.replace(/_/g, "-")}`} className={`${s.itemHead} ${s.choiceHead}`} onClick={() => onChange(e.id)}>
                 <span className={s.optIcon}><EngineLogo id={e.id} /></span>
                 <span className={s.optText}>
                   <span className={s.optName}>

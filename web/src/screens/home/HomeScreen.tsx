@@ -19,6 +19,7 @@ import { api, ApiError, fileToBase64 } from "../../lib/api";
 import { useInterval, useLoad } from "../../lib/hooks";
 import { prefs } from "../../lib/prefs";
 import { useApp } from "../../lib/store";
+import { homeUtScreen, useUtScreen } from "../../lib/utScreen";
 import type { Vacancy } from "../../lib/types";
 import { buildSessionConfig } from "../../session/startConfig";
 import { homePrefs, shortDate } from "./homePrefs";
@@ -261,6 +262,8 @@ export function HomeScreen() {
   const unsupportedSpeech = stt.data?.available === false && !browserSttSupported();
   const loading = (vacancies.loading && !vacancies.data) || (sessions.loading && !sessions.data);
   const shown = setup ? setupModel(ctx, setup) : undefined;
+  // User-test screen name (13b): start screen, setup chat, or the plan card.
+  useUtScreen(homeUtScreen({ active: Boolean(setup), plan: shown?.plan?.kind ?? null }));
   /* Quick start (D51 item 1): one click, the last settings (general questions on a first visit), no setup chat. */
   // While Home loads the row keeps its place (disabled, no detail) so it doesn't jump in later.
   const quick = setup || loading ? null : quickStartFor(ctx, textMode || unsupportedSpeech);

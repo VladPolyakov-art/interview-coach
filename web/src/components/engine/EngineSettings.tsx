@@ -34,7 +34,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
 
   if (!engines) {
     return enginesLoading ? <Skeleton variant="row" rows={3} label={t("common.checking")} /> : (
-      <Callout tone="error" title={t("errors.server_unreachable")} actions={<Button size="sm" onClick={() => void refreshEngines()}>{t("common.tryAgain")}</Button>} />
+      <Callout tone="error" title={t("errors.server_unreachable")} actions={<Button size="sm" data-track="engines-try-again" onClick={() => void refreshEngines()}>{t("common.tryAgain")}</Button>} />
     );
   }
 
@@ -51,7 +51,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
     }
   };
 
-  const recheck = <IconButton icon="refresh" size="sm" label={t("common.checkAgain")} disabled={enginesLoading} onClick={() => void refreshEngines()} />;
+  const recheck = <IconButton icon="refresh" size="sm" label={t("common.checkAgain")} data-track="engine-recheck" disabled={enginesLoading} onClick={() => void refreshEngines()} />;
   const others = engines.engines.filter((e) => e.id !== selected?.id);
 
   return (
@@ -100,9 +100,9 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
                     </span>
                   </span>
                   {e.status.ready && !expanded ? (
-                    <Button size="sm" loading={switching === e.id} disabled={switching !== null} onClick={() => void use(e)}>{t("engines.settings.use")}</Button>
+                    <Button size="sm" data-track="engine-use" loading={switching === e.id} disabled={switching !== null} onClick={() => void use(e)}>{t("engines.settings.use")}</Button>
                   ) : (
-                    <Button size="sm" variant={expanded ? "ghost" : "secondary"} aria-expanded={expanded} aria-controls={bodyId} onClick={() => setOpen(expanded ? null : e.id)}>
+                    <Button size="sm" variant={expanded ? "ghost" : "secondary"} data-track="engine-set-up" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setOpen(expanded ? null : e.id)}>
                       {expanded ? t("engines.settings.hide") : t("engines.settings.setUp")}
                     </Button>
                   )}
@@ -114,7 +114,7 @@ export function EngineSettings({ initialOpen }: EngineSettingsProps) {
                     <div className={s.footerEnd}>
                       {e.status.ready ? <DisconnectButton engine={e} /> : null}
                       {!e.status.ready ? <span className={s.note} aria-live="polite">{t("engines.flow.useNote", { name: engineName(e) })}</span> : null}
-                      <Button variant="primary" size="sm" disabled={!e.status.ready || switching !== null} loading={switching === e.id} onClick={() => void use(e)}>
+                      <Button variant="primary" size="sm" data-track="engine-use" disabled={!e.status.ready || switching !== null} loading={switching === e.id} onClick={() => void use(e)}>
                         {t("engines.flow.use", { name: engineName(e) })}
                       </Button>
                     </div>

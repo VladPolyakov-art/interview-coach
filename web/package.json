@@ -14,6 +14,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static",
     "e2e": "node scripts/e2e.mjs",
+    "ut": "node scripts/ut-server.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "build:review": "tsc -b && vite build --config vite.review.config.ts && node scripts/copy-review.mjs"

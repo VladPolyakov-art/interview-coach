@@ -27,11 +27,13 @@ export interface SelectProps extends Common {
   inline?: boolean;
   defaultOpen?: boolean;
   className?: string;
+  /** User-test label (`data-track`, kebab-case, never user data). The button gets it as is, each option as `<track>-<value>`. */
+  track?: string;
 }
 
 export function Select({
   label, hideLabel, hint, error, optionalText, id: idProp, options, value, onChange, disabled, placeholder,
-  width = "fill", placement, inline, defaultOpen, className,
+  width = "fill", placement, inline, defaultOpen, className, track,
 }: SelectProps) {
   const auto = useId();
   const id = idProp ?? auto;
@@ -41,7 +43,10 @@ export function Select({
       <Menu
         kind="listbox"
         label={label}
-        options={options.map((o) => ({ id: o.value, label: o.label, description: o.description, disabled: o.disabled }))}
+        options={options.map((o) => ({
+          id: o.value, label: o.label, description: o.description, disabled: o.disabled,
+          track: track ? `${track}-${o.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : undefined,
+        }))}
         value={current ? value : null}
         onChange={(v) => { if (v !== value) onChange(v); }}
         matchWidth="min"
@@ -56,6 +61,7 @@ export function Select({
             id={id}
             type="button"
             disabled={disabled}
+            data-track={track}
             className={`${f.control} ${s.trigger} ${className ?? ""}`}
             aria-labelledby={`${id}-label ${id}-value`}
             aria-invalid={error ? true : undefined}

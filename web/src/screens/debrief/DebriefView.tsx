@@ -223,7 +223,7 @@ export function DebriefView(props: DebriefViewProps) {
                   <Segmented
                     label={t("debrief.convo.pick")}
                     hideLabel
-                    options={model.questions.map((q) => ({ value: String(q.n), label: String(q.n), title: q.question }))}
+                    options={model.questions.map((q) => ({ value: String(q.n), label: String(q.n), title: q.question, track: "debrief-question-pick" }))}
                     value={String(current.n)}
                     onChange={(v) => pick(Number(v))}
                   />

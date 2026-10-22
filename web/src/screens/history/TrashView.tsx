@@ -29,8 +29,8 @@ export function TrashView(props: TrashViewProps) {
           title={t("history.trashError.title")}
           actions={(
             <>
-              <Button variant="secondary" size="sm" icon="refresh" onClick={props.onRetry}>{t("history.error.retry")}</Button>
-              <Link to="/settings/storage" className={s.inlineLink}>{t("history.error.storage")}</Link>
+              <Button variant="secondary" size="sm" icon="refresh" data-track="trash-retry" onClick={props.onRetry}>{t("history.error.retry")}</Button>
+              <Link to="/settings/storage" className={s.inlineLink} data-track="trash-storage-link">{t("history.error.storage")}</Link>
             </>
           )}
         >
@@ -57,8 +57,8 @@ export function TrashView(props: TrashViewProps) {
                 </span>
               </div>
               <div className={s.side}>
-                <Button variant="secondary" size="sm" icon="redo" onClick={() => props.onRestore?.(x.id, li(x.id))}>{t("history.restore")}</Button>
-                <Button variant="ghost" size="sm" icon="trash" aria-label={t("history.purgeRow", { title: x.title })} onClick={() => setConfirming(x.id)}>{t("history.purge")}</Button>
+                <Button variant="secondary" size="sm" icon="redo" data-track="trash-restore" onClick={() => props.onRestore?.(x.id, li(x.id))}>{t("history.restore")}</Button>
+                <Button variant="ghost" size="sm" icon="trash" aria-label={t("history.purgeRow", { title: x.title })} data-track="trash-purge" onClick={() => setConfirming(x.id)}>{t("history.purge")}</Button>
               </div>
             </li>
           );
@@ -68,7 +68,7 @@ export function TrashView(props: TrashViewProps) {
   }
 
   return (
-    <Page title={t("history.trashTitle")} sub={t("history.trashSub")} actions={<Link to="/archive">{t("history.backToHistory")}</Link>}>
+    <Page title={t("history.trashTitle")} sub={t("history.trashSub")} actions={<Link to="/archive" data-track="trash-back">{t("history.backToHistory")}</Link>}>
       {notice ? <Callout tone="success" live="status">{notice}</Callout> : null}
       {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
       {body}
@@ -78,8 +78,8 @@ export function TrashView(props: TrashViewProps) {
         onClose={() => setConfirming(null)}
         actions={(
           <>
-            <Button onClick={() => setConfirming(null)}>{t("common.cancel")}</Button>
-            <Button variant="danger" onClick={() => { const id = confirming; setConfirming(null); if (id) props.onPurge?.(id, li(id)); }}>{t("history.purge")}</Button>
+            <Button data-track="trash-purge-cancel" onClick={() => setConfirming(null)}>{t("common.cancel")}</Button>
+            <Button variant="danger" data-track="trash-purge-confirm" onClick={() => { const id = confirming; setConfirming(null); if (id) props.onPurge?.(id, li(id)); }}>{t("history.purge")}</Button>
           </>
         )}
       >

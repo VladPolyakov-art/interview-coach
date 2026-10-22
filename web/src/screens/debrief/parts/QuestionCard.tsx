@@ -67,11 +67,11 @@ function Answer({ q, answerEditing, answerDraft, onEditAnswer, onSaveAnswer, onC
           {clamped || expanded || onEditAnswer ? (
             <div className={s.answerActions}>
               {clamped || expanded ? (
-                <Button variant="link" size="sm" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+                <Button variant="link" size="sm" data-track="debrief-show-answer" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
                   {expanded ? t("debrief.q.showLess") : t("debrief.q.showFull")}
                 </Button>
               ) : null}
-              {onEditAnswer ? <Button variant="ghost" size="sm" icon="edit" onClick={onEditAnswer}>{t("debrief.q.edit")}</Button> : null}
+              {onEditAnswer ? <Button variant="ghost" size="sm" icon="edit" data-track="edit-what-i-said" onClick={onEditAnswer}>{t("debrief.q.edit")}</Button> : null}
             </div>
           ) : null}
         </>
@@ -86,6 +86,7 @@ function Stronger({ q, open, onOpenChange }: { q: QuestionModel; open: boolean; 
   return (
     <Disclosure
       surface="plain"
+      track="debrief-stronger-toggle"
       open={open}
       onOpenChange={onOpenChange}
       leading={<Icon name="sparkle" size="sm" />}
@@ -184,6 +185,7 @@ export function QuestionCard(p: QuestionCardProps) {
   return (
     <Disclosure
       as="li"
+      track="debrief-question-toggle"
       headingLevel={3}
       id={headerId}
       open={open}

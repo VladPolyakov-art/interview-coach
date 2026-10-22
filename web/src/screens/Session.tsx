@@ -10,6 +10,7 @@ import { useElapsed } from "../lib/hooks";
 import { pendingSave } from "../lib/pendingSave";
 import { useStorageWritable } from "../lib/storageProbe";
 import { useApp } from "../lib/store";
+import { sessionUtScreen, useUtScreen } from "../lib/utScreen";
 import type { EngineId } from "../lib/types";
 import { selectThreads, type SessionState } from "../session/reducer";
 import { editTargets, heardEdit, recheckEdits } from "../session/recheck";
@@ -25,10 +26,11 @@ export function SessionScreen() {
   // Coming back Home after a session replays the Home build-up (docs/motion.md 3.1).
   useEffect(() => () => { motionMemory.returnFromSession = true; }, []);
   const st = (location.state ?? {}) as LocationState;
+  useUtScreen(sessionUtScreen(st.config?.start.mode));   // user-test screen name (13b)
   if (!st.config) {
     return (
       <main className={s.center} id="main">
-        <EmptyState icon="info" title={t("session.missing")} actions={<Link to="/">{t("session.backHome")}</Link>} />
+        <EmptyState icon="info" title={t("session.missing")} actions={<Link to="/" data-track="session-back-home">{t("session.backHome")}</Link>} />
       </main>
     );
   }
@@ -181,7 +183,7 @@ function LiveSession({ config, title, focus }: { config: SessionConfig; title: s
           tone="error"
           live="alert"
           title={engine ? t("session.errors.engineTitle") : t("session.errors.title")}
-          actions={engine ? <Link to="/settings/engine">{t("session.errors.fixEngine")}</Link> : <Link to="/">{t("session.backHome")}</Link>}
+          actions={engine ? <Link to="/settings/engine" data-track="session-fix-engine">{t("session.errors.fixEngine")}</Link> : <Link to="/" data-track="session-back-home">{t("session.backHome")}</Link>}
         >
           {engine
             ? [state.fatal?.message, state.fatal?.hint].filter(Boolean).join(" ")
@@ -189,7 +191,7 @@ function LiveSession({ config, title, focus }: { config: SessionConfig; title: s
               ? t("session.errors.bad_start", { message: state.fatal?.message ?? "" })
               : tMaybe(`session.errors.${code}`, state.fatal?.message || t("session.errors.session_failed"))}
         </Callout>
-        {engine ? <Link to="/">{t("session.backHome")}</Link> : null}
+        {engine ? <Link to="/" data-track="session-back-home">{t("session.backHome")}</Link> : null}
       </main>
     );
   }
@@ -201,8 +203,8 @@ function LiveSession({ config, title, focus }: { config: SessionConfig; title: s
           title={t("session.orb.ended")}
           actions={(
             <>
-              {state.saveError && state.transcript.length ? <Button variant="secondary" icon="download" onClick={() => downloadTranscript(title, state.transcript)}>{t("session.errors.downloadTranscript")}</Button> : null}
-              <Button variant="primary" onClick={() => navigate("/")}>{t("session.backHome")}</Button>
+              {state.saveError && state.transcript.length ? <Button variant="secondary" icon="download" data-track="session-download-transcript" onClick={() => downloadTranscript(title, state.transcript)}>{t("session.errors.downloadTranscript")}</Button> : null}
+              <Button variant="primary" data-track="session-back-home" onClick={() => navigate("/")}>{t("session.backHome")}</Button>
             </>
           )}
         >

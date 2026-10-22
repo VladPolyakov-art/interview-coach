@@ -9,10 +9,12 @@ export interface ToggleProps {
   disabled?: boolean;
   /** Hide the visible label (still announced). */
   hideLabel?: boolean;
+  /** User-test label on the switch (`data-track`, kebab-case, never user data). */
+  track?: string;
 }
 
 /** On/off switch (role="switch"). The visible label is clickable; state is announced, not only coloured. */
-export function Toggle({ label, description, checked, onChange, disabled, hideLabel }: ToggleProps) {
+export function Toggle({ label, description, checked, onChange, disabled, hideLabel, track }: ToggleProps) {
   const id = useId();
   return (
     <div className={s.row}>
@@ -27,6 +29,7 @@ export function Toggle({ label, description, checked, onChange, disabled, hideLa
         aria-checked={checked}
         aria-describedby={description ? `${id}-d` : undefined}
         className={s.switch}
+        data-track={track}
         disabled={disabled}
         onClick={() => onChange(!checked)}
       />

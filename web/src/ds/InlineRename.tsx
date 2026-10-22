@@ -75,6 +75,7 @@ export function InlineRename({
           ref={input}
           label={label}
           hideLabel
+          data-track="rename-input"
           value={draft}
           maxLength={max}
           className={s.input}
@@ -91,8 +92,8 @@ export function InlineRename({
         {t("rename.counter", { n: draft.length, max })}
       </span>
       <div className={s.actions}>
-        <IconButton icon="check" label={t("rename.save")} size="sm" onClick={save} />
-        <IconButton icon="x" label={t("common.cancel")} size="sm" onClick={onCancel} />
+        <IconButton icon="check" label={t("rename.save")} size="sm" data-track="rename-save" onClick={save} />
+        <IconButton icon="x" label={t("common.cancel")} size="sm" data-track="rename-cancel" onClick={onCancel} />
       </div>
     </div>
   );

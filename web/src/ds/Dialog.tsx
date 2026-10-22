@@ -78,7 +78,7 @@ function Inner({ id, title, children, actions, actionsStart, onClose, closeLabel
     <div className={s.inner}>
       <div className={s.head}>
         <h2 id={`${id}-t`} className={s.title}>{title}</h2>
-        {closeLabel ? <IconButton icon="x" size="sm" label={closeLabel} className={s.close} onClick={onClose} /> : null}
+        {closeLabel ? <IconButton icon="x" size="sm" label={closeLabel} className={s.close} data-track="dialog-close" onClick={onClose} /> : null}
       </div>
       {children ? <div className={s.body}>{children}</div> : null}
       {actions || actionsStart ? (

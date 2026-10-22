@@ -70,17 +70,18 @@ export function VacancyEditorView(p: VacancyEditorViewProps) {
       inline={inline}
       onClose={p.onClose}
       title={mode === "edit" ? t("vacancy.editTitle") : t("vacancy.title")}
-      actionsStart={mode === "edit" ? <Button variant="ghost" icon="trash" onClick={p.onDelete}>{t("vacancy.delete")}</Button> : undefined}
+      actionsStart={mode === "edit" ? <Button variant="ghost" icon="trash" data-track="job-delete" onClick={p.onDelete}>{t("vacancy.delete")}</Button> : undefined}
       actions={(
         <>
-          <Button variant="ghost" onClick={p.onClose}>{t("common.cancel")}</Button>
+          <Button variant="ghost" data-track="job-cancel" onClick={p.onClose}>{t("common.cancel")}</Button>
           {/* F-13-11: the button stays where it was and says what it is doing. */}
-          <Button variant="primary" disabled={!canSave} loading={saving} onClick={p.onSave}>{saving ? t("vacancy.saving") : saveLabel ?? t("vacancy.save")}</Button>
+          <Button variant="primary" data-track="job-save" disabled={!canSave} loading={saving} onClick={p.onSave}>{saving ? t("vacancy.saving") : saveLabel ?? t("vacancy.save")}</Button>
         </>
       )}
     >
       <form className={s.form} data-review-id="VacancyEditor" onSubmit={(e) => { e.preventDefault(); if (canSave && !saving) p.onSave?.(); }}>
         <Segmented<VacancySource>
+          track="job-source"
           label={t("vacancy.tabs")}
           hideLabel
           fullWidth
@@ -120,7 +121,7 @@ export function VacancyEditorView(p: VacancyEditorViewProps) {
             error={{
               title: t("vacancy.fileErrorTitle"),
               body: error || t("vacancy.fileError"),
-              action: <Button variant="secondary" size="sm" onClick={p.onSwitchToPaste}>{t("vacancy.toPaste")}</Button>,
+              action: <Button variant="secondary" size="sm" data-track="job-to-paste" onClick={p.onSwitchToPaste}>{t("vacancy.toPaste")}</Button>,
             }}
             onFile={p.onFile}
             onRemove={p.onRemoveFile}
@@ -140,7 +141,7 @@ export function VacancyEditorView(p: VacancyEditorViewProps) {
                 onChange={(e) => p.onUrlChange?.(e.target.value)}
               />
               {p.onFetch ? (
-                <Button variant="secondary" disabled={!url.trim() || link === "fetching"} onClick={p.onFetch}>{t("vacancy.fetch")}</Button>
+                <Button variant="secondary" data-track="job-fetch" disabled={!url.trim() || link === "fetching"} onClick={p.onFetch}>{t("vacancy.fetch")}</Button>
               ) : null}
             </div>
             {link === "fetching" ? (
@@ -152,7 +153,7 @@ export function VacancyEditorView(p: VacancyEditorViewProps) {
                 tone="error"
                 live="alert"
                 title={t("vacancy.linkErrorTitle")}
-                actions={<Button variant="secondary" size="sm" onClick={p.onSwitchToPaste}>{t("vacancy.toPaste")}</Button>}
+                actions={<Button variant="secondary" size="sm" data-track="job-to-paste" onClick={p.onSwitchToPaste}>{t("vacancy.toPaste")}</Button>}
               >
                 {error || t("vacancy.linkError")}
               </Callout>
@@ -187,8 +188,8 @@ export function DeleteJobDialog({ open, name, inline, onCancel, onConfirm }: {
       title={t("vacancy.deleteTitle", { name })}
       actions={(
         <>
-          <Button variant="ghost" onClick={onCancel}>{t("common.cancel")}</Button>
-          <Button variant="danger" onClick={onConfirm}>{t("vacancy.delete")}</Button>
+          <Button variant="ghost" data-track="job-delete-cancel" onClick={onCancel}>{t("common.cancel")}</Button>
+          <Button variant="danger" data-track="job-delete-confirm" onClick={onConfirm}>{t("vacancy.delete")}</Button>
         </>
       )}
     >

@@ -79,10 +79,10 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
         <SettingGroup title={t("setup.check.group")} headingLevel={2}>
           {ttsOk ? (
             <SettingRow id="setup-voice" label={t("setup.check.voice")} description={t("setup.check.voiceHint")}>
-              <Select label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
+              <Select track="setup-voice" label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
                 onChange={(v) => void save({ voice: v })}
                 options={(voices.data?.voices ?? []).map((v) => ({ value: v.id, label: `${v.label} · ${v.locale}` }))} />
-              <Button variant="secondary" icon="play" onClick={playSample} disabled={!voice}>{t("setup.check.sample")}</Button>
+              <Button variant="secondary" icon="play" data-track="setup-voice-sample" onClick={playSample} disabled={!voice}>{t("setup.check.sample")}</Button>
             </SettingRow>
           ) : <Callout tone="info">{t("setup.check.voiceMissing")}</Callout>}
           <div className={s.checkArea}>
@@ -93,16 +93,16 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
       </div>
       {state.phase === "done" ? (
         <div className={s.telemetry}>
-          <Checkbox label={t("setup.check.telemetry")} description={t("setup.check.telemetryHint")} checked={share} onChange={(e) => setShare(e.target.checked)} />
+          <Checkbox data-track="setup-telemetry" label={t("setup.check.telemetry")} description={t("setup.check.telemetryHint")} checked={share} onChange={(e) => setShare(e.target.checked)} />
         </div>
       ) : null}
-      <StepFooter back={<Button variant="ghost" icon="chevronLeft" onClick={() => { check.stop(); onBack(); }}>{t("common.back")}</Button>}>
+      <StepFooter back={<Button variant="ghost" icon="chevronLeft" data-track="setup-back" onClick={() => { check.stop(); onBack(); }}>{t("common.back")}</Button>}>
         {state.phase === "done" ? (
           <>
-            <Button variant="ghost" onClick={retry}>{t("setup.check.tryAgain")}</Button>
-            <Button variant="primary" iconRight="arrowRight" onClick={works}>{t("setup.check.works")}</Button>
+            <Button variant="ghost" data-track="setup-try-again" onClick={retry}>{t("setup.check.tryAgain")}</Button>
+            <Button variant="primary" iconRight="arrowRight" data-track="setup-works" onClick={works}>{t("setup.check.works")}</Button>
           </>
-        ) : <Button variant="secondary" icon="keyboard" onClick={() => leave("text")}>{t("setup.check.typeInstead")}</Button>}
+        ) : <Button variant="secondary" icon="keyboard" data-track="setup-type-instead" onClick={() => leave("text")}>{t("setup.check.typeInstead")}</Button>}
       </StepFooter>
     </>
   );
@@ -123,10 +123,10 @@ function CheckBody({ state, level, getLevel, onStart, onFinish, onReplay, onEngi
     const live = state.phase === "listening";
     return (
       <div className={s.check}>
-        <MicButton label={live ? t("setup.check.done") : t("setup.check.start")} muted={false} live={live}
+        <MicButton data-track={live ? "setup-mic-done" : "setup-mic-start"} label={live ? t("setup.check.done") : t("setup.check.start")} muted={false} live={live}
           getLevel={live ? getLevel : undefined} level={live ? level : undefined} onClick={live ? onFinish : onStart} />
         <p className={s.checkLine} role="status">{live ? t("setup.check.listening") : t("setup.check.idle")}</p>
-        {live ? <Button size="sm" variant="secondary" onClick={onFinish}>{t("setup.check.done")}</Button> : null}
+        {live ? <Button size="sm" variant="secondary" data-track="setup-mic-done" onClick={onFinish}>{t("setup.check.done")}</Button> : null}
       </div>
     );
   }
@@ -137,8 +137,8 @@ function CheckBody({ state, level, getLevel, onStart, onFinish, onReplay, onEngi
         title={t(`setup.check.error.${state.code}.title`)}
         actions={(
           <>
-            {state.code !== "no_stt" ? <Button size="sm" onClick={onStart}>{t("setup.check.tryAgain")}</Button> : null}
-            {state.code === "engine" ? <Button size="sm" variant="ghost" onClick={onEngine}>{t("setup.check.engineBack")}</Button> : null}
+            {state.code !== "no_stt" ? <Button size="sm" data-track="setup-try-again" onClick={onStart}>{t("setup.check.tryAgain")}</Button> : null}
+            {state.code === "engine" ? <Button size="sm" variant="ghost" data-track="setup-back-to-engine" onClick={onEngine}>{t("setup.check.engineBack")}</Button> : null}
           </>
         )}>
         {t(`setup.check.error.${state.code}.body`, { message: state.message ?? "" })}
@@ -155,7 +155,7 @@ function CheckBody({ state, level, getLevel, onStart, onFinish, onReplay, onEngi
           heard ? <ChatMessage speaker="mike" name={t("chat.setup.mike")} state="pending" pendingLabel={t("setup.check.answering")} /> : null
         ) : (
           <ChatMessage speaker="mike" name={t("chat.setup.mike")} animate
-            actions={state.audio ? <Button size="sm" variant="ghost" icon="play" onClick={onReplay}>{t("setup.check.replay")}</Button> : undefined}>
+            actions={state.audio ? <Button size="sm" variant="ghost" icon="play" data-track="setup-replay" onClick={onReplay}>{t("setup.check.replay")}</Button> : undefined}>
             {state.reply}
           </ChatMessage>
         )}

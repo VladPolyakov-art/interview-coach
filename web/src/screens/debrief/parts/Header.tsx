@@ -28,11 +28,11 @@ export interface HeaderProps {
 export function Header(p: HeaderProps) {
   const [confirming, setConfirming] = useState(false);
   const items: MenuEntry[] = [
-    ...(p.obsidian ? [{ id: "export", label: t("debrief.menu.export"), icon: "folder" as const, onSelect: p.onExport }] : []),
-    { id: "download", label: t("debrief.menu.download"), icon: "download" as const, onSelect: p.onDownload },
-    ...(p.onArchive ? [{ id: "archive", label: t("debrief.menu.archive"), icon: "archive" as const, onSelect: p.onArchive }] : []),
+    ...(p.obsidian ? [{ id: "export", track: "debrief-menu-export", label: t("debrief.menu.export"), icon: "folder" as const, onSelect: p.onExport }] : []),
+    { id: "download", track: "debrief-menu-download", label: t("debrief.menu.download"), icon: "download" as const, onSelect: p.onDownload },
+    ...(p.onArchive ? [{ id: "archive", track: "debrief-menu-archive", label: t("debrief.menu.archive"), icon: "archive" as const, onSelect: p.onArchive }] : []),
     { id: "sep", separator: true as const },
-    { id: "trash", label: t("debrief.menu.trash"), icon: "trash" as const, onSelect: () => setConfirming(true) },
+    { id: "trash", track: "debrief-menu-trash", label: t("debrief.menu.trash"), icon: "trash" as const, onSelect: () => setConfirming(true) },
   ];
   const showMenu = !p.example && (p.onDownload || p.onTrash || p.onExport || p.onArchive);
   return (
@@ -47,14 +47,14 @@ export function Header(p: HeaderProps) {
             </Tooltip>
             {p.example ? <Badge>{t("debrief.exampleBadge")}</Badge> : null}
             {!p.example && p.onRenameStart ? (
-              <IconButton icon="edit" size="sm" label={t("debrief.rename")} onClick={p.onRenameStart} />
+              <IconButton icon="edit" size="sm" label={t("debrief.rename")} data-track="debrief-rename" onClick={p.onRenameStart} />
             ) : null}
             {showMenu ? (
               <Menu
                 label={t("debrief.moreActions")}
                 items={items}
                 placement="bottom-end"
-                trigger={(props) => <IconButton icon="more" size="sm" label={t("debrief.moreActions")} {...props} />}
+                trigger={(props) => <IconButton icon="more" size="sm" label={t("debrief.moreActions")} data-track="debrief-more" {...props} />}
               />
             ) : null}
           </div>
@@ -64,7 +64,7 @@ export function Header(p: HeaderProps) {
         {p.meta.map((m, i) => (
           <li key={i} className={`${s.metaItem} ${m.tone === "warning" ? s.warning : ""}`}>
             <Icon name={m.icon} size="sm" />
-            {m.href ? <Link to={m.href} className={s.metaLink}>{m.text}</Link> : <span>{m.text}</span>}
+            {m.href ? <Link to={m.href} className={s.metaLink} data-track="debrief-meta-link">{m.text}</Link> : <span>{m.text}</span>}
           </li>
         ))}
       </ul>
@@ -74,8 +74,8 @@ export function Header(p: HeaderProps) {
         onClose={() => setConfirming(false)}
         actions={(
           <>
-            <Button onClick={() => setConfirming(false)}>{t("common.cancel")}</Button>
-            <Button variant="danger" onClick={() => { setConfirming(false); p.onTrash?.(); }}>{t("rail.deleteConfirm")}</Button>
+            <Button data-track="debrief-trash-cancel" onClick={() => setConfirming(false)}>{t("common.cancel")}</Button>
+            <Button variant="danger" data-track="debrief-trash-confirm" onClick={() => { setConfirming(false); p.onTrash?.(); }}>{t("rail.deleteConfirm")}</Button>
           </>
         )}
       >

@@ -12,5 +12,5 @@
     "strict": true,
     "types": []
   },
-  "include": ["vite.config.ts", "vitest.config.ts"]
+  "include": ["vite.config.ts", "vitest.config.ts", "scripts/ut-tracker-plugin.d.mts"]
 }

@@ -44,7 +44,7 @@ function useConnect(id: EngineId) {
 }
 
 function ConnectButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
-  return <Button variant="primary" size="sm" loading={busy} onClick={onClick}>{t("engines.connect")}</Button>;
+  return <Button variant="primary" size="sm" data-track="engine-connect" loading={busy} onClick={onClick}>{t("engines.connect")}</Button>;
 }
 
 /** D84: switched off with Disconnect; Connect brings it back (and starts Ollama if it isn't running). */
@@ -74,7 +74,7 @@ export function DisconnectButton({ engine }: { engine: EngineInfo }) {
       setBusy(false);
     }
   };
-  return <Button variant="ghost" size="sm" loading={busy} onClick={() => void run()}>{t("engines.disconnect")}</Button>;
+  return <Button variant="ghost" size="sm" data-track="engine-disconnect" loading={busy} onClick={() => void run()}>{t("engines.disconnect")}</Button>;
 }
 
 export function OllamaBody({ engine }: { engine: EngineInfo }) {
@@ -86,7 +86,7 @@ export function OllamaBody({ engine }: { engine: EngineInfo }) {
         actions={(
           <>
             <ConnectButton busy={busy} onClick={connect} />
-            <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url || "https://ollama.com/download", "_blank", "noopener")}>{t("engines.ollama.download")}</Button>
+            <Button variant="secondary" size="sm" iconRight="external" data-track="ollama-download" onClick={() => window.open(engine.setup_url || "https://ollama.com/download", "_blank", "noopener")}>{t("engines.ollama.download")}</Button>
           </>
         )}>
         {failed ? t("engines.ollama.stillMissing") : t("engines.ollama.afterInstall")}
@@ -132,11 +132,11 @@ export function OllamaModelPicker() {
     <div className={s.modelRows}>
       <SettingRow label={t("engines.ollama.modelLabel")}
         description={[t("engines.ollama.modelHint", { model: data.recommended }), data.ram_gb ? t("engines.ollama.ram", { gb: data.ram_gb }) : ""].filter(Boolean).join(" ")}>
-        <Select label={t("engines.ollama.modelLabel")} hideLabel width="content" value={settings?.ollama.model ?? ""}
+        <Select track="engine-model" label={t("engines.ollama.modelLabel")} hideLabel width="content" value={settings?.ollama.model ?? ""}
           options={options(data.recommended)} onChange={(v) => void save({ model: v })} />
       </SettingRow>
       <SettingRow label={t("engines.ollama.voiceModelLabel")} description={t("engines.ollama.voiceModelHint", { model: data.recommended_voice })}>
-        <Select label={t("engines.ollama.voiceModelLabel")} hideLabel width="content" value={settings?.ollama.voice_model ?? ""}
+        <Select track="engine-voice-model" label={t("engines.ollama.voiceModelLabel")} hideLabel width="content" value={settings?.ollama.voice_model ?? ""}
           options={options(data.recommended_voice)} onChange={(v) => void save({ voice_model: v })} />
       </SettingRow>
     </div>
@@ -199,8 +199,8 @@ export function OpenAiBody({ engine }: { engine: EngineInfo }) {
       <Input label={t("engines.openai.model")} hint={t("engines.openai.modelHint")} value={model} onChange={(e) => setModel(e.target.value)} autoComplete="off" spellCheck={false} />
       {!baseUrl.includes("localhost") && !baseUrl.includes("127.0.0.1") && baseUrl ? <Callout tone="info">{t("engines.openai.paidNote")}</Callout> : null}
       <div className={s.actions}>
-        <Button type="submit" variant="secondary" loading={busy}>{t("engines.openai.save")}</Button>
-        {cfg?.has_api_key ? <Button variant="ghost" size="sm" onClick={() => void save(true)}>{t("engines.openai.clearKey")}</Button> : null}
+        <Button type="submit" variant="secondary" data-track="engine-openai-save" loading={busy}>{t("engines.openai.save")}</Button>
+        {cfg?.has_api_key ? <Button variant="ghost" size="sm" data-track="engine-openai-clear-key" onClick={() => void save(true)}>{t("engines.openai.clearKey")}</Button> : null}
         <span className={s.result} aria-live="polite">{msg}</span>
       </div>
     </form>
@@ -226,7 +226,7 @@ function CliBody({ engine, login }: { engine: EngineInfo; login: string }) {
           actions={(
             <>
               <ConnectButton busy={busy} onClick={connect} />
-              {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t(`engines.${k}.install`)}</Button> : null}
+              {engine.setup_url ? <Button variant="secondary" size="sm" iconRight="external" data-track="engine-cli-install" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t(`engines.${k}.install`)}</Button> : null}
             </>
           )}>
           {failed ? t(`engines.${k}.stillMissing`) : install ? (
@@ -299,9 +299,9 @@ export function GeminiBody({ engine }: { engine: EngineInfo }) {
         adornment={<IconButton icon="eye" size="sm" pressed={show} label={show ? t("engines.openai.hideKey") : t("engines.openai.showKey")} onClick={() => setShow(!show)} />}
       />
       <div className={s.actions}>
-        <Button type="submit" loading={busy} disabled={!key.trim()}>{t("engines.gemini.save")}</Button>
+        <Button type="submit" data-track="engine-gemini-save" loading={busy} disabled={!key.trim()}>{t("engines.gemini.save")}</Button>
         {engine.setup_url ? (
-          <Button variant="link" iconRight="external" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.gemini.getKey")}</Button>
+          <Button variant="link" iconRight="external" data-track="engine-gemini-get-key" onClick={() => window.open(engine.setup_url, "_blank", "noopener")}>{t("engines.gemini.getKey")}</Button>
         ) : null}
         <span className={s.result} aria-live="polite">{msg}</span>
       </div>

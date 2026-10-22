@@ -11,3 +11,5 @@ playwright-report/
 test-results/
 .syn-dist/
 .qa-dist/
+# user test build (npm run ut): own build with the tracker
+.ut-dist/

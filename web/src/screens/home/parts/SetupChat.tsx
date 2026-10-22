@@ -58,6 +58,12 @@ function firstHeld(turns: SetupTurn[], seen: Set<string>): number {
   return turns.length;
 }
 
+/** `data-track` of a quick reply: the group and its value ("setup-reply-level-b1"); a saved job's id never goes in. */
+function replyTrack(id: string): string {
+  const [k, v = ""] = id.split(":");
+  return k === "job" && v !== "general" ? "setup-reply-job-saved" : `setup-reply-${k}-${v}`.toLowerCase();
+}
+
 function Replies({ turn, fresh, onReply }: { turn: SetupTurn; fresh: boolean; onReply?: (turnId: string, replyId: string) => void }) {
   const open = Boolean(turn.replies?.length) && !turn.answered;
   const { mounted, leaving } = usePresence(open);
@@ -68,7 +74,7 @@ function Replies({ turn, fresh, onReply }: { turn: SetupTurn; fresh: boolean; on
     <div className={leaving ? s.repliesOut : fresh ? s.repliesIn : undefined} data-review-id="Home/Setup/Replies">
       <ChipGroup label={t("chat.setup.replies")} hideLabel>
         {last.current.map((r, i) => (
-          <Chip key={r.id} icon={r.icon} style={{ "--i": i } as CSSProperties} disabled={leaving} onClick={() => onReply?.(turn.id, r.id)}>
+          <Chip key={r.id} icon={r.icon} data-track={replyTrack(r.id)} style={{ "--i": i } as CSSProperties} disabled={leaving} onClick={() => onReply?.(turn.id, r.id)}>
             {r.label}
           </Chip>
         ))}
@@ -84,7 +90,7 @@ function PastedJob({ label, meta }: { label: string; meta?: string }) {
       <p className={`${s.pastedText} ${all ? "" : s.clamped}`}>{label}</p>
       <span className={s.pastedMeta}>
         {meta ? <span>{meta}</span> : null}
-        <Button variant="link" size="sm" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+        <Button variant="link" size="sm" data-track="setup-show-all" aria-expanded={all} onClick={() => setAll((v) => !v)}>
           {all ? t("chat.setup.showLess") : t("chat.setup.showAll")}
         </Button>
       </span>
@@ -166,9 +172,9 @@ export function SetupChat(props: SetupChatProps) {
         }
         const action = turn.action ? (
           turn.action.button ? (
-            <Button variant="secondary" size="sm" icon={turn.action.icon ?? "chat"} onClick={() => props.onTurnAction?.(turn.id, turn.action!.id)}>{turn.action.label}</Button>
+            <Button variant="secondary" size="sm" icon={turn.action.icon ?? "chat"} data-track={`setup-action-${turn.action.id}`} onClick={() => props.onTurnAction?.(turn.id, turn.action!.id)}>{turn.action.label}</Button>
           ) : (
-            <Button variant="link" size="sm" icon={turn.action.icon} onClick={() => props.onTurnAction?.(turn.id, turn.action!.id)}>{turn.action.label}</Button>
+            <Button variant="link" size="sm" icon={turn.action.icon} data-track={`setup-action-${turn.action.id}`} onClick={() => props.onTurnAction?.(turn.id, turn.action!.id)}>{turn.action.label}</Button>
           )
         ) : null;
         const replies = turn.replies?.length ? <Replies turn={turn} fresh={isFresh} onReply={props.onReply} /> : null;
@@ -226,7 +232,7 @@ export function SetupHeader({ setup, onSkip }: Pick<HomeViewProps, "setup" | "on
       <h1 className={s.headerTitle}>{t("chat.setup.title")}</h1>
       {setup?.step ? <span className={s.headerStep}>{t("chat.setup.step", { n: setup.step.n, of: setup.step.of })}</span> : null}
       {setup?.canSkip ? (
-        <Button variant="ghost" size="sm" className={s.headerSkip} onClick={onSkip}>{t("chat.setup.skip")}</Button>
+        <Button variant="ghost" size="sm" className={s.headerSkip} data-track="setup-skip-questions" onClick={onSkip}>{t("chat.setup.skip")}</Button>
       ) : null}
     </div>
   );

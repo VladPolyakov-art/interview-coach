@@ -104,17 +104,18 @@ export function HomeView(props: HomeViewProps) {
   const hasInput = Boolean(composer.text.trim() || composer.file);
   /* The end button: Send with text or a file, otherwise the mic (stop while it listens), as on the start screen. */
   const send: ComposerSend = (hasInput && !hearing) || !dictation?.available
-    ? { label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, onSend: props.onSend }
+    ? { label: t("chat.start.send"), icon: "arrowRight", variant: "action", hidden: !hasInput, track: "composer-send", onSend: props.onSend }
     : {
       label: t(hearing ? "chat.dictate.stop" : "chat.dictate.start"),
       icon: hearing ? "stop" : "mic",
       variant: hearing ? "action" : "quiet",
       busy: dictation.state === "transcribing",
+      track: hearing ? "composer-dictate-stop" : "composer-dictate",
       onSend: props.onDictate,
     };
   const english = track === "english";
   const addFile = english ? null : (
-    <IconButton icon="plus" size="sm" outlined label={t(setup?.stage === "job" ? "chat.setup.addJobFile" : "chat.setup.addCv")} onClick={props.onAddFile} />
+    <IconButton icon="plus" size="sm" outlined label={t(setup?.stage === "job" ? "chat.setup.addJobFile" : "chat.setup.addCv")} data-track="composer-add-file" onClick={props.onAddFile} />
   );
   const rootClass = [s.home, leaving ? "motion-soft-out" : ""].filter(Boolean).join(" ");
 
@@ -159,7 +160,7 @@ export function HomeView(props: HomeViewProps) {
                       icon="file"
                       title={composer.file.name}
                       meta={composer.file.size}
-                      actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} onClick={props.onRemoveFile} />}
+                      actions={<IconButton icon="x" size="sm" label={t("chat.start.removeFile")} data-track="composer-remove-file" onClick={props.onRemoveFile} />}
                     />
                   ) : undefined}
                   leading={addFile}

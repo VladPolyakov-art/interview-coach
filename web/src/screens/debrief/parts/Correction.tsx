@@ -32,7 +32,7 @@ export function CorrectionRow({ c, dismissed, leaving, editing, draft, onEdit, o
     return (
       <p className={`${s.removed} motion-fade`} data-review-id="Debrief/CorrectionRow/dismissed">
         <span>{t("debrief.lang.dismissed")}</span>
-        {onRestore ? <Button variant="link" size="sm" onClick={onRestore}>{t("common.undo")}</Button> : null}
+        {onRestore ? <Button variant="link" size="sm" data-track="correction-undo" onClick={onRestore}>{t("common.undo")}</Button> : null}
       </p>
     );
   }
@@ -50,8 +50,8 @@ export function CorrectionRow({ c, dismissed, leaving, editing, draft, onEdit, o
       </dl>
       {onEdit || onDismiss ? (
         <div className={s.rowActions}>
-          {onEdit ? <Button variant="ghost" size="sm" onClick={onEdit}>{t("debrief.lang.notWhatISaid")}</Button> : null}
-          {onDismiss ? <Button variant="ghost" size="sm" icon="x" onClick={onDismiss}>{t("debrief.lang.dismiss")}</Button> : null}
+          {onEdit ? <Button variant="ghost" size="sm" data-track="not-what-i-said" onClick={onEdit}>{t("debrief.lang.notWhatISaid")}</Button> : null}
+          {onDismiss ? <Button variant="ghost" size="sm" icon="x" data-track="correction-dismiss" onClick={onDismiss}>{t("debrief.lang.dismiss")}</Button> : null}
         </div>
       ) : null}
     </div>
@@ -72,8 +72,8 @@ export function Editor({ start, label, focus = true, onSave, onCancel }: { start
         onChange={(e) => setText(e.target.value)}
       />
       <div className={s.rowActions}>
-        <Button variant="secondary" size="sm" disabled={!text.trim()} onClick={() => onSave?.(text.trim())}>{t("debrief.lang.saveCheck")}</Button>
-        <Button variant="ghost" size="sm" onClick={onCancel}>{t("common.cancel")}</Button>
+        <Button variant="secondary" size="sm" data-track="recheck" disabled={!text.trim()} onClick={() => onSave?.(text.trim())}>{t("debrief.lang.saveCheck")}</Button>
+        <Button variant="ghost" size="sm" data-track="correction-cancel" onClick={onCancel}>{t("common.cancel")}</Button>
       </div>
     </div>
   );

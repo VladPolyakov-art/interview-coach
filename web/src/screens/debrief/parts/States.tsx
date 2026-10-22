@@ -30,9 +30,9 @@ export function NotFoundBody({ onHistory, onHome }: { onHistory?: () => void; on
         title={t("debrief.gone.title")}
         actions={
           <>
-            {onHistory ? <Button variant="primary" onClick={onHistory}>{t("debrief.gone.openHistory")}</Button>
-              : <Link to="/archive" className={s.primaryLink}>{t("debrief.gone.openHistory")}</Link>}
-            {onHome ? <Button variant="secondary" onClick={onHome}>{t("debrief.gone.goHome")}</Button> : null}
+            {onHistory ? <Button variant="primary" data-track="debrief-gone-archive" onClick={onHistory}>{t("debrief.gone.openHistory")}</Button>
+              : <Link to="/archive" className={s.primaryLink} data-track="debrief-gone-archive">{t("debrief.gone.openHistory")}</Link>}
+            {onHome ? <Button variant="secondary" data-track="debrief-gone-home" onClick={onHome}>{t("debrief.gone.goHome")}</Button> : null}
           </>
         }
       >
@@ -51,8 +51,8 @@ export function ErrorBody({ onRetry, detail }: { onRetry?: () => void; detail?: 
         title={t("debrief.error.title")}
         actions={
           <>
-            <Button size="sm" variant="secondary" icon="refresh" onClick={onRetry}>{t("common.tryAgain")}</Button>
-            <Link to="/archive" className={s.inlineLink}>{t("debrief.gone.openHistory")}</Link>
+            <Button size="sm" variant="secondary" icon="refresh" data-track="debrief-retry" onClick={onRetry}>{t("common.tryAgain")}</Button>
+            <Link to="/archive" className={s.inlineLink} data-track="debrief-error-archive">{t("debrief.gone.openHistory")}</Link>
           </>
         }
       >
@@ -71,8 +71,8 @@ export function StorageBanner({ onDownload }: { onDownload?: () => void }) {
         title={t("debrief.storage.title")}
         actions={
           <>
-            <Button variant="primary" size="sm" icon="download" onClick={onDownload}>{t("debrief.storage.download")}</Button>
-            <Link to="/settings/storage" className={s.inlineLink}>{t("debrief.storage.fix")}</Link>
+            <Button variant="primary" size="sm" icon="download" data-track="debrief-storage-download" onClick={onDownload}>{t("debrief.storage.download")}</Button>
+            <Link to="/settings/storage" className={s.inlineLink} data-track="debrief-storage-fix">{t("debrief.storage.fix")}</Link>
           </>
         }
       >
@@ -89,7 +89,7 @@ export function ExampleBanner({ onStart }: { onStart?: () => void }) {
         tone="info"
         live="status"
         title={t("debrief.example.title")}
-        actions={<Button variant="primary" size="sm" onClick={onStart}>{t("debrief.example.start")}</Button>}
+        actions={<Button variant="primary" size="sm" data-track="debrief-example-start" onClick={onStart}>{t("debrief.example.start")}</Button>}
       >
         {t("debrief.example.body")}
       </Callout>

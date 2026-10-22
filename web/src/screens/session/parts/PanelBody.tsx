@@ -80,7 +80,7 @@ export function PanelBody({ mode, variant, input, data, layerOrder, withChecks, 
             />
           </div>
           {data.earlier.length ? (
-            <Disclosure surface="plain" title={`${english ? t("feedback.earlierEnglish") : t("feedback.earlier")} (${data.earlier.length})`}>
+            <Disclosure surface="plain" track="feedback-earlier-toggle" title={`${english ? t("feedback.earlierEnglish") : t("feedback.earlier")} (${data.earlier.length})`}>
               <div className={s.earlierList}>
                 {data.earlier.map((th) => (
                   <ThreadFeedback

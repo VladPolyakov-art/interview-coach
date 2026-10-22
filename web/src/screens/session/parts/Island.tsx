@@ -156,6 +156,7 @@ function MainSlot({ main, variant, stacked, sized = true }: { main: Main; varian
           iconRight={main.iconRight ? main.icon : undefined}
           // D61: the button fills the sized slot, so a short label leaves no gap before the next group.
           fullWidth={stacked || sized}
+          data-track={main.id === "debrief" ? "see-debrief" : main.id === "next" ? "next-question" : `session-${main.id}`}
           disabled={main.disabled}
           onClick={main.onClick}
         >
@@ -202,7 +203,7 @@ function TextComposer({ phase, handlers: h, sendLocked, autoFocus }: Pick<Sessio
       minRows={1}
       maxRows={6}
       autoFocus={autoFocus}
-      send={{ label: t("session.input.send"), icon: "send", variant: "action", disabled: !canSend, onSend: send }}
+      send={{ label: t("session.input.send"), icon: "send", variant: "action", disabled: !canSend, track: "session-send-text", onSend: send }}
     />
   );
 }
@@ -216,7 +217,7 @@ export function SessionIsland(p: SessionIslandProps) {
   const onEnd = interrupted ? h?.onEndAndDebrief ?? h?.onEnd : h?.onEnd;
 
   const end = (
-    <Button variant="secondary" size={stacked ? "sm" : "md"} icon="stop" onClick={onEnd}>{endLabel}</Button>
+    <Button variant="secondary" size={stacked ? "sm" : "md"} icon="stop" data-track="end-session" onClick={onEnd}>{endLabel}</Button>
   );
 
   if (phase === "connecting") {
@@ -245,6 +246,7 @@ export function SessionIsland(p: SessionIslandProps) {
       label={p.muted ? t("session.controls.unmute") : t("session.controls.mute")}
       title={p.noSpeech ? t("session.island.voiceUnavailable") : interrupted ? t("session.island.micDisabled") : undefined}
       muted={p.muted}
+      data-track="voice-toggle"
       live={!micDisabled && phase !== "saving"}
       level={p.getMicLevel ? undefined : p.micLevel}
       getLevel={p.getMicLevel}
@@ -261,6 +263,7 @@ export function SessionIsland(p: SessionIslandProps) {
     <IconButton
       icon="redo"
       label={t("session.island.redo")}
+      data-track="session-redo"
       title={model.redoReason}
       disabled={!model.canRedo}
       onClick={h?.onRedo}
@@ -270,6 +273,7 @@ export function SessionIsland(p: SessionIslandProps) {
   const type = voice ? (
     <IconButton
       icon="keyboard"
+      data-track="session-type-instead"
       label={t("session.island.type")}
       disabled={typeDisabled || !h?.onTypeInstead}
       onClick={p.voiceDown ? h?.onUseText ?? h?.onTypeInstead : h?.onTypeInstead}
@@ -278,6 +282,7 @@ export function SessionIsland(p: SessionIslandProps) {
     // D64: back to voice in the same session (the server attaches speech recognition on the switch).
     <IconButton
       icon="mic"
+      data-track="session-use-voice"
       label={t("session.island.toVoice")}
       title={p.noSpeech ? t("session.island.voiceUnavailable") : undefined}
       disabled={p.noSpeech || !h?.onUseVoice}
@@ -287,18 +292,20 @@ export function SessionIsland(p: SessionIslandProps) {
   const suggest = p.showSuggester ? (
     <IconButton
       icon="bulb"
+      data-track="suggester-toggle"
       label={p.suggestOn ? t("session.island.suggestHide") : t("session.island.suggestShow")}
       pressed={p.suggestOn}
       onClick={() => p.onSuggest(!p.suggestOn)}
     />
   ) : null;
   const help = (
-    <IconButton icon="help" label={t("session.island.help")} onClick={p.onShortcuts} />
+    <IconButton icon="help" label={t("session.island.help")} data-track="session-help" onClick={p.onShortcuts} />
   );
   const feedback = (
     <IconButton
       ref={p.feedbackRef}
       icon="panel"
+      data-track="feedback-toggle"
       label={p.panelOpen ? t("session.island.feedbackHide") : p.feedbackUnread ? t("session.island.feedbackShowNew") : t("session.island.feedbackShow")}
       title={model.feedback.reason}
       pressed={p.panelOpen}
@@ -309,9 +316,9 @@ export function SessionIsland(p: SessionIslandProps) {
   );
 
   const items: MenuEntry[] = [];
-  if (stacked) items.push({ id: "redo", label: t("session.controls.redo"), icon: "redo", shortcut: "R", disabled: !model.canRedo, onSelect: h?.onRedo });
-  items.push({ id: "shortcuts", label: t("session.island.shortcuts"), icon: "keyboard", shortcut: "?", onSelect: p.onShortcuts });
-  if (voice) items.push({ id: "mic-help", label: t("session.island.micHelp"), icon: "mic", onSelect: p.onMicHelp });
+  if (stacked) items.push({ id: "redo", track: "session-redo", label: t("session.controls.redo"), icon: "redo", shortcut: "R", disabled: !model.canRedo, onSelect: h?.onRedo });
+  items.push({ id: "shortcuts", track: "session-shortcuts", label: t("session.island.shortcuts"), icon: "keyboard", shortcut: "?", onSelect: p.onShortcuts });
+  if (voice) items.push({ id: "mic-help", track: "mic-help", label: t("session.island.micHelp"), icon: "mic", onSelect: p.onMicHelp });
   if (p.noSpeech) items.push({ id: "voice", label: t("session.island.switchToVoice"), description: t("session.island.voiceUnavailable"), icon: "mic", disabled: true });
 
   const more = (
@@ -321,7 +328,7 @@ export function SessionIsland(p: SessionIslandProps) {
       header={<MenuHeader data={data} variant={variant} />}
       placement="top-end"
       defaultOpen={p.moreOpen}
-      trigger={(tp) => <IconButton {...tp} icon="more" label={t("session.island.more")} />}
+      trigger={(tp) => <IconButton {...tp} icon="more" label={t("session.island.more")} data-track="session-more" />}
     />
   );
 

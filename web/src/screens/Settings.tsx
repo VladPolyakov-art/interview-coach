@@ -205,6 +205,7 @@ function SettingsBody({ section, initialQuery = "", content: override, startOnLi
         <div className={s.search} role="search">
           <Input
             type="search"
+            data-track="settings-search"
             label={t("settings.search.label")}
             hideLabel
             placeholder={t("settings.search.placeholder")}
@@ -212,7 +213,7 @@ function SettingsBody({ section, initialQuery = "", content: override, startOnLi
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && results?.[0]) go(results[0]); }}
             adornment={query
-              ? <IconButton icon="x" size="sm" label={t("settings.search.clear")} onClick={() => setQuery("")} />
+              ? <IconButton icon="x" size="sm" label={t("settings.search.clear")} data-track="settings-search-clear" onClick={() => setQuery("")} />
               : <span className={s.searchIcon}><Icon name="search" size="sm" /></span>}
             spellCheck={false}
             autoComplete="off"
@@ -222,7 +223,7 @@ function SettingsBody({ section, initialQuery = "", content: override, startOnLi
           <ul className={s.nav}>
             {SECTIONS.map((x) => (
               <li key={x.id}>
-                <Link className={s.navLink} to={`/settings/${x.id}`} replace onClick={() => { setQuery(""); setView("section"); }}
+                <Link className={s.navLink} to={`/settings/${x.id}`} data-track={`settings-nav-${x.id}`} replace onClick={() => { setQuery(""); setView("section"); }}
                   aria-current={!results && x.id === section ? "page" : undefined}>
                   <Icon name={x.icon} size="sm" />{t(`settings.section.${x.id}`)}
                   <span className={s.navChevron} aria-hidden="true"><Icon name="chevronRight" size="sm" /></span>
@@ -235,7 +236,7 @@ function SettingsBody({ section, initialQuery = "", content: override, startOnLi
       <div key={results ? "search" : section} ref={content} className={s.content}>
         {results ? <SearchResults query={query.trim()} results={results} onPick={go} /> : (
           <>
-            <button type="button" className={s.back} onClick={() => setView("list")}>
+            <button type="button" className={s.back} data-track="settings-all" onClick={() => setView("list")}>
               <Icon name="chevronLeft" size="sm" />{t("settings.allSettings")}
             </button>
             <h2 className={s.pageTitle}>{t(`settings.section.${section}`)}</h2>
@@ -257,7 +258,7 @@ function SearchResults({ query, results, onPick }: { query: string; results: Sea
         <ul className={s.resultList}>
           {results.map((item) => (
             <li key={item.id}>
-              <button type="button" className={s.result} onClick={() => onPick(item)}>
+              <button type="button" className={s.result} data-track="settings-search-result" onClick={() => onPick(item)}>
                 <span className={s.resultLabel}>{t(item.label)}</span>
                 <span className={s.resultMeta}>
                   {t(`settings.section.${item.section}`)}
@@ -308,6 +309,7 @@ function GeneralSection() {
         <SettingRow id="general-theme" label={t("theme.label")} description={t("settings.appearance.themeHint")}>
           <Segmented
             label={t("theme.label")}
+            track="settings-theme"
             hideLabel
             value={theme}
             onChange={setTheme}
@@ -339,7 +341,7 @@ function NameGroup() {
   return (
     <SettingGroup title={t("settings.name.title")} id="name-title">
       <SettingRow id="general-name" label={t("settings.name.label")} description={t("settings.name.hint")}>
-        <Input label={t("settings.name.label")} hideLabel className={s.nameInput} value={value} maxLength={NAME_MAX}
+        <Input label={t("settings.name.label")} hideLabel data-track="settings-name" className={s.nameInput} value={value} maxLength={NAME_MAX}
           placeholder={t("settings.name.placeholder")} autoComplete="given-name" spellCheck={false}
           onChange={(e) => setDraft(e.target.value)} onBlur={commit}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commit(); } }} />
@@ -392,6 +394,7 @@ function VoiceSection() {
         {!ttsOk ? <Callout tone="info">{t("settings.voice.unavailable")}</Callout> : null}
         <SettingRow id="voice-voice" label={t("settings.voice.voice")}>
           <Select
+            track="settings-voice"
             label={t("settings.voice.voice")}
             hideLabel
             width="content"
@@ -400,10 +403,11 @@ function VoiceSection() {
             onChange={(v) => void save({ voice: v })}
             options={(voices.data?.voices ?? []).map((v) => ({ value: v.id, label: `${v.label} · ${v.locale}` }))}
           />
-          <IconButton icon="play" label={t("settings.voice.sample")} onClick={play} disabled={!ttsOk || !voice} />
+          <IconButton icon="play" label={t("settings.voice.sample")} data-track="settings-voice-sample" onClick={play} disabled={!ttsOk || !voice} />
         </SettingRow>
         <SettingRow id="voice-speed" label={t("settings.voice.speed")}>
           <Select
+            track="settings-speed"
             label={t("settings.voice.speed")}
             hideLabel
             width="content"
@@ -414,7 +418,7 @@ function VoiceSection() {
           />
         </SettingRow>
         <SettingRow id="voice-speak" label={t("settings.voice.speak")} description={t("settings.voice.speakHint")}>
-          <Toggle label={t("settings.voice.speak")} hideLabel checked={speak}
+          <Toggle label={t("settings.voice.speak")} hideLabel track="settings-speak" checked={speak}
             onChange={(v) => { setSpeak(v); prefs.setSpeak(v); }} />
         </SettingRow>
       </SettingGroup>
@@ -422,6 +426,7 @@ function VoiceSection() {
       <SettingGroup title={t("settings.voice.stt")} id="stt-title">
         <SettingRow id="voice-stt" label={t("settings.voice.sttWhere")} description={sttHint}>
           <Segmented
+            track="settings-stt"
             label={t("settings.voice.stt")}
             hideLabel
             value={sttPref}
@@ -434,6 +439,7 @@ function VoiceSection() {
         </SettingRow>
         <SettingRow id="voice-pause" label={t("settings.voice.pause")} description={t("settings.voice.pauseHint")}>
           <Select
+            track="settings-pause"
             label={t("settings.voice.pause")}
             hideLabel
             width="content"
@@ -456,11 +462,12 @@ function PracticeSection() {
     <>
       <SettingGroup title={t("settings.practice.defaults")} id="practice-title">
         <SettingRow id="practice-suggester" label={t("settings.practice.suggester")} description={t("settings.practice.suggesterHint")}>
-          <Toggle label={t("settings.practice.suggester")} hideLabel
+          <Toggle label={t("settings.practice.suggester")} hideLabel track="settings-suggester"
             checked={settings.answer_suggester} onChange={(v) => void save({ answer_suggester: v })} />
         </SettingRow>
         <SettingRow id="practice-order" label={t("settings.practice.layerOrder")} description={t("settings.practice.layerOrderHint")}>
           <Segmented
+            track="settings-layer-order"
             label={t("settings.practice.layerOrder")}
             hideLabel
             value={settings.layer_order}
@@ -473,6 +480,7 @@ function PracticeSection() {
         </SettingRow>
         <SettingRow id="practice-strictness" label={t("settings.practice.strictness")}>
           <Segmented
+            track="settings-strictness"
             label={t("settings.practice.strictness")}
             hideLabel
             value={String(settings.strictness) as "1" | "2" | "3"}
@@ -485,13 +493,13 @@ function PracticeSection() {
           />
         </SettingRow>
         <SettingRow id="practice-questions" label={t("settings.practice.questions")}>
-          <Select label={t("settings.practice.questions")} hideLabel width="content" value={String(settings.questions_per_session)}
+          <Select track="settings-questions" label={t("settings.practice.questions")} hideLabel width="content" value={String(settings.questions_per_session)}
             onChange={(v) => void save({ questions_per_session: Number(v) })}
             options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ value: String(n), label: String(n) }))} />
         </SettingRow>
         <SettingRow id="practice-level" label={t("settings.practice.level")} description={t("settings.practice.levelHint")}>
           {/* D78: a short name on the button and in the list ("B1 · Familiar topics"). */}
-          <Select label={t("settings.practice.level")} hideLabel width="content" value={settings.level}
+          <Select track="settings-level" label={t("settings.practice.level")} hideLabel width="content" value={settings.level}
             onChange={(v) => void save({ level: v as Level })}
             options={(["A2", "B1", "B2", "C1"] as const).map((l) => ({
               value: l, label: `${l} · ${t(`english.short.${l}`)}`,
@@ -528,12 +536,12 @@ function PrivacySection() {
               {info ? (
                 <span className={s.meta}>
                   {tp("settings.privacy.events", info.events)}
-                  {info.events ? <Button variant="link" size="sm" onClick={() => setOpt(info.opt_in, true)}>{t("settings.privacy.clear")}</Button> : null}
+                  {info.events ? <Button variant="link" size="sm" data-track="settings-telemetry-clear" onClick={() => setOpt(info.opt_in, true)}>{t("settings.privacy.clear")}</Button> : null}
                 </span>
               ) : null}
             </>
           )}>
-          <Toggle label={t("settings.privacy.telemetry")} hideLabel checked={Boolean(info?.opt_in)} disabled={!info} onChange={(v) => setOpt(v)} />
+          <Toggle label={t("settings.privacy.telemetry")} hideLabel track="settings-telemetry" checked={Boolean(info?.opt_in)} disabled={!info} onChange={(v) => setOpt(v)} />
         </SettingRow>
       </SettingGroup>
       <SettingGroup title={t("settings.privacy.files")} id="privacy-files-title">
@@ -546,12 +554,12 @@ function PrivacySection() {
           description={t("settings.privacy.obsidianHint")}>
           <div className={s.inputRow}>
             <Input label={t("settings.privacy.obsidian")} hideLabel value={obsidian} onChange={(e) => setFolder(e.target.value)} spellCheck={false} />
-            <Button variant="secondary" disabled={folder === null}
+            <Button variant="secondary" data-track="settings-obsidian-save" disabled={folder === null}
               onClick={() => void save({ obsidian_dir: obsidian.trim() }).then(() => setFolder(null))}>{t("settings.privacy.obsidianSave")}</Button>
           </div>
         </SettingRow>
         <SettingRow id="privacy-trash" label={t("settings.privacy.trash")} description={t("settings.privacy.trashHint")}>
-          <Link to="/archive/trash" className={s.rowLink}>
+          <Link to="/archive/trash" className={s.rowLink} data-track="settings-trash-link">
             <Icon name="trash" size="sm" />
             {trashCount ? t("history.trashCount", { n: trashCount }) : t("settings.privacy.trashOpen")}
           </Link>
@@ -626,7 +634,7 @@ function AboutSection() {
       </SettingGroup>
       <SettingGroup title={t("settings.about.setupTitle")} id="about-setup-title">
         <SettingRow id="about-setup" label={t("settings.about.setupRun")} description={t("settings.about.setupHint")}>
-          <Button size="sm" variant="secondary" icon="refresh" onClick={() => navigate("/setup")}>{t("settings.about.setupRun")}</Button>
+          <Button size="sm" variant="secondary" icon="refresh" data-track="settings-run-setup" onClick={() => navigate("/setup")}>{t("settings.about.setupRun")}</Button>
         </SettingRow>
       </SettingGroup>
       <div id="about-licence" className={s.anchor}>

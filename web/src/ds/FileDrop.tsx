@@ -90,7 +90,7 @@ export function FileDrop({
           <p id={`${id}p`} className={s.prompt}>
             <span className="visually-hidden">{label}. </span>
             {prompt}{" "}
-            <Button variant="link" onClick={() => input.current?.click()} disabled={disabled}>{browseLabel}</Button>
+            <Button variant="link" data-track="file-browse" onClick={() => input.current?.click()} disabled={disabled}>{browseLabel}</Button>
           </p>
           {hint ? <p id={`${id}h`} className={s.hint}>{hint}</p> : null}
         </div>
@@ -176,7 +176,7 @@ export function FileRow({ name, meta, reading, readingLabel, accept, replaceLabe
       </span>
       {!reading && replaceLabel && onReplace ? (
         <>
-          <Button size="sm" aria-label={replaceName} onClick={() => input.current?.click()} disabled={disabled}>{replaceLabel}</Button>
+          <Button size="sm" aria-label={replaceName} data-track="file-replace" onClick={() => input.current?.click()} disabled={disabled}>{replaceLabel}</Button>
           <input ref={input} type="file" accept={accept} className="visually-hidden" tabIndex={-1} aria-hidden="true" disabled={disabled}
             onChange={(e) => {
               const f = e.currentTarget.files?.[0];
@@ -185,7 +185,7 @@ export function FileRow({ name, meta, reading, readingLabel, accept, replaceLabe
             }} />
         </>
       ) : null}
-      {!reading && onRemove && removeLabel ? <IconButton icon="trash" size="sm" label={removeLabel} onClick={onRemove} disabled={disabled} /> : null}
+      {!reading && onRemove && removeLabel ? <IconButton icon="trash" size="sm" label={removeLabel} data-track="file-remove" onClick={onRemove} disabled={disabled} /> : null}
     </div>
   );
 }

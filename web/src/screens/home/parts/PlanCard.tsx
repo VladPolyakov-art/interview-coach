@@ -40,7 +40,7 @@ function ChangeMenu({ row, label, items, open }: { row: PlanRow; label: string; 
       defaultOpen={open}
       className={s.rowAction}
       trigger={(p) => (
-        <Button {...p} variant="link" size="sm" aria-label={label} data-row={row}>{t("chat.plan.change")}</Button>
+        <Button {...p} variant="link" size="sm" aria-label={label} data-row={row} data-track={`plan-change-${row}`}>{t("chat.plan.change")}</Button>
       )}
     />
   );
@@ -69,11 +69,11 @@ export function PlanCard(props: PlanCardProps) {
   const reasonId = "home-start-reason";
 
   const radio = <V extends string | number>(row: PlanRow, values: readonly V[], current: V, label: (v: V) => string, desc?: (v: V) => string): MenuEntry[] =>
-    values.map((v) => ({ id: String(v), label: label(v), description: desc?.(v), checked: v === current, onSelect: () => onChange?.(row, String(v)) }));
+    values.map((v) => ({ id: String(v), track: `plan-${row}-${String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, label: label(v), description: desc?.(v), checked: v === current, onSelect: () => onChange?.(row, String(v)) }));
 
   const jobOptions: ListboxOption[] = [
-    ...jobs.map((j) => ({ id: j.id, label: j.company, description: j.role, icon: "briefcase" as const })),
-    { id: "general", label: t("chat.plan.general"), description: t("home.vacancies.generalHint") },
+    ...jobs.map((j) => ({ id: j.id, track: "job-option", label: j.company, description: j.role, icon: "briefcase" as const })),
+    { id: "general", track: "job-option-general", label: t("chat.plan.general"), description: t("home.vacancies.generalHint") },
   ];
 
   const jobStatus = !plan.job ? null : plan.jobStatus === "preparing"
@@ -82,7 +82,7 @@ export function PlanCard(props: PlanCardProps) {
       ? (
         <span className={s.valueRow}>
           <span className={s.valueSub}>{t("chat.plan.prepError")}</span>
-          <Button variant="link" size="sm" icon="refresh" onClick={props.onRetryPrep}>{t("chat.plan.tryAgain")}</Button>
+          <Button variant="link" size="sm" icon="refresh" data-track="plan-retry-prep" onClick={props.onRetryPrep}>{t("chat.plan.tryAgain")}</Button>
         </span>
       )
       : plan.questionsReady ? <span className={s.valueSub}>{tp("chat.plan.ready", plan.questionsReady)}</span> : null;
@@ -128,7 +128,7 @@ export function PlanCard(props: PlanCardProps) {
                     placement="bottom-end"
                     defaultOpen={initialOverlay === "change-job"}
                     className={s.rowAction}
-                    trigger={(p) => <Button {...p} variant="link" size="sm" aria-label={t("chat.plan.changeJob")}>{t("chat.plan.change")}</Button>}
+                    trigger={(p) => <Button {...p} variant="link" size="sm" data-track="plan-change-job" aria-label={t("chat.plan.changeJob")}>{t("chat.plan.change")}</Button>}
                   />
                 )}
               >
@@ -150,7 +150,7 @@ export function PlanCard(props: PlanCardProps) {
               </Row>
               {!drill ? <Row term={t("chat.plan.basis")}>{`${basis}.`}</Row> : null}
               {plan.note ? (
-                <Row term={t("chat.plan.note")} action={<Button variant="link" size="sm" className={s.rowAction} aria-label={t("chat.plan.removeNote")} onClick={props.onRemoveNote}>{t("chat.plan.remove")}</Button>}>
+                <Row term={t("chat.plan.note")} action={<Button variant="link" size="sm" className={s.rowAction} aria-label={t("chat.plan.removeNote")} data-track="plan-remove-note" onClick={props.onRemoveNote}>{t("chat.plan.remove")}</Button>}>
                   {plan.note}
                 </Row>
               ) : null}
@@ -162,7 +162,7 @@ export function PlanCard(props: PlanCardProps) {
           <p className={s.planLine}>
             <Icon name="info" size="sm" />
             <span>{t("chat.plan.noCv")}</span>
-            <Button variant="link" size="sm" onClick={props.onAddCv}>{t("chat.plan.addCv")}</Button>
+            <Button variant="link" size="sm" data-track="plan-add-cv" onClick={props.onAddCv}>{t("chat.plan.addCv")}</Button>
           </p>
         ) : null}
         <div className={s.actions} data-review-id="Home/Start" data-review-section="Home · Start" data-comment-target>
@@ -173,6 +173,7 @@ export function PlanCard(props: PlanCardProps) {
               variant="primary"
               size="lg"
               icon={textMode ? "keyboard" : "mic"}
+              data-track={english ? "start-english" : drill ? "start-drill" : "start-interview"}
               disabled={!engineReady || waiting}
               aria-describedby={!engineReady || waiting ? reasonId : undefined}
               onClick={props.onStart}
@@ -184,7 +185,7 @@ export function PlanCard(props: PlanCardProps) {
           {engineReady && waiting && !starting ? <span id={reasonId} className={s.actionsNote}>{t("chat.plan.startWaits")}</span> : null}
           {engineReady && textMode && !waiting ? <span className={s.actionsNote}>{t("home.browser.typing")}</span> : null}
           {engineReady && !textMode && !starting ? (
-            <Button variant="ghost" size="sm" icon="keyboard" disabled={waiting} aria-describedby={waiting ? reasonId : undefined} onClick={props.onTypeInstead}>{t("home.typeInstead")}</Button>
+            <Button variant="ghost" size="sm" icon="keyboard" data-track="type-instead" disabled={waiting} aria-describedby={waiting ? reasonId : undefined} onClick={props.onTypeInstead}>{t("home.typeInstead")}</Button>
           ) : null}
         </div>
       </section>

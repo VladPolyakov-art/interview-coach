@@ -8,6 +8,8 @@ export interface TabItem<T extends string> {
   icon?: IconName;
   /** Short helper shown next to an inactive tab (e.g. the English-practice hint). */
   hint?: string;
+  /** User-test label (`data-track`, kebab-case, never user data). */
+  track?: string;
 }
 
 export interface TabsProps<T extends string> {
@@ -81,6 +83,7 @@ export function Tabs<T extends string>({ items, value, onChange, idBase, label }
             aria-selected={selected}
             aria-controls={`${idBase}-panel-${item.id}`}
             tabIndex={selected ? 0 : -1}
+            data-track={item.track}
             className={s.tab}
             onClick={() => onChange(item.id)}
             onKeyDown={(e) => onKey(e, i)}

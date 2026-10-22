@@ -8,6 +8,8 @@ export interface SegmentedOption<T extends string> {
   icon?: IconName;
   disabled?: boolean;
   title?: string;
+  /** User-test label (`data-track`, kebab-case, never user data). */
+  track?: string;
 }
 
 export interface SegmentedProps<T extends string> {
@@ -17,6 +19,8 @@ export interface SegmentedProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   fullWidth?: boolean;
+  /** User-test label prefix: an option without its own `track` gets `<track>-<value>` (`data-track`, kebab-case, never user data). */
+  track?: string;
 }
 
 interface Thumb { x: number; y: number; w: number; h: number; animate: boolean }
@@ -25,7 +29,7 @@ interface Thumb { x: number; y: number; w: number; h: number; animate: boolean }
  * A raised pill thumb slides under the selected option (docs/motion.md 3.2): it is measured from the option's
  * box (offsetLeft/Top — correct in RTL too) and moved with transform. It snaps without a slide on first paint
  * and when the move crosses a wrapped row (a diagonal slide reads as a glitch). */
-export function Segmented<T extends string>({ label, hideLabel, options, value, onChange, fullWidth }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ label, hideLabel, options, value, onChange, fullWidth, track }: SegmentedProps<T>) {
   const id = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const groupRef = useRef<HTMLDivElement>(null);
@@ -92,6 +96,7 @@ export function Segmented<T extends string>({ label, hideLabel, options, value, 
               tabIndex={checked ? 0 : -1}
               disabled={o.disabled}
               title={o.title}
+              data-track={o.track ?? (track ? `${track}-${o.value.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : undefined)}
               className={s.option}
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKey(e, i)}

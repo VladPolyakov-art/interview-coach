@@ -7,7 +7,7 @@ export function NotFound() {
   const navigate = useNavigate();
   return (
     <Page title={t("notFound.title")}>
-      <EmptyState icon="alert" title={t("notFound.body")} actions={<Button variant="primary" onClick={() => navigate("/")}>{t("notFound.home")}</Button>} />
+      <EmptyState icon="alert" title={t("notFound.body")} actions={<Button variant="primary" data-track="not-found-home" onClick={() => navigate("/")}>{t("notFound.home")}</Button>} />
     </Page>
   );
 }

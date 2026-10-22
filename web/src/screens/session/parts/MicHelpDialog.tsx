@@ -13,8 +13,8 @@ export function MicHelpDialog({ open, reason = "blocked", handlers }: { open: bo
       closeLabel={t("common.close")}
       actions={
         <>
-          <Button variant="ghost" icon="keyboard" onClick={handlers?.onUseText}>{t("session.micHelp.useText")}</Button>
-          <Button variant="primary" icon="refresh" onClick={handlers?.onTryAgain}>{t("session.micHelp.tryAgain")}</Button>
+          <Button variant="ghost" icon="keyboard" data-track="mic-help-use-text" onClick={handlers?.onUseText}>{t("session.micHelp.useText")}</Button>
+          <Button variant="primary" icon="refresh" data-track="mic-help-try-again" onClick={handlers?.onTryAgain}>{t("session.micHelp.tryAgain")}</Button>
         </>
       }
     >

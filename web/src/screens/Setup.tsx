@@ -6,12 +6,14 @@ import { CheckStep } from "./setup/CheckStep";
 import { EngineStep } from "./setup/EngineStep";
 import { SetupFrame } from "./setup/SetupFrame";
 import { SETUP_STEPS, type SetupStep } from "./setup/types";
+import { useUtScreen } from "../lib/utScreen";
 
 export function SetupWizard() {
   const [step, setStep] = useState<SetupStep>("engine");
   const index = SETUP_STEPS.indexOf(step);
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => { headingRef.current?.focus(); }, [step]);
+  useUtScreen(`/setup/${step}`);
   const next = () => setStep(SETUP_STEPS[Math.min(index + 1, SETUP_STEPS.length - 1)]!);
   const back = () => setStep(SETUP_STEPS[Math.max(index - 1, 0)]!);
 

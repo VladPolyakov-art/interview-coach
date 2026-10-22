@@ -62,7 +62,7 @@ export function EngineStep({ headingRef, onNext, initialPick }: EngineStepProps)
         <span className={s.note} aria-live="polite">
           {!picked ? t("setup.engine.pickFirst") : !ready ? t("setup.engine.waiting", { name: engineName(picked) }) : t("setup.engine.later")}
         </span>
-        <Button variant="primary" iconRight="arrowRight" disabled={!ready || busy} loading={busy} onClick={() => void next()}>{t("common.continue")}</Button>
+        <Button variant="primary" iconRight="arrowRight" data-track="setup-continue" disabled={!ready || busy} loading={busy} onClick={() => void next()}>{t("common.continue")}</Button>
       </StepFooter>
     </>
   );

@@ -6,6 +6,7 @@ import { AppShell } from "./components/AppShell";
 import { api } from "./lib/api";
 import { useDocumentTitle } from "./lib/documentTitle";
 import { prefs } from "./lib/prefs";
+import { UT_PENDING, useUtScreen, utScreenForPath } from "./lib/utScreen";
 import { AppProvider } from "./lib/store";
 import { DebriefScreen } from "./screens/Debrief";
 import { ArchiveScreen, TrashScreen } from "./screens/History";
@@ -31,6 +32,8 @@ export function App() {
     }
   }, []);
   useEffect(() => { void check(); }, [check]);
+  // User-test tracker (13b): the server check is not a screen yet.
+  useUtScreen(health === "checking" ? UT_PENDING : null);
 
   if (health === "checking") {
     return <div className={s.center} aria-busy="true"><p className="shimmer-text" role="status">{t("common.loading")}</p></div>;
@@ -64,6 +67,8 @@ function ShellRoutes() {
   const location = settings.pageLocation;
   // The Settings popup names the tab while it is open; closing puts the page's title back.
   useDocumentTitle(settings.open ? t("settings.title") : null, true);
+  // User-test screen name (13b): Home names itself; Settings is a popup, so the page's name comes back when it closes.
+  useUtScreen(settings.open ? "/settings" : utScreenForPath(location.pathname), settings.open);
   return (
     <AppShell>
       <Swap

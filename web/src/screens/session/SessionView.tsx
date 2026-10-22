@@ -243,6 +243,7 @@ export function SessionView(props: SessionViewProps) {
         size={compact ? "lg" : "md"}
         fullWidth
         iconRight="arrowRight"
+        data-track={last ? "see-debrief" : "next-question"}
         disabled={interrupted}
         onClick={onClick}
       >
@@ -318,7 +319,7 @@ export function SessionView(props: SessionViewProps) {
           </div>
           {showJump(followState) ? (
             <div className={`${s.jumpWrap} ${s.shift}`}>
-              <Button variant="secondary" size="sm" iconRight="arrowDown" className={s.jump} onClick={() => send({ type: "jump" }, scrollBehavior())}>
+              <Button variant="secondary" size="sm" iconRight="arrowDown" className={s.jump} data-track="session-jump-latest" onClick={() => send({ type: "jump" }, scrollBehavior())}>
                 {t("session.captions.jump")}
               </Button>
             </div>
@@ -378,7 +379,7 @@ export function SessionView(props: SessionViewProps) {
               labelId="session-feedback-title"
               footer={footer}
               className={s.panel}
-              actions={<IconButton icon="x" size="sm" label={t("session.island.feedbackHide")} onClick={() => setPanel(false, true)} />}
+              actions={<IconButton icon="x" size="sm" label={t("session.island.feedbackHide")} data-track="feedback-close" onClick={() => setPanel(false, true)} />}
             >
               {body}
             </Panel>

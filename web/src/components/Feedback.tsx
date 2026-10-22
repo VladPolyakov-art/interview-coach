@@ -236,11 +236,11 @@ export function ThreadFeedback({
       </div>
       <SummaryRow records={records} mode={mode} order={layerOrder} tinted={!live} />
       <div className={s.answerRow}>
-        <Button variant="link" size="sm" icon="eye" className={s.answerToggle} aria-expanded={showAnswer} aria-controls={answersId} onClick={() => setShowAnswer(!showAnswer)}>
+        <Button variant="link" size="sm" icon="eye" className={s.answerToggle} data-track="feedback-show-answer" aria-expanded={showAnswer} aria-controls={answersId} onClick={() => setShowAnswer(!showAnswer)}>
           {showAnswer ? t("feedback.hideAnswer") : voiced ? t("feedback.showAnswer") : t("feedback.showTyped")}
         </Button>
         {onEdit ? (
-          <Button variant="link" size="sm" icon="edit" onClick={onEdit}>{voiced ? t("feedback.edit") : t("feedback.editTyped")}</Button>
+          <Button variant="link" size="sm" icon="edit" data-track="edit-what-i-said" onClick={onEdit}>{voiced ? t("feedback.edit") : t("feedback.editTyped")}</Button>
         ) : null}
       </div>
       {showAnswer ? (
@@ -484,8 +484,8 @@ function LanguageBody({ data, record, live, onFlag, onSaveHeard, initialOpenHear
               <div className={s.itemFoot}>
                 <span className={s.subLabel}>{t("feedback.language.didYouSay")}</span>
                 <div className={s.itemActions}>
-                  <Button size="sm" onClick={() => act(item, "confirm")}>{t("feedback.language.yesSaid")}</Button>
-                  <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss", true)}>{t("feedback.language.noSaid")}</Button>
+                  <Button size="sm" data-track="misheard-yes-said" onClick={() => act(item, "confirm")}>{t("feedback.language.yesSaid")}</Button>
+                  <Button size="sm" variant="ghost" data-track="not-what-i-said" onClick={() => act(item, "dismiss", true)}>{t("feedback.language.noSaid")}</Button>
                 </div>
               </div>
             ) : null}
@@ -499,9 +499,9 @@ function LanguageBody({ data, record, live, onFlag, onSaveHeard, initialOpenHear
             </div>
             {onFlag && item.status === "active" ? (
               <div className={s.itemActions}>
-                <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss")}>{t(voiced ? "feedback.language.saidRight" : "feedback.language.typedRight")}</Button>
-                <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss")}>{t("feedback.language.nameOrTerm")}</Button>
-                {voiced ? <Button size="sm" variant="ghost" onClick={() => act(item, "dismiss", true)}>{t("feedback.language.notWhatISaid")}</Button> : null}
+                <Button size="sm" variant="ghost" data-track="flag-said-right" onClick={() => act(item, "dismiss")}>{t(voiced ? "feedback.language.saidRight" : "feedback.language.typedRight")}</Button>
+                <Button size="sm" variant="ghost" data-track="flag-name-or-term" onClick={() => act(item, "dismiss")}>{t("feedback.language.nameOrTerm")}</Button>
+                {voiced ? <Button size="sm" variant="ghost" data-track="not-what-i-said" onClick={() => act(item, "dismiss", true)}>{t("feedback.language.notWhatISaid")}</Button> : null}
               </div>
             ) : null}
           </div>
@@ -519,14 +519,14 @@ function LanguageBody({ data, record, live, onFlag, onSaveHeard, initialOpenHear
               autoFocus={!initialOpenHeard}
             />
             <div className={s.itemActions}>
-              <Button size="sm" onClick={() => closeField(item, true)}>{t("feedback.language.saveHeard")}</Button>
-              <Button size="sm" variant="ghost" onClick={() => closeField(item, false)}>{t("feedback.language.skip")}</Button>
+              <Button size="sm" data-track="recheck-heard" onClick={() => closeField(item, true)}>{t("feedback.language.saveHeard")}</Button>
+              <Button size="sm" variant="ghost" data-track="heard-skip" onClick={() => closeField(item, false)}>{t("feedback.language.skip")}</Button>
             </div>
           </div>
         ) : (
           <div key={item.id} className={s.removed}>
             <span>{misheard[item.id] ? t("feedback.language.removedMisheard", { text: item.heard_as || item.original }) : t("feedback.language.removed")}</span>
-            {onFlag ? <Button size="sm" variant="link" onClick={() => act(item, "restore")}>{t("common.undo")}</Button> : null}
+            {onFlag ? <Button size="sm" variant="link" data-track="flag-undo" onClick={() => act(item, "restore")}>{t("common.undo")}</Button> : null}
           </div>
         )
       ))}
@@ -563,7 +563,7 @@ function Stronger({ record, state, onRequest, defaultOpen }: { record: FeedbackR
   return (
     <div className={s.stronger}>
       {/* A disclosure, not an "AI" button: a chevron that turns (session.md §2.7), no sparkle. */}
-      <Button variant="secondary" size="sm" iconRight="chevronDown" className={s.strongerBtn} aria-expanded={open} onClick={toggle}>
+      <Button variant="secondary" size="sm" iconRight="chevronDown" data-track="show-sample-answer" className={s.strongerBtn} aria-expanded={open} onClick={toggle}>
         {open ? t("feedback.stronger.hide") : t("feedback.stronger.show")}
       </Button>
       {open ? (

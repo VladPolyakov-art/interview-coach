@@ -34,6 +34,8 @@ export interface MenuItem {
   /** Keyboard shortcut hint at the end of the row ("?", "F"): a Kbd, also announced via aria-keyshortcuts. */
   shortcut?: string;
   disabled?: boolean;
+  /** User-test label (`data-track`, kebab-case, never user data). */
+  track?: string;
   onSelect?: () => void;
 }
 export interface MenuSeparator { id: string; separator: true }
@@ -57,6 +59,8 @@ export interface ListboxOption {
   meta?: ReactNode;
   icon?: IconName;
   disabled?: boolean;
+  /** User-test label (`data-track`, kebab-case, never user data). */
+  track?: string;
 }
 
 export interface MenuTriggerProps {
@@ -329,6 +333,7 @@ function MenuPopup({ items, header, popupId, floatingRef, focusIntent, onClose, 
             role={entry.checkbox ? "menuitemcheckbox" : checkable ? "menuitemradio" : "menuitem"}
             aria-checked={checkable ? Boolean(entry.checked) : undefined}
             aria-keyshortcuts={entry.shortcut}
+            data-track={entry.track}
             disabled={entry.disabled}
             tabIndex={-1}
             className={s.item}
@@ -461,6 +466,7 @@ function ListboxPopup({
               role="option"
               aria-selected={selected}
               aria-disabled={o.disabled || undefined}
+              data-track={o.track}
               className={`${s.option} ${active?.id === o.id ? s.active : ""}`}
               onPointerMove={() => { if (!o.disabled) setActiveId(o.id); }}
               onClick={() => { if (!o.disabled) choose(o.id); }}

@@ -53,7 +53,7 @@ export function EnglishBody({ english, ctx, ids }: { english: EnglishModel; ctx:
           ))}
           {hidden > 0 ? (
             <div>
-              <Button variant="link" size="sm" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+              <Button variant="link" size="sm" data-track="debrief-corrections-more" aria-expanded={all} onClick={() => setAll((v) => !v)}>
                 {all ? t("debrief.english.showFewer") : t("debrief.english.showMore", { n: hidden })}
               </Button>
             </div>

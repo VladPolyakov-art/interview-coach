@@ -82,13 +82,14 @@ export function ProfileEditor({ id }: { id?: string }) {
       </div>
       <div className={s.text}>
         <Disclosure surface="plain" defaultOpen={Boolean(data.note) && !files.length}
+          track="profile-note-toggle"
           title={data.note ? t("settings.profile.text") : files.length ? t("settings.profile.moreText") : t("settings.profile.asText")}>
           <div className={s.textBody}>
             <p className={s.hint}>{t("settings.profile.textHint")}</p>
             <Textarea label={t("settings.profile.text")} hideLabel placeholder={t("settings.profile.textPlaceholder")} rows={8} value={value}
               onChange={(e) => setNote(e.target.value)} showCount />
             <div className={s.actions}>
-              <Button variant="primary" loading={busy === "note"} disabled={note === null || note === data.note || busy !== null}
+              <Button variant="primary" data-track="profile-note-save" loading={busy === "note"} disabled={note === null || note === data.note || busy !== null}
                 onClick={() => void run("note", () => api.saveProfile(value, "paste")).then((ok) => { if (ok) setNote(null); })}>{t("common.save")}</Button>
             </div>
           </div>

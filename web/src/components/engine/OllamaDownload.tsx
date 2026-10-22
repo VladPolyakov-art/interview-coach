@@ -78,7 +78,7 @@ export function OllamaDownload({ engine, initial: given }: OllamaDownloadProps) 
         pct: Math.floor((share ?? 0) * 100) });
     return (
       <Callout tone="info" icon="download" title={t("engines.ollama.pull.downloading", { model: pull.model })}
-        actions={<Button variant="ghost" size="sm" onClick={() => void cancel()}>{t("common.cancel")}</Button>}>
+        actions={<Button variant="ghost" size="sm" data-track="ollama-pull-cancel" onClick={() => void cancel()}>{t("common.cancel")}</Button>}>
         <div className={s.pull}>
           <Progress label={t("engines.ollama.pull.label")} value={pull.phase === "verify" ? 1 : share} valueText={line} />
           <p className={s.pullLine}>{line}</p>
@@ -99,11 +99,11 @@ export function OllamaDownload({ engine, initial: given }: OllamaDownloadProps) 
         </p>
         {first ? (
           <div className={s.actions}>
-            <Button variant="primary" size="sm" icon="download" onClick={() => void start(first)}>
+            <Button variant="primary" size="sm" icon="download" data-track="ollama-pull-start" onClick={() => void start(first)}>
               {resume ? t("engines.ollama.pull.resume", { model: first }) : t("engines.ollama.pull.start", { model: first })}
             </Button>
             {second ? (
-              <Button variant="secondary" size="sm" onClick={() => void start(second.model)}>
+              <Button variant="secondary" size="sm" data-track="ollama-pull-alt" onClick={() => void start(second.model)}>
                 {second.model === recommended ? t("engines.ollama.pull.start", { model: second.model }) : t("engines.ollama.pull.smaller", { size: second.size_gb })}
               </Button>
             ) : null}

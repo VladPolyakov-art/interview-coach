@@ -33,11 +33,13 @@ export interface DisclosureProps {
   /** Id of the header button (evidence links focus it). */
   id?: string;
   className?: string;
+  /** User-test label on the header button (`data-track`, kebab-case, never user data). */
+  track?: string;
 }
 
 export function Disclosure({
   title, meta, leading, children, surface = "card", open: openProp, defaultOpen = false, onOpenChange,
-  chevron = "end", disabled, headingLevel, as: Root = "div", id, className,
+  chevron = "end", disabled, headingLevel, as: Root = "div", id, className, track,
 }: DisclosureProps) {
   const [own, setOwn] = useState(defaultOpen);
   const open = openProp ?? own;
@@ -68,6 +70,7 @@ export function Disclosure({
       className={s.header}
       aria-expanded={open}
       aria-controls={regionId}
+      data-track={track}
       disabled={disabled}
       onClick={toggle}
     >

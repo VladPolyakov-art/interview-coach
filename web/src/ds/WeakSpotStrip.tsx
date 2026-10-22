@@ -105,6 +105,7 @@ export function WeakSpotStrip({
             <Button
               variant="link"
               size="sm"
+              data-track="weak-spots-toggle"
               aria-expanded={expanded}
               aria-controls={`${id}r`}
               onClick={() => setExpanded((v) => !v)}

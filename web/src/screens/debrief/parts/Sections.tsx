@@ -34,6 +34,7 @@ export function VerdictBar({ verdict, id, open, onOpenChange, children }: {
     <section className={s.verdictBar} aria-labelledby={id} data-review-id="Debrief/VerdictBar" data-review-section="Debrief · Verdict" data-comment-target="">
       <Disclosure
         id={id}
+        track="debrief-verdict-toggle"
         headingLevel={2}
         open={open}
         defaultOpen={false}
@@ -81,7 +82,7 @@ export function Verdict({ verdict, id, note, bare }: { verdict: VerdictModel; id
 /** Live only: the verdict came from the template, not from the model: offer to write it again. */
 export function TemplateNote({ rerunning, onRerun }: { rerunning?: boolean; onRerun?: () => void }) {
   return (
-    <Callout tone="warning" actions={onRerun ? <Button size="sm" variant="secondary" icon="refresh" loading={rerunning} onClick={onRerun}>{rerunning ? t("debrief.rerunning") : t("debrief.rerun")}</Button> : undefined}>
+    <Callout tone="warning" actions={onRerun ? <Button size="sm" variant="secondary" icon="refresh" data-track="debrief-rerun" loading={rerunning} onClick={onRerun}>{rerunning ? t("debrief.rerunning") : t("debrief.rerun")}</Button> : undefined}>
       {t("debrief.template")}
     </Callout>
   );
@@ -89,7 +90,7 @@ export function TemplateNote({ rerunning, onRerun }: { rerunning?: boolean; onRe
 
 export function VerdictNotice({ kind, id, rerunning, onRerun }: { kind: "pending" | "missing"; id: string; rerunning?: boolean; onRerun?: () => void }) {
   const rerun = onRerun ? (
-    <Button size="sm" variant="secondary" icon="refresh" loading={rerunning} onClick={onRerun}>{rerunning ? t("debrief.rerunning") : t("debrief.rerun")}</Button>
+    <Button size="sm" variant="secondary" icon="refresh" data-track="debrief-rerun" loading={rerunning} onClick={onRerun}>{rerunning ? t("debrief.rerunning") : t("debrief.rerun")}</Button>
   ) : null;
   return (
     <section className={s.verdict} aria-labelledby={id} data-review-id="Debrief/VerdictNotice" data-review-section="Debrief · Verdict" data-comment-target="">
@@ -110,7 +111,7 @@ export function VerdictNotice({ kind, id, rerunning, onRerun }: { kind: "pending
 function EvidenceLine({ e, onJump }: { e: Evidence; onJump: (n: number) => void }) {
   const links = e.ids.map((n, i) => (
     <span key={n}>
-      <Button variant="link" size="sm" aria-label={t("debrief.evidence.goTo", { n })} onClick={() => onJump(n)}>{n}</Button>
+      <Button variant="link" size="sm" aria-label={t("debrief.evidence.goTo", { n })} data-track="debrief-evidence-jump" onClick={() => onJump(n)}>{n}</Button>
       {i < e.ids.length - 1 ? "," : ""}
     </span>
   ));
@@ -138,7 +139,7 @@ export function WeakSpots({ model, order, onJump, id }: { model: DebriefModel; o
         <strong className={s.lead}>{t("debrief.alsoLead")}</strong> {w.also.text} {tp("debrief.inQuestion", w.also.ids.length)}{" "}
         {w.also.ids.map((n, i) => (
           <span key={n}>
-            <Button variant="link" size="sm" aria-label={t("debrief.evidence.goTo", { n })} onClick={() => onJump(n)}>{n}</Button>
+            <Button variant="link" size="sm" aria-label={t("debrief.evidence.goTo", { n })} data-track="debrief-evidence-jump" onClick={() => onJump(n)}>{n}</Button>
             {i < w.also!.ids.length - 1 ? "," : ""}
           </span>
         ))}
@@ -173,7 +174,7 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
     body = (
       <>
         <p className={s.exampleHint}>{t("debrief.example.own")}</p>
-        <Button variant="link" onClick={onStartFirst}>{t("debrief.example.start")}</Button>
+        <Button variant="link" data-track="debrief-example-start" onClick={onStartFirst}>{t("debrief.example.start")}</Button>
       </>
     );
   } else if (variant === "english") {
@@ -182,7 +183,7 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
     body = (
       <>
         <div className={s.action}>
-          <Button variant="primary" size="lg" icon="refresh" onClick={onPractise}>
+          <Button variant="primary" size="lg" icon="refresh" data-track="practise-again" onClick={onPractise}>
             {count ? t("debrief.english.practise") : t("debrief.practiceAgain")}
           </Button>
           {count ? (
@@ -199,7 +200,7 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
     body = (
       <>
         <div className={s.action}>
-          <Button variant="primary" size="lg" icon="refresh" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
+          <Button variant="primary" size="lg" icon="refresh" data-track="practise-again" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
           <p className={s.hint}>{t("debrief.practiseHint")}</p>
         </div>
       </>
@@ -210,7 +211,7 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
       <>
         {d ? (
           <div className={s.action}>
-            <Button variant={storageError ? "secondary" : "primary"} size="lg" icon="play" onClick={onDrill}>{t("debrief.drill")}</Button>
+            <Button variant={storageError ? "secondary" : "primary"} size="lg" icon="play" data-track="drill-start" onClick={onDrill}>{t("debrief.drill")}</Button>
             <p className={s.hint}>
               {d.questions === undefined
                 ? tp("debrief.drillHintPoints", d.points)
@@ -221,7 +222,7 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
           </div>
         ) : null}
         <div className={s.action}>
-          <Button variant="secondary" size="lg" icon="refresh" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
+          <Button variant="secondary" size="lg" icon="refresh" data-track="practise-again" onClick={onPractise}>{t("debrief.practiceAgain")}</Button>
           <p className={s.hint}>{t("debrief.practiseHint")}</p>
         </div>
       </>

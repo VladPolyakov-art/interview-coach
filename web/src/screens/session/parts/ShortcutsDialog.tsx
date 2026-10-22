@@ -31,8 +31,8 @@ export function ShortcutsDialog({ open, onClose, input, variant, onMicHelp }: {
       onClose={onClose}
       actions={
         <>
-          {onMicHelp ? <Button variant="ghost" icon="mic" onClick={onMicHelp}>{t("session.island.micHelp")}</Button> : null}
-          <Button variant="secondary" onClick={onClose}>{t("session.shortcuts.close")}</Button>
+          {onMicHelp ? <Button variant="ghost" icon="mic" data-track="mic-help" onClick={onMicHelp}>{t("session.island.micHelp")}</Button> : null}
+          <Button variant="secondary" data-track="shortcuts-close" onClick={onClose}>{t("session.shortcuts.close")}</Button>
         </>
       }
     >

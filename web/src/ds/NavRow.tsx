@@ -16,6 +16,7 @@ export interface LinkLikeProps {
   "aria-current"?: "page" | "true" | undefined;
   "aria-label"?: string;
   "data-review-id"?: string;
+  "data-track"?: string;
 }
 export type LinkComponent = ComponentType<LinkLikeProps>;
 
@@ -31,15 +32,18 @@ export interface NavRowProps {
   linkAs?: LinkComponent;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   className?: string;
+  /** User-test label (`data-track`, kebab-case, never user data: a row's label may be a session title). */
+  track?: string;
 }
 
-export function NavRow({ href, label, icon, current, end, linkAs: LinkAs = PlainLink, onClick, className }: NavRowProps) {
+export function NavRow({ href, label, icon, current, end, linkAs: LinkAs = PlainLink, onClick, className, track }: NavRowProps) {
   return (
     <LinkAs
       href={href}
       className={`${s.row} ${className ?? ""}`}
       aria-current={current ? "page" : undefined}
       onClick={onClick}
+      data-track={track}
       data-review-id={`NavRow/${current ? "current" : "default"}`}
     >
       {icon ? <Icon name={icon} /> : null}
