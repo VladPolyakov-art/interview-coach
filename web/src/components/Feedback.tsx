@@ -17,7 +17,7 @@ export interface ThreadFeedbackProps {
   thread: Thread;
   mode: "interview" | "english";
   layerOrder: LayerOrder;
-  /** Live panel: shows "B1 grammar" level labels (owner rule: only in the live panel). */
+  /** Live panel: shows "B1 rule" level labels (QA-13: the level of the rule, not of the user) (owner rule: only in the live panel). */
   live: boolean;
   onFlag?: (feedbackId: string, flagId: string, action: FlagAction) => void;
   onStronger?: (feedbackId: string) => void;
@@ -494,7 +494,7 @@ function LanguageBody({ data, record, live, onFlag, onSaveHeard, initialOpenHear
           <div key={item.id} className={s.item}>
             <FlagGrid item={item} voiced={voiced} />
             <div className={s.itemFoot}>
-              {live && item.level ? <Badge tone="neutral">{t("feedback.language.grammarLevel", { level: item.level })}</Badge> : <span />}
+              {live && item.level ? <Badge tone="neutral" title={t("feedback.language.grammarLevelHint")}>{t("feedback.language.grammarLevel", { level: item.level })}<span className="visually-hidden"> ({t("feedback.language.grammarLevelHint")})</span></Badge> : <span />}
               {item.status === "confirmed" ? <span className={s.note}>{t("feedback.language.confirmed")}</span> : null}
             </div>
             {onFlag && item.status === "active" ? (

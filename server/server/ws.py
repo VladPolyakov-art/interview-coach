@@ -68,13 +68,14 @@ def parse_start(data: dict, settings: dict) -> dict:
     if vacancy_id and not storage.RECORD_ID.fullmatch(str(vacancy_id)):
         raise ValueError("vacancy_id")
     topic = str(data.get("topic") or "")[:80]
+    drill = data.get("drill") is True and mode == "interview"      # a weak-spot drill: only its name differs (13)
     resume_id = str(data.get("resume_session_id") or "")
     if resume_id and not storage.RECORD_ID.fullmatch(resume_id):
         raise ValueError("resume_session_id")
     voice = str(data.get("voice") or settings.get("voice") or "")
     return {"mode": mode, "round_type": round_type, "engine": engine, "questions": questions,
             "strictness": strictness, "input": input_mode, "vacancy_id": vacancy_id, "topic": topic,
-            "level": config.normalize_level(data.get("level") or settings["level"]),
+            "drill": drill, "level": config.normalize_level(data.get("level") or settings["level"]),
             "voice": voice, "speak": data.get("speak", True) is not False,
             "suggest": bool(data.get("suggest", False)), "resume": resume_id}
 
@@ -611,8 +612,7 @@ async def session_socket(websocket: WebSocket) -> None:
                    "strictness": opts["strictness"], "input": opts["input"], "vacancy_id": opts["vacancy_id"],
                    "vacancy_title": vacancy_title, "started_at": started_at, "app_version": __version__,
                    "questions": [q.public() for q in plan],
-                   "title": ("English practice" if opts["mode"] == "english" else
-                             f"Interview practice{(' · ' + vacancy_title) if vacancy_title else ''}")}
+                   "title": storage.session_title(opts["mode"], vacancy_title, opts["drill"])}
         if resume_saved:                                # continue the saved record: same id, same start, time adds up
             session.update({k: resume_saved[k] for k in ("id", "started_at", "title", "questions", "vacancy_title",
                                                          "archived") if k in resume_saved})

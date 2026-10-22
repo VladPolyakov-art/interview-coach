@@ -8,7 +8,7 @@ export function ServerUnavailable({ onRetry }: { onRetry: () => void }) {
       <Card padding="lg" className={s.card}>
         <EmptyState
           icon="alert"
-          headingLevel={2}
+          headingLevel={1}
           title={t("server.title")}
           actions={<Button variant="primary" icon="refresh" onClick={onRetry}>{t("server.checkAgain")}</Button>}
         >

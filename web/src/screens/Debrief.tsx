@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useFreshOnce, useToast } from "../ds";
 import { t } from "../i18n";
 import { api, ApiError } from "../lib/api";
+import { useDocumentTitle } from "../lib/documentTitle";
 import { useInterval, useLoad } from "../lib/hooks";
 import { useStorageWritable } from "../lib/storageProbe";
 import { errorMessage, useApp } from "../lib/store";
@@ -24,6 +25,7 @@ const seen = new Set<string>();
 function ExampleDebrief() {
   const navigate = useNavigate();
   const { settings } = useApp();
+  useDocumentTitle(exampleSam.title);
   return (
     <DebriefView
       variant="example"
@@ -62,6 +64,7 @@ function LiveDebrief() {
   const fresh = useFreshOnce(seen, `debrief:${id}`);
   const loadedOnce = useRef(false);
   if (record) loadedOnce.current = true;
+  useDocumentTitle(record?.title || t("debrief.title")); // QA-11: the tab carries the session's name
 
   // The debrief may still be being written right after a session: poll for up to a minute.
   const waiting = Boolean(record && record.mode === "interview" && !record.debrief && record.feedback.length && polls < 20);
@@ -180,7 +183,7 @@ function LiveDebrief() {
     }
   };
   const practise = () => navigate(record.mode === "english" ? "/?track=english" : "/");
-  const drill = () => navigate(record.mode === "english" ? "/?track=english" : "/?drill=1");
+  const drill = () => navigate(record.mode === "english" ? "/?track=english" : `/?drill=1${record.vacancy_id ? `&job=${encodeURIComponent(record.vacancy_id)}` : ""}`);
 
   return (
     <DebriefView

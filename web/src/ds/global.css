@@ -107,7 +107,7 @@ textarea {
 code,
 kbd {
   font-family: var(--font-mono);
-  font-size: 1em;
+  font-size: inherit; /* same size as the text around it (QA-18: no literal) */
 }
 
 .visually-hidden {

@@ -15,9 +15,12 @@ const mobile = (id: SetupSceneId): StoryObj => ({
   parameters: { viewport: { defaultViewport: "mobile1" } },
 });
 
-/** First run: the four engines, nothing picked; Continue waits for a pick. */
+/** First run, Ollama is Ready: it is picked for you (it is the recommended one) and Continue is enabled. */
 export const EngineFirst = desktop("engineFirst");
 export const EngineFirstMobile = mobile("engineFirst");
+/** First run, nothing is Ready: nothing is picked and Continue waits for a pick. */
+export const EngineNoneReady = desktop("engineNoneReady");
+export const EngineNoneReadyMobile = mobile("engineNoneReady");
 /** Ollama picked and Ready. */
 export const EnginePicked = desktop("enginePicked");
 /** Ollama picked but not installed: "Download Ollama" right under it. */

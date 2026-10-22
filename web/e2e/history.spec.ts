@@ -41,7 +41,7 @@ test.describe("US-21 One history", () => {
     await row.getByRole("link", { name: /Northwind Logistics · Product Owner/ }).click();
     await expect(page).toHaveURL(/\/sessions\/s-/);
     await expect(
-      page.getByRole("heading", { name: "Interview practice · Northwind Logistics · Product Owner", level: 1 }),
+      page.getByRole("heading", { name: "Northwind Logistics · Product Owner", level: 1 }),
     ).toBeVisible();
     await expect(page.getByRole("region", { name: /^Verdict/ })).toBeVisible();
   });
@@ -86,7 +86,7 @@ test.describe("US-21 One history", () => {
     await page.getByRole("textbox", { name: "Session title" }).fill("Something else");
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(
-      page.getByRole("heading", { name: "Interview practice · Kestrel Pay · Product Manager", level: 1 }),
+      page.getByRole("heading", { name: "Kestrel Pay · Product Manager", level: 1 }),
     ).toBeVisible();
   });
 
@@ -96,7 +96,7 @@ test.describe("US-21 One history", () => {
     await archiveChat(page, "Northwind Logistics · Product Owner");
     await goToArchive(page);
     // A desktop row has the button inline; a phone row keeps it in the "..." menu.
-    const title = "Interview practice · Northwind Logistics · Product Owner";
+    const title = "Northwind Logistics · Product Owner";
     const inline = page.getByRole("button", { name: `Move ${title} back to Recents` });
     if (await inline.isVisible()) {
       await inline.click();

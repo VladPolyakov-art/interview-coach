@@ -8,11 +8,12 @@ export interface EmptyStateProps {
   children?: ReactNode;
   actions?: ReactNode;
   compact?: boolean;
-  headingLevel?: 2 | 3;
+  /** 1 when the empty state is the whole page (ServerUnavailable), 2 by default, 3 inside a section that has an h2. */
+  headingLevel?: 1 | 2 | 3;
 }
 
 export function EmptyState({ icon = "info", title, children, actions, compact, headingLevel = 2 }: EmptyStateProps) {
-  const H = headingLevel === 2 ? "h2" : "h3";
+  const H = headingLevel === 1 ? "h1" : headingLevel === 2 ? "h2" : "h3";
   return (
     <div className={`${s.empty} ${compact ? s.compact : ""}`}>
       <span className={s.icon}><Icon name={icon} size="lg" /></span>

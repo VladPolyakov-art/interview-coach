@@ -157,3 +157,11 @@ def test_text_session_switches_to_voice(client, monkeypatch, fake_llm):
         s.send_json({"type": "end_session"})
         receive_until(s, "session_ended")
     assert len(attached) == 1
+
+
+def test_drill_flag_is_read_for_interview_only():
+    from server import ws
+    settings = {"engine": "ollama", "questions_per_session": 3, "strictness": 2, "level": "B1", "voice": ""}
+    assert ws.parse_start({"mode": "interview", "drill": True}, settings)["drill"] is True
+    assert ws.parse_start({"mode": "interview", "drill": "yes"}, settings)["drill"] is False
+    assert ws.parse_start({"mode": "english", "drill": True}, settings)["drill"] is False

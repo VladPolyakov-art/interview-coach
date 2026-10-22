@@ -35,12 +35,11 @@ test.describe("US-02 First-run wizard", () => {
     const steps = page.getByRole("navigation", { name: "Setup steps" }).getByRole("listitem");
     await expect(steps).toHaveText([/AI engine/, /Check/, /About you/]);
     await expect(page.getByRole("heading", { name: "Choose how Mike runs", level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
-
-    // The ready engine is listed with its readiness; picking it connects it.
+    // 13 (QA-06): the recommended engine is picked for you when it is Ready, so Continue is on from the start.
     const ollama = page.getByRole("radio", { name: /^Ollama/ });
     await expect(ollama).toContainText("Ready");
-    await ollama.click();
+    await expect(ollama).toBeChecked();
+    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
     await expect(page.getByText("Connected.")).toBeVisible();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -122,10 +121,15 @@ test.describe("US-02 First-run wizard", () => {
     const alert = page.getByRole("alert");
     await expect(alert).toContainText("Vukoli can't use the microphone");
     await expect(alert).toContainText("Allow the microphone in your browser's address bar");
+    // QA-05: the macOS system switch is named too, not only the browser's address bar.
+    await expect(alert).toContainText("On a Mac: System Settings → Privacy & Security → Microphone");
     await expect(alert.getByRole("button", { name: "Try again" })).toBeVisible();
 
     // The way out is the keyboard, and the wizard can be finished that way.
-    await alert.getByRole("button", { name: "I'll type instead" }).click();
+    // F-13-10: one "I'll type instead" on the step, in the footer; the error does not repeat it.
+    await expect(page.getByRole("button", { name: "I'll type instead" })).toHaveCount(1);
+    await expect(alert.getByRole("button", { name: "I'll type instead" })).toHaveCount(0);
+    await page.getByRole("button", { name: "I'll type instead" }).click();
     await expect(page.getByRole("heading", { name: "About you", level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "Not now" }).click();
     await expect(page.getByRole("heading", { name: "What are we practising today?", level: 1 })).toBeVisible();

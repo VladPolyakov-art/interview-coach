@@ -12,12 +12,12 @@ export default meta;
 
 interface Fixture { id: string; title: string; track: "interview" | "english"; round: string; when: string; length: string; result: string }
 const S: Fixture[] = [
-  { id: "s3", title: "Kestrel Pay · Senior Product Designer", track: "interview", round: "Behavioural · Standard", when: "Oct 19, 20:40", length: "24 min", result: "Getting there" },
-  { id: "s2", title: "English · Talk about your work", track: "english", round: "B2", when: "Oct 18, 21:05", length: "11 min", result: "5 corrections" },
+  { id: "s3", title: "Kestrel Pay · Senior Product Designer", track: "interview", round: "Behavioural · Standard", when: "Oct 19, 8:40 PM", length: "24 min", result: "Getting there" },
+  { id: "s2", title: "English · Talk about your work", track: "english", round: "B2", when: "Oct 18, 9:05 PM", length: "11 min", result: "5 corrections" },
   { id: "s1", title: "Lumen Health · Product Designer, Design Systems", track: "interview", round: "HR screen · Gentle", when: "Oct 17, 19:10", length: "14 min", result: "Not ready yet" },
 ];
 const OVERFLOW: Fixture[] = [
-  { id: "o1", title: "Kestrel Pay · Senior Product Designer", track: "interview", round: "Behavioural · Standard", when: "Oct 20, 08:15", length: "6 min", result: "No verdict — 2 of 5 answered" },
+  { id: "o1", title: "Kestrel Pay · Senior Product Designer", track: "interview", round: "Behavioural · Standard", when: "Oct 20, 8:15 AM", length: "6 min", result: "No verdict — 2 of 5 answered" },
   ...S,
   { id: "o2", title: "Lumen HR screen — calmer second try", track: "interview", round: "HR screen · Gentle", when: "Oct 16, 18:30", length: "13 min", result: "Getting there" },
   { id: "o3", title: "Northwind Logistics International · Senior Product Designer, Platform and Internal Tools", track: "interview", round: "Technical · Tough", when: "Oct 9, 17:00", length: "31 min", result: "Not ready yet" },

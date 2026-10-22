@@ -10,15 +10,18 @@
   background: var(--color-surface-card);
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
-/* D51: no stroke; the fill steps one level on focus. D70: no focus ring either, for mouse or keyboard (owner: «давай
- * вообще без этого строка… и так очевидно, что он выбрал чат»): focus = the lighter fill + the caret. Radius 24px. */
+/* D51: no stroke; the fill steps one level on focus. D70 dropped the ring, but the caret alone left keyboard users
+ * without a clear focus mark (13, QA-16, WCAG 2.4.7): the box shows the contract's focus ring while the field is
+ * focused (token ring, 2px offset), next to the lighter fill; the wrapper is the field's visible edge. Radius 24px. */
 .box:focus-within { background: var(--color-surface-card-hover); }
+/* The ring follows the text field, not the send button (which has its own ring when tabbed to). */
+.box:has(.field:focus) { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: var(--focus-ring-offset); }
 /* Field + inline send (no toolbar): the button stays inside the box, bottom-right, as the text grows. */
 .row { display: flex; align-items: flex-end; gap: var(--space-2); min-width: 0; }
 /* D90: the control on the left sits on the last line, centred on the send button's height (both stay put as the text grows). */
 .leading { flex: none; display: flex; align-items: center; height: var(--control-h-md); }
 /* surface: none (v2) — inside the Island. D62: a rounded chip fill (like the End button), one step lighter on focus,
- * no blue ring (owner: "не светился настолько синим"); the round send sits inside it. 🟡 focus = the fill + the caret. */
+ * the round send sits inside it. Focus = the fill + the same ring as the plain box (QA-16, replaces D62's "no blue ring"). */
 .box.bare { padding: var(--space-1); border: 0; border-radius: var(--radius-xl); background: var(--color-surface-chip); box-shadow: none; }
 .box.bare:focus-within { background: var(--color-surface-chip-hover); }
 .box.bare.disabled { background: var(--color-surface-chip); }

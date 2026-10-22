@@ -13,6 +13,7 @@ export interface StartChoices {
   level?: Level;
   vacancyId?: string;
   topic?: string;
+  drill?: boolean;
 }
 
 export function buildSessionConfig(choices: StartChoices, settings: Settings | null, stt: SttInfo | null): SessionConfig {
@@ -40,6 +41,7 @@ export function buildSessionConfig(choices: StartChoices, settings: Settings | n
     start.strictness = choices.strictness ?? settings?.strictness ?? 2;
     start.questions = choices.questions ?? settings?.questions_per_session ?? 5;
     if (choices.vacancyId) start.vacancy_id = choices.vacancyId;
+    if (choices.drill) start.drill = true;
   } else {
     start.level = choices.level ?? settings?.level ?? "B1";
     if (choices.topic) start.topic = choices.topic;

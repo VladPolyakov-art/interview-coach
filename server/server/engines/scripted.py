@@ -182,7 +182,8 @@ def debrief(text: str) -> dict:
     ranked = sorted(found.items(), key=lambda kv: -len(kv[1]))
     spots = [{"layer": layer, "tag": tag, "text": f"Work on {tag.replace('_', ' ')}.", "evidence": ev}
              for (layer, tag), ev in ranked[:3]]
-    return {"verdict": ("Your answers were clear. " + (f"The one thing to fix: {spots[0]['tag'].replace('_', ' ')}."
+    lead = "The one thing" if len(spots) == 1 else "The main thing"      # "one" is only true with one weak spot (F-13-6)
+    return {"verdict": ("Your answers were clear. " + (f"{lead} to fix: {spots[0]['tag'].replace('_', ' ')}."
                                                           if spots else "Nothing repeated stood out.")),
             "weak_spots": spots, "strength": "You kept each answer on the question.",
             "next_step": "Practise one answer again, out loud, with a result at the end."}
@@ -194,17 +195,36 @@ def stronger(text: str) -> dict:
             "placeholders": ["[your number]"]}
 
 
+def _clauses(source: str) -> list[str]:
+    """Duty and requirement clauses of a posting, verbatim: the title line (first) is skipped when more lines follow,
+    so question 1 quotes what the job asks for, not its name (13, QA-17)."""
+    lines = [" ".join(line.split()) for line in source.splitlines() if line.strip()]
+    if len(lines) > 1:
+        lines = lines[1:]
+    out = []
+    for line in lines:
+        for part in re.split(r"[.;,:!?]", line):
+            part = part.strip()
+            if 3 <= len(part.split()) <= 14 and part in " ".join(source.split()):
+                out.append(part)
+    return out
+
+
 def questions(text: str) -> dict:
     """Questions anchored in real quotes of the user's own CV and job posting (the server drops any other anchor)."""
     count = int((re.search(r"^count:\s*(\d+)", text, re.M) or [0, 3])[1])
     source = _tag(text, "jd") or _tag(text, "cv")
+    anchors = _clauses(source)
     words = source.split()
     out = []
     for n in range(max(3, min(count, 6))):
-        chunk = words[n * 5:n * 5 + 5]
-        if len(chunk) < 3:
-            chunk = words[:5]
-        anchor = " ".join(chunk)
+        if anchors:
+            anchor = anchors[n % len(anchors)]
+        else:
+            chunk = words[n * 5:n * 5 + 5]
+            if len(chunk) < 3:
+                chunk = words[:5]
+            anchor = " ".join(chunk)
         out.append({"id": f"V{n + 1}", "recipe": "R1", "anchor": anchor, "competency": "B",
                     "question": f"The posting says \"{anchor}\". Tell me about a time you did that.",
                     "follow_ups": [{"tag": "YP", "text": "What exactly did you do yourself?"},

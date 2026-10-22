@@ -39,6 +39,16 @@
   flex: 0 1 auto;
   transition: color var(--duration-fast) var(--ease-standard);
 }
+/* 13 (QA-03): a 44px hit area on touch screens; the option looks the same. */
+@media (pointer: coarse) {
+  .option { position: relative; }
+  .option::before {
+    content: "";
+    position: absolute;
+    inset-block: min(0px, calc((100% - var(--control-h-touch)) / 2));
+    inset-inline: min(0px, calc((100% - var(--control-h-touch)) / 2));
+  }
+}
 .optionLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .option:not(:disabled):hover { color: var(--color-text-primary); }
 /* D51: no strokes. The selected segment is the inverted chip fill (the thumb below), label = on-checked, hover never changes it. */

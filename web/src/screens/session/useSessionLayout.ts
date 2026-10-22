@@ -16,7 +16,11 @@ export function layoutFor(width: number): SessionLayout {
 /** Below this width the island goes to two rows (DS Island `layout: stacked`, session.md §V2.7). */
 export const ISLAND_STACKED = 560;
 
-export function useSessionLayout(ref: RefObject<HTMLElement | null>): { layout: SessionLayout; stacked: boolean } {
+/** Below this width (a phone) the text-mode island keeps End next to the status and moves the tools to the second row:
+ * one row of status + three icons + End has no air at 375 and clips at 320 (13, QA-10). */
+export const ISLAND_COMPACT = 420;
+
+export function useSessionLayout(ref: RefObject<HTMLElement | null>): { layout: SessionLayout; stacked: boolean; compact: boolean } {
   const [width, setWidth] = useState<number>(SESSION_WIDE);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -29,5 +33,5 @@ export function useSessionLayout(ref: RefObject<HTMLElement | null>): { layout: 
     ro.observe(el);
     return () => ro.disconnect();
   }, [ref]);
-  return { layout: layoutFor(width), stacked: width < ISLAND_STACKED };
+  return { layout: layoutFor(width), stacked: width < ISLAND_STACKED, compact: width < ISLAND_COMPACT };
 }

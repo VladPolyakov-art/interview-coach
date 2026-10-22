@@ -4,7 +4,7 @@
   --bar-i: 0;
   display: block;
   width: var(--bar-w);
-  height: 10px;
+  height: calc(var(--space-2) + var(--space-1) / 2); /* 10px on the space scale (components.md Skeleton) */
   border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--color-subtle) 0%, var(--color-selected) 50%, var(--color-subtle) 100%) 0 0 / 200% 100%;
   animation: global(skeleton) var(--duration-loop-skeleton) ease-in-out infinite;

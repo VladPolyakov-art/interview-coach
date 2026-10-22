@@ -12,7 +12,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { durationMs, motionMemory, shouldBuildUp } from "../../ds";
 import { t, tMaybe, tp } from "../../i18n";
 import { VacancyEditor } from "../../components/VacancyEditor";
-import { splitTitle } from "../../components/vacancyTitle";
+import { extractCompanyRole, jobName, splitTitle } from "../../components/vacancyTitle";
 import { browserSttSupported } from "../../audio/browserStt";
 import { useDictation } from "../../audio/dictation";
 import { api, ApiError, fileToBase64 } from "../../lib/api";
@@ -37,9 +37,17 @@ const TOPICS: EnglishTopic[] = ["free", "work", "small"];
 const PREP_TIMEOUT_MS = 90_000;
 
 function toJob(v: { id: string; title: string; created_at: string; questions: number | unknown[] }, state: JobItem["state"]): JobItem {
-  const parts = splitTitle(v.title);
+  let parts = splitTitle(v.title);
+  // A posting saved with the first line as its title ("Product Manager at Kestrel Pay") still gets company and role.
+  if (!parts.role) parts = extractCompanyRole(v.title) ?? parts;
   const questions = Array.isArray(v.questions) ? v.questions.length : v.questions;
   return { id: v.id, company: parts.company, role: parts.role, added: shortDate(v.created_at), questions, state };
+}
+
+/** The name a session shows (13, QA-15): "Company · Role", "General questions" without a job, "Drill · …" for a drill. */
+function sessionName(vacancyTitle: string, drill: boolean): string {
+  const name = jobName(vacancyTitle) || t("session.titleGeneral");
+  return drill ? t("session.titleDrill", { name }) : name;
 }
 
 interface EditorState { open: boolean; editId: string | null }
@@ -129,7 +137,7 @@ export function HomeScreen() {
   useEffect(() => {
     if (drillAsked.current || params.get("drill") !== "1" || !dataReady) return;
     drillAsked.current = true;
-    setSetup(begin(ctx, { kind: "suggestion", id: "drill" }));
+    setSetup(begin(ctx, { kind: "drill", jobId: params.get("job") || undefined }));
   }, [params, dataReady, ctx]);
 
   /* Questions from a job: the plan's Job row shows "Preparing questions…" and Start waits until the call returns
@@ -243,9 +251,11 @@ export function HomeScreen() {
     const roundType = plan.kind === "drill" || plan.round === "technical" ? "mix" : plan.round;
     const config = buildSessionConfig({
       mode: "interview", answer, roundType, strictness: plan.strictness, questions: plan.questions, vacancyId: plan.job?.id,
+      drill: plan.kind === "drill",
     }, settings, stt.data);
-    const title = list.find((v) => v.id === plan.job?.id)?.title ?? "";
-    leave(() => navigate("/session", { state: { config, title, roundType: config.start.round_type } }));
+    const title = sessionName(list.find((v) => v.id === plan.job?.id)?.title ?? "", plan.kind === "drill");
+    const focus = plan.kind === "drill" ? plan.focus?.spots : undefined;
+    leave(() => navigate("/session", { state: { config, title, focus, roundType: config.start.round_type } }));
   };
   const plan = setup ? planFor(ctx, setup) : null;
   const unsupportedSpeech = stt.data?.available === false && !browserSttSupported();
@@ -263,7 +273,7 @@ export function HomeScreen() {
       mode: "interview", answer: quick.answer, roundType: quick.roundType, strictness: quick.strictness,
       questions: quick.questions, vacancyId: quick.jobId ?? undefined,
     }, settings, stt.data);
-    const title = list.find((v) => v.id === quick.jobId)?.title ?? "";
+    const title = sessionName(list.find((v) => v.id === quick.jobId)?.title ?? "", false);
     leave(() => navigate("/session", { state: { config, title, roundType: config.start.round_type } }));
   };
 

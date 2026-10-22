@@ -76,7 +76,7 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
       <StepHead headingRef={headingRef} title={t("setup.check.title")} sub={t("setup.check.subtitle")} />
       {saveView}
       <div data-review-id="Setup/Check" data-review-section="Setup · Check" data-comment-target>
-        <SettingGroup title={t("setup.check.group")}>
+        <SettingGroup title={t("setup.check.group")} headingLevel={2}>
           {ttsOk ? (
             <SettingRow id="setup-voice" label={t("setup.check.voice")} description={t("setup.check.voiceHint")}>
               <Select label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
@@ -87,7 +87,7 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
           ) : <Callout tone="info">{t("setup.check.voiceMissing")}</Callout>}
           <div className={s.checkArea}>
             <CheckBody state={state} level={level} getLevel={initial ? undefined : check.getLevel}
-              onStart={retry} onFinish={check.finish} onReplay={check.replay} onKeyboard={() => leave("text")} onEngine={onEngine} />
+              onStart={retry} onFinish={check.finish} onReplay={check.replay} onEngine={onEngine} />
           </div>
         </SettingGroup>
       </div>
@@ -115,11 +115,10 @@ interface CheckBodyProps {
   onStart: () => void;
   onFinish: () => void;
   onReplay: () => void;
-  onKeyboard: () => void;
   onEngine: () => void;
 }
 
-function CheckBody({ state, level, getLevel, onStart, onFinish, onReplay, onKeyboard, onEngine }: CheckBodyProps) {
+function CheckBody({ state, level, getLevel, onStart, onFinish, onReplay, onEngine }: CheckBodyProps) {
   if (state.phase === "idle" || state.phase === "listening") {
     const live = state.phase === "listening";
     return (
@@ -132,14 +131,13 @@ function CheckBody({ state, level, getLevel, onStart, onFinish, onReplay, onKeyb
     );
   }
   if (state.phase === "error") {
-    const mic = state.code === "mic_denied" || state.code === "mic_missing" || state.code === "no_stt";
+    // The keyboard way out is the footer's one "I'll type instead" (F-13-10): not repeated in the callout.
     return (
       <Callout tone={state.code === "engine" || state.code === "failed" ? "error" : "warning"} live="alert"
         title={t(`setup.check.error.${state.code}.title`)}
         actions={(
           <>
             {state.code !== "no_stt" ? <Button size="sm" onClick={onStart}>{t("setup.check.tryAgain")}</Button> : null}
-            {mic ? <Button size="sm" variant="ghost" icon="keyboard" onClick={onKeyboard}>{t("setup.check.typeInstead")}</Button> : null}
             {state.code === "engine" ? <Button size="sm" variant="ghost" onClick={onEngine}>{t("setup.check.engineBack")}</Button> : null}
           </>
         )}>

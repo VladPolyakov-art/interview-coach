@@ -83,3 +83,19 @@ export const BottomSheet: StoryObj = {
 export const InteractiveLeft: StoryObj = { render: () => <Demo side="left" startOpen /> };
 export const InteractiveRight: StoryObj = { render: () => <Demo side="right" /> };
 export const InteractiveBottom: StoryObj = { render: () => <Demo side="bottom" /> };
+
+/** QA-09: long feedback with no control inside the sheet. The scrolling area takes keyboard focus (named region), so the
+ * arrow keys scroll it; a sheet that fits, or holds a button, adds no extra Tab stop. */
+export const BottomSheetScrolls: StoryObj = {
+  render: () => (
+    <Frame width={375} height={360}>
+      <Drawer open onClose={() => {}} side="bottom" label="Feedback" title="Feedback" closeLabel="Hide feedback">
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", fontSize: "var(--text-sm)" }}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <p key={i}>Question {i + 1}: clear situation and a concrete result. Say what you did yourself, not the team.</p>
+          ))}
+        </div>
+      </Drawer>
+    </Frame>
+  ),
+};

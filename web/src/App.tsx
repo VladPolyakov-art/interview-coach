@@ -4,6 +4,7 @@ import { Swap } from "./ds";
 import { t } from "./i18n";
 import { AppShell } from "./components/AppShell";
 import { api } from "./lib/api";
+import { useDocumentTitle } from "./lib/documentTitle";
 import { prefs } from "./lib/prefs";
 import { AppProvider } from "./lib/store";
 import { DebriefScreen } from "./screens/Debrief";
@@ -42,6 +43,12 @@ export function App() {
   );
 }
 
+/** QA-11: a screen's tab title, written once when its route mounts. */
+function TabTitle({ page, children }: { page?: string; children: React.ReactNode }) {
+  useDocumentTitle(page);
+  return <>{children}</>;
+}
+
 function FirstRunGate({ children, off }: { children: React.ReactNode; off?: boolean }) {
   const location = useLocation();
   if (!off && !prefs.setupDone() && location.pathname === "/") return <Navigate to="/setup" replace />;
@@ -55,6 +62,8 @@ function FirstRunGate({ children, off }: { children: React.ReactNode; off?: bool
 function ShellRoutes() {
   const settings = useSettingsRoute();
   const location = settings.pageLocation;
+  // The Settings popup names the tab while it is open; closing puts the page's title back.
+  useDocumentTitle(settings.open ? t("settings.title") : null, true);
   return (
     <AppShell>
       <Swap
@@ -65,14 +74,14 @@ function ShellRoutes() {
         focusTarget={() => document.getElementById("main")}
       >
         <Routes location={location}>
-          <Route path="/" element={<FirstRunGate off={settings.open}><HomeScreen /></FirstRunGate>} />
-          <Route path="/archive" element={<ArchiveScreen />} />
-          <Route path="/archive/trash" element={<TrashScreen />} />
+          <Route path="/" element={<TabTitle><FirstRunGate off={settings.open}><HomeScreen /></FirstRunGate></TabTitle>} />
+          <Route path="/archive" element={<TabTitle page={t("history.title")}><ArchiveScreen /></TabTitle>} />
+          <Route path="/archive/trash" element={<TabTitle page={t("history.trashTitle")}><TrashScreen /></TabTitle>} />
           {/* D80: History became Archive; old links still land. */}
           <Route path="/history" element={<Navigate to="/archive" replace />} />
           <Route path="/history/trash" element={<Navigate to="/archive/trash" replace />} />
           <Route path="/sessions/:id" element={<DebriefScreen />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<TabTitle page={t("notFound.tabTitle")}><NotFound /></TabTitle>} />
         </Routes>
       </Swap>
       {settings.dialog}

@@ -10,6 +10,7 @@ import { t } from "../i18n";
 import { IconButton } from "./Button";
 import { usePresence } from "./motion";
 import { OverlayPortal } from "./OverlayRoot";
+import { useScrollFocusable } from "./scrollFocus";
 import { trapTab, useOverlayFocus } from "./overlay";
 import s from "./Drawer.module.css";
 
@@ -40,6 +41,8 @@ export function Drawer({
 }: DrawerProps) {
   const { mounted, leaving } = usePresence(open && !inline);
   const panel = useRef<HTMLDivElement>(null);
+  // QA-09: a sheet that scrolls and holds no control stays reachable by keyboard.
+  const bodyFocus = useScrollFocusable(typeof title === "string" ? title : label);
   const id = useId();
   useOverlayFocus(panel, open && !inline && mounted);
   const surface = tone ?? (side === "left" ? "sidebar" : "raised");
@@ -73,7 +76,7 @@ export function Drawer({
           <IconButton icon="x" size="sm" label={closeLabel ?? t("common.close")} onClick={onClose} />
         </div>
       ) : null}
-      <div className={s.body}>{children}</div>
+      <div className={s.body} {...bodyFocus}>{children}</div>
       {footer ? <div className={s.footer}>{footer}</div> : null}
     </div>
   );

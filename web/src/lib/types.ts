@@ -324,6 +324,8 @@ export interface StartMessage {
   speak: boolean;
   suggest: boolean;
   topic?: string;
+  /** A weak-spot drill (interview only): the saved session is named "Drill · …". */
+  drill?: boolean;
   engine?: EngineId;
   /** US-13 AC5: continue this saved session (after a dropped connection) instead of starting a new one. */
   resume_session_id?: string;

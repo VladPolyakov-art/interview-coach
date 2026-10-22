@@ -471,9 +471,22 @@ def fallback_debrief(feedback: list[dict], layer_order: str) -> dict:
             "source": "template"}
 
 
+def advice_inline(text: str) -> str:
+    """Advice text as the tail of a sentence after a colon (F-13-16): the first letter is lower case (unless the
+    first word is "I" or an acronym) and an inner ": " becomes ", ", so the line has one colon, not two."""
+    out = " ".join(str(text or "").split()).rstrip(".").replace(": ", ", ")
+    first = out.split(" ", 1)[0]
+    keeps_case = first == "I" or first.startswith("I'") or (len(first) > 1 and first.isupper())
+    return out if not out or keeps_case or not first[0].isupper() else out[0].lower() + out[1:]
+
+
 def main_fix_sentence(spots: list[dict]) -> str:
-    """The "thing to fix" part of a verdict, written in code from the ranked weak spots."""
-    return f"The main thing to fix: {spots[0]['text'].rstrip('.')}." if spots else "No repeated problem stood out."
+    """The "thing to fix" part of a verdict, written in code from the ranked weak spots. "The one thing" is only
+    true with exactly one weak spot (F-13-6); with more it is "the main thing"."""
+    if not spots:
+        return "No repeated problem stood out."
+    lead = "The one thing to fix" if len(spots) == 1 else "The main thing to fix"
+    return f"{lead}: {advice_inline(spots[0]['text'])}."
 
 
 def next_step_for(spots: list[dict]) -> str:

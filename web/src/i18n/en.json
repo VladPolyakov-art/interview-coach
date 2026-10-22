@@ -1,6 +1,7 @@
 {
   "app": {
     "name": "Vukoli",
+    "pageTitle": "{page} · {app}",
     "practiceOnly": "Practice only: this app is for rehearsal, never for help during a real interview.",
     "noAccount": "No account. Nothing leaves this computer unless you choose an engine that says so.",
     "skipToContent": "Skip to content"
@@ -104,6 +105,7 @@
   },
   "notFound": {
     "title": "This page doesn't exist",
+    "tabTitle": "Page not found",
     "body": "The link may be old, or the session was deleted.",
     "home": "Go to home"
   },
@@ -337,7 +339,7 @@
     "stepDone": "done",
     "engine": {
       "title": "Choose how Mike runs",
-      "subtitle": "Mike needs an AI engine to ask questions and give feedback.",
+      "subtitle": "Mike is your AI interviewer. He needs an AI engine to ask questions and give feedback.",
       "later": "You can switch any time in Settings → AI engine.",
       "waiting": "Continue once {name} is Ready.",
       "pickFirst": "Pick an engine to continue."
@@ -365,7 +367,7 @@
       "error": {
         "mic_denied": {
           "title": "Vukoli can't use the microphone",
-          "body": "Allow the microphone in your browser's address bar, then try again. Or answer with the keyboard."
+          "body": "Allow the microphone in your browser's address bar, then try again. On a Mac: System Settings → Privacy & Security → Microphone → turn on your browser, then reload. Or answer with the keyboard."
         },
         "mic_missing": {
           "title": "No microphone found",
@@ -506,7 +508,7 @@
       "langWrong": "of",
       "langTo": "I'm responsible",
       "langRight": "for",
-      "langLevel": "B1 grammar"
+      "langLevel": "B1 rule"
     },
     "greetingName": "{greeting}, {name}",
     "trackHint": "English practice: just talk at your level, no interview needed.",
@@ -670,6 +672,9 @@
   },
   "session": {
     "title": "Interview session",
+    "titleGeneral": "General questions",
+    "titleDrill": "Drill · {name}",
+    "focus": "Focus: {spots}",
     "progress": "Question {n} of {total}",
     "turn": "Turn {n}",
     "elapsed": "Elapsed time",
@@ -719,6 +724,9 @@
       "text3": "Feedback appears on the right after each question.",
       "text3Mid": "After each question a dot shows on the feedback button. Press it and the feedback slides in from the right.",
       "text3Narrow": "After each question a dot shows on the feedback button. Press it and the feedback slides up from the bottom.",
+      "text3English": "Feedback appears on the right after each turn.",
+      "text3MidEnglish": "After each turn a dot shows on the feedback button. Press it and the feedback slides in from the right.",
+      "text3NarrowEnglish": "After each turn a dot shows on the feedback button. Press it and the feedback slides up from the bottom.",
       "voice1Manual": "Answer aloud when Mike stops. Take your time: Mike waits until you press Send now."
     },
     "controls": {
@@ -793,7 +801,6 @@
     },
     "missing": "This session wasn't started from home.",
     "warnings": "Notes from the engine",
-    "titleDrill": "Drill",
     "elapsedAria": "Elapsed time {m} minutes {s} seconds",
     "round": {
       "hr": "HR screen",
@@ -901,6 +908,7 @@
       "step1": "Click the lock icon left of the address bar.",
       "step2": "Set Microphone to Allow.",
       "step3": "Press Try again.",
+      "mac": "On a Mac: System Settings → Privacy & Security → Microphone → turn on your browser, then reload.",
       "none": "No microphone found. Plug in a headset or pick another input in your system sound settings, then press Try again.",
       "useText": "Use text mode",
       "tryAgain": "Try again"
@@ -1016,7 +1024,8 @@
       "youTyped": "You typed",
       "say": "Say",
       "why": "Why",
-      "grammarLevel": "{level} grammar",
+      "grammarLevel": "{level} rule",
+      "grammarLevelHint": "Level of the grammar rule, not your level",
       "saidRight": "I said it right",
       "typedRight": "I wrote it right",
       "nameOrTerm": "It's a name or term",
@@ -1162,7 +1171,7 @@
       "notReady": "Not ready yet",
       "gettingThere": "Getting there",
       "ready": "Ready",
-      "sr": "Verdict: {step}, step {n} of 3"
+      "sr": "step {n} of 3"
     },
     "workOn": "What to work on",
     "workOnSub": "One per layer, from this session.",
@@ -1266,7 +1275,9 @@
       "repeated_one": "{n} of them came up twice — it's in Phrases to review.",
       "repeated_other": "{n} of them came up twice — they're in Phrases to review.",
       "corrections": "Corrections",
-      "correctionsSub": "In the order they happened. “Heard as” is what speech recognition heard.",
+      "correctionsSub": "In the order they happened.",
+      "correctionsSubHeard": "In the order they happened. “Heard as” is what speech recognition heard.",
+      "noCorrections": "No corrections this time.",
       "turnAt": "Turn {n} · {time}",
       "showMore": "Show {n} more",
       "showFewer": "Show fewer",
@@ -1633,7 +1644,7 @@
       "cvFull": "Your profile already has 10 files, the most it keeps. Remove one in Settings → Profile, then send the CV again.",
       "addCv": "Add your CV",
       "addJobFile": "Add a job file",
-      "jobGot": "Got it: **{company}**, {role}. I saved it to your jobs and I'm preparing questions from it.",
+      "jobGot": "Got it: **{company}**{roleTail}. I saved it to your jobs and I'm preparing questions from it.",
       "jobShort": "This text is short, so most questions will be general.",
       "editDetails": "Edit details",
       "jobMeta": "Job description · {n} characters",
@@ -1644,9 +1655,9 @@
       "useGeneral": "Use general questions",
       "keywordMatch": "{round} for {company}, got it.",
       "roundOnly": "{round}, got it.",
-      "savedPicked_one": "{company}, {role}. {n} question from this job is ready.",
-      "savedPicked_other": "{company}, {role}. {n} questions from this job are ready.",
-      "savedPreparing": "{company}, {role}. I'm still preparing questions from this job.",
+      "savedPicked_one": "{company}{roleTail}. {n} question from this job is ready.",
+      "savedPicked_other": "{company}{roleTail}. {n} questions from this job are ready.",
+      "savedPreparing": "{company}{roleTail}. I'm still preparing questions from this job.",
       "generalPicked": "General questions for any role, then.",
       "again": "Same as {date}: {company}, {round}, {strictness}. Change anything below, or start.",
       "againGeneral": "Same as {date}: general questions, {round}, {strictness}. Change anything below, or start.",
@@ -1655,6 +1666,7 @@
       "drillMore_one": "One smaller one too.",
       "drillMore_other": "{n} smaller ones too.",
       "drillAsk": "What should we drill?",
+      "drillDirect": "Here's a drill on the weak spots we found. Check the plan and start when you're ready.",
       "drillAll": "All {n}",
       "example": "This is what you get after each question. It's an example from Sam, a product manager, not you.",
       "exampleTry": "Want to try? Paste a job, or start with general questions.",
@@ -1714,7 +1726,6 @@
       "changeFocus": "Change focus",
       "remove": "Remove",
       "removeNote": "Remove your note",
-      "jobValue": "{company} · {role}",
       "general": "General questions, no job",
       "ready_one": "{n} question ready",
       "ready_other": "{n} questions ready",
@@ -1723,6 +1734,7 @@
       "startWaits": "Start unlocks when the questions are ready.",
       "tryAgain": "Try again",
       "lengthValue": "{n} questions, about {min} minutes. Each question can have a follow-up.",
+      "lengthEnglish": "As long as you like · end any time",
       "drillLength": "{n} questions, about {min} minutes",
       "correctionsValue": "After each of your turns, up to 3, with a reason. Nothing appears while you speak.",
       "noCv": "Add your CV so questions use your own experience.",

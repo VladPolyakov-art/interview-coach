@@ -94,6 +94,8 @@ export const SETUP_SCENES = {
     engines: makeEngines({ ollama: "no_model", antigravity_cli: "ready" }), settings: SETTINGS,
     render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="antigravity_cli" /></SetupFrame>,
   },
+  /** Nothing is ready on this computer: nothing is picked, Continue waits for a pick. */
+  engineNoneReady: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} /></SetupFrame> },
   engineNotRunning: { engines: NONE_READY, settings: SETTINGS, render: () => <SetupFrame step="engine"><EngineStep onNext={noop} initialPick="ollama" /></SetupFrame> },
   checkIdle: { render: check({ phase: "idle" }) },
   checkListening: { render: check({ phase: "listening" }, 0.55) },

@@ -4,7 +4,7 @@ import { railSessions, railTitle } from "./railItems";
 describe("rail chat rows (D57)", () => {
   it("drops the shared 'Interview practice · ' prefix, keeps other titles", () => {
     expect(railTitle("Interview practice · About the job", "Untitled")).toBe("About the job");
-    expect(railTitle("Interview practice", "Untitled")).toBe("Interview practice");
+    expect(railTitle("Interview practice", "Untitled")).toBe("General questions");
     expect(railTitle("My Lumen rehearsal", "Untitled")).toBe("My Lumen rehearsal");
     expect(railTitle("  ", "Untitled")).toBe("Untitled");
   });
@@ -16,7 +16,7 @@ describe("rail chat rows (D57)", () => {
       { ...base, id: "b", title: "English practice", mode: "english", started_at: new Date(2026, 9, 20, 9).toISOString() },
       { ...base, id: "c", title: "", started_at: new Date(2026, 9, 1).toISOString() },
     ], "Untitled");
-    expect(rows.map((r) => [r.id, r.title, r.track])).toEqual([["b", "English practice", "english"], ["a", "Interview practice", "interview"], ["c", "Untitled", "interview"]]);
+    expect(rows.map((r) => [r.id, r.title, r.track])).toEqual([["b", "English practice", "english"], ["a", "General questions", "interview"], ["c", "Untitled", "interview"]]);
     expect(Object.keys(rows[0] ?? {}).sort()).toEqual(["id", "title", "track"]);
   });
 

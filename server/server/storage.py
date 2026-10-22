@@ -27,6 +27,51 @@ RECORD_ID = re.compile(r"[a-z0-9][a-z0-9-]{5,40}")
 _lock = threading.RLock()
 
 
+# ---------- Names (13: QA-04, QA-15) ----------
+# One rule for every list and heading: a job session is "Company · Role", an interview without a job is
+# "General questions", English is "English practice", a drill is "Drill · <the same name>".
+GENERAL_TITLE = "General questions"
+ENGLISH_TITLE = "English practice"
+DRILL_PREFIX = "Drill · "
+LEGACY_PREFIX = "Interview practice"
+
+
+def job_name(title: str) -> str:
+    """A job's name as "Company · Role": "Role at Company" is turned around, "Company - Role" normalised.
+    Anything else (one word, a sentence) stays as it is."""
+    line = " ".join(str(title or "").split())
+    if not line or " · " in line or len(line) > 140:
+        return line
+    at = re.match(r"^(.{3,80}?)\s+(?:at|@)\s+(.{2,60})$", line, re.I)
+    if at:
+        return f"{at.group(2).strip()} · {at.group(1).strip()}"
+    sep = re.match(r"^(.{2,60}?)\s+[|\u2013\u2014-]\s+(.{3,80})$", line)
+    if sep:
+        return f"{sep.group(1).strip()} · {sep.group(2).strip()}"
+    return line
+
+
+def session_title(mode: str, vacancy_title: str = "", drill: bool = False) -> str:
+    """The name a new session is saved under."""
+    if mode == "english":
+        return ENGLISH_TITLE
+    base = job_name(vacancy_title) or GENERAL_TITLE
+    return f"{DRILL_PREFIX}{base}" if drill else base
+
+
+def display_title(title: str) -> str:
+    """A saved title as it is shown. Sessions saved before 13 carry an "Interview practice" prefix: dropped here, so
+    "Interview practice · Kestrel Pay · Product Manager" reads "Kestrel Pay · Product Manager" and a bare
+    "Interview practice" reads "General questions". A name the user typed is left alone."""
+    raw = str(title or "").strip()
+    if raw == LEGACY_PREFIX:
+        return GENERAL_TITLE
+    head = LEGACY_PREFIX + " · "
+    if raw.startswith(head) and raw[len(head):].strip():
+        return raw[len(head):].strip()
+    return raw
+
+
 def now_iso() -> str:
     return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -115,7 +160,7 @@ def list_trash(kind: str) -> list[dict]:
         except (OSError, ValueError):
             continue
         items.append({"trash_id": path.stem, "id": data.get("id", path.stem),
-                      "title": data.get("title", ""), "started_at": data.get("started_at", ""),
+                      "title": display_title(data.get("title", "")), "started_at": data.get("started_at", ""),
                       "deleted_at": datetime.datetime.fromtimestamp(path.stat().st_mtime).astimezone()
                       .isoformat(timespec="seconds")})
     return sorted(items, key=lambda item: item["deleted_at"], reverse=True)
@@ -258,7 +303,7 @@ def render_session_markdown(session: dict) -> str:
              f"date: {started[:10]}", f"mode: {session.get('mode', '')}",
              f"engine: {session.get('engine', '')}", f"model: {session.get('model', '')}",
              "tags: [interview-practice]", "---", "",
-             f"# {session.get('title') or 'Practice session'}", "",
+             f"# {display_title(session.get('title', '')) or 'Practice session'}", "",
              "Saved on this computer.", ""]
     debrief = session.get("debrief") or {}
     if debrief.get("verdict"):

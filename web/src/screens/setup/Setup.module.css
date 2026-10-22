@@ -39,7 +39,12 @@
 }
 .head { display: flex; flex-direction: column; gap: var(--space-2); }
 .sub { color: var(--color-text-secondary); }
-.footer { display: flex; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+/* QA-06: Continue stays in view when the choices are long: the footer sticks to the bottom of the screen. */
+.footer {
+  display: flex; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; align-items: center;
+  position: sticky; bottom: 0; z-index: var(--z-sticky);
+  padding-block: var(--space-3); background: var(--color-canvas); border-top: var(--border-width) solid var(--color-border-subtle);
+}
 .footerRight { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; margin-inline-start: auto; }
 .note { font-size: var(--text-sm); color: var(--color-text-secondary); }
 .body { display: flex; flex-direction: column; gap: var(--space-6); }

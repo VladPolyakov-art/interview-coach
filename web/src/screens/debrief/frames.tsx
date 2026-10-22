@@ -67,6 +67,21 @@ const englishNoPhrases = {
   english: englishS3.english && { ...englishS3.english, phrases: [], repeated: 0, practiseMinutes: undefined },
 };
 
+/** F-13-7: a talk with nothing to correct: no empty "Corrections" heading, one line says so. */
+const englishNoCorrections = {
+  ...englishS3,
+  english: englishS3.english && { ...englishS3.english, corrections: [], removed: [], phrases: [], repeated: 0, practiseMinutes: undefined },
+};
+
+/** QA-14: a typed talk (rows say "You typed"), so the Corrections subtitle does not explain "Heard as". */
+const englishTyped = {
+  ...englishS3,
+  english: englishS3.english && {
+    ...englishS3.english,
+    corrections: englishS3.english.corrections.map((c) => ({ ...c, typed: true })),
+  },
+};
+
 const base = { variant: "interview", state: "ready" } as const;
 
 export const DEBRIEF_SCENES = {
@@ -85,6 +100,10 @@ export const DEBRIEF_SCENES = {
   english: { variant: "english", state: "ready", model: englishS3, route: "/sessions/s3" },
   /** US-24: no phrases to review, so "Practise again" stands alone. */
   englishNoPhrases: { variant: "english", state: "ready", model: englishNoPhrases, route: "/sessions/s3" },
+  /** F-13-7: nothing to correct, so the Corrections block is one line instead of an empty heading and list. */
+  englishNoCorrections: { variant: "english", state: "ready", model: englishNoCorrections, route: "/sessions/s3" },
+  /** QA-14: typed talk, the subtitle says nothing about "Heard as". */
+  englishTyped: { variant: "english", state: "ready", model: englishTyped, route: "/sessions/s3" },
   exampleContentFirst: { variant: "example", state: "ready", model: exampleSam, ui: { open: DEFAULT_OPEN.example }, route: "/sessions/example" },
   exampleDeliveryFirst: { variant: "example", state: "ready", model: exampleSam, layerOrder: "delivery-first", ui: { open: DEFAULT_OPEN.example }, route: "/sessions/example" },
   partial: { ...base, model: interviewPartial, ui: { open: DEFAULT_OPEN["s-partial"] }, route: "/sessions/s-partial" },

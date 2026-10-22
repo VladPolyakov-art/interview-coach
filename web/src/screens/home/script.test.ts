@@ -103,6 +103,23 @@ describe("home setup script", () => {
     expect(plan.focus?.label).toBe("Content: no result, “we” instead of “I”");
   });
 
+  it("13 (F-13-8, F-13-14): a drill from a debrief goes straight to the plan, keeps the job and asks nothing", () => {
+    const s = begin(CTX_RETURNING, { kind: "drill", jobId: "v2" });
+    expect(s.stage).toBe("plan");
+    expect(s.turns.some((x) => x.replies?.length)).toBe(false);
+    expect(s.turns.some((x) => x.text?.includes("What should we drill?"))).toBe(false);
+    const plan = planFor(CTX_RETURNING, s);
+    expect(plan).toMatchObject({ kind: "drill", questions: 3, job: { id: "v2", company: "Lumen Health" } });
+    expect(plan.focus?.spots).toBe("no result, “we” instead of “I”, “I have led”, fillers");
+  });
+
+  it("13 (QA-04): a job with no role is named without a dangling comma", () => {
+    let s = begin(CTX_RETURNING, { kind: "text", text: PASTED_TEXT });
+    s = resolveJob(CTX_RETURNING, s, { ok: true, job: { ...KESTREL_PASTED, role: "" } });
+    const got = s.turns.find((x) => x.text?.startsWith("Got it:"))?.text ?? "";
+    expect(got).toMatch(/^Got it: \*\*Kestrel Pay\*\*\. I saved it/);
+  });
+
   it("English: a returning user confirms the level, picks a topic, answers the phrases question", () => {
     let s = begin(CTX_ENGLISH, { kind: "suggestion", id: "en-work" });
     expect(last(s.turns).text).toBe("Same level as last time, B2?");

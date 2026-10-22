@@ -41,19 +41,22 @@ export interface SettingGroupProps {
   children: ReactNode;
   /** No side padding in the box: a table or list that draws its own cells edge to edge. */
   flush?: boolean;
+  /** Level of the title: 3 under a section heading (Settings), 2 straight under the page's h1 (Setup steps). */
+  headingLevel?: 2 | 3;
   className?: string;
 }
 
 /** A titled group of setting rows (D78): the title above, the rows in one rounded box with hairlines between them,
  * so where one group ends and the next begins is plain to see. */
-export function SettingGroup({ title, description, id, action, children, flush, className }: SettingGroupProps) {
+export function SettingGroup({ title, description, id, action, children, flush, headingLevel = 3, className }: SettingGroupProps) {
   const auto = useId();
   const headingId = id ?? auto;
+  const H = headingLevel === 2 ? "h2" : "h3";
   return (
     <section className={`${s.groupSection} ${className ?? ""}`} aria-labelledby={headingId}>
       <div className={s.groupHead}>
         <div className={s.groupHeadText}>
-          <h3 id={headingId} className={s.groupTitle}>{title}</h3>
+          <H id={headingId} className={s.groupTitle}>{title}</H>
           {description ? <p className={s.groupDesc}>{description}</p> : null}
         </div>
         {action}

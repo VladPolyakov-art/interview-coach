@@ -37,6 +37,10 @@ export const English = desktop("english");
 export const EnglishMobile = mobile("english");
 /** A clean English session: no phrases to review, so the action is a plain "Practise again" without a hint. */
 export const EnglishNoPhrases = desktop("englishNoPhrases");
+/** F-13-7: no corrections: "No corrections this time." instead of an empty Corrections heading. */
+export const EnglishNoCorrections = desktop("englishNoCorrections");
+/** QA-14: a typed talk: rows say "You typed" and the subtitle does not explain "Heard as". */
+export const EnglishTyped = desktop("englishTyped");
 /** §3.7: a fictional debrief (Sam Rivera) with the banner; Q3 open. */
 export const Example = desktop("exampleContentFirst");
 export const ExampleDeliveryFirst = desktop("exampleDeliveryFirst");

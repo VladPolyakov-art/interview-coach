@@ -1,5 +1,5 @@
 /* Fictional fixtures for the Debrief (GR2). Real user: Alex Morgan, Product Designer; session S2 = Kestrel Pay,
- * Oct 19, 20:40 (docs/ia.md §6, invariants 3–5). English S3. Example = Sam Rivera, PM, Brightline (invariant 10).
+ * Oct 19, 8:40 PM (docs/ia.md §6, invariants 3–5). English S3. Example = Sam Rivera, PM, Brightline (invariant 10).
  * Numbers must agree everywhere: fillers 8 · 11 · 6 · 12 · 8 = 45 → 9 per answer; lengths 1:50 · 2:20 · 1:35 · 3:40 · 2:05. */
 import { t, tp } from "../../i18n";
 import type {
@@ -182,7 +182,7 @@ export const interviewS2: DebriefModel = {
   title: "Kestrel Pay · Senior Product Designer",
   meta: [
     { icon: "briefcase", text: "Behavioural · Standard" },
-    { icon: "clock", text: "Oct 19, 20:40 · 24 min" },
+    { icon: "clock", text: "Oct 19, 8:40 PM · 24 min" },
     { icon: "chat", text: counts(5, 4) },
     // D88: requests this session sent, and the share of the plan where the plan reports one.
     { icon: "cpu", text: `${tp("debrief.meta.requests", 17)} · ${t("debrief.meta.spent", { used: t("engines.limits.underOne"), window: "monthly" })}` },
@@ -245,7 +245,7 @@ export const interviewPartial: DebriefModel = {
   title: "Kestrel Pay · Senior Product Designer",
   meta: [
     { icon: "briefcase", text: "Behavioural · Standard" },
-    { icon: "clock", text: "Oct 20, 08:15 · 6 min" },
+    { icon: "clock", text: "Oct 20, 8:15 AM · 6 min" },
     { icon: "chat", text: t("debrief.meta.answered", { answered: 2, total: 5 }) },
     saved,
   ],
@@ -288,7 +288,7 @@ export const englishS3: DebriefModel = {
   title: "English · Talk about your work",
   meta: [
     { icon: "language", text: "B2" },
-    { icon: "clock", text: "Oct 18, 21:05 · 11 min" },
+    { icon: "clock", text: "Oct 18, 9:05 PM · 11 min" },
     { icon: "chat", text: tp("debrief.meta.turns", 9) },
     { icon: "cpu", text: tp("debrief.meta.requests", 13) },
     saved,
@@ -362,7 +362,7 @@ export const exampleSam: DebriefModel = {
   title: "Brightline · Product Manager, Growth",
   meta: [
     { icon: "briefcase", text: "Behavioural · Standard" },
-    { icon: "clock", text: "Oct 14, 19:30 · 22 min" },
+    { icon: "clock", text: "Oct 14, 7:30 PM · 22 min" },
     { icon: "chat", text: counts(5, 3) },
   ],
   verdict: { step: 1, headline: "Getting there", line: "Strong on the why, but 3 answers skip the decision you made yourself." },

@@ -55,6 +55,7 @@ Source of truth: `server/ws.py` (socket loop), `server/session.py` (local interv
 | `voice` | Kokoro voice id from `GET /api/voices` | settings, else `am_michael` |
 | `speak` | `false` for text-only replies | `true` (ignored when Kokoro is not installed) |
 | `suggest` | turn the answer suggester on (only if settings `answer_suggester` is true) | `false` |
+| `drill` | `true` marks a weak-spot drill (interview only): the saved session is named "Drill · Company · Role" (or "Drill · General questions"); nothing else changes | `false` |
 | `topic` | English mode: conversation topic, up to 80 characters | none |
 | `engine` | override the selected engine for this session | settings `engine` |
 | `resume_session_id` | continue a saved session after a dropped connection (US-13 AC5): same record, transcript and feedback kept; Mike says sorry and asks again (or replies to the last answer). `mode`, `round_type`, `level`, `strictness`, `vacancy_id` come from the record. Not for Gemini Live | none |

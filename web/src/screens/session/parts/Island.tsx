@@ -89,6 +89,8 @@ export interface SessionIslandProps {
   /** The browser can't recognise speech (S12b): the mic is disabled with the reason. */
   noSpeech: boolean;
   layout: "inline" | "stacked";
+  /** A phone-width stacked island (< 420): the text-mode tools go to the second row (13, QA-10). */
+  compact?: boolean;
   panelOpen: boolean;
   /** QA-01: feedback is ready and the panel is closed: a dot on the toggle, and the name says so. */
   feedbackUnread?: boolean;
@@ -125,7 +127,7 @@ function Status({ data, variant, entering, context, full }: Pick<SessionIslandPr
   );
   // D62 tools "open": the context that lived in the More header is the status tooltip (🟡 hover only).
   if (!context) return status;
-  const tip = [data.title, variant === "interview" ? data.sub : null, ...(data.badges ?? []).map((b) => b.label)].filter(Boolean).join(" · ");
+  const tip = [data.title, variant !== "english" ? data.sub : null, ...(data.badges ?? []).map((b) => b.label)].filter(Boolean).join(" · ");
   return <Tooltip content={tip} placement="top-start">{status}</Tooltip>;
 }
 
@@ -172,7 +174,7 @@ function MenuHeader({ data, variant }: Pick<SessionIslandProps, "data" | "varian
       <Tooltip content={data.title} onlyWhenTruncated block>
         <span className={s.menuTitle} data-truncate>{data.title}</span>
       </Tooltip>
-      {data.sub && variant === "interview" ? <span className={s.menuSub}>{data.sub}</span> : null}
+      {data.sub && variant !== "english" ? <span className={s.menuSub}>{data.sub}</span> : null}
       {data.badges?.length ? (
         <span className={s.menuBadges}>
           {data.badges.map((b) => <Badge key={b.label} tone={b.tone} icon={b.icon}>{b.label}</Badge>)}
@@ -351,11 +353,20 @@ export function SessionIsland(p: SessionIslandProps) {
     const mainGroup: IslandGroup | null = model.main
       ? { id: "voice", row: 2, grow: true, label: t("session.island.voice"), reviewId: "Session/Island/Controls", children: main }
       : null;
-    groups = stacked
+    const toolsGroup: IslandGroup = { id: "tools", row: p.compact ? 2 : 1, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{suggest}{feedback}{more}</> };
+    const exitGroup: IslandGroup = { id: "exit", row: 1, label: t("session.island.exit"), reviewId: "Session/Island/More", children: end };
+    groups = stacked && p.compact
       ? [
           statusGroup(1, true),
-          { id: "tools", row: 1, label: t("session.island.tools"), reviewId: "Session/Island/Tools", children: <>{type}{suggest}{feedback}{more}</> },
-          { id: "exit", row: 1, label: t("session.island.exit"), reviewId: "Session/Island/More", children: end },
+          exitGroup,
+          mainGroup ?? { id: "spacer", row: 2, grow: true, children: null },
+          toolsGroup,
+        ]
+      : stacked
+      ? [
+          statusGroup(1, true),
+          toolsGroup,
+          exitGroup,
           ...(mainGroup ? [mainGroup] : []),
         ]
       : [

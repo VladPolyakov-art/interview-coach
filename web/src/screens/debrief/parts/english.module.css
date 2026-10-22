@@ -1,5 +1,6 @@
 .section { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 .summary { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-medium); line-height: var(--leading-normal); max-width: 60ch; }
+.empty { margin: 0; color: var(--color-text-secondary); font-size: var(--text-md); }
 .block {
   display: flex;
   flex-direction: column;

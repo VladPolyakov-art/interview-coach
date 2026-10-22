@@ -10,7 +10,7 @@
  * scrolled up → "Jump to latest"). Mike's presence is a glow along the top edge (ds/Presence), only while someone talks
  * or Mike thinks; the transcript starts in its lower part (D91). The one state text sits in the glow, top centre (D92). */
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Button, Drawer, IconButton, Panel, Presence, scrollBehavior, StatusPill, usePresence } from "../../ds";
+import { Button, Drawer, IconButton, Panel, Presence, scrollBehavior, StatusPill, usePresence, useScrollFocusable } from "../../ds";
 import { t } from "../../i18n";
 import { Banners } from "./parts/Banners";
 import { FirstTime } from "./parts/FirstTime";
@@ -69,9 +69,10 @@ export function SessionView(props: SessionViewProps) {
   const { variant, input, phase, overlay, muted, data, handlers, entering } = props;
   const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollFocus = useScrollFocusable(t("session.transcript"), scrollRef); // QA-09: reachable by keyboard when it scrolls
   const islandRef = useRef<HTMLDivElement>(null);
   const feedbackRef = useRef<HTMLButtonElement>(null);
-  const { layout, stacked: narrowIsland } = useSessionLayout(rootRef);
+  const { layout, stacked: narrowIsland, compact: compactIsland } = useSessionLayout(rootRef);
   const wide = layout === "wide";
   const compact = layout === "narrow";
   const voice = input === "voice";
@@ -287,6 +288,7 @@ export function SessionView(props: SessionViewProps) {
     >
       <div className={s.body}>
         <main className={s.stage} id="main" data-review-id="Session/Stage" data-review-section="Session · Stage" data-comment-target>
+          <h1 className="visually-hidden">{data.title}</h1>{/* QA-12: the page's one h1 (the title left the screen, session.md V2.3) */}
           <div className={s.presenceBox} data-review-id="Session/Presence" data-review-section="Session · Presence" data-comment-target>
             <Presence
               state={stage.presence}
@@ -299,7 +301,7 @@ export function SessionView(props: SessionViewProps) {
           <div className={`${s.status} ${s.shift}`} data-review-id="Session/Status" data-review-section="Session · Status" data-comment-target>
             <StatusPill state={stage.pill} label={stage.label} live={stage.live} sub={stage.sub} subFadeMs={stage.hint ? (props.hintMs ?? HINT_MS) : undefined} surface="glass" className={data.micTip && muted ? s.statusQuiet : undefined} />
           </div>
-          <div className={s.scroll} ref={scrollRef} onScroll={onScroll}>
+          <div className={s.scroll} onScroll={onScroll} {...scrollFocus}>
             <div className={`${s.flow} ${s.shift}`}>
               {showTranscript ? (
                 <Transcript
@@ -310,7 +312,7 @@ export function SessionView(props: SessionViewProps) {
                 />
               ) : null}
               {interrupted ? <Interrupted kind={overlay === "interrupted-voice" ? "voice" : "engine"} handlers={handlers} info={data.interrupted} /> : null}
-              {showTips ? <FirstTime input={input} pauseSec={data.pauseSec} layout={layout} /> : null}
+              {showTips ? <FirstTime input={input} pauseSec={data.pauseSec} layout={layout} english={variant === "english"} /> : null}
               {showSuggester && suggestOn && !interrupted ? <Suggester suggestion={data.suggestion} /> : null}
             </div>
           </div>
@@ -341,6 +343,7 @@ export function SessionView(props: SessionViewProps) {
                     voiceDown={overlay === "interrupted-voice"}
                     noSpeech={overlay === "browser" || Boolean(props.banners?.browser)}
                     layout={props.island ?? (narrowIsland ? "stacked" : "inline")}
+                    compact={props.island ? props.island === "stacked" : compactIsland}
                     panelOpen={panelOpen}
                     feedbackUnread={unread}
                     onToggleFeedback={() => setPanel(!panelOpen)}

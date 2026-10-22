@@ -4,6 +4,7 @@
 import type { ReactNode, Ref } from "react";
 import { Button, Card, Dots, Icon, Menu, TextShimmer, type ListboxOption, type MenuEntry } from "../../../ds";
 import { t, tp } from "../../../i18n";
+import { joinTitle } from "../../../components/vacancyTitle";
 import { levelValue, roundValue, strictnessValue } from "../script";
 import type { HomeViewProps, JobItem, Level, PlanModel, PlanRow, RoundType, Strictness } from "../types";
 import s from "./parts.module.css";
@@ -49,8 +50,11 @@ function Row({ term, children, action }: { term: string; children: ReactNode; ac
   return (
     <div className={s.row}>
       <dt className={s.term}>{term}</dt>
-      <dd className={s.value}>{children}</dd>
-      {action ?? <span aria-hidden="true" />}
+      {/* QA-08: the Change action lives inside the dd, so the list stays `dl > div > dt + dd`. */}
+      <dd className={s.value}>
+        <div className={s.valueBody}>{children}</div>
+        {action}
+      </dd>
     </div>
   );
 }
@@ -101,6 +105,7 @@ export function PlanCard(props: PlanCardProps) {
                 {plan.topic}
               </Row>
               <Row term={t("chat.plan.corrections")}>{t("chat.plan.correctionsValue")}</Row>
+              <Row term={t("chat.plan.length")}>{t("chat.plan.lengthEnglish")}</Row>
               {plan.phrases?.length ? <Row term={t("chat.plan.phrases")}>{plan.phrases.join(" · ")}</Row> : null}
             </>
           ) : (
@@ -127,7 +132,7 @@ export function PlanCard(props: PlanCardProps) {
                   />
                 )}
               >
-                <span>{plan.job ? t("chat.plan.jobValue", { company: plan.job.company, role: plan.job.role }) : t("chat.plan.general")}</span>
+                <span>{plan.job ? joinTitle(plan.job) : t("chat.plan.general")}</span>
                 {jobStatus}
               </Row>
               {!drill ? (
@@ -160,7 +165,6 @@ export function PlanCard(props: PlanCardProps) {
             <Button variant="link" size="sm" onClick={props.onAddCv}>{t("chat.plan.addCv")}</Button>
           </p>
         ) : null}
-        {english ? <p className={s.planFree}>{t("english.free")}</p> : null}
         <div className={s.actions} data-review-id="Home/Start" data-review-section="Home · Start" data-comment-target>
           {starting ? (
             <span className={s.startSlot}><Dots variant="pill" shimmer showLabel label={t("home.connecting")} /></span>

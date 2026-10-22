@@ -69,7 +69,7 @@ export function AboutStep({ headingRef, onBack, initialJob = "", initialSaveErro
       {saveView}
       <div className={s.body}>
         <div data-review-id="Setup/About/Name" data-review-section="Setup · About you · Name" data-comment-target>
-          <SettingGroup title={t("setup.about.nameGroup")}>
+          <SettingGroup title={t("setup.about.nameGroup")} headingLevel={2}>
             <SettingRow id="setup-name" label={t("setup.about.name")} description={t("setup.about.nameHint")}>
               <Input label={t("setup.about.name")} hideLabel className={s.nameInput} value={value} maxLength={NAME_MAX}
                 placeholder={t("setup.about.namePlaceholder")} autoComplete="given-name" spellCheck={false}
@@ -79,12 +79,12 @@ export function AboutStep({ headingRef, onBack, initialJob = "", initialSaveErro
           </SettingGroup>
         </div>
         <div data-review-id="Setup/About/CV" data-review-section="Setup · About you · CV" data-comment-target>
-          <SettingGroup title={t("setup.about.cv")} description={t("setup.about.cvHint")}>
+          <SettingGroup title={t("setup.about.cv")} description={t("setup.about.cvHint")} headingLevel={2}>
             <ProfileEditor id="setup-cv" />
           </SettingGroup>
         </div>
         <div data-review-id="Setup/About/Job" data-review-section="Setup · About you · Job and round" data-comment-target>
-          <SettingGroup title={t("setup.about.job")} description={t("setup.about.jobHint")}>
+          <SettingGroup title={t("setup.about.job")} description={t("setup.about.jobHint")} headingLevel={2}>
             <SettingRow id="setup-job" label={job ? <span className={s.job}><Icon name="briefcase" size="sm" /><span className={s.jobTitle}>{job}</span></span> : t("setup.about.job")}>
               <Button size="sm" variant="secondary" icon={job ? undefined : "plus"} onClick={() => setEditor(true)}>
                 {job ? t("setup.about.jobChange") : t("setup.about.jobAdd")}

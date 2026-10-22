@@ -14,6 +14,8 @@ export function EnglishBody({ english, ctx, ids }: { english: EnglishModel; ctx:
   const total = english.corrections.length;
   const shown = all ? english.corrections : english.corrections.slice(0, english.visible);
   const hidden = total - english.visible;
+  // QA-14: the "Heard as" explanation only when some row says "Heard as" (a typed talk says "You typed").
+  const heardAs = english.corrections.some((c) => !c.typed);
   return (
     <>
       <section className={s.section} aria-labelledby={ids.summary} data-review-id="Debrief/EnglishSummary" data-review-section="Debrief · Summary" data-comment-target="">
@@ -24,8 +26,14 @@ export function EnglishBody({ english, ctx, ids }: { english: EnglishModel; ctx:
         </p>
       </section>
 
+      {total === 0 ? (
+        /* F-13-7: nothing to list, so no empty heading and no empty block: one plain line. */
+        <section className={s.section} aria-label={t("debrief.english.corrections")} data-review-id="Debrief/EnglishCorrections" data-review-section="Debrief · Corrections" data-comment-target="">
+          <p className={s.empty}>{t("debrief.english.noCorrections")}</p>
+        </section>
+      ) : (
       <section className={s.section} aria-labelledby={ids.corrections} data-review-id="Debrief/EnglishCorrections" data-review-section="Debrief · Corrections" data-comment-target="">
-        <SectionHead id={ids.corrections} title={t("debrief.english.corrections")} sub={t("debrief.english.correctionsSub")} />
+        <SectionHead id={ids.corrections} title={t("debrief.english.corrections")} sub={t(heardAs ? "debrief.english.correctionsSubHeard" : "debrief.english.correctionsSub")} />
         <div className={s.block}>
           {shown.map((c, i) => (
             <div key={c.id} className={i >= english.visible ? "motion-rise-base" : undefined}>
@@ -53,6 +61,8 @@ export function EnglishBody({ english, ctx, ids }: { english: EnglishModel; ctx:
           <RemovedLines lines={english.removed} />
         </div>
       </section>
+
+      )}
 
       {english.phrases.length ? (
         <section className={s.section} aria-labelledby={ids.phrases} data-review-id="Debrief/EnglishPhrases" data-review-section="Debrief · Phrases to review" data-comment-target="">

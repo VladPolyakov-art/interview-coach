@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Button, Callout } from "../../ds";
 import { t } from "../../i18n";
 import { EngineChoice } from "../../components/engine/EngineChoice";
-import { engineName } from "../../components/engine/meta";
+import { RECOMMENDED, engineName } from "../../components/engine/meta";
 import { prefs } from "../../lib/prefs";
 import { errorMessage, useApp } from "../../lib/store";
 import type { EngineId } from "../../lib/types";
@@ -27,8 +27,10 @@ export function EngineStep({ headingRef, onNext, initialPick }: EngineStepProps)
   const [pick, setPick] = useState<EngineId | null>(initialPick ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // A rerun (setup done before) starts on the engine in use; the first run starts with nothing picked.
-  const value = pick ?? (prefs.setupDone() && inUse ? inUse.id : null);
+  // A rerun (setup done before) starts on the engine in use; the first run starts on the recommended one when it is
+  // ready (QA-06), otherwise on nothing: the user chooses, and Continue waits.
+  const recommended = engines?.engines.find((e) => e.id === RECOMMENDED && e.status.ready) ?? null;
+  const value = pick ?? (prefs.setupDone() && inUse ? inUse.id : recommended ? recommended.id : null);
   const picked = engines?.engines.find((e) => e.id === value) ?? null;
   const ready = Boolean(picked?.status.ready);
 

@@ -117,6 +117,10 @@ export const S14dSuggester = scene("S14d · Answer suggester on", "suggester");
 export const S1TipsMid = scene("Mid · First-time tips (text)", "q1-start", { args: { frame: "mid" } }, { input: "text" });
 export const S1TipsNarrow = scene("Narrow · First-time tips (text)", "q1-start", { args: { frame: "mobile" } }, { input: "text" });
 export const S1TipsWideText = scene("S1 · First-time tips (text)", "q1-start", {}, { input: "text" });
+/* 13 (F-13-9): English has turns, not questions: the tip says "after each turn" in all three layouts. */
+export const S8TipsEnglishWide = scene("English · First-time tips, wide (text)", "q1-start", {}, { input: "text", variant: "english" });
+export const S8TipsEnglishMid = scene("English · First-time tips, mid (text)", "q1-start", { args: { frame: "mid" } }, { input: "text", variant: "english" });
+export const S8TipsEnglishNarrow = scene("English · First-time tips, narrow (text)", "q1-start", { args: { frame: "mobile" } }, { input: "text", variant: "english" });
 
 /* The same feedback on a phone and in the mid layout: bottom sheet and right drawer. */
 export const NarrowFeedback = scene("Narrow · Feedback sheet", "feedback", { args: { frame: "mobile" } });
@@ -131,6 +135,8 @@ export const MidFeedbackReadyDot = scene("Mid · Feedback ready, dot on the togg
 export const NarrowFeedbackReadyDot = scene("Narrow · Feedback ready, dot on the toggle", "feedback", { args: { frame: "mobile" } }, { panelOpen: false, feedbackUnread: true });
 export const S6TextIsland = scene("S6 · Text mode island (box)", "text", { args: { withChecks: false } });
 export const Shortcuts = scene("Keyboard shortcuts dialog", "feedback", {}, { initialOverlay: "shortcuts" });
+/* 13 (QA-10): the text-mode island on a phone: status and End on row 1, the tools on row 2. */
+export const S6TextIslandPhone = scene("Narrow · Text mode island, two rows", "text", { args: { frame: "mobile", withChecks: false } });
 export const NarrowIsland = scene("Narrow · Island, two rows", "listening", { args: { frame: "mobile" } }, { panelOpen: false });
 
 /* v2.1 (D49): running transcript + Presence glow. */

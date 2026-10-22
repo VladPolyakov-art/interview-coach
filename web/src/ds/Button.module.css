@@ -21,6 +21,23 @@
 .button:not(:disabled):not([aria-disabled="true"]):active { transform: scale(0.97); }
 .link:not(:disabled):active { transform: none; }
 
+/* 13 (QA-03): the touch target is bigger than the look. On coarse pointers a see-through ::before widens the hit area
+ * to the touch size (44px, WCAG 2.5.5); the look and the layout do not change. The inline link has no fill, so its box
+ * itself is 24px (WCAG 2.5.8 counts the element's own box, not a pseudo-element). min(0px, …) keeps a control that is
+ * already large from shrinking its own hit area. */
+.link { position: relative; }
+@media (pointer: coarse) {
+  .button,
+  .iconButton { position: relative; }
+  .button::before,
+  .iconButton::before {
+    content: "";
+    position: absolute;
+    inset-block: min(0px, calc((100% - var(--control-h-touch)) / 2));
+    inset-inline: min(0px, calc((100% - var(--control-h-touch)) / 2));
+  }
+}
+
 .button:disabled,
 .button[aria-disabled="true"] {
   cursor: not-allowed;
@@ -58,7 +75,8 @@
   background: transparent;
   color: var(--color-text-link);
   padding: 0 var(--space-1);
-  min-height: auto;
+  min-height: var(--space-6);
+  min-width: var(--space-6);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }

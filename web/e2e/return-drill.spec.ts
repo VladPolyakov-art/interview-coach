@@ -116,16 +116,14 @@ test.describe("US-20 AC1 What next, in the debrief", () => {
     await page.getByRole("button", { name: /^Verdict/ }).click();
     await page.getByRole("button", { name: "Drill these weak spots" }).click();
 
-    // Home opens straight in the drill: Mike names the recurring weak spots and asks which layer to drill.
-    await expect(page).toHaveURL(/\/\?drill=1$/);
+    // F-13-14: Home opens the drill plan straight away, no "What should we drill?" question, and it keeps the job.
+    await expect(page).toHaveURL(/\/\?drill=1&job=/);
     const chat = page.getByRole("log", { name: "Setup with Mike" });
-    await expect(chat).toContainText("From your last 3 interviews");
-    await expect(chat).toContainText("end with the result (3 sessions)");
-    const replies = page.getByRole("group", { name: "Quick replies" });
-    await expect(replies.getByRole("button", { name: "All 2" })).toBeVisible();
-    await replies.getByRole("button", { name: "All 2" }).click();
+    await expect(chat).toContainText("Here's a drill on the weak spots we found");
+    await expect(chat).not.toContainText("What should we drill?");
     const plan = page.getByRole("region", { name: "Here's the plan" });
-    await expect(plan).toContainText("All 2: end with the result, prepositions");
+    await expect(plan).toContainText("Kestrel Pay · Product Manager");
+    await expect(plan).toContainText("end with the result");
     await expect(plan).toContainText("3 questions");
   });
 });

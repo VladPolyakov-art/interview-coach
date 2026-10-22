@@ -194,7 +194,7 @@ def test_session_list_names_the_first_question_and_short_sessions(client):
 
 def test_posting_title_skips_board_headers():
     from server.api import posting_title
-    assert posting_title("About the job\n\nSenior Product Designer at Kestrel Pay\nWe build...") == "Senior Product Designer at Kestrel Pay"
+    assert posting_title("About the job\n\nSenior Product Designer at Kestrel Pay\nWe build...") == "Kestrel Pay · Senior Product Designer"
     assert posting_title("Job description:\n") == "Job posting"
 
 
@@ -274,3 +274,20 @@ def test_dictation_without_local_stt_says_so(client, monkeypatch):
     monkeypatch.setattr(stt_module, "get_stt", lambda settings: stt_module.STT(None))
     r = client.post("/api/stt/transcribe", headers=SAME, json={"data": ""})
     assert r.status_code == 503 and r.json()["detail"]["code"] == "stt_unavailable"
+
+
+def test_session_naming_rule():
+    from server.storage import display_title, job_name, session_title
+    assert job_name("Product Manager at Kestrel Pay") == "Kestrel Pay · Product Manager"
+    assert job_name("Kestrel Pay - Product Manager") == "Kestrel Pay · Product Manager"
+    assert job_name("Kestrel Pay · Product Manager") == "Kestrel Pay · Product Manager"
+    assert session_title("interview", "Product Manager at Kestrel Pay") == "Kestrel Pay · Product Manager"
+    assert session_title("interview", "") == "General questions"
+    assert session_title("english", "Kestrel Pay · PM") == "English practice"
+    assert session_title("interview", "Kestrel Pay · PM", drill=True) == "Drill · Kestrel Pay · PM"
+    assert session_title("interview", "", drill=True) == "Drill · General questions"
+    # records saved before 13 keep their stored title but are shown by the new rule
+    assert display_title("Interview practice · Kestrel Pay · Product Manager") == "Kestrel Pay · Product Manager"
+    assert display_title("Interview practice") == "General questions"
+    assert display_title("English practice") == "English practice"
+    assert display_title("My own name") == "My own name"

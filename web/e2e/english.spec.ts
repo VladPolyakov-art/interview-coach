@@ -51,7 +51,10 @@ test.describe("US-24 English practice", () => {
     await expect(plan).toContainText("B1: familiar topics, more corrections");
     await expect(plan).toContainText("After each of your turns, up to 3, with a reason. Nothing appears while you speak.");
     // AC5: no cap, paywall or upsell.
-    await expect(plan).toContainText("Free forever: no limits on English practice.");
+    // 13 (F-13-13): "Free forever" is said once (the footer), and the plan has a Length row.
+    await expect(page.getByText("Free forever: no limits on English practice.")).toHaveCount(1);
+    await expect(plan).not.toContainText("Free forever");
+    await expect(plan).toContainText("As long as you like · end any time");
     await plan.getByRole("button", { name: "Type instead" }).click();
 
     await expect(page).toHaveURL(/\/session$/);
@@ -75,7 +78,7 @@ test.describe("US-24 English practice", () => {
     await expect(language).toContainText("Use 'for' with periods of time");
     // The second slip: the corrected phrase is split into spans for the heard-as label, so assert on its reason.
     await expect(language).toContainText("Agree is itself the verb");
-    await expect(language).toContainText("B1 grammar");
+    await expect(language).toContainText("B1 rule");
     await expect(panel.getByRole("region", { name: "Content" })).toHaveCount(0);
     await expect(panel.getByRole("region", { name: "Delivery" })).toHaveCount(0);
 
@@ -143,6 +146,7 @@ test.describe("US-24 English practice", () => {
     await expect(conversation(page)).toContainText("Mike: That sounds interesting.");
     await (await endSession(page, "End practice")).click();
     await expect(page.getByRole("region", { name: "Corrections" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Corrections" })).toContainText("No corrections this time.");
     const actions = page.getByRole("region", { name: "What next" });
     await expect(actions).toBeVisible();
     await expect(actions.getByRole("button", { name: "Practise again" })).toBeVisible();

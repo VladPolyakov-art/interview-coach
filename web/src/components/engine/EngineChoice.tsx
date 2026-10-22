@@ -29,7 +29,7 @@ export function EngineChoice({ value, onChange }: EngineChoiceProps) {
 
   const recheck = <IconButton icon="refresh" size="sm" label={t("common.checkAgain")} disabled={enginesLoading} onClick={() => void refreshEngines()} />;
   return (
-    <SettingGroup title={t("engines.choice.title")} description={t("engines.choice.hint")} action={recheck} flush>
+    <SettingGroup title={t("engines.choice.title")} description={t("engines.choice.hint")} action={recheck} headingLevel={2} flush>
       <div role="radiogroup" aria-label={t("engines.choice.title")}>
         {engines.engines.map((e) => {
           const on = e.id === value;

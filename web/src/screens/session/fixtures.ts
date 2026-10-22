@@ -219,7 +219,7 @@ export function fixtureProps({ scene, layerOrder = "content-first", withChecks =
     }
     case "drill":
       return withThread({
-        title: "Drill", sub: undefined, progress: "Question 1 of 3", elapsed: 8, answered: false, earlier: [], nextNumber: 2,
+        title: "Drill · Kestrel Pay · Product Manager", sub: "Focus: no result, we instead of I", progress: "Question 1 of 3", elapsed: 8, answered: false, earlier: [], nextNumber: 2,
         question: "Tell me about a time you led a project from start to finish. What did you do, and what was the result?",
         badges: [
           { label: "No result", tone: "outline", icon: "content" },

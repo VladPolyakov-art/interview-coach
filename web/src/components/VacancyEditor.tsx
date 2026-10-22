@@ -1,7 +1,7 @@
 /* Add / edit a job (home.md §3.5). `VacancyEditorView` is the pure dialog (every state by props: paste, file, link,
  * saving, edit); `VacancyEditor` is the live wrapper (POST /api/vacancies). `DeleteJobDialog` is the confirm. */
 import { useEffect, useRef, useState } from "react";
-import { Button, Callout, Card, Dialog, Dots, FileDrop, Input, Segmented, Spinner, Textarea, TextShimmer } from "../ds";
+import { Button, Callout, Card, Dialog, FileDrop, Input, Segmented, Spinner, Textarea, TextShimmer } from "../ds";
 import { t } from "../i18n";
 import { api, fileToBase64 } from "../lib/api";
 import { errorMessage } from "../lib/store";
@@ -74,11 +74,8 @@ export function VacancyEditorView(p: VacancyEditorViewProps) {
       actions={(
         <>
           <Button variant="ghost" onClick={p.onClose}>{t("common.cancel")}</Button>
-          {saving ? (
-            <Dots variant="pill" label={t("vacancy.saving")} />
-          ) : (
-            <Button variant="primary" disabled={!canSave} onClick={p.onSave}>{saveLabel ?? t("vacancy.save")}</Button>
-          )}
+          {/* F-13-11: the button stays where it was and says what it is doing. */}
+          <Button variant="primary" disabled={!canSave} loading={saving} onClick={p.onSave}>{saving ? t("vacancy.saving") : saveLabel ?? t("vacancy.save")}</Button>
         </>
       )}
     >

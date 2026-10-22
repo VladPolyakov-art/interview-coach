@@ -33,6 +33,12 @@ export const debriefReview: ReviewScreen = {
     state("english-no-phrases", "English · нечего повторять", "englishNoPhrases", {
       note: "12d: в чистой сессии нет фраз для повторения — внизу просто «Practise again», без строки «uses these 0 phrases».",
     }),
+    state("english-no-corrections", "English · без исправлений", "englishNoCorrections", {
+      note: "13, F-13-7: нет исправлений — вместо пустого заголовка «Corrections» одна строка «No corrections this time.».",
+    }),
+    state("english-typed", "English · набрано текстом", "englishTyped", {
+      note: "13, QA-14: у строк «You typed», а подзаголовок Corrections не объясняет «Heard as».",
+    }),
     state("example", "Example · Sam Rivera, Brightline", "exampleContentFirst", {
       tall: true,
       note: "Выдуманный пример с баннером Example; Q3 открыт. Для нового пользователя — путь «Start your first interview».",

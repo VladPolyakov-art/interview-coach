@@ -74,7 +74,9 @@ export interface SetupState {
 export type StartInput =
   | { kind: "text"; text: string }
   | { kind: "file"; name: string; size: string }
-  | { kind: "suggestion"; id: SuggestionId };
+  | { kind: "suggestion"; id: SuggestionId }
+  /** "Drill these weak spots" in a debrief: straight to the plan, with that interview's job (F-13-8, F-13-14). */
+  | { kind: "drill"; jobId?: string | null };
 
 /* ---------- copy helpers ---------- */
 
@@ -125,6 +127,8 @@ export function matchJob(text: string, jobs: JobItem[]): JobItem | undefined {
     return v.includes(name) || (first.length > 2 && new RegExp(`\\b${first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(v));
   });
 }
+/** ", Product Manager" after the company, or nothing when the role is not known: no dangling comma (13, QA-04). */
+const roleTail = (job: { role: string }) => (job.role.trim() ? `, ${job.role.trim()}` : "");
 const matchGeneral = (text: string) => /general|any role|no job|common questions/.test(text.toLowerCase());
 export function matchLevel(text: string): Level | undefined {
   const m = text.toUpperCase().match(/\b(A2|B1|B2|C1)\b/);
@@ -298,6 +302,11 @@ function showPlan(_ctx: ScriptContext, s: SetupState, text = t("chat.setup.plan"
 export function begin(ctx: ScriptContext, input: StartInput): SetupState {
   let s = empty(ctx, ctx.track);
   if (input.kind === "suggestion") return suggestion(ctx, s, input.id);
+  if (input.kind === "drill") {
+    // Nothing to ask: the weak spots are known and the job comes with the link. The focus stays changeable in the plan.
+    s.draft = { ...s.draft, kind: "drill", jobId: input.jobId ?? ctx.last?.jobId ?? null, round: "mix", focus: "all" };
+    return showPlan(ctx, s, t("chat.setup.drillDirect"));
+  }
   if (input.kind === "file") {
     s = push(s, { speaker: "user", attachment: { kind: "file", label: input.name, meta: input.size } });
     s.steps = ["job", "round", "anything"];
@@ -336,8 +345,8 @@ export function begin(ctx: ScriptContext, input: StartInput): SetupState {
 }
 
 function pickedLine(job: JobItem) {
-  if (job.state === "preparing") return t("chat.setup.savedPreparing", { company: job.company, role: job.role });
-  return tp("chat.setup.savedPicked", job.questions, { company: job.company, role: job.role });
+  if (job.state === "preparing") return t("chat.setup.savedPreparing", { company: job.company, roleTail: roleTail(job) });
+  return tp("chat.setup.savedPicked", job.questions, { company: job.company, roleTail: roleTail(job) });
 }
 
 function suggestion(ctx: ScriptContext, s: SetupState, id: SuggestionId): SetupState {
@@ -440,7 +449,7 @@ export function resolveJob(ctx: ScriptContext, s: SetupState, result: JobResult)
   const short = result.short ?? (p.text !== undefined && p.text.length < SHORT_JOB_CHARS);
   next.jobs = [job, ...next.jobs.filter((j) => j.id !== job.id)];
   next.draft = { ...next.draft, jobId: job.id };
-  const got = t("chat.setup.jobGot", { company: job.company, role: job.role });
+  const got = t("chat.setup.jobGot", { company: job.company, roleTail: roleTail(job) });
   next = mike(next, short ? `${got} ${t("chat.setup.jobShort")}` : got, { action: { id: "edit-job", label: t("chat.setup.editDetails"), icon: "edit" } });
   return advance(ctx, { ...next, stage: "job" });
 }
@@ -632,6 +641,7 @@ export function planFor(ctx: ScriptContext, s: SetupState): PlanModel {
     hasCv: ctx.hasCv,
     focus: d.kind === "drill"
       ? {
+        spots: focusItems.map((w) => w.short ?? w.title).join(", "),
         id: d.focus ?? "all",
         label: d.focus && d.focus !== "all"
           ? `${layerLabel(d.focus)}: ${focusItems.map((w) => w.short ?? w.title).join(", ")}`

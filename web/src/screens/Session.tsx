@@ -18,7 +18,7 @@ import { SessionView } from "./session/SessionView";
 import type { PanelMode, SessionData, SessionHandlers, SessionOverlay, SessionPhase, TranscriptTurn } from "./session/types";
 import s from "./Session.module.css";
 
-interface LocationState { config?: SessionConfig; title?: string }
+interface LocationState { config?: SessionConfig; title?: string; /** A drill: the weak spots it works on. */ focus?: string }
 
 export function SessionScreen() {
   const location = useLocation();
@@ -32,7 +32,7 @@ export function SessionScreen() {
       </main>
     );
   }
-  return <LiveSession config={st.config} title={st.title || t("session.title")} />;
+  return <LiveSession config={st.config} title={st.title || t("session.title")} focus={st.focus} />;
 }
 
 const ENGINE_CODES = new Set(["not_installed", "not_running", "no_model", "not_configured", "unreachable", "unauthorized", "billing_required"]);
@@ -62,7 +62,7 @@ function phaseOf(state: SessionState, playing: boolean): SessionPhase {
   return "your-turn";
 }
 
-function LiveSession({ config, title }: { config: SessionConfig; title: string }) {
+function LiveSession({ config, title, focus }: { config: SessionConfig; title: string; focus?: string }) {
   const navigate = useNavigate();
   const { settings } = useApp();
   const { state, playing, muted, micError, actions, getLevel } = useSession(config);
@@ -166,9 +166,8 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
   useEffect(() => {
     if (!live) return;
     const prev = document.title;
-    const company = title.split(" · ")[0];
     const where = english ? t("session.turn", { n: userTurns + 1 }) : total && questionIndex >= 0 ? t("session.progress", { n: questionIndex + 1, total }) : "";
-    document.title = [where, company].filter(Boolean).join(" · ");
+    document.title = [where, title].filter(Boolean).join(" · ");
     return () => { document.title = prev; };
   }, [live, title, english, userTurns, total, questionIndex]);
 
@@ -231,7 +230,10 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     : total && questionIndex >= 0 ? t("session.progress", { n: questionIndex + 1, total }) : "";
   const roundLabel = start.round_type ? t(`session.round.${start.round_type}`) : "";
   const strictLabel = start.strictness && STRICT[start.strictness as 1 | 2 | 3] ? t(`session.strict.${STRICT[start.strictness as 1 | 2 | 3]}`) : "";
-  const sub = english ? undefined : [roundLabel, strictLabel].filter(Boolean).join(" · ") || undefined;
+  const drill = !english && start.drill === true;
+  const sub = english ? undefined
+    : drill && focus ? t("session.focus", { spots: focus })
+      : [roundLabel, strictLabel].filter(Boolean).join(" · ") || undefined;
 
   /* The running transcript (D49): the whole dialogue, newest last. Mike's first line of each thread opens "Question N";
    * follow-ups get their badge. The interim words of the answer being recorded ride on a last user line. */
@@ -357,7 +359,7 @@ function LiveSession({ config, title }: { config: SessionConfig; title: string }
     <div className={s.screen}>
       <span className="visually-hidden" role="status" aria-live="polite">{readyMsg}</span>
       <SessionView
-        variant={english ? "english" : "interview"}
+        variant={english ? "english" : drill ? "drill" : "interview"}
         input={voice ? "voice" : "text"}
         phase={phase}
         overlay={overlay}

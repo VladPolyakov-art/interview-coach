@@ -222,3 +222,11 @@ def test_seed_makes_a_returning_user_with_weak_spots(e2e_client):
     assert e2e_client.get("/api/profile").json()["text"].startswith("Alex Morgan")
     e2e_client.post("/api/_e2e/reset")
     assert e2e_client.get("/api/sessions").json()["sessions"] == []
+
+
+async def test_scripted_first_question_quotes_a_duty_not_the_title():
+    llm = scripted.ScriptedEngine()
+    questions = await planner.generate_questions(llm, PROFILE, JOB)
+    first = questions[0]
+    assert first.anchor == "You will own the checkout experience"
+    assert "Product Manager at Kestrel Pay" not in first.text

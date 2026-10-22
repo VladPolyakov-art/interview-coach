@@ -27,3 +27,10 @@ export function extractCompanyRole(text: string): CompanyRole | null {
   if (sep) return { company: sep[1]!.trim(), role: sep[2]!.trim() };
   return null;
 }
+
+/** A job's name as shown everywhere: "Company · Role". "Role at Company" is turned around (same rule as the server's
+ * `job_name`); a title that is neither stays as it is. */
+export function jobName(title: string): string {
+  const parts = splitTitle(title);
+  return joinTitle(parts.role ? parts : extractCompanyRole(title) ?? parts);
+}

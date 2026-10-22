@@ -98,6 +98,11 @@ function Session(props: Partial<ComposerProps>) {
 }
 /** Session text mode: black send button, Enter sends. */
 export const SessionTyping: Story = { render: () => <Session /> };
+/** QA-16: the field is focused: the box shows the focus ring (token ring, 2px offset) and the lighter fill. */
+export const Focused: Story = {
+  render: () => <div style={{ padding: "var(--space-2)" }}><Home attachment={KESTREL} initial="Product Manager at Kestrel Pay" /></div>,
+  play: ({ canvasElement }) => { canvasElement.querySelector("textarea")?.focus(); },
+};
 /** Overflow: long answer grows to 8 rows, then scrolls; long attachment clamps to 2 lines. */
 export const Overflow: Story = {
   render: () => (

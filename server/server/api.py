@@ -461,7 +461,7 @@ def posting_title(text: str) -> str:
     for line in text.splitlines():
         clean = line.strip().rstrip(":").strip()
         if clean and clean.lower() not in POSTING_HEADERS:
-            return clean[:80]
+            return storage.job_name(clean[:80])
     return "Job posting"
 
 
@@ -512,7 +512,7 @@ def _session_or_404(session_id: str) -> dict:
 @router.get("/sessions")
 async def list_sessions() -> dict:
     items = sorted(storage.list_records("sessions"), key=lambda s: s.get("started_at", ""), reverse=True)
-    return {"sessions": [{"id": s["id"], "title": s.get("title", ""), "mode": s.get("mode", ""),
+    return {"sessions": [{"id": s["id"], "title": storage.display_title(s.get("title", "")), "mode": s.get("mode", ""),
                           "started_at": s.get("started_at", ""), "duration_s": s.get("duration_s"),
                           "engine": s.get("engine", ""), "answers": (s.get("stats") or {}).get("answers", 0),
                           "verdict": (s.get("debrief") or {}).get("verdict", ""),
@@ -561,7 +561,8 @@ async def purge_session(trash_id: str, request: Request) -> dict:
 
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: str) -> dict:
-    return _session_or_404(session_id)
+    record = _session_or_404(session_id)
+    return {**record, "title": storage.display_title(record.get("title", ""))}
 
 
 @router.get("/sessions/{session_id}/markdown")

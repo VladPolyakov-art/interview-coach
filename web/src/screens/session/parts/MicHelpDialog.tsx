@@ -26,6 +26,7 @@ export function MicHelpDialog({ open, reason = "blocked", handlers }: { open: bo
             <li>{t("session.micHelp.step2")}</li>
             <li>{t("session.micHelp.step3")}</li>
           </ol>
+          <p>{t("session.micHelp.mac")}</p>
         </>
       ) : (
         <p>{t("session.micHelp.none")}</p>

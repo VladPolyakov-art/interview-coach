@@ -38,7 +38,7 @@ test.describe("US-23 AC2 Trash", () => {
   test("delete forever asks first, then the chat is gone for good", async ({ page, request }) => {
     await deleteFromRecents(page);
     await page.goto("/archive/trash");
-    await page.getByRole("button", { name: `Delete forever: Interview practice · ${TITLE}` }).click();
+    await page.getByRole("button", { name: `Delete forever: ${TITLE}` }).click();
     const confirm = page.getByRole("dialog", { name: "Delete this chat forever?" });
     await expect(confirm).toContainText("This can't be undone.");
     await confirm.getByRole("button", { name: "Delete forever" }).click();
@@ -66,7 +66,7 @@ test.describe("US-23 AC2 Trash", () => {
     await page.getByRole("menuitem", { name: "Delete" }).click();
     await page.getByRole("dialog", { name: "Delete this chat?" }).getByRole("button", { name: "Delete" }).click();
     await page.goto("/archive/trash");
-    await page.getByRole("button", { name: `Delete forever: Interview practice · ${TITLE}` }).click();
+    await page.getByRole("button", { name: `Delete forever: ${TITLE}` }).click();
     await page.getByRole("dialog", { name: "Delete this chat forever?" }).getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByRole("listitem").filter({ hasText: "Northwind Logistics" })).toBeVisible();
   });

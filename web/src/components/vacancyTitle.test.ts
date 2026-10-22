@@ -20,3 +20,14 @@ describe("vacancyTitle", () => {
     expect(extractCompanyRole("")).toBeNull();
   });
 });
+
+describe("jobName (13, QA-04)", () => {
+  it("is Company · Role whichever way the title was written", async () => {
+    const { jobName } = await import("./vacancyTitle");
+    expect(jobName("Product Manager at Kestrel Pay")).toBe("Kestrel Pay · Product Manager");
+    expect(jobName("Kestrel Pay · Product Manager")).toBe("Kestrel Pay · Product Manager");
+    expect(jobName("Kestrel Pay - Product Manager")).toBe("Kestrel Pay · Product Manager");
+    expect(jobName("Lumen")).toBe("Lumen");
+    expect(jobName("")).toBe("");
+  });
+});

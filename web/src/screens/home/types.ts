@@ -105,7 +105,8 @@ export interface PlanModel {
   watch?: string;
   hasCv: boolean;
   /** Drill: what the questions aim at. */
-  focus?: { id: "all" | WeakSpotLayer; label: string };
+  /** `spots`: the weak spots being drilled, as one line ("no result, we instead of I"): the session shows it as its focus. */
+  focus?: { id: "all" | WeakSpotLayer; label: string; spots: string };
   /** Drill: the Change focus menu ("All 4", "Content 2", …). */
   focusOptions?: { id: "all" | WeakSpotLayer; label: string }[];
   /** English. */

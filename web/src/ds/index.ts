@@ -49,6 +49,7 @@ export { InlineMark } from "./InlineMark";
 // Layout & overlay layer (stage 11: G3, G4, G5, G6, G16, G17, OverlayRoot)
 export { OverlayRoot, OverlayPortal, useOverlayRoot } from "./OverlayRoot";
 export { Drawer } from "./Drawer";
+export { useScrollFocusable } from "./scrollFocus";
 export type { DrawerSide } from "./Drawer";
 export { Menu } from "./Menu";
 export type { MenuItem, MenuSeparator, ListboxOption, MenuTriggerProps } from "./Menu";
