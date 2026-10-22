@@ -14,6 +14,7 @@ import logging
 import platform
 import sys
 import threading
+import re
 import time
 from dataclasses import dataclass, field
 
@@ -55,6 +56,48 @@ class Transcript:
                 await asyncio.wait_for(self.words_ready.wait(), timeout)
             except asyncio.TimeoutError:
                 pass
+
+
+LOOP_MAX_WORDS = 6
+
+
+def _loop_at(norm: list[str], i: int) -> tuple[int, int]:
+    """Longest-covering run of one phrase (1..6 words) repeated from position i: (phrase length, repeats)."""
+    best = (0, 0)
+    for n in range(1, LOOP_MAX_WORDS + 1):
+        phrase = norm[i:i + n]
+        if len(phrase) < n:
+            break
+        count = 1
+        while norm[i + count * n:i + (count + 1) * n] == phrase:
+            count += 1
+        if count >= (4 if n == 1 else 3) and n * count > best[0] * best[1]:
+            best = (n, count)
+    return best
+
+
+def drop_loops(text: str) -> str:
+    """Whisper on silence or room noise loops one short phrase ("I have a look. I have a look. ...", "Oh Oh Oh Oh").
+    A run of such repeats collapses to one copy; a transcript that is mostly one loop is no speech at all."""
+    words = text.split()
+    if len(words) < 4:
+        return text
+    norm = [re.sub(r"[^\w']", "", w.lower()) for w in words]
+    out, looped, i = [], 0, 0
+    while i < len(words):
+        n, count = _loop_at(norm, i)
+        if n:
+            out.extend(words[i:i + n])
+            looped += n * count
+            i += n * count
+        else:
+            out.append(words[i])
+            i += 1
+    if not looped:
+        return text
+    if looped >= 0.8 * len(words):
+        return ""
+    return " ".join(out)
 
 
 def is_apple_silicon() -> bool:
@@ -146,6 +189,10 @@ class STT:
                 text = "".join(parts).strip()
         log.info("STT %s%s: %.1f s of audio in %.2f s", self.backend, "" if words else " (text)", duration,
                  time.perf_counter() - started)
+        cleaned = drop_loops(text)
+        if cleaned != text:
+            log.info("STT dropped a repeated-phrase loop (%d -> %d words)", len(text.split()), len(cleaned.split()))
+            text, words = cleaned, []
         return Transcript(text=text, words=words, duration_s=duration, backend=self.backend)
 
     def transcribe_if_idle(self, pcm16k: bytes) -> Transcript | None:

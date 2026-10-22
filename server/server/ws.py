@@ -45,6 +45,14 @@ async def check_engine(settings: dict, engine_id: str, voice: bool = False):    
     return await get_llm(settings, engine_id, voice).status()
 
 
+def asks_for_answer(kind: str | None, text: str) -> bool:
+    """Mike asked something to answer, so a sample answer fits: every question and follow-up, including
+    imperatives ("Give an example of..."); a reply without a kind only when it asks with a question mark."""
+    if kind in ("question", "follow_up"):
+        return True
+    return kind is None and "?" in text
+
+
 def parse_start(data: dict, settings: dict) -> dict:
     mode = data.get("mode", "interview")
     if mode not in MODES:
@@ -214,8 +222,8 @@ async def session_socket(websocket: WebSocket) -> None:
             payload["turn_id"] = state["voice_turn"]
         emit("turn_complete", speaker=speaker, full_text=text, **payload)
         if speaker == "model":
-            asks = meta.get("kind") in ("question", "follow_up", None) and "?" in text
-            if opts.get("mode") == "interview" and state["suggest"] and settings["answer_suggester"] and asks:
+            if (opts.get("mode") == "interview" and state["suggest"] and settings["answer_suggester"]
+                    and asks_for_answer(meta.get("kind"), text)):
                 queue_suggestion(text)
             return
         state["pending_voice"] = False
