@@ -174,7 +174,7 @@ export const SCENES = {
     ...ret,
     ctx: CTX_OVERFLOW,
     label: "Setup overflow, text +30%",
-    note: "Длинная вакансия (40 строк, свёрнута до 3), длинные компания и роль, заметка 300 символов, 7 вакансий в Change job.",
+    note: "Long job post (40 lines, collapsed to 3), long company and role, a 300-character note, 7 jobs in Change job.",
     props: { name: LONG_NAME, initialOverlay: "change-job" },
     recent: RECENT_LONG,
     inputs: [

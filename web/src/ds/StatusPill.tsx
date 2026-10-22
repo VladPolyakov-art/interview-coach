@@ -1,6 +1,6 @@
 /* Status pill (G11, docs/motion.md 3.2 P6/P7 + 3.7): the one state text above the island (session.md O5, V2.1).
  * It is the live region for Mike's state (Presence is aria-hidden) (role="status", polite): colour never tells Mike's states apart (P6).
- * - Dot: always --color-mic-live (D93, owner: «чтобы она всегда оставалась синей»); the label tells the states apart.
+ * - Dot: always --color-mic-live (D93: the dot stays blue in every state); the label tells the states apart.
  *   It pulses (`pulse-dot`, .motion-loop) while thinking / connecting, and is still otherwise (rule 3: nothing pulses
  *   while the user speaks). Muted shows the slashed mic icon instead of a dot.
  * - Label cross-fades (fast) on change, except into Listening (the user has just started talking).

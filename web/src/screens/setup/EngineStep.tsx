@@ -1,5 +1,5 @@
-/* Setup → AI engine (D82, was D81). A choice of the four engines; on the first run nothing is picked for you (owner:
- * «нужно давать выбор людям»). Picking one that isn't ready opens its setup under it — Ollama not installed →
+/* Setup → AI engine (D82, was D81). A choice of the four engines; on the first run nothing is picked for you (people should be
+ * given a choice). Picking one that isn't ready opens its setup under it — Ollama not installed →
  * "Download Ollama", not running → how to start it (US-02 AC5). Continue switches to the picked engine once it is
  * Ready; there is no text-mode way out here (the engine writes Mike's questions). Run again from Settings → About,
  * the engine in use is picked when it is Ready. */

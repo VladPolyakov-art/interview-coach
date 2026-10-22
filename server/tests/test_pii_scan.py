@@ -40,3 +40,18 @@ def test_require_denylist_and_patterns_are_not_printed(tmp_path):
     assert result.returncode == 1
     assert "denylist pattern #1" in result.stdout
     assert "fictional person" not in result.stdout.lower()
+
+
+def test_cyrillic_is_allowed_only_under_top_level_design(tmp_path):
+    (tmp_path / "design" / "docs").mkdir(parents=True)
+    (tmp_path / "design" / "docs" / "ui.md").write_text("\u043f\u0440\u0438\u0432\u0435\u0442\n")
+    assert run_scan(tmp_path).returncode == 0
+    (tmp_path / "design" / "docs" / "mail.md").write_text("write to " + "jane.doe" + "@" + "acme-corp.io" + "\n")
+    (tmp_path / "web").mkdir()
+    (tmp_path / "web" / "design").mkdir()
+    (tmp_path / "web" / "design" / "x.ts").write_text("// \u043f\u0440\u0438\u0432\u0435\u0442\n")
+    result = run_scan(tmp_path)
+    assert result.returncode == 1
+    assert "design/docs/mail.md:1  e-mail address" in result.stdout
+    assert "web/design/x.ts:1  cyrillic text" in result.stdout
+    assert "ui.md" not in result.stdout

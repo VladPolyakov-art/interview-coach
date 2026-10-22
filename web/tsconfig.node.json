@@ -2,7 +2,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "isolatedModules": true,
@@ -12,5 +12,5 @@
     "strict": true,
     "types": []
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "scripts/ut-tracker-plugin.d.mts"]
+  "include": ["vite.config.ts", "vitest.config.ts"]
 }

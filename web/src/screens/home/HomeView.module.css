@@ -27,7 +27,7 @@
 /* ---- setup ---- */
 .top { flex: none; background: var(--color-canvas); }
 /* D90: the chat takes the whole height below the header and scrolls under the composer, which floats at the bottom on a
- * short fade (owner: «очень маленькая видимая область и очень рано пропадает текст»). `--dock-h` = the composer's
+ * short fade (the visible area was too small and the text vanished too early). `--dock-h` = the composer's
  * height (HomeView measures it), so the last message can still scroll clear of it. */
 .body { --dock-h: 0px; position: relative; flex: 1 1 auto; min-height: 0; }
 .scroller { position: absolute; inset: 0; overflow-y: auto; }

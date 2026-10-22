@@ -43,7 +43,7 @@ const REF_REACH = 220;
 const clamp01 = (n: number) => Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
 const oneHot = (s: PresenceState): Record<PresenceState, number> => ({ idle: 0, waiting: 0, listening: 0, thinking: 0, speaking: 0, [s]: 1 });
 
-/** Strength of the inviting glow on your turn (D50: faint, "не надо ярче" for the rest). */
+/** Strength of the inviting glow on your turn (D50: faint; brighter was not wanted for the rest). */
 export const WAITING_ON = 0.35;
 
 /** Glow target: none at idle, faint on your turn, full while someone is talking or Mike is thinking. */

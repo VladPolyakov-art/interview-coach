@@ -6,7 +6,7 @@ The patterns themselves are personal, so they never live in the repository. They
   2. IC_PII_DENYLIST_FILE, or by default ~/.config/interview-coach/denylist.txt
      (one pattern per line; "#" comments; a line starting with "re:" is a regular expression,
      any other line is a case-insensitive substring).
-Built-in checks (no patterns needed): Cyrillic text (the app ships in English), e-mail addresses outside
+Built-in checks (no patterns needed): Cyrillic text (the app ships in English; the top-level design/ folder is exempt), e-mail addresses outside
 example/noreply domains (lockfiles excepted), and absolute home-folder paths (reported as warnings, they do not fail the scan).
 
 Without a denylist only the built-in checks run (this is what CI does). Before a release, run it locally
@@ -32,6 +32,7 @@ HOME_PATH = re.compile(r"(/Users/|/home/|C:\\Users\\)[A-Za-z0-9._-]+")
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)+[A-Za-z]{2,}")
 EMAIL_OK = re.compile(r"@(([A-Za-z0-9-]+\.)*example\.(com|org|net)|users\.noreply\.github\.com|noreply\.[A-Za-z0-9.-]+)$",
                       re.I)
+CYRILLIC_OK_DIRS = {"design"}  # the owner's design docs are written in Russian; they hold no personal data (other checks still apply)
 LOCKFILES = {"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "uv.lock", "poetry.lock"}  # third-party metadata
 
 
@@ -85,7 +86,7 @@ def scan(root: Path, patterns: list[re.Pattern]) -> tuple[int, list[str], list[s
                     hits.append(f"{rel}:{number}  denylist pattern #{index}")
             if path.resolve() == this_file:
                 continue
-            if CYRILLIC.search(line):
+            if CYRILLIC.search(line) and rel.parts[0] not in CYRILLIC_OK_DIRS:
                 hits.append(f"{rel}:{number}  cyrillic text")
             if path.name not in LOCKFILES and any(not EMAIL_OK.search(m.group(0)) for m in EMAIL.finditer(line)):
                 hits.append(f"{rel}:{number}  e-mail address")

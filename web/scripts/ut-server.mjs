@@ -25,7 +25,7 @@ const outDir = join(web, ".ut-dist");
 const PORT = process.env.UT_PORT ?? "8040";
 const ENDPOINT = process.env.UT_ENDPOINT ?? "http://localhost:8787";
 const dataDir = process.env.UT_IC_DATA_DIR ?? join(project, ".tmp", "usertest", "ic-data");
-const kokoroDir = process.env.UT_KOKORO_MODEL_DIR ?? "/Users/anna/Documents/project/interview-coach/models";
+const kokoroDir = process.env.UT_KOKORO_MODEL_DIR; // optional: folder with the Kokoro models; unset = the server default
 
 if (["8000", "8001", "8002", "8010", "11434", "11435"].includes(PORT)) {
   console.error(`ut-server: port ${PORT} is reserved for other runs.`);
@@ -44,7 +44,8 @@ mkdirSync(dataDir, { recursive: true });
 const logFile = join(dirname(dataDir), "ut-server.log");
 const log = openSync(logFile, "a");
 const python = join(server, ".venv", "bin", "python");
-const env = { ...process.env, IC_PORT: PORT, IC_DATA_DIR: dataDir, IC_WEB_DIST: outDir, KOKORO_MODEL_DIR: kokoroDir };
+const env = { ...process.env, IC_PORT: PORT, IC_DATA_DIR: dataDir, IC_WEB_DIST: outDir };
+if (kokoroDir) env.KOKORO_MODEL_DIR = kokoroDir;
 delete env.IC_E2E; // real engines
 delete env.VITE_UT_ENDPOINT;
 const child = spawn(existsSync(python) ? python : "python3", ["-m", "server", "--port", PORT], {

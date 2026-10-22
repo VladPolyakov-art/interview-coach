@@ -1,4 +1,4 @@
-/* Quick start (D51 item 1, «Начать сразу»): one click on Home starts an interview with the last settings, no setup chat.
+/* Quick start (D51 item 1, "Start right away"): one click on Home starts an interview with the last settings, no setup chat.
  * - returning user: the remembered job (only if it is still saved), the remembered round, the default strictness;
  * - first visit (no interview yet): general questions, the unseen mix, the default strictness.
  * Questions = the questions-per-session setting; voice or text follows the text-mode preference. English has no

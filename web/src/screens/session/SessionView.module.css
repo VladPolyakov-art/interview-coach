@@ -8,8 +8,8 @@
   /* D49: the glow box along the top edge; its bottom is the first text line (Presence text-safe mask). */
   --stage-reach: var(--presence-reach);
   --island-offset: var(--space-6);
-  /* D91: the transcript reaches up into the glow's lower part, fading out over --text-fade as it goes (owner: more
-   * room for the dialogue, «но не слишком сильно»). The glow's bright band stays clear of text. */
+  /* D91: the transcript reaches up into the glow's lower part, fading out over --text-fade as it goes (more
+   * room for the dialogue, but not too much). The glow's bright band stays clear of text. */
   --text-top: calc(var(--stage-reach) * 0.4);
   --text-fade: var(--space-16);
   /* Wide, panel open: the stage content shifts left by half of what the floating panel takes (V2.4, "Stage shift"). */
@@ -83,8 +83,8 @@
 /* D62: the voice pill hugs its content and may run wider than the text column (it squeezed the mic at 704px); the
  * text-mode box and the notices keep the column width. */
 .dock { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 100%; max-width: 100%; min-width: 0; }
-/* D92: the state text in the glow, top centre, above where the transcript fades in (owner: the line above the island
- * «очень много пространства занимает»). It takes no room from the dialogue. */
+/* D92: the state text in the glow, top centre, above where the transcript fades in (the line above the island
+ * took too much space). It takes no room from the dialogue. */
 .status {
   position: absolute;
   inset-inline: 0;

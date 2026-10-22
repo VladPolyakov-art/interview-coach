@@ -1,4 +1,4 @@
-/* D68: the product's wordmark — the name "Vukoli" set lowercase in the UI font, no symbol (owner: «только слово»,
+/* D68: the product's wordmark — the name "Vukoli" set lowercase in the UI font, no symbol (a plain word, no mark,
  * a simple placeholder until a real logo). The favicon is its first letter (public/favicon.svg); LogoMark is the same
  * letter in the UI (D78: the collapsed sidebar's toggle). */
 import { t } from "../i18n";

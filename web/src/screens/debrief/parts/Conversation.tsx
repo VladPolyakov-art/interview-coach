@@ -1,4 +1,4 @@
-/* The whole talk as a chat (D71, owner: "чата никакого даже нету"). Mike = plain text, the user = a bubble, like the
+/* The whole talk as a chat (D71: the debrief showed no chat before). Mike = plain text, the user = a bubble, like the
  * Session transcript; "Question N" starts each question, a quiet "Follow-up" label sits on Mike's follow-ups. An answer
  * whose question has a breakdown is a pressed-state bubble: pressing it shows that breakdown next to the chat. */
 import { ChatLog, ChatMessage } from "../../../ds";
