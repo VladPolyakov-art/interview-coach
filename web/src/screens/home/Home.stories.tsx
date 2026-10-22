@@ -40,6 +40,8 @@ export const StartOverflowMobile = mobile("overflowStart");
  * StartFileAttached); typing → keyboard icon; disabled on StartLoading / StartEngineNotRunning; none in StartEnglish. */
 export const QuickStartTextMode = desktop("quickTextMode");
 export const QuickStartPressed = desktop("quickStarting");
+/* QA-02: the remembered job's questions are still being written: the mic is off until they are ready. */
+export const QuickStartWaiting = desktop("quickWaiting");
 
 /* ---- setup chat (§4) ---- */
 export const SetupJobReading = desktop("jobReading");
@@ -69,7 +71,9 @@ export const SetupRoundNotCaught = desktop("roundNotCaught");
 export const SetupFreeTextNote = desktop("freeTextNote");
 export const SetupPlan = desktop("plan");
 export const SetupPlanMobile = mobile("plan");
+/* QA-02: "Preparing questions…" — Start interview and Type instead are off, the note says when they unlock. */
 export const SetupPlanPreparing = desktop("planPreparing");
+export const SetupPlanPreparingMobile = mobile("planPreparing");
 export const SetupPlanPrepError = desktop("planPrepError");
 export const SetupPlanNoCv = desktop("planNoCv");
 export const SetupPlanEngineDown = desktop("planEngineDown");

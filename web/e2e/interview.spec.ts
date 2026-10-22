@@ -201,8 +201,8 @@ test.describe("US-14 / US-15 / US-20 A text interview", () => {
 test.describe("US-15 The first-time hint names where feedback appears", () => {
   const WORDING = {
     wide: "Feedback appears on the right after each question.",
-    mid: "Feedback slides in from the right after each question.",
-    narrow: "Feedback slides up from the bottom after each question.",
+    mid: "a dot shows on the feedback button. Press it and the feedback slides in from the right.",
+    narrow: "a dot shows on the feedback button. Press it and the feedback slides up from the bottom.",
   } as const;
   for (const [layout, width] of [["narrow", 375], ["mid", 900], ["wide", 1440]] as const) {
     test(`${layout} layout (${width} px): the hint matches where the panel opens`, async ({ page }) => {

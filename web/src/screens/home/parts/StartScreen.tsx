@@ -67,7 +67,7 @@ export function StartScreen(props: StartScreenProps) {
       icon: typed ? "keyboard" : "mic",
       // D59: no white fill under the mic: a grey chip, so the icon reads clearly in both themes.
       variant: "quiet",
-      disabled: props.loading || !props.engineReady,
+      disabled: props.loading || !props.engineReady || quick.wait,
       busy: props.starting,
       onSend: props.onQuickStart,
     }

@@ -30,3 +30,14 @@ export const IconButtons: Story = {
     </div>
   ),
 };
+/* 13, QA-01: `dot` marks something new behind the button (the Session's feedback toggle when feedback is ready). */
+export const IconButtonWithDot: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: "var(--space-2)" }}>
+      <IconButton icon="panel" label="Show feedback (F), new feedback is ready" dot />
+      <IconButton icon="panel" label="Show feedback (F)" />
+      <IconButton icon="panel" label="Hide feedback (F)" pressed />
+      <IconButton icon="panel" label="Show feedback (F), new feedback is ready" size="sm" dot />
+    </div>
+  ),
+};

@@ -82,6 +82,7 @@
 }
 
 .iconButton {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -98,6 +99,18 @@
     transform var(--duration-fast) var(--ease-standard);
 }
 .iconButton:not(:disabled):active { transform: scale(0.94); }
+/* A mark on the icon's top-right corner: the text colour (monochrome, never blue), the shape of a Badge dot. */
+.iconDot {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-text-primary);
+  pointer-events: none;
+}
+.iconButton.sm .iconDot { top: var(--space-1); right: var(--space-1); }
 .iconButton:not(:disabled):hover { background: var(--color-hover); color: var(--color-text-primary); }
 .iconButton.outlined:not(:disabled):hover { background: var(--color-surface-chip-hover); }
 .iconButton:disabled { opacity: 0.5; cursor: not-allowed; }

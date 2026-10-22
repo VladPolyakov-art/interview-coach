@@ -69,6 +69,11 @@ const states: ReviewState[] = [
     render: show({ scene: "feedback" }, { panelOpen: false }),
   },
   {
+    id: "s5-unread", label: "S5 · Разбор готов, панель закрыта: точка на кнопке Feedback (13, QA-01)", dark: true,
+    note: "13 (QA-01): на среднем экране и на телефоне панель сама сцену не закрывает — о готовом разборе говорит точка на кнопке Feedback (имя кнопки: «Show feedback (F), new feedback is ready»). Нажали — панель открылась, точка погасла. На широком экране панель открывается сама; точка там только если пользователь закрыл панель сам, а пришёл новый разбор. 🟡 Закрытие вручную держится, пока пользователь сам не откроет панель.",
+    render: show({ scene: "feedback" }, { panelOpen: false, feedbackUnread: true }),
+  },
+  {
     id: "s5b", label: "S5b · Тот же разбор, delivery first (порядок слоёв из настроек)", mobile: false,
     render: show({ scene: "feedback", layerOrder: "delivery-first" }),
   },

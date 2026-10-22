@@ -140,6 +140,9 @@ export interface SessionViewProps {
   handlers?: SessionHandlers;
   /** Override the panel mode (the live container keeps showing the latest feedback while Mike speaks). */
   panel?: PanelMode;
+  /** Stories and the review page: show the "feedback is ready" dot on the toggle. The live view works it out itself
+   * from the thread (screens/session/feedbackWatch.ts). */
+  feedbackUnread?: boolean;
   getMicLevel?: () => number;
   getVoiceLevel?: () => number;
   /** Play the session entrance (the island docks in). Live only. */

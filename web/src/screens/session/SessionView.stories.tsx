@@ -125,6 +125,10 @@ export const MidFeedback = scene("Mid · Feedback drawer", "feedback", { args: {
 /* v2 island (session.md §V2.9). */
 export const S1IslandMoreOpen = scene("S1 · Island, More menu open", "q1-start", {}, { initialOverlay: "more" });
 export const S5PanelHidden = scene("S5 · Feedback ready, panel hidden", "feedback", {}, { panelOpen: false });
+/* 13 (QA-01): feedback is ready and the panel is closed: a dot on the toggle (always so on mid and narrow). */
+export const S5FeedbackReadyDot = scene("S5 · Feedback ready, dot on the toggle", "feedback", {}, { panelOpen: false, feedbackUnread: true });
+export const MidFeedbackReadyDot = scene("Mid · Feedback ready, dot on the toggle", "feedback", { args: { frame: "mid" } }, { panelOpen: false, feedbackUnread: true });
+export const NarrowFeedbackReadyDot = scene("Narrow · Feedback ready, dot on the toggle", "feedback", { args: { frame: "mobile" } }, { panelOpen: false, feedbackUnread: true });
 export const S6TextIsland = scene("S6 · Text mode island (box)", "text", { args: { withChecks: false } });
 export const Shortcuts = scene("Keyboard shortcuts dialog", "feedback", {}, { initialOverlay: "shortcuts" });
 export const NarrowIsland = scene("Narrow · Island, two rows", "listening", { args: { frame: "mobile" } }, { panelOpen: false });

@@ -60,6 +60,9 @@ export function PlanCard(props: PlanCardProps) {
   const english = plan.kind === "english";
   const drill = plan.kind === "drill";
   const startLabel = english ? t("english.start") : drill ? t("chat.plan.startDrill") : t("home.start");
+  // QA-02: while Mike writes the job's questions the plan says so, and a session started now would use general ones.
+  const waiting = !english && plan.jobStatus === "preparing" && Boolean(plan.job);
+  const reasonId = "home-start-reason";
 
   const radio = <V extends string | number>(row: PlanRow, values: readonly V[], current: V, label: (v: V) => string, desc?: (v: V) => string): MenuEntry[] =>
     values.map((v) => ({ id: String(v), label: label(v), description: desc?.(v), checked: v === current, onSelect: () => onChange?.(row, String(v)) }));
@@ -166,17 +169,18 @@ export function PlanCard(props: PlanCardProps) {
               variant="primary"
               size="lg"
               icon={textMode ? "keyboard" : "mic"}
-              disabled={!engineReady}
-              aria-describedby={!engineReady ? "home-start-reason" : undefined}
+              disabled={!engineReady || waiting}
+              aria-describedby={!engineReady || waiting ? reasonId : undefined}
               onClick={props.onStart}
             >
               {startLabel}
             </Button>
           )}
-          {!engineReady ? <span id="home-start-reason" className={s.actionsNote}>{t("home.engine.reason")}</span> : null}
-          {engineReady && textMode ? <span className={s.actionsNote}>{t("home.browser.typing")}</span> : null}
+          {!engineReady ? <span id={reasonId} className={s.actionsNote}>{t("home.engine.reason")}</span> : null}
+          {engineReady && waiting && !starting ? <span id={reasonId} className={s.actionsNote}>{t("chat.plan.startWaits")}</span> : null}
+          {engineReady && textMode && !waiting ? <span className={s.actionsNote}>{t("home.browser.typing")}</span> : null}
           {engineReady && !textMode && !starting ? (
-            <Button variant="ghost" size="sm" icon="keyboard" onClick={props.onTypeInstead}>{t("home.typeInstead")}</Button>
+            <Button variant="ghost" size="sm" icon="keyboard" disabled={waiting} aria-describedby={waiting ? reasonId : undefined} onClick={props.onTypeInstead}>{t("home.typeInstead")}</Button>
           ) : null}
         </div>
       </section>

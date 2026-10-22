@@ -144,7 +144,7 @@ export interface HomeViewProps {
   storageError?: boolean;
   suggestions: Suggestion[];
   /** Quick start (D51 item 1): what the round mic at the composer's end starts (its tooltip). None: not offered (English). */
-  quickStart?: { detail: string; answer?: "voice" | "text" } | null;
+  quickStart?: { detail: string; answer?: "voice" | "text"; /** The remembered job's questions are still being written (QA-02): the button waits. */ wait?: boolean } | null;
   composer: { text: string; file?: { name: string; size: string } };
   setup?: SetupModel;
   /** Saved jobs, for the plan's Change job listbox. */

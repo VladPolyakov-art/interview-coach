@@ -9,3 +9,5 @@ dist-review/
 .e2e-data/
 playwright-report/
 test-results/
+.syn-dist/
+.qa-dist/

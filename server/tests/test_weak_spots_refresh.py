@@ -116,3 +116,74 @@ def test_a_session_without_a_debrief_is_saved_without_one(client):
                       json={"feedback_id": "a", "action": "dismiss"})
     assert res.status_code == 200
     assert res.json()["debrief"] is None
+
+
+# ---------- QA-07: the verdict never names a weak spot that is gone ----------
+
+def two_spot_debrief(language_tag: str) -> dict:
+    debrief = model_debrief(("content", "no_result"), ("language", language_tag))
+    debrief["weak_spots"][0]["text"] = feedback.CONTENT_FIX.get("no_result") or "Finish with what happened."
+    debrief["weak_spots"][1]["text"] = f"Work on {language_tag.replace('_', ' ')}."
+    return debrief
+
+
+def test_a_removed_spot_is_replaced_in_the_verdict_from_the_refreshed_list():
+    records = [language_record("a", True, content_tag="no_result"), language_record("b", True), language_record("c", True)]
+    tag = records[0]["layers"]["language"]["items"][0]["tag"]
+    debrief = two_spot_debrief(tag)
+    debrief["verdict"] = f"Your answers were clear. The one thing to fix: {tag.replace('_', ' ')}."
+    debrief["next_step"] = f"Drill {tag.replace('_', ' ')} out loud."
+    for r in records:
+        feedback.apply_flag_action(r, slip_flag_id(r), "dismiss")
+    out = feedback.refresh_weak_spots(debrief, records, "content-first")
+    assert [s["tag"] for s in out["weak_spots"]] == ["no_result"]
+    assert tag.replace("_", " ") not in out["verdict"].lower()
+    assert out["verdict"].startswith("Your answers were clear. ")            # the model's other sentence stays
+    assert out["verdict"].endswith(feedback.main_fix_sentence(out["weak_spots"]))
+    assert tag.replace("_", " ") not in out["next_step"].lower()
+    assert out["next_step"] == "Practise the content layer next."
+
+
+def test_a_verdict_that_names_nothing_that_is_gone_keeps_its_words():
+    records = [language_record("a", True, content_tag="no_result"), language_record("b", True), language_record("c", True)]
+    tag = records[0]["layers"]["language"]["items"][0]["tag"]
+    debrief = two_spot_debrief(tag)
+    debrief["verdict"] = "Solid structure. Lead with the result."
+    for r in records:
+        feedback.apply_flag_action(r, slip_flag_id(r), "dismiss")
+    assert feedback.refresh_weak_spots(debrief, records, "content-first")["verdict"] == "Solid structure. Lead with the result."
+
+
+def test_with_no_spot_left_the_verdict_says_nothing_repeated_stood_out():
+    records = [language_record("a", True), language_record("b", True), language_record("c", True)]
+    tag = records[0]["layers"]["language"]["items"][0]["tag"]
+    debrief = model_debrief(("language", tag))
+    debrief["weak_spots"][0]["text"] = f"Work on {tag.replace('_', ' ')}."
+    debrief["verdict"] = f"Nice work. The one thing to fix: {tag.replace('_', ' ')}."
+    for r in records:
+        feedback.apply_flag_action(r, slip_flag_id(r), "dismiss")
+    out = feedback.refresh_weak_spots(debrief, records, "content-first")
+    assert out["weak_spots"] == []
+    assert out["verdict"] == "Nice work. No repeated problem stood out."
+    assert out["next_step"] == debrief["next_step"] or out["next_step"] == "Try a harder round next."
+
+
+def test_a_spot_named_twice_is_replaced_once():
+    spot = {"layer": "language", "tag": "preposition", "text": "Work on preposition."}
+    line = "Mind the preposition. The one thing to fix: preposition. Then drill."
+    out = feedback.follow_weak_spots(line, [spot], "The main thing to fix: pace.")
+    assert out == "The main thing to fix: pace. Then drill."
+
+
+def test_rechecking_an_answer_rewrites_the_verdict_in_the_saved_debrief_response(client):
+    records = [language_record("a", True, content_tag="no_result"), language_record("b", True), language_record("c", True)]
+    tag = records[0]["layers"]["language"]["items"][0]["tag"]
+    debrief = two_spot_debrief(tag)
+    debrief["verdict"] = f"Your answers were clear. The one thing to fix: {tag.replace('_', ' ')}."
+    sid = saved(debrief, records)
+    for r in records:
+        res = client.post(f"/api/sessions/{sid}/flags/{slip_flag_id(r)}", headers=SAME,
+                          json={"feedback_id": r["id"], "action": "dismiss"})
+    body = res.json()["debrief"]
+    assert tag.replace("_", " ") not in body["verdict"].lower()
+    assert storage.read_record("sessions", sid)["debrief"]["verdict"] == body["verdict"]

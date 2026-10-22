@@ -71,6 +71,9 @@ export async function denyMicrophone(page: Page) {
 /** On a phone the sidebar is behind a menu button; on a desktop it is always there. */
 export async function openMenu(page: Page) {
   const menu = page.getByRole("button", { name: "Open menu" });
+  // On a phone the button appears a moment after the page loads: wait for it, or the sidebar is never opened (two
+  // different mobile tests timed out on this in full runs, 13).
+  if ((page.viewportSize()?.width ?? 1440) < 768) await menu.waitFor({ state: "visible" });
   // Already open (aria-expanded) on a phone: leave it, the button is under the drawer.
   if ((await menu.isVisible()) && (await menu.getAttribute("aria-expanded")) !== "true") await menu.click();
 }

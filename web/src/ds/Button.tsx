@@ -38,16 +38,20 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   size?: "sm" | "md";
   outlined?: boolean;
   pressed?: boolean;
+  /** Something new behind the button (13, QA-01): a small mark on the icon's corner. Monochrome, no animation. The
+   * caller says it in `label` too: the dot is decoration (aria-hidden). */
+  dot?: boolean;
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { icon, label, size = "md", outlined, pressed, className, type, ...rest },
+  { icon, label, size = "md", outlined, pressed, dot, className, type, ...rest },
   ref,
 ) {
   const cls = [s.iconButton, size === "sm" ? s.sm : "", outlined ? s.outlined : "", className ?? ""].filter(Boolean).join(" ");
   return (
     <button ref={ref} type={type ?? "button"} className={cls} aria-label={label} title={label} aria-pressed={pressed} {...rest}>
       <Icon name={icon} size={size === "sm" ? "sm" : "md"} />
+      {dot ? <span className={s.iconDot} aria-hidden="true" /> : null}
     </button>
   );
 });

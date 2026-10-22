@@ -78,6 +78,41 @@ test.describe("US-18 AC3 Edit what I said, in the debrief", () => {
   });
 });
 
+test.describe("US-20 QA-07 The verdict follows the weak spots after a recheck", () => {
+  test("the verdict no longer names a weak spot that the edit removed, and the editor does not promise otherwise", async ({
+    page,
+    request,
+  }) => {
+    const { sessions } = await seedReturningUser(request);
+    const id = sessions[0]!.id;
+    await page.goto(`/sessions/${id}`);
+    const bar = page.getByRole("button", { name: /^Verdict/ });
+    // Premise: the verdict names the Language weak spot ("preposition") that the edit below removes.
+    await expect(bar).toContainText("preposition");
+
+    await page.getByRole("radio", { name: "2", exact: true }).click();
+    const card = page.getByRole("region", { name: "Breakdown" }).getByRole("article");
+    await card.getByRole("button", { name: "Edit what I said" }).click();
+    // The old copy said "The rest of the debrief stays as it is." while the verdict changed with the edit.
+    await expect(card).not.toContainText("The rest of the debrief stays as it is");
+    await card
+      .getByRole("textbox", { name: "What you actually said" })
+      .fill(
+        "When two engineers disagreed about the release plan I set up a short call, I wrote down both options and I asked the team lead to decide by Friday. I have worked on this team for five years and I like it.",
+      );
+    await card.getByRole("button", { name: "Save and check again" }).click();
+    await expect(card.getByText("Edited by you")).toBeVisible();
+
+    // "What to work on" lost the Language item, and the verdict says the same thing.
+    await bar.click();
+    await expect(page.getByRole("region", { name: "What to work on" })).not.toContainText("Language");
+    await expect(bar).not.toContainText("preposition");
+    // Saved on this computer, not only on screen.
+    await page.reload();
+    await expect(page.getByRole("button", { name: /^Verdict/ })).not.toContainText("preposition");
+  });
+});
+
 test.describe("US-22 AC3 Dismissing a correction in a saved debrief", () => {
   test("the dismissed correction no longer counts as a weak spot", async ({ page, request }) => {
     const { sessions } = await seedReturningUser(request);

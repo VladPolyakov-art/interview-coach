@@ -32,6 +32,9 @@ import type { EnglishTopic, JobItem, PlanModel, Track, WeakItem } from "./types"
 
 let browserBannerDismissed = false;
 const TOPICS: EnglishTopic[] = ["free", "work", "small"];
+/** QA-02 🟡: how long Start waits for the job's questions. Past it the plan says general questions will be used (the
+ * user can try again); if the answer arrives later after all, the plan turns ready. */
+const PREP_TIMEOUT_MS = 90_000;
 
 function toJob(v: { id: string; title: string; created_at: string; questions: number | unknown[] }, state: JobItem["state"]): JobItem {
   const parts = splitTitle(v.title);
@@ -129,20 +132,29 @@ export function HomeScreen() {
     setSetup(begin(ctx, { kind: "suggestion", id: "drill" }));
   }, [params, dataReady, ctx]);
 
-  /* Questions from a job: the plan's Job row shows "Preparing questions…" until the call returns. */
+  /* Questions from a job: the plan's Job row shows "Preparing questions…" and Start waits until the call returns
+   * (QA-02: a session started meanwhile would ask a general question). A failure or the timeout says that general
+   * questions will be used and unlocks Start; "Try again" asks once more. */
+  const prepTimers = useRef(new Set<number>());
+  useEffect(() => () => { prepTimers.current.forEach((id) => window.clearTimeout(id)); }, []);
   const prepareQuestions = useCallback((job: JobItem) => {
     setPrep((p) => ({ ...p, [job.id]: "preparing" }));
     setSetup((st) => (st ? updateJob(st, { ...job, state: "preparing" }) : st));
+    const failed = () => {
+      setPrep((p) => ({ ...p, [job.id]: "error" }));
+      setSetup((st) => (st ? updateJob(st, { ...job, state: "error" }) : st));
+    };
+    const timer = window.setTimeout(failed, PREP_TIMEOUT_MS);
+    prepTimers.current.add(timer);
+    const settled = () => { window.clearTimeout(timer); prepTimers.current.delete(timer); };
     api.vacancyQuestions(job.id)
       .then((r) => {
+        settled();
         setPrep((p) => { const rest = { ...p }; delete rest[job.id]; return rest; });
         setSetup((st) => (st ? updateJob(st, { ...job, questions: r.questions.length, state: "ready" }) : st));
         vacancies.reload();
       })
-      .catch(() => {
-        setPrep((p) => ({ ...p, [job.id]: "error" }));
-        setSetup((st) => (st ? updateJob(st, { ...job, state: "error" }) : st));
-      });
+      .catch(() => { settled(); failed(); });
   }, [vacancies]);
 
   /* A pending read (pasted job, link, file): save it as a job, then let Mike name it. */
@@ -242,8 +254,10 @@ export function HomeScreen() {
   /* Quick start (D51 item 1): one click, the last settings (general questions on a first visit), no setup chat. */
   // While Home loads the row keeps its place (disabled, no detail) so it doesn't jump in later.
   const quick = setup || loading ? null : quickStartFor(ctx, textMode || unsupportedSpeech);
+  // QA-02: the remembered job is still getting its questions: the mic waits as Start does in the plan.
+  const quickWaits = Boolean(quick?.jobId && prep[quick.jobId] === "preparing");
   const quickStart = () => {
-    if (!quick || !engineReady) return;
+    if (!quick || !engineReady || quickWaits) return;
     homePrefs.setRound(quick.round);
     const config = buildSessionConfig({
       mode: "interview", answer: quick.answer, roundType: quick.roundType, strictness: quick.strictness,
@@ -272,7 +286,7 @@ export function HomeScreen() {
         textMode={textMode}
         storageError={Boolean(sessions.error)}
         suggestions={loading ? [] : suggestionsFor(ctx)}
-        quickStart={quick ? { detail: quick.detail, answer: quick.answer } : loading && track === "interview" ? { detail: "" } : null}
+        quickStart={quick ? { detail: quick.detail, answer: quick.answer, wait: quickWaits } : loading && track === "interview" ? { detail: "" } : null}
         onQuickStart={quickStart}
         composer={composer}
         setup={shown}

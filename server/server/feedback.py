@@ -466,11 +466,42 @@ def fallback_debrief(feedback: list[dict], layer_order: str) -> dict:
         spots.append({"layer": layer, "tag": tag, "text": text, "evidence": evidence})
     order = ["content", "language", "delivery"] if layer_order == "content-first" else ["delivery", "content", "language"]
     spots.sort(key=lambda s: order.index(s["layer"]))
-    verdict = ("You finished the practice round. " + (f"The main thing to fix: {spots[0]['text'].rstrip('.')}."
-                                                       if spots else "No repeated problem stood out."))
-    return {"verdict": verdict, "weak_spots": spots[:3], "strength": "",
-            "next_step": f"Practise the {spots[0]['layer']} layer next." if spots else "Try a harder round next.",
+    verdict = "You finished the practice round. " + main_fix_sentence(spots)
+    return {"verdict": verdict, "weak_spots": spots[:3], "strength": "", "next_step": next_step_for(spots),
             "source": "template"}
+
+
+def main_fix_sentence(spots: list[dict]) -> str:
+    """The "thing to fix" part of a verdict, written in code from the ranked weak spots."""
+    return f"The main thing to fix: {spots[0]['text'].rstrip('.')}." if spots else "No repeated problem stood out."
+
+
+def next_step_for(spots: list[dict]) -> str:
+    return f"Practise the {spots[0]['layer']} layer next." if spots else "Try a harder round next."
+
+
+def names_spot(sentence: str, spot: dict) -> bool:
+    """The sentence names this weak spot: its tag as words ("no result") or its advice text."""
+    low = sentence.lower()
+    tag = str(spot.get("tag", "")).replace("_", " ").lower().strip()
+    text = str(spot.get("text", "")).rstrip(".").lower().strip()
+    return bool((tag and re.search(rf"\b{re.escape(tag)}\b", low)) or (len(text) > 8 and text in low))
+
+
+def follow_weak_spots(line: str, removed: list[dict], replacement: str) -> str:
+    """A model-written sentence stays as written, except the sentences that name a weak spot that is gone now (the
+    user edited or dismissed what it was about): the first of them becomes `replacement`, the others are dropped.
+    A line that names nothing that is gone is returned unchanged."""
+    sentences = [x for x in re.split(r"(?<=[.!?])\s+", (line or "").strip()) if x]
+    out, replaced = [], False
+    for sentence in sentences:
+        if any(names_spot(sentence, spot) for spot in removed):
+            if not replaced and replacement not in sentences:
+                out.append(replacement)
+            replaced = True
+        else:
+            out.append(sentence)
+    return " ".join(out) if replaced else (line or "")
 
 
 async def debrief(llm: LLMEngine | None, feedback: list[dict], *, layer_order: str, past: str = "none") -> dict:
@@ -509,7 +540,8 @@ def refresh_weak_spots(debrief: dict | None, records: list[dict], layer_order: s
     """US-22 AC3: a correction the user dismissed (or brought back) after the debrief was written changes which
     weak spots count. Spots whose tag no longer counts are dropped, a restored one comes back when its layer has
     no spot, and the evidence is recounted. A template debrief is rebuilt as a whole (its verdict names the main
-    spot); a model-written verdict keeps its wording, "Rerun" in the debrief writes it again. Returns the debrief
+    spot); a model-written verdict keeps its wording except the sentences that name a spot that is gone (QA-07),
+    "Rerun" in the debrief writes all of it again. Returns the debrief
     unchanged when there is none or it was too short to carry weak spots."""
     if not debrief or debrief.get("too_short"):
         return debrief
@@ -529,7 +561,16 @@ def refresh_weak_spots(debrief: dict | None, records: list[dict], layer_order: s
     spots += [s for s in fresh["weak_spots"] if s["layer"] not in used]
     order = ["content", "language", "delivery"] if layer_order == "content-first" else ["delivery", "content", "language"]
     spots.sort(key=lambda s: order.index(s["layer"]) if s.get("layer") in order else 9)
-    return {**debrief, "weak_spots": spots[:3]}
+    spots = spots[:3]
+    out = {**debrief, "weak_spots": spots}
+    # QA-07: the verdict and the next step never name a weak spot the list no longer has. Only the sentence that names
+    # it is written again, from the refreshed list; the rest of the model's wording stays.
+    kept = {(s.get("layer"), s.get("tag")) for s in spots}
+    gone = [s for s in debrief.get("weak_spots") or [] if (s.get("layer"), s.get("tag")) not in kept]
+    if gone:
+        out["verdict"] = follow_weak_spots(debrief.get("verdict", ""), gone, main_fix_sentence(spots))
+        out["next_step"] = follow_weak_spots(debrief.get("next_step", ""), gone, next_step_for(spots))
+    return out
 
 
 # ---------- Answer suggester (practice only, D35) ----------

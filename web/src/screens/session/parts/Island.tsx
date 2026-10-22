@@ -90,6 +90,8 @@ export interface SessionIslandProps {
   noSpeech: boolean;
   layout: "inline" | "stacked";
   panelOpen: boolean;
+  /** QA-01: feedback is ready and the panel is closed: a dot on the toggle, and the name says so. */
+  feedbackUnread?: boolean;
   onToggleFeedback: () => void;
   feedbackRef?: Ref<HTMLButtonElement>;
   /** More menu */
@@ -295,9 +297,10 @@ export function SessionIsland(p: SessionIslandProps) {
     <IconButton
       ref={p.feedbackRef}
       icon="panel"
-      label={p.panelOpen ? t("session.island.feedbackHide") : t("session.island.feedbackShow")}
+      label={p.panelOpen ? t("session.island.feedbackHide") : p.feedbackUnread ? t("session.island.feedbackShowNew") : t("session.island.feedbackShow")}
       title={model.feedback.reason}
       pressed={p.panelOpen}
+      dot={p.feedbackUnread && !p.panelOpen}
       disabled={!model.feedback.enabled}
       onClick={p.onToggleFeedback}
     />

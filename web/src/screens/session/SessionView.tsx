@@ -21,6 +21,7 @@ import { PanelBody, type ConcretePanel } from "./parts/PanelBody";
 import { ShortcutsDialog } from "./parts/ShortcutsDialog";
 import { Suggester } from "./parts/Suggester";
 import { Transcript } from "./parts/Transcript";
+import { opensItself, readyKey } from "./feedbackWatch";
 import { HINT_MS, stageFor } from "./stage";
 import { follow, FOLLOW_START, isAtBottom, showJump, type FollowEvent, type FollowState } from "./transcriptScroll";
 import type { SessionPhase, SessionViewProps } from "./types";
@@ -127,15 +128,33 @@ export function SessionView(props: SessionViewProps) {
   const hasFeedback = Boolean(data.answered || th?.records.length || th?.pendingIds.length || th?.unavailable.length || data.earlier.length);
   const model = islandModel({ variant, input, phase, muted, interrupted, data, handlers, hasFeedback });
 
-  /* ---------- feedback panel: opens on its own when feedback is ready, closes when Mike asks the next question;
-   * the user's toggle (F, the island button, X, Esc) wins until the panel's mode changes. ---------- */
+  /* ---------- feedback panel (13, QA-01; rules in feedbackWatch.ts). The designed frames (p2/p3/p4/edit/recheck in
+   * a phase that is not quiet) open it as before. In the live app every phase is quiet, so what opens it is the
+   * feedback itself: on wide it opens by itself when ready feedback arrives (not while the user talks); on mid and
+   * narrow a dot on the toggle says it is ready. The user's own toggle wins: a close they made keeps it shut until
+   * they open it again; their open or close holds until the panel's mode changes. ---------- */
   const autoOpen = OPEN_MODES.has(panelMode) && !QUIET.has(phase) && !(interrupted && !wide);
   const autoKey = `${th?.number ?? 0}:${panelMode}:${autoOpen}`;
   const [manual, setManual] = useState<{ key: string; open: boolean } | null>(null);
-  const wanted = manual?.key === autoKey ? manual.open : props.panelOpen ?? autoOpen;
+  const ready = readyKey(th);
+  const [seen, setSeen] = useState(ready);             // feedback that is there on arrival counts as seen
+  const [selfOpened, setSelfOpened] = useState(false); // opened by itself on wide: stays until the user closes it
+  const [closedByUser, setClosedByUser] = useState(false);
+  const fresh = ready !== null && ready !== seen;
+  const opensNow = fresh && opensItself({ layout, phase: interrupted ? "interrupted" : phase, suppressed: closedByUser });
+  const wanted = manual?.key === autoKey ? manual.open : props.panelOpen ?? (autoOpen || (wide && selfOpened) || opensNow);
   const panelOpen = model.feedback.enabled && wanted;
+  useEffect(() => {
+    if (!fresh || !panelOpen) return;
+    setSeen(ready);
+    if (opensNow) setSelfOpened(true);
+  }, [fresh, panelOpen, opensNow, ready]);
+  /* Ready feedback the user has not seen with the panel open: the dot (stories can force it with `feedbackUnread`). */
+  const unread = props.feedbackUnread ?? (fresh && !panelOpen);
   const setPanel = (open: boolean, returnFocus = false) => {
     setManual({ key: autoKey, open });
+    setClosedByUser(!open);
+    if (!open) setSelfOpened(false);
     if (!open && returnFocus) feedbackRef.current?.focus({ preventScroll: true });
   };
   const floating = usePresence(wide && panelOpen);
@@ -323,6 +342,7 @@ export function SessionView(props: SessionViewProps) {
                     noSpeech={overlay === "browser" || Boolean(props.banners?.browser)}
                     layout={props.island ?? (narrowIsland ? "stacked" : "inline")}
                     panelOpen={panelOpen}
+                    feedbackUnread={unread}
                     onToggleFeedback={() => setPanel(!panelOpen)}
                     feedbackRef={feedbackRef}
                     moreOpen={props.initialOverlay === "more"}
