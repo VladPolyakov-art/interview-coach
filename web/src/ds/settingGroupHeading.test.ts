@@ -15,3 +15,12 @@ describe("SettingGroup heading level (QA-12)", () => {
     expect(html).not.toContain("<h3");
   });
 });
+
+describe("SettingGroup hideTitle (13b)", () => {
+  it("keeps the title for screen readers only and still labels the section", () => {
+    const html = renderToStaticMarkup(createElement(SettingGroup, { title: "Your name", hideTitle: true, headingLevel: 2, children: "rows" }));
+    expect(html).toMatch(/<h2 id="([^"]+)" class="visually-hidden">Your name<\/h2>/);
+    const id = /<h2 id="([^"]+)"/.exec(html)?.[1];
+    expect(html).toContain(`aria-labelledby="${id}"`);
+  });
+});

@@ -321,8 +321,7 @@
       "connection": "Connection"
     },
     "choice": {
-      "title": "Pick an engine",
-      "hint": "Ollama is free and runs on this computer. The others need a key or a plan."
+      "title": "Pick an engine"
     },
     "connect": "Connect",
     "disconnect": "Disconnect",
@@ -339,21 +338,18 @@
     "stepDone": "done",
     "engine": {
       "title": "Choose how Mike runs",
-      "subtitle": "Mike is your AI interviewer. He needs an AI engine to ask questions and give feedback.",
-      "later": "You can switch any time in Settings → AI engine.",
+      "later": "You can change this later in Settings.",
       "waiting": "Continue once {name} is Ready.",
       "pickFirst": "Pick an engine to continue."
     },
     "check": {
-      "title": "Say hi to Mike",
-      "subtitle": "One quick check of your microphone, speech recognition and Mike's voice.",
+      "title": "Quick mic check",
       "voice": "Mike's voice",
-      "voiceHint": "You'll hear it in the check below.",
       "sample": "Listen",
       "voiceMissing": "Mike's voice isn't installed on this computer, so he'll reply in text.",
       "group": "Voice check",
       "start": "Start the check",
-      "idle": "Press the microphone and say something like “Hi Mike, can you hear me?”",
+      "idle": "Press the mic and say “Hi Mike, can you hear me?”",
       "listening": "Listening… Mike replies after a short pause.",
       "done": "Done",
       "recognising": "Recognising…",
@@ -394,19 +390,16 @@
     },
     "about": {
       "title": "About you",
-      "subtitle": "Mike tailors questions to you and the job. Everything here is optional and stays on this computer.",
+      "subtitle": "All optional. It stays on this computer.",
       "nameGroup": "Your name",
       "name": "What should Mike call you?",
-      "nameHint": "He says it in the greeting and now and then.",
       "namePlaceholder": "Your first name",
       "cv": "Your CV",
-      "cvHint": "Mike asks about your own experience. Several files are fine.",
       "job": "The job you're preparing for",
-      "jobHint": "A posting, a link or a file. Mike asks about that role.",
       "jobAdd": "Add a job",
       "jobChange": "Change",
       "how": "How you'll answer",
-      "roundHint": "Five questions, about 20 minutes. Feedback comes after each answer, never while you talk.",
+      "roundHint": "Five questions, about 20 minutes.",
       "later": "Not now",
       "start": "Start the first round",
       "roundTitle": "Your first round"

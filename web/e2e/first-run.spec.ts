@@ -44,7 +44,7 @@ test.describe("US-02 First-run wizard", () => {
     await page.getByRole("button", { name: "Continue" }).click();
 
     // The check step: no microphone, so the user goes on in text mode (AC4, see the negative test below).
-    await expect(page.getByRole("heading", { name: "Say hi to Mike", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Quick mic check", level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "I'll type instead" }).first().click();
 
     // AC3: the profile step; the name, the CV text and a job are all optional but can be filled in.

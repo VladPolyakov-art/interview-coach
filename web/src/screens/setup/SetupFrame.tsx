@@ -33,11 +33,11 @@ export function SetupFrame({ step, children }: { step: SetupStep; children: Reac
 
 export type HeadingRef = RefObject<HTMLHeadingElement | null>;
 
-export function StepHead({ headingRef, title, sub }: { headingRef?: HeadingRef; title: string; sub: string }) {
+export function StepHead({ headingRef, title, sub }: { headingRef?: HeadingRef; title: string; sub?: string }) {
   return (
     <div className={s.head}>
       <h1 ref={headingRef} tabIndex={-1}>{title}</h1>
-      <p className={s.sub}>{sub}</p>
+      {sub ? <p className={s.sub}>{sub}</p> : null}
     </div>
   );
 }

@@ -73,12 +73,12 @@ export function CheckStep({ headingRef, onNext, onBack, onEngine, initial, level
         <Presence state={presence} level={presence === "listening" ? level : undefined}
           getLevel={presence === "listening" && !initial ? check.getLevel : undefined} />
       </div>
-      <StepHead headingRef={headingRef} title={t("setup.check.title")} sub={t("setup.check.subtitle")} />
+      <StepHead headingRef={headingRef} title={t("setup.check.title")} />
       {saveView}
       <div data-review-id="Setup/Check" data-review-section="Setup · Check" data-comment-target>
-        <SettingGroup title={t("setup.check.group")} headingLevel={2}>
+        <SettingGroup title={t("setup.check.group")} hideTitle headingLevel={2}>
           {ttsOk ? (
-            <SettingRow id="setup-voice" label={t("setup.check.voice")} description={t("setup.check.voiceHint")}>
+            <SettingRow id="setup-voice" label={t("setup.check.voice")}>
               <Select track="setup-voice" label={t("setup.check.voice")} hideLabel width="content" value={voice} disabled={!voices.data}
                 onChange={(v) => void save({ voice: v })}
                 options={(voices.data?.voices ?? []).map((v) => ({ value: v.id, label: `${v.label} · ${v.locale}` }))} />

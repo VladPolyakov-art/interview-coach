@@ -26,7 +26,7 @@ test.describe("G4 No horizontal scroll at 375 px", () => {
     await expectNoHorizontalScroll(page);
     await page.getByRole("radio", { name: /^Ollama/ }).click();
     await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page.getByRole("heading", { name: "Say hi to Mike", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Quick mic check", level: 1 })).toBeVisible();
     await expectNoHorizontalScroll(page);
   });
 

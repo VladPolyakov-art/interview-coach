@@ -65,7 +65,7 @@ export const setupReview: ReviewScreen = {
     state("engine-antigravity-ready", "1 · Antigravity подключён", "engineAntigravityReady", { mobile: false, note: "D87: Antigravity ответил на Connect — Ready, «Connected.» + «Disconnect», Continue включается. Условие: запросы идут с аккаунта Google и считаются в квоту Antigravity, правила Google." }),
     state("check-idle", "2 · Проверка — старт", "checkIdle", {
       dark: true,
-      note: "Сверху выбор голоса Майка и ▶ образец. Справа от голоса — кнопка «Listen» (D82: с подписью, не значок). Ниже — микрофон: «Press the microphone and say something like “Hi Mike, can you hear me?”». Справа внизу — «I'll type instead», без проверки микрофона.",
+      note: "Сверху выбор голоса Майка и ▶ образец. Справа от голоса — кнопка «Listen» (D82: с подписью, не значок). Ниже — микрофон: «Press the mic and say “Hi Mike, can you hear me?”» (13b: без подзаголовка и подписи «Voice check»). Справа внизу — «I'll type instead», без проверки микрофона.",
     }),
     state("check-listening", "2 · Слушаем", "checkListening", { note: "D82: сверху — то же свечение, что в сессии: идёт за вашим голосом. Уровень и на кнопке; отправка сама после паузы или по «Done»." }),
     state("check-thinking", "2 · Распознано, Майк отвечает", "checkThinking", { mobile: false, note: "Ваша фраза пузырём, у Майка — «Mike is answering…»; свечение сверху «думает» — одна волна ходит из стороны в сторону." }),

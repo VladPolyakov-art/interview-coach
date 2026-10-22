@@ -175,11 +175,11 @@ test.describe("QA-17 The scripted interviewer asks about duties, not the job tit
 });
 
 test.describe("QA-06 / F-13-3 / F-13-12 Setup step 1", () => {
-  test("happy path: the ready engine is picked, Continue is in view without scrolling, the subtitle says what Mike needs", async ({
+  test("happy path: the ready engine is picked, Continue is in view without scrolling, the heading alone says what to do (13b)", async ({
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByText("Mike is your AI interviewer. He needs an AI engine to ask questions and give feedback.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Choose how Mike runs", level: 1 })).toBeVisible();
     const ollama = page.getByRole("radio", { name: /^Ollama/ });
     await expect(ollama).toBeChecked();
     const next = page.getByRole("button", { name: "Continue" });
@@ -369,7 +369,7 @@ test.describe("UT-3 The voice island never runs its groups into each other", () 
   test.use({ permissions: ["microphone"] });
 
   /** Every point across the main action hits the button itself: no divider or icon lies over it. */
-  async function nothingOver(page: Page, button: Locator) {
+  async function nothingOver(button: Locator) {
     return button.evaluate((b) => {
       const r = b.getBoundingClientRect();
       for (let x = Math.ceil(r.left) + 2; x < r.right - 2; x++) {
@@ -403,7 +403,7 @@ test.describe("UT-3 The voice island never runs its groups into each other", () 
     for (const [width, layout] of [[1440, "inline"], [820, "stacked"], [700, "stacked"], [1100, "inline"]] as const) {
       await page.setViewportSize({ width, height: 900 });
       await expect(island).toHaveAttribute("data-layout", layout);
-      expect(await nothingOver(page, send), `Send now is clear at ${width}px`).toBe(true);
+      expect(await nothingOver(send), `Send now is clear at ${width}px`).toBe(true);
     }
   });
 });

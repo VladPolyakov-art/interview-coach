@@ -4,7 +4,7 @@
  * Ready; there is no text-mode way out here (the engine writes Mike's questions). Run again from Settings → About,
  * the engine in use is picked when it is Ready. */
 import { useState } from "react";
-import { Button, Callout } from "../../ds";
+import { Button, Callout, IconButton } from "../../ds";
 import { t } from "../../i18n";
 import { EngineChoice } from "../../components/engine/EngineChoice";
 import { RECOMMENDED, engineName } from "../../components/engine/meta";
@@ -22,7 +22,7 @@ export interface EngineStepProps {
 }
 
 export function EngineStep({ headingRef, onNext, initialPick }: EngineStepProps) {
-  const { engines, updateSettings } = useApp();
+  const { engines, updateSettings, refreshEngines, enginesLoading } = useApp();
   const inUse = engines?.engines.find((e) => e.id === engines.selected && e.status.ready) ?? null;
   const [pick, setPick] = useState<EngineId | null>(initialPick ?? null);
   const [busy, setBusy] = useState(false);
@@ -53,12 +53,13 @@ export function EngineStep({ headingRef, onNext, initialPick }: EngineStepProps)
 
   return (
     <>
-      <StepHead headingRef={headingRef} title={t("setup.engine.title")} sub={t("setup.engine.subtitle")} />
+      <StepHead headingRef={headingRef} title={t("setup.engine.title")} />
       <div data-review-id="Setup/Engine" data-review-section="Setup · AI engine" data-comment-target>
         <EngineChoice value={value} onChange={setPick} />
       </div>
       {error ? <Callout tone="error" live="alert">{error}</Callout> : null}
-      <StepFooter>
+      {/* 13b: "Check again" sits in the footer, so nothing stands alone above the list. */}
+      <StepFooter back={engines ? <IconButton icon="refresh" label={t("common.checkAgain")} data-track="engine-recheck" disabled={enginesLoading} onClick={() => void refreshEngines()} /> : undefined}>
         <span className={s.note} aria-live="polite">
           {!picked ? t("setup.engine.pickFirst") : !ready ? t("setup.engine.waiting", { name: engineName(picked) }) : t("setup.engine.later")}
         </span>

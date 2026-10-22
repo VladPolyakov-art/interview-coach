@@ -43,24 +43,29 @@ export interface SettingGroupProps {
   flush?: boolean;
   /** Level of the title: 3 under a section heading (Settings), 2 straight under the page's h1 (Setup steps). */
   headingLevel?: 2 | 3;
+  /** The title is only for screen readers: the box already says what it is (13b, Setup: no label repeating the row). */
+  hideTitle?: boolean;
   className?: string;
 }
 
 /** A titled group of setting rows (D78): the title above, the rows in one rounded box with hairlines between them,
  * so where one group ends and the next begins is plain to see. */
-export function SettingGroup({ title, description, id, action, children, flush, headingLevel = 3, className }: SettingGroupProps) {
+export function SettingGroup({ title, description, id, action, children, flush, headingLevel = 3, hideTitle, className }: SettingGroupProps) {
   const auto = useId();
   const headingId = id ?? auto;
   const H = headingLevel === 2 ? "h2" : "h3";
   return (
     <section className={`${s.groupSection} ${className ?? ""}`} aria-labelledby={headingId}>
-      <div className={s.groupHead}>
-        <div className={s.groupHeadText}>
-          <H id={headingId} className={s.groupTitle}>{title}</H>
-          {description ? <p className={s.groupDesc}>{description}</p> : null}
+      {hideTitle ? <H id={headingId} className="visually-hidden">{title}</H> : null}
+      {hideTitle && !description && !action ? null : (
+        <div className={s.groupHead}>
+          <div className={s.groupHeadText}>
+            {hideTitle ? null : <H id={headingId} className={s.groupTitle}>{title}</H>}
+            {description ? <p className={s.groupDesc}>{description}</p> : null}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      )}
       <div className={`${s.group} ${flush ? s.flush : ""}`}>{children}</div>
     </section>
   );

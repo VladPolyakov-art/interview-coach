@@ -3,7 +3,7 @@
  * for Gemini, and so on), and the status re-checks every 5 s until it is Ready. Picking doesn't switch the engine:
  * the step's Continue does, once the picked engine is Ready. A Ready pick shows Disconnect (D84). */
 import { useEffect } from "react";
-import { Badge, Icon, IconButton, SettingGroup, Skeleton } from "../../ds";
+import { Badge, Icon, SettingGroup, Skeleton } from "../../ds";
 import { t } from "../../i18n";
 import { useInterval } from "../../lib/hooks";
 import { useApp } from "../../lib/store";
@@ -21,15 +21,14 @@ export interface EngineChoiceProps {
 }
 
 export function EngineChoice({ value, onChange }: EngineChoiceProps) {
-  const { engines, settings, refreshEngines, enginesLoading } = useApp();
+  const { engines, settings, refreshEngines } = useApp();
   useEffect(() => { void refreshEngines(); }, [refreshEngines]);
   const picked = engines?.engines.find((e) => e.id === value) ?? null;
   useInterval(() => { void refreshEngines(); }, 5000, Boolean(picked && !picked.status.ready));
   if (!engines) return <Skeleton variant="row" rows={4} label={t("common.checking")} />;
 
-  const recheck = <IconButton icon="refresh" size="sm" label={t("common.checkAgain")} data-track="engine-recheck" disabled={enginesLoading} onClick={() => void refreshEngines()} />;
   return (
-    <SettingGroup title={t("engines.choice.title")} description={t("engines.choice.hint")} action={recheck} headingLevel={2} flush>
+    <SettingGroup title={t("engines.choice.title")} hideTitle headingLevel={2} flush>
       <div role="radiogroup" aria-label={t("engines.choice.title")}>
         {engines.engines.map((e) => {
           const on = e.id === value;
