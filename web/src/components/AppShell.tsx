@@ -455,13 +455,27 @@ const SAVE_WAIT_MS = 3 * 60_000;
 /** D73 toasts, shared with the review frames: "Saving…" stays (shimmer: real work is going on), "saved" offers the debrief. */
 export const savingToast = (): ToastOptions => ({ message: <span className="shimmer-text">{t("session.afterEnd.saving")}</span>, duration: null });
 export const savedToast = (onOpen: () => void): ToastOptions => ({
-  message: t("session.afterEnd.ready"), action: { label: t("session.afterEnd.open"), onClick: onOpen }, duration: 12_000,
+  message: t("session.afterEnd.ready"), action: { label: t("session.afterEnd.open"), onClick: onOpen },
 });
+
+/** The page of a saved session (its debrief). UT-4: the "saved" toast is not shown there and leaves when the user gets there. */
+export const sessionPath = (id: string) => `/sessions/${encodeURIComponent(id)}`;
+export const onSessionPage = (pathname: string, id: string) => pathname === sessionPath(id);
 
 /** D73: the toast for a session being saved after End (lib/pendingSave). It stays while the server saves the session
  * and writes the debrief, then says it is ready, with the way in. Polled: the session's socket is gone by then. */
-function useSaveWatch(toast: ReturnType<typeof useToast>, loadRecent: () => Promise<void>, navigate: NavigateFunction) {
+function useSaveWatch(toast: ReturnType<typeof useToast>, loadRecent: () => Promise<void>, navigate: NavigateFunction, pathname: string) {
   const pending = useSyncExternalStore(pendingSave.subscribe, pendingSave.get);
+  const pathRef = useRef(pathname);
+  pathRef.current = pathname;
+  const saved = useRef<{ id: string; toast: number } | null>(null);
+  // UT-4: reaching the debrief (from Recents or the toast) closes the "saved" toast.
+  useEffect(() => {
+    if (saved.current && onSessionPage(pathname, saved.current.id)) {
+      toast.dismiss(saved.current.toast);
+      saved.current = null;
+    }
+  }, [pathname, toast]);
   useEffect(() => {
     if (!pending) return;
     const { id, at } = pending;
@@ -469,12 +483,13 @@ function useSaveWatch(toast: ReturnType<typeof useToast>, loadRecent: () => Prom
     let listed = false;
     let timer = 0;
     const saving = toast.show(savingToast());
-    const finish = (saved: boolean) => {
+    const finish = (ok: boolean) => {
       stopped = true;
       toast.dismiss(saving);
       pendingSave.clear(id);
       void loadRecent();
-      toast.show(saved ? savedToast(() => navigate(`/sessions/${encodeURIComponent(id)}`)) : { message: t("session.afterEnd.failed"), tone: "error" });
+      if (!ok) toast.show({ message: t("session.afterEnd.failed"), tone: "error" });
+      else if (!onSessionPage(pathRef.current, id)) saved.current = { id, toast: toast.show(savedToast(() => navigate(sessionPath(id)))) };
     };
     const poll = async () => {
       const late = Date.now() - at > SAVE_WAIT_MS;
@@ -523,7 +538,7 @@ function LiveShell({ children }: { children: ReactNode }) {
     () => { if (aliveRef.current) setRecent((prev) => (prev.status === "ready" ? prev : { status: "error" })); },
   ), []);
 
-  useSaveWatch(toast, loadRecent, navigate);
+  useSaveWatch(toast, loadRecent, navigate, location.pathname);
 
   // Recents: refetched on every navigation (a session may have been added, renamed or trashed), and when a screen
   // changed a chat in place (rename in the debrief, Undo from a toast).

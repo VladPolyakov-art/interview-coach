@@ -25,7 +25,7 @@ import { opensItself, readyKey } from "./feedbackWatch";
 import { HINT_MS, stageFor } from "./stage";
 import { follow, FOLLOW_START, isAtBottom, showJump, type FollowEvent, type FollowState } from "./transcriptScroll";
 import type { SessionPhase, SessionViewProps } from "./types";
-import { useSessionLayout } from "./useSessionLayout";
+import { useIslandOverflow, useSessionLayout } from "./useSessionLayout";
 import s from "./SessionView.module.css";
 
 /** Spec P0..P4 from the phase, unless the caller (the live container) says what to show. */
@@ -72,7 +72,10 @@ export function SessionView(props: SessionViewProps) {
   const scrollFocus = useScrollFocusable(t("session.transcript"), scrollRef); // QA-09: reachable by keyboard when it scrolls
   const islandRef = useRef<HTMLDivElement>(null);
   const feedbackRef = useRef<HTMLButtonElement>(null);
+  const islandBoxRef = useRef<HTMLDivElement>(null);
   const { layout, stacked: narrowIsland, compact: compactIsland } = useSessionLayout(rootRef);
+  const overflowIsland = useIslandOverflow(islandBoxRef, !props.island && !narrowIsland);
+  const islandLayout = props.island ?? (narrowIsland || overflowIsland ? "stacked" : "inline");
   const wide = layout === "wide";
   const compact = layout === "narrow";
   const voice = input === "voice";
@@ -328,7 +331,7 @@ export function SessionView(props: SessionViewProps) {
             <div ref={islandRef} className={s.dock}>
               <Banners overlay={overlay} browser={props.banners?.browser} storage={props.banners?.storage} typing={Boolean(props.banners?.browser) && input === "text"} notices={data.notices} handlers={handlers} />
               {showIsland ? (
-                <div className={s.islandBox} data-input={input} data-stacked={(props.island ?? (narrowIsland ? "stacked" : "inline")) === "stacked" || undefined}>
+                <div ref={islandBoxRef} className={s.islandBox} data-input={input} data-stacked={islandLayout === "stacked" || undefined}>
                   <SessionIsland
                     key={input}
                     variant={variant}
@@ -343,7 +346,7 @@ export function SessionView(props: SessionViewProps) {
                     interrupted={interrupted}
                     voiceDown={overlay === "interrupted-voice"}
                     noSpeech={overlay === "browser" || Boolean(props.banners?.browser)}
-                    layout={props.island ?? (narrowIsland ? "stacked" : "inline")}
+                    layout={islandLayout}
                     compact={props.island ? props.island === "stacked" : compactIsland}
                     panelOpen={panelOpen}
                     feedbackUnread={unread}

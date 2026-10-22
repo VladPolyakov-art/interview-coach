@@ -35,3 +35,30 @@ export function useSessionLayout(ref: RefObject<HTMLElement | null>): { layout: 
   }, [ref]);
   return { layout: layoutFor(width), stacked: width < ISLAND_STACKED, compact: width < ISLAND_COMPACT };
 }
+
+/** UT-3: the one-row island also goes to two rows as soon as its row doesn't fit the space it has (between 560 and
+ * ~800 px of Session the groups ran into each other and the divider lay over Send now). Measured on the island box
+ * while the island is one row; the width it needed is kept, so it comes back to one row only once that width is there. */
+export function useIslandOverflow(ref: RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [need, setNeed] = useState(0);
+  const [space, setSpace] = useState(Number.POSITIVE_INFINITY);
+  const stacked = enabled && need > 0 && space < need;
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box || !enabled) return;
+    const measure = () => {
+      setSpace(box.clientWidth);
+      if (stacked) return;
+      const island = box.querySelector<HTMLElement>('[data-layout="inline"]');
+      const row = island?.lastElementChild as HTMLElement | null | undefined;
+      if (!island || !row || row.scrollWidth <= row.clientWidth + 1) return;
+      setNeed(Math.ceil(row.scrollWidth + island.offsetWidth - row.clientWidth));
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  });
+  return stacked;
+}

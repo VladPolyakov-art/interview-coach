@@ -1,7 +1,7 @@
 /* Stage 13, round 2 (part A): the P2/P3 fixes in Home, Setup and the Session.
  * Naming (QA-04/15, F-13-15), the drill that keeps its job (F-13-8/14), the Setup wizard (QA-06, F-13-3/10/12), the mic help
  * (QA-05, F-13-4), Save job (F-13-11), touch targets (QA-03), the phone island (QA-10), the English first-time hint (F-13-9)
- * and the scripted first question (QA-17). Each test names the finding it guards. */
+ * and the scripted first question (QA-17). 13b: the voice island at mid widths (UT-3). Each test names the finding it guards. */
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   ANSWER_WITH_RESULT,
@@ -363,4 +363,47 @@ test.describe("F-13-9 The English first-time hint says 'after each turn'", () =>
       await expect(tips).not.toContainText("after each question");
     });
   }
+});
+
+test.describe("UT-3 The voice island never runs its groups into each other", () => {
+  test.use({ permissions: ["microphone"] });
+
+  /** Every point across the main action hits the button itself: no divider or icon lies over it. */
+  async function nothingOver(page: Page, button: Locator) {
+    return button.evaluate((b) => {
+      const r = b.getBoundingClientRect();
+      for (let x = Math.ceil(r.left) + 2; x < r.right - 2; x++) {
+        const top = document.elementsFromPoint(x, r.top + r.height / 2)[0];
+        if (top && top !== b && !b.contains(top)) return false;
+      }
+      return true;
+    });
+  }
+
+  test("one row where it fits, two rows where it doesn't, Send now always clear", async ({ page }) => {
+    await skipSetup(page);
+    await page.goto("/");
+    await page.getByRole("textbox", { name: "Message Mike" }).fill(JOB_TEXT);
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await page.getByRole("button", { name: "Behavioural", exact: true }).click();
+    await page.getByRole("button", { name: "Nothing else" }).click();
+    await page.getByRole("button", { name: "Start interview" }).click();
+    const voice = page.getByRole("group", { name: "Voice" });
+    await expect(voice).toBeVisible();
+    const talk = voice.getByRole("button", { name: "Talk now" });
+    const send = voice.getByRole("button", { name: "Send now" });
+    await expect(talk.or(send)).toBeVisible({ timeout: 30_000 });
+    // The fake microphone's tone may start listening on its own while Talk now is being clicked: retry until Send now.
+    await expect(async () => {
+      if (await talk.isVisible()) await talk.click({ timeout: 1000 });
+      await expect(send).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+    const island = page.locator('[data-layout="inline"], [data-layout="stacked"]').filter({ has: voice });
+
+    for (const [width, layout] of [[1440, "inline"], [820, "stacked"], [700, "stacked"], [1100, "inline"]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(island).toHaveAttribute("data-layout", layout);
+      expect(await nothingOver(page, send), `Send now is clear at ${width}px`).toBe(true);
+    }
+  });
 });
