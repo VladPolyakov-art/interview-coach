@@ -97,6 +97,16 @@
     "light": "Light",
     "dark": "Dark"
   },
+  "install": {
+    "body": "Install Vukoli as an app: its own window and icon in the {where}.",
+    "dock": "Dock",
+    "taskbar": "taskbar",
+    "action": "Install",
+    "dismiss": "Not now",
+    "settingsTitle": "App",
+    "settingsLabel": "Install Vukoli as an app",
+    "settingsHint": "Its own window and icon in the {where}. If the app is closed, the icon offers to start it."
+  },
   "server": {
     "title": "The app server isn't answering",
     "body": "Vukoli runs a small server on this computer. Start it, then check again.",
