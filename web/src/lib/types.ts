@@ -337,7 +337,7 @@ export type ClientMessage =
   | { type: "activity_start"; turn_id: number; manual?: boolean }
   | { type: "audio_stream_end" }
   /** Browser recognition heard nothing in a voice turn opened by activity_start. */
-  | { type: "activity_cancel" }
+  | { type: "activity_cancel"; turn_id?: number }
   | { type: "user_turn"; text: string; turn_id: number; source: "text" | "browser_stt" }
   | { type: "redo_answer" }
   | { type: "suggest"; on: boolean }
@@ -393,9 +393,13 @@ export type ServerMessage =
       interrupted?: boolean;
     }
   | { type: "response_complete" }
-  | { type: "interrupted" }
-  /** The voice turn was no speech (noise, Whisper's "Thank you." on silence, Mike's echo): Mike's reply goes on. */
+  /** Speech: Mike's reply is cut off. `turn_id`: the voice turn that proved to be speech (none: all open turns). */
+  | { type: "interrupted"; turn_id?: number }
+  /** The voice turn was no speech (noise, Whisper's "Thank you." on silence, Mike's echo): Mike's reply goes on.
+   * Exactly one of `interrupted` / `voice_turn_dropped` closes every activity_start. */
   | { type: "voice_turn_dropped"; turn_id?: number }
+  /** Not a verdict: the live captions of a long turn stay empty, so it no longer holds Mike back. */
+  | { type: "voice_turn_noise"; turn_id: number }
   | { type: "speech_preview"; turn_id: number; text: string }
   | { type: "user_transcript"; turn_id: number; text: string; backend?: string; low_conf?: LowConfWord[] }
   | { type: "notice"; code: string; message: string }

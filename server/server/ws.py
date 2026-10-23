@@ -439,13 +439,14 @@ async def session_socket(websocket: WebSocket) -> None:
                 state["voice_turn"] = turn_id
                 state["pending_voice"] = True
                 if isinstance(driver, TextDriver):
-                    await driver.begin_audio_turn(manual=data.get("manual") is True)
+                    await driver.begin_audio_turn(turn_id, manual=data.get("manual") is True)
                 else:
                     await driver.begin_audio_turn()
             elif kind == "activity_cancel":
                 # Browser recognition heard nothing: the voice turn opened by activity_start has no speech in it.
                 if isinstance(driver, TextDriver):
-                    await driver.cancel_audio_turn()
+                    cancelled = data.get("turn_id")
+                    await driver.cancel_audio_turn(cancelled if isinstance(cancelled, int) else None)
             elif kind == "audio_stream_end":
                 await asyncio.wait_for(audio_queue.join(), timeout=3)
                 if isinstance(driver, TextDriver):
@@ -592,7 +593,7 @@ async def session_socket(websocket: WebSocket) -> None:
             on_transcript_delta=lambda speaker, delta, full: emit("transcript_delta", speaker=speaker,
                                                                   delta=delta, full_text=full),
             on_turn_complete=turn_complete,
-            on_interrupted=lambda: emit("interrupted"),
+            on_interrupted=lambda turn_id=None: emit("interrupted", **({} if turn_id is None else {"turn_id": turn_id})),
             on_ready=lambda: emit("ready"),
             on_response_complete=lambda: emit("response_complete"),
         )
@@ -620,7 +621,8 @@ async def session_socket(websocket: WebSocket) -> None:
                 on_notice=lambda code, text: emit("notice", code=code, message=text),
                 on_preview=lambda text: emit("speech_preview", turn_id=state["voice_turn"], text=text),
                 on_error=lambda code, message, hint, retryable: error(code, message, hint, retryable),
-                on_voice_dropped=lambda: emit("voice_turn_dropped", turn_id=state["voice_turn"]),
+                on_voice_dropped=lambda turn_id: emit("voice_turn_dropped", turn_id=turn_id),
+                on_voice_noise=lambda turn_id: emit("voice_turn_noise", turn_id=turn_id),
                 on_user_transcript=user_transcript, on_metrics=metrics, gate=gate, resume=resume_info, **callbacks)
             stt_info = recogniser.info() if recogniser else {"available": False, "backend": "none"}
         session = {"id": storage.new_id("s-"), "mode": opts["mode"], "round_type": opts["round_type"],

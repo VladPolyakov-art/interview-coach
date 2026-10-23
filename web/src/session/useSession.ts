@@ -40,6 +40,8 @@ export function useSession(config: SessionConfig) {
   const capture = useRef<VoiceCapture | null>(null);
   const stt = useRef<BrowserStt | null>(null);
   const turnId = useRef(0);
+  /** The voice turn being recorded (or last recorded); typed turns also count in `turnId`. */
+  const voiceTurn = useRef(0);
   /** Latest mic level 0..1 for the live mic indicator; written per audio frame, read per animation frame (no re-render). */
   const level = useRef(0);
   const stateRef = useRef(state);
@@ -87,11 +89,12 @@ export function useSession(config: SessionConfig) {
     const cap = new VoiceCapture(context, {
       onTurnStart: (preRoll, manual) => {
         const pb = playback.current;
+        turnId.current += 1;
+        voiceTurn.current = turnId.current;
         if (pb && (manual || stateRef.current.engine === "gemini_live")) {
           pb.suppressed = true;
           pb.stop();
-        } else pb?.hold();
-        turnId.current += 1;
+        } else pb?.hold(turnId.current);
         send({ type: "activity_start", turn_id: turnId.current, ...(manual ? { manual: true } : {}) });
         if (!useBrowser) preRoll.forEach(sendPcm);
         dispatch({ type: "local/voice_turn_started", turnId: turnId.current });
@@ -100,6 +103,8 @@ export function useSession(config: SessionConfig) {
         if (!useBrowser) sendPcm(buffer);
       },
       onTurnEnd: () => {
+        const ended = voiceTurn.current;
+        playback.current?.turnEnded(ended);
         if (!useBrowser) {
           send({ type: "audio_stream_end" });
           dispatch({ type: "local/voice_turn_sent" });
@@ -111,15 +116,16 @@ export function useSession(config: SessionConfig) {
           const text = recogniser?.text() ?? "";
           recogniser?.consume();
           if (text) {
-            send({ type: "user_turn", text, turn_id: turnId.current, source: "browser_stt" });
-            dispatch({ type: "local/user_turn", turnId: turnId.current, text });
+            send({ type: "user_turn", text, turn_id: ended, source: "browser_stt" });
+            dispatch({ type: "local/user_turn", turnId: ended, text });
           } else {
             // Nothing recognised: the server lets Mike's held reply go on (voice_turn_dropped). The notice is for a
             // user who was expected to answer, not for a noise while Mike was speaking or about to reply.
             const mikeBusy = playback.current?.hasHeldAudio || stateRef.current.mikeTurnOpen
               || stateRef.current.awaitingBeforeVoice;
-            dispatch({ type: "local/voice_turn_dropped" });
-            if (stateRef.current.engine !== "gemini_live") send({ type: "activity_cancel" });
+            dispatch({ type: "local/voice_turn_dropped", turnId: ended });
+            if (stateRef.current.engine !== "gemini_live") send({ type: "activity_cancel", turn_id: ended });
+            playback.current?.release(ended);
             if (!mikeBusy) dispatch({ type: "notice", code: "not_heard", message: t("session.notice.notHeard") });
           }
         }, configRef.current.pauseSec ? 250 : 700);
@@ -195,8 +201,8 @@ export function useSession(config: SessionConfig) {
         return;
       }
       if (msg.type === "turn_start" && playback.current) playback.current.suppressed = false;
-      if (msg.type === "interrupted") playback.current?.stop();
-      if (msg.type === "voice_turn_dropped") playback.current?.resume();
+      if (msg.type === "interrupted") playback.current?.cutOff(msg.turn_id);
+      if (msg.type === "voice_turn_dropped" || msg.type === "voice_turn_noise") playback.current?.release(msg.turn_id);
       dispatch(msg);
     };
     socket.onclose = () => {

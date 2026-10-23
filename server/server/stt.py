@@ -34,6 +34,7 @@ AVG_LOGPROB = -1.0
 SILENCE_PHRASES = frozenset({
     "thank you", "thanks", "thank you very much", "thank you so much", "thanks for watching",
     "thank you for watching", "you", "bye", "bye bye", "see you next time", "please subscribe",
+    "hmm", "hm", "mm", "mhm", "uh", "um", "oh", "ah", "huh",       # a knock or a breath, heard as a sound
 })
 # Such a phrase is dropped only when the clip has little voice in it: under this much speech (frames louder than
 # the voice-activity threshold of the page, doubled) or when even its loudest frames are quiet. A clear, longer

@@ -86,6 +86,8 @@ export interface SessionState {
   /** The user is recording a voice answer (set locally on activity_start). */
   recording: boolean;
   recordingTurnId: number | null;
+  /** Voice turns (activity_start) that have no verdict yet; each gets exactly one: interrupted or voice_turn_dropped. */
+  openVoiceTurns: number[];
   /** `awaitingReply` as it was when the voice turn started: what a dropped turn goes back to. */
   awaitingBeforeVoice: boolean;
   preview: string;
@@ -121,11 +123,16 @@ export interface SessionState {
   interrupted: Interruption | null;
 }
 
+/** The open voice turns after a verdict for `turn` (none: for all of them). */
+function settle(open: number[], turn: number | undefined): number[] {
+  return turn === undefined ? [] : open.filter((id) => id !== turn);
+}
+
 export function initialState(input: InputMode, mode: "interview" | "english" = "interview"): SessionState {
   return {
     phase: "connecting", input, sessionId: "", mode, engine: "", model: "", speaks: false, questions: [], stt: null,
     suggesterAvailable: false, suggestOn: false, warnings: [], ready: false, mikeTurnOpen: false, awaitingReply: false,
-    recording: false, recordingTurnId: null, awaitingBeforeVoice: false, preview: "", transcript: [], threadOrder: [], currentThreadId: "",
+    recording: false, recordingTurnId: null, openVoiceTurns: [], awaitingBeforeVoice: false, preview: "", transcript: [], threadOrder: [], currentThreadId: "",
     followUps: [], currentQuestionText: "", closing: false, threadOfTurn: {}, feedback: {}, feedbackOrder: [],
     pending: {}, unavailable: {}, stronger: {}, rechecking: {}, recheckError: null, suggestion: null, notice: null, error: null, fatal: null,
     savedSessionId: "", debrief: null, saveError: "", endedReason: "", lastTurnMs: null, interrupted: null,
@@ -135,7 +142,7 @@ export function initialState(input: InputMode, mode: "interview" | "english" = "
 export type LocalAction =
   | { type: "local/voice_turn_started"; turnId: number }
   | { type: "local/voice_turn_sent" }
-  | { type: "local/voice_turn_dropped" }
+  | { type: "local/voice_turn_dropped"; turnId?: number }
   | { type: "local/user_turn"; turnId: number; text: string }
   | { type: "local/stronger_requested"; feedbackId: string }
   | { type: "local/recheck_requested"; feedbackIds: string[] }
@@ -195,7 +202,7 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         ...state,
         // Continuing a saved session: the transcript and feedback stay, what the cut-off left behind goes.
         ...(state.interrupted ? { interrupted: null, fatal: null, error: null, savedSessionId: "", debrief: null, saveError: "",
-          endedReason: "", mikeTurnOpen: false, awaitingReply: false, recording: false, notice: null } : null),
+          endedReason: "", mikeTurnOpen: false, awaitingReply: false, recording: false, openVoiceTurns: [], notice: null } : null),
         phase: "live", sessionId: action.session_id, mode: action.mode, engine: action.engine,
         model: action.model, speaks: action.speaks, questions: action.questions, stt: action.stt,
         suggesterAvailable: action.suggester_available, suggestOn: action.suggest, warnings: action.warnings ?? [],
@@ -278,24 +285,40 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       };
     case "interrupted":
       return {
-        ...state, mikeTurnOpen: false,
+        ...state, mikeTurnOpen: false, openVoiceTurns: settle(state.openVoiceTurns, action.turn_id),
         transcript: state.transcript.map((t) => (t.live ? { ...t, live: false, interrupted: true } : t)),
       };
 
     /* ---------- the user's side ---------- */
     case "local/voice_turn_started":
       return {
-        ...state, recording: true, recordingTurnId: action.turnId, awaitingBeforeVoice: state.awaitingReply,
+        ...state, recording: true, recordingTurnId: action.turnId,
+        // What a dropped turn goes back to is what it was before the first of the open turns (not a later turn's own wait).
+        awaitingBeforeVoice: state.openVoiceTurns.length ? state.awaitingBeforeVoice : state.awaitingReply,
+        openVoiceTurns: [...state.openVoiceTurns.filter((id) => id !== action.turnId), action.turnId],
         preview: "", notice: null,
         threadOfTurn: { ...state.threadOfTurn, [action.turnId]: state.currentThreadId },
       };
     case "local/voice_turn_sent":
       return { ...state, recording: false, awaitingReply: true };
     case "local/voice_turn_dropped":
-      return { ...state, recording: false, recordingTurnId: null, preview: "" };
-    case "voice_turn_dropped":
+      // The server still answers with a verdict for a turn id (activity_cancel); redo has none: all turns are void.
+      return {
+        ...state, recording: false, recordingTurnId: null, preview: "",
+        openVoiceTurns: action.turnId === undefined ? [] : state.openVoiceTurns,
+      };
+    case "voice_turn_dropped": {
+      // A verdict for a turn that is not open (a second one, or one from before a reconnect) changes nothing.
+      if (action.turn_id !== undefined && !state.openVoiceTurns.includes(action.turn_id)) return state;
+      const open = settle(state.openVoiceTurns, action.turn_id);
+      // Another voice turn is still open: it decides what Mike does, this one only leaves the list.
+      if (open.length) return { ...state, openVoiceTurns: open };
       // No answer was given: Mike is as busy (or as idle) as before the clip.
-      return { ...state, recording: false, recordingTurnId: null, preview: "", awaitingReply: state.awaitingBeforeVoice };
+      return {
+        ...state, openVoiceTurns: open, recording: false, recordingTurnId: null, preview: "",
+        awaitingReply: state.awaitingBeforeVoice,
+      };
+    }
     case "local/user_turn": {
       const threadId = state.currentThreadId;
       return {
@@ -425,7 +448,7 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     case "local/end_requested":
       return state.phase === "live" || state.phase === "connecting" ? { ...state, phase: "ending", interrupted: null } : { ...state, interrupted: null };
     case "saving":
-      return { ...ended(state), phase: "saving", recording: false };
+      return { ...ended(state), phase: "saving", recording: false, openVoiceTurns: [] };
     case "session_saved":
       return { ...ended(state), savedSessionId: action.session_id };
     case "debrief_pending":
@@ -452,7 +475,7 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       // Mid-session, with at least one answer on record: pause and offer to resume instead of ending the screen.
       if (FATAL_CODES.has(action.code) && interruptible(state)) {
         return {
-          ...state, recording: false, mikeTurnOpen: false,
+          ...state, recording: false, openVoiceTurns: [], mikeTurnOpen: false,
           interrupted: {
             kind: action.code === "connection_lost" ? "voice" : "engine", code: action.code,
             message: [action.message, action.hint].filter(Boolean).join(" "), ended: ENDS_SOCKET.has(action.code),
@@ -462,7 +485,7 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       if (FATAL_CODES.has(action.code)) {
         // A fatal error after saving started is not a failure of the save itself.
         if (state.phase === "saving" || state.phase === "debrief_pending") return { ...state, error: action };
-        return { ...state, fatal: action, phase: state.phase === "done" ? "done" : "failed", recording: false };
+        return { ...state, fatal: action, phase: state.phase === "done" ? "done" : "failed", recording: false, openVoiceTurns: [] };
       }
       return { ...state, error: action, awaitingReply: false };
     }
@@ -470,16 +493,16 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       return { ...state, error: { type: "error", code: action.code, message: action.message } };
     case "local/socket_closed": {
       if (state.interrupted?.resuming) {
-        return { ...state, phase: "live", mikeTurnOpen: false, recording: false, interrupted: { ...state.interrupted, resuming: false, ended: true, failed: "" } };
+        return { ...state, phase: "live", mikeTurnOpen: false, recording: false, openVoiceTurns: [], interrupted: { ...state.interrupted, resuming: false, ended: true, failed: "" } };
       }
       if (state.interrupted || interruptible(state)) {
         const interrupted = state.interrupted ?? { kind: "voice" as const, code: "connection_lost", message: "", ended: true };
-        return { ...state, mikeTurnOpen: false, recording: false, interrupted: { ...interrupted, ended: true } };
+        return { ...state, mikeTurnOpen: false, recording: false, openVoiceTurns: [], interrupted: { ...interrupted, ended: true } };
       }
-      if (state.phase === "done" || state.phase === "failed") return { ...state, mikeTurnOpen: false, recording: false };
-      if (state.savedSessionId) return { ...state, phase: "done", mikeTurnOpen: false, recording: false };
+      if (state.phase === "done" || state.phase === "failed") return { ...state, mikeTurnOpen: false, recording: false, openVoiceTurns: [] };
+      if (state.savedSessionId) return { ...state, phase: "done", mikeTurnOpen: false, recording: false, openVoiceTurns: [] };
       return {
-        ...state, phase: "failed", mikeTurnOpen: false, recording: false,
+        ...state, phase: "failed", mikeTurnOpen: false, recording: false, openVoiceTurns: [],
         fatal: state.fatal ?? { type: "error", code: "connection_lost", message: "" },
       };
     }
@@ -487,10 +510,10 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       return { ...state, interrupted: null, error: null };
     case "local/resume_requested":
       return state.interrupted
-        ? { ...state, phase: "connecting", input: action.input, recording: false, preview: "", interrupted: { ...state.interrupted, resuming: true, failed: undefined } }
+        ? { ...state, phase: "connecting", input: action.input, recording: false, openVoiceTurns: [], preview: "", interrupted: { ...state.interrupted, resuming: true, failed: undefined } }
         : state;
     case "local/input_changed":
-      return { ...state, input: action.input, recording: false, preview: "" };
+      return { ...state, input: action.input, recording: false, openVoiceTurns: [], preview: "" };
     case "local/dismiss_notice":
       return { ...state, notice: null };
     case "local/dismiss_error":

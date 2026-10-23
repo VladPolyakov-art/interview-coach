@@ -36,6 +36,7 @@ def test_silence_phrase_on_a_short_or_quiet_clip_is_dropped():
     assert non_speech_reason("Thank you.", voiced_s=0.2, level=0.05) == "silence phrase"      # short, even if loud
     assert non_speech_reason("Thanks for watching!", voiced_s=3.0, level=0.005) == "silence phrase"   # quiet
     assert non_speech_reason("you", voiced_s=0.0, level=0.0)
+    assert non_speech_reason("Hmm.", voiced_s=0.4, level=0.008) == "silence phrase"
     assert non_speech_reason("  thank   YOU very much ", voiced_s=0.3, level=0.04)
 
 
@@ -144,9 +145,9 @@ class Rig:
             self.llm, plan=PLAN, speak=False, stt=HeardSTT(heard),
             on_turn_complete=lambda s, t, m=None: self.log.append((s, t)),
             on_transcript_delta=lambda s, d, full: self.log.append(("delta", d)),
-            on_interrupted=lambda: self.log.append(("interrupted", "")),
+            on_interrupted=lambda turn=None: self.log.append(("interrupted", turn)),
             on_notice=lambda code, text: self.log.append(("notice", code)),
-            on_voice_dropped=lambda: self.log.append(("dropped", "")), **kw)
+            on_voice_dropped=lambda turn: self.log.append(("dropped", turn)), **kw)
 
     async def answer_and_wait_for_reply(self):
         """The user's answer is in and Mike's reply is being written (the model is blocked)."""
@@ -154,10 +155,10 @@ class Rig:
         await asyncio.sleep(0.02)
         assert self.driver.replying()
 
-    async def voice_turn(self):
-        await self.driver.begin_audio_turn()
+    async def voice_turn(self, turn=2):
+        await self.driver.begin_audio_turn(turn)
         self.driver._buffer.extend(pcm(1.0, 0.05))
-        await self.driver.end_audio_stream(turn_id=2)
+        await self.driver.end_audio_stream(turn_id=turn)
 
     async def settle(self):
         self.llm.release.set()
@@ -301,3 +302,129 @@ async def test_the_interrupt_button_stops_mike_at_once_even_if_nothing_is_said()
     await rig.driver.end_audio_stream(turn_id=2)
     assert rig.kinds().count("dropped") == 1 and rig.kinds().count("notice") == 1    # "I didn't catch that"
     assert rig.mike_lines() == []                                                    # and he does not carry on
+
+
+# ---------- one verdict per voice turn ----------
+
+async def test_overlapping_turns_each_get_one_verdict_and_mike_waits_for_the_last():
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    await rig.driver.begin_audio_turn(2)
+    assert not rig.driver._flow.is_set()
+    await rig.driver.cancel_audio_turn(1)                  # A is noise while B is still open
+    assert rig.log == [("dropped", 1)] and not rig.driver._flow.is_set()
+    await rig.driver.cancel_audio_turn(1)                  # a second verdict for A is never sent
+    assert rig.log == [("dropped", 1)]
+    await rig.driver.cancel_audio_turn(2)
+    assert rig.log == [("dropped", 1), ("dropped", 2)] and rig.driver._flow.is_set()
+
+
+async def test_a_dropped_turn_never_frees_mike_while_a_newer_one_is_in_recognition():
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    rig.driver._buffer.extend(pcm(1.0, 0.05))
+    await rig.driver.end_audio_stream(turn_id=1)           # A: no speech
+    await rig.driver.begin_audio_turn(2)
+    assert rig.log[:1] == [("dropped", 1)] and not rig.driver._flow.is_set()
+    await rig.driver.end_audio_stream(turn_id=2)
+    assert rig.log.count(("dropped", 2)) == 1 and rig.driver._flow.is_set()
+
+
+async def test_speech_in_an_old_turn_settles_only_that_turn():
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    await rig.driver.begin_audio_turn(2)
+    await rig.driver.handle_user_text_turn(LONG, None, 1)
+    assert ("interrupted", 1) in rig.log and not rig.driver._flow.is_set()      # B is still open
+    await rig.driver.cancel_audio_turn(2)
+    assert ("dropped", 2) in rig.log and rig.driver._flow.is_set()
+    await rig.settle()
+
+
+async def test_typed_text_settles_every_open_voice_turn():
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    await rig.driver.begin_audio_turn(2)
+    await rig.driver.handle_user_text_turn(LONG, None, 3)
+    assert ("interrupted", None) in rig.log and rig.driver._flow.is_set()
+    await rig.settle()
+
+
+async def test_stopping_the_session_frees_the_flow():
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    rig.driver.stop()
+    assert rig.driver._flow.is_set() and not rig.driver._turns
+
+
+async def test_the_interrupt_button_settles_the_older_turns_and_opens_its_own():
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    await rig.driver.begin_audio_turn(2, manual=True)
+    assert ("interrupted", None) in rig.log and rig.driver._turns == [2]
+    await rig.driver.cancel_audio_turn(2)
+    assert rig.driver._flow.is_set()
+
+
+# ---------- safety nets ----------
+
+async def test_mike_goes_on_when_no_verdict_comes(monkeypatch, caplog):
+    monkeypatch.setattr("server.session.FLOW_MAX_S", 0.05)
+    monkeypatch.setattr("server.session.FLOW_POLL_S", 0.02)
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)
+    rig.driver._recording = False                          # the user stopped; recognition never answers
+    rig.driver._quiet_since = time.monotonic()
+    with caplog.at_level("INFO", logger="uvicorn.error"):
+        await asyncio.wait_for(rig.driver._may_speak(), 2)
+    assert rig.log == [("dropped", 1)] and rig.driver._flow.is_set()
+    assert caplog.text.count("No verdict") == 1
+
+
+async def test_mike_keeps_waiting_while_the_user_is_still_talking(monkeypatch):
+    monkeypatch.setattr("server.session.FLOW_MAX_S", 0.05)
+    monkeypatch.setattr("server.session.FLOW_POLL_S", 0.02)
+    rig = Rig("")
+    await rig.driver.begin_audio_turn(1)                   # recording: a long answer is not a missing verdict
+    waiting = asyncio.create_task(rig.driver._may_speak())
+    await asyncio.sleep(0.2)
+    assert not waiting.done() and rig.log == []
+    await rig.driver.cancel_audio_turn(1)
+    await asyncio.wait_for(waiting, 1)
+
+
+async def test_a_long_noisy_turn_is_dropped_when_the_captions_stay_empty(monkeypatch):
+    monkeypatch.setattr("server.session.PREVIEW_EMPTY_RESUME", 2)
+    monkeypatch.setattr("server.session.NOISE_TURN_MIN_S", 1)
+    previews, noise = [], []
+    rig = Rig("", on_preview=previews.append, on_voice_noise=noise.append)
+    rig.driver.stt.transcribe_if_idle = lambda pcm_bytes: Transcript(text="", duration_s=1.0, backend="fake")
+    await rig.driver.begin_audio_turn(1)
+    for _ in range(40):                                    # the noise goes on: the buffer keeps growing
+        rig.driver._buffer.extend(pcm(1.0, 0.05))
+        if rig.driver._flow.is_set():
+            break
+        await asyncio.sleep(0.5)
+    assert noise == [1] and previews == [] and rig.log == []          # a hint: the turn is still open ...
+    assert rig.driver._turns == [1]
+    rig.driver._recording = False
+    await rig.driver.cancel_audio_turn(1)
+    assert rig.log == [("dropped", 1)] and noise == [1]                # ... and still gets its one verdict
+    rig.driver.stop()
+
+
+async def test_a_cancelled_reply_leaves_no_pending_wait_task_behind():
+    """The "Task was destroyed but it is pending ... Event.wait()" warning of the live test."""
+    rig = Rig("")
+    rig.driver.speak = True
+
+    async def stuck(speech, heard=None):
+        await asyncio.sleep(3600)
+    rig.driver._voice_worker = stuck
+    before = set(asyncio.all_tasks())
+    deliver = asyncio.create_task(rig.driver._deliver(rig.driver._from_list(["Okay."]), lambda: {"kind": "turn"}))
+    await asyncio.sleep(0.05)                              # inside the wait for the first audio
+    deliver.cancel()
+    await asyncio.gather(deliver, return_exceptions=True)
+    await asyncio.sleep(0)
+    assert [t for t in asyncio.all_tasks() - before if not t.done()] == []

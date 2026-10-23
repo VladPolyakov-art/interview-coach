@@ -73,20 +73,29 @@ Then binary PCM frames, then:
 preparing his reply, the local-engine server pauses him (text and audio) and waits for the verdict on the clip.
 The Interrupt button sends `"manual": true`: that is a barge-in by definition, Mike stops at once and nothing waits.
 
-- speech: the server cancels the reply, records the cut-off line and sends `interrupted`, then the answer goes on
-  as usual (`user_transcript`, `turn_complete`). `interrupted` is sent for every recognised voice answer, also when
-  nothing was cut off;
+- speech: the server cancels the reply, records the cut-off line and sends `interrupted` with the turn's `turn_id`,
+  then the answer goes on as usual (`user_transcript`, `turn_complete`). `interrupted` is sent for every recognised
+  voice answer, also when nothing was cut off. Without a `turn_id` (typed text, redo) it settles every open turn;
 - no speech (empty text, Whisper's "Thank you." on silence or noise, Mike's own echo): the server sends
-  `voice_turn_dropped` and Mike's reply goes on from where it stopped. Nothing is added to the transcript. A
-  `notice` `not_heard` follows only when Mike was neither speaking nor replying.
+  `voice_turn_dropped` with the `turn_id` and Mike's reply goes on from where it stopped. Nothing is added to the
+  transcript. A `notice` `not_heard` follows only when Mike was neither speaking nor replying.
 
-The client holds Mike's audio from `activity_start` (it keeps what was not yet played) and plays it again on
-`voice_turn_dropped` or discards it on `interrupted`. Gemini Live decides on its own and sends `interrupted` at once.
+Every `activity_start` gets exactly one of the two, whatever happens (recognition missing or failing, `activity_cancel`,
+the Interrupt button). Turns may overlap (a new clip while the last one is still being recognised): Mike speaks only
+while no turn is open, so a verdict for an old turn never frees him while a newer one is open. Two safety nets keep
+noise from silencing him for good: the server drops open turns that got no verdict 15 s after recording ended
+(`FLOW_MAX_S`), and a turn whose live captions stay empty for a few seconds of audio is announced by
+`{"type": "voice_turn_noise", "turn_id": 3}` (not a verdict: it stops holding Mike back, its verdict still follows).
+
+The client holds Mike's audio per open turn from `activity_start` (it keeps what was not yet played), plays it again
+when the last held turn gets `voice_turn_dropped` / `voice_turn_noise` and discards it on `interrupted`; a turn that
+ended 8 s ago without a verdict stops holding on its own. Gemini Live decides on its own and sends `interrupted`
+at once (no `turn_id`).
 `turn_id` is a non-negative integer chosen by the client; it is echoed in `speech_preview`, `user_transcript`,
 `turn_complete`, `voice_turn_dropped` and `feedback_pending`.
 
 With browser recognition the verdict is the client's: `user_turn` (text, as below) or, when it heard nothing,
-`{"type": "activity_cancel"}`, which gives `voice_turn_dropped`.
+`{"type": "activity_cancel", "turn_id": 3}`, which gives `voice_turn_dropped`.
 
 ### Typed or browser-recognised answer
 
@@ -148,8 +157,9 @@ With browser recognition the verdict is the client's: `user_turn` (text, as belo
 {"type": "turn_complete", "speaker": "model", "full_text": "Okay. What was the result of that launch?",
  "kind": "follow_up", "question_id": "B2", "thread_id": "B2"}
 {"type": "response_complete"}
-{"type": "interrupted"}
+{"type": "interrupted", "turn_id": 3}
 {"type": "voice_turn_dropped", "turn_id": 3}
+{"type": "voice_turn_noise", "turn_id": 3}
 ```
 - Mike's text arrives sentence by sentence (`delta` is one sentence, `full_text` the turn so far). With Gemini Live,
   deltas are transcription fragments and user deltas also arrive (`speaker: "user"`).

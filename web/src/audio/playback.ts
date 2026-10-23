@@ -1,11 +1,15 @@
 /* Plays Mike's 24 kHz PCM16 frames gap-free in arrival order (ported from studio.js queueAudio / stopPlayback).
  *
- * hold() / resume(): the mic opens a voice turn before anyone knows it is speech (a breath or a click opens one too).
- * Until the server says so, Mike's audio is held back, not thrown away: what was not yet played is parked, frames
- * that arrive meanwhile wait. resume() plays it all on (the turn was noise), stop() discards it (a real barge-in). */
+ * hold(turn) / release(turn): the mic opens a voice turn before anyone knows it is speech (a breath or a click opens
+ * one too). Until the server says so, Mike's audio is held back, not thrown away: what was not yet played is parked,
+ * frames that arrive meanwhile wait. Every open turn holds it on its own, so a verdict for an old turn cannot free
+ * Mike while a newer one is still open. release(turn) plays on once no held turn is left (the turn was noise),
+ * cutOff(turn) discards it (a real barge-in), stop() discards everything. */
 import { OUT_RATE, pcm16ToFloat32 } from "./framing";
 
 export const PLAYBACK_COOLDOWN_MS = 400;
+/** A turn that ended this long ago without a verdict stops holding Mike back (a lost or very late message). */
+export const HOLD_NO_VERDICT_MS = 8000;
 
 interface Scheduled {
   audio: AudioBuffer;
@@ -18,7 +22,8 @@ export class Playback {
   private sources = new Map<AudioBufferSourceNode, Scheduled>();
   private nextAt = 0;
   private cooldownUntil = 0;
-  private held = false;
+  /** Voice turns holding Mike back -> their no-verdict timer (started when the turn ends). */
+  private holds = new Map<number, ReturnType<typeof setTimeout> | undefined>();
   private parked: { audio: AudioBuffer; offset: number }[] = [];
   private waiting: ArrayBuffer[] = [];
   /** Drop incoming audio (after a barge-in, until the next Mike turn starts). */
@@ -29,7 +34,7 @@ export class Playback {
 
   enqueue(buffer: ArrayBuffer) {
     if (this.suppressed || buffer.byteLength < 2 || this.context.state === "closed") return;
-    if (this.held) {
+    if (this.holds.size) {
       this.waiting.push(buffer);
       return;
     }
@@ -76,10 +81,12 @@ export class Playback {
     return scheduled;
   }
 
-  /** Pause Mike: silence what plays and keep the rest of it, in order. */
-  hold() {
-    if (this.held) return;
-    this.held = true;
+  /** Pause Mike for this voice turn: silence what plays and keep the rest of it, in order. */
+  hold(turn: number) {
+    if (this.holds.has(turn)) return;
+    const first = this.holds.size === 0;
+    this.holds.set(turn, undefined);
+    if (!first) return;
     const now = this.context.currentTime;
     const had = this.sources.size > 0;
     for (const { audio, startAt, offset } of this.silence()) {
@@ -89,10 +96,29 @@ export class Playback {
     if (had) this.onChange?.(false);
   }
 
-  /** The held turn was noise: carry on where Mike stopped. */
-  resume() {
-    if (!this.held) return;
-    this.held = false;
+  /** The turn stopped recording: from now on it must get its verdict within HOLD_NO_VERDICT_MS. */
+  turnEnded(turn: number) {
+    if (!this.holds.has(turn)) return;
+    clearTimeout(this.holds.get(turn));
+    this.holds.set(turn, setTimeout(() => {
+      if (!this.holds.has(turn)) return;
+      console.warn(`No verdict for voice turn ${turn} after ${HOLD_NO_VERDICT_MS / 1000} s: playing Mike on`);
+      this.release(turn);
+    }, HOLD_NO_VERDICT_MS));
+  }
+
+  private forget(turn?: number) {
+    for (const key of turn === undefined ? [...this.holds.keys()] : [turn]) {
+      clearTimeout(this.holds.get(key));
+      this.holds.delete(key);
+    }
+  }
+
+  /** The turn was noise: carry on where Mike stopped, unless another turn still holds him back. */
+  release(turn?: number) {
+    if (!this.holds.size) return;
+    this.forget(turn);
+    if (this.holds.size) return;
     const parked = this.parked;
     const waiting = this.waiting;
     this.parked = [];
@@ -101,13 +127,18 @@ export class Playback {
     waiting.forEach((buffer) => this.enqueue(buffer));
   }
 
-  stop() {
+  /** The turn was speech: discard what Mike had left. Other open turns keep holding what comes next. */
+  cutOff(turn?: number) {
     const had = this.sources.size > 0;
     this.silence();
-    this.held = false;
+    this.forget(turn);
     this.parked = [];
     this.waiting = [];
     if (had) this.onChange?.(false);
+  }
+
+  stop() {
+    this.cutOff();
   }
 
   get playing() {
@@ -115,12 +146,12 @@ export class Playback {
   }
 
   get holding() {
-    return this.held;
+    return this.holds.size > 0;
   }
 
   /** Something of Mike's is waiting to be played again. */
   get hasHeldAudio() {
-    return this.held && (this.parked.length > 0 || this.waiting.length > 0);
+    return this.holds.size > 0 && (this.parked.length > 0 || this.waiting.length > 0);
   }
 
   /** Mike is audible or just stopped: the mic may still carry his voice. */

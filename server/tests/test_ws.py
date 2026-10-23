@@ -202,7 +202,7 @@ def test_a_voice_turn_with_no_speech_is_dropped_not_answered(client, monkeypatch
         dropped, seen = receive_until(s, "voice_turn_dropped")
         assert dropped["turn_id"] == 4
         s.send_json({"type": "activity_start", "turn_id": 5})            # browser recognition heard nothing
-        s.send_json({"type": "activity_cancel"})
+        s.send_json({"type": "activity_cancel", "turn_id": 5})
         again, more = receive_until(s, "voice_turn_dropped")
         assert again["turn_id"] == 5
         assert not [m for m in seen + more if m["type"] in ("interrupted", "user_transcript")]

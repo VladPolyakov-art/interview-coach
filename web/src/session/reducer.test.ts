@@ -198,4 +198,49 @@ describe("a voice turn that was no speech", () => {
       { type: "voice_turn_dropped", turn_id: 1 }], idle);
     expect(s.awaitingReply).toBe(false);
   });
+
+  it("gives each overlapping turn one verdict; the screen is restored only when none is open", () => {
+    const idle = run([started, ...askQ("A1")]);
+    let s = run([{ type: "local/voice_turn_started", turnId: 1 }, { type: "local/voice_turn_sent" },
+      { type: "local/voice_turn_started", turnId: 2 }, { type: "local/voice_turn_sent" }], idle);
+    expect(s.openVoiceTurns).toEqual([1, 2]);
+    s = run([{ type: "voice_turn_dropped", turn_id: 1 }], s);
+    expect(s.openVoiceTurns).toEqual([2]);
+    expect(s.awaitingReply).toBe(true);                     // B is still being recognised
+    s = run([{ type: "voice_turn_dropped", turn_id: 1 }], s);       // a second verdict for A: nothing
+    expect(s.openVoiceTurns).toEqual([2]);
+    expect(s.awaitingReply).toBe(true);
+    s = run([{ type: "voice_turn_dropped", turn_id: 2 }], s);
+    expect(s.openVoiceTurns).toEqual([]);
+    expect(s.awaitingReply).toBe(false);                    // idle before the first clip, idle again
+  });
+
+  it("a stale verdict does not touch a turn that is being recorded", () => {
+    const idle = run([started, ...askQ("A1")]);
+    const s = run([{ type: "local/voice_turn_started", turnId: 1 }, { type: "local/voice_turn_sent" },
+      { type: "local/voice_turn_started", turnId: 2 }, { type: "voice_turn_dropped", turn_id: 1 }], idle);
+    expect(s.recording).toBe(true);
+    expect(s.recordingTurnId).toBe(2);
+    expect(s.openVoiceTurns).toEqual([2]);
+  });
+
+  it("speech settles its own turn only; interrupted without an id settles all; a reconnect forgets them", () => {
+    let s = run([started, { type: "local/voice_turn_started", turnId: 1 }, { type: "local/voice_turn_started", turnId: 2 },
+      { type: "interrupted", turn_id: 1 }]);
+    expect(s.openVoiceTurns).toEqual([2]);
+    s = run([{ type: "interrupted" }], s);
+    expect(s.openVoiceTurns).toEqual([]);
+    s = run([{ type: "local/voice_turn_started", turnId: 3 }, { type: "local/socket_closed" }], s);
+    expect(s.openVoiceTurns).toEqual([]);
+  });
+
+  it("an empty browser recognition keeps the id until the server's verdict; redo voids all", () => {
+    let s = run([started, { type: "local/voice_turn_started", turnId: 1 }, { type: "local/voice_turn_dropped", turnId: 1 }]);
+    expect(s.recording).toBe(false);
+    expect(s.openVoiceTurns).toEqual([1]);
+    s = run([{ type: "voice_turn_dropped", turn_id: 1 }], s);
+    expect(s.openVoiceTurns).toEqual([]);
+    s = run([{ type: "local/voice_turn_started", turnId: 2 }, { type: "local/voice_turn_dropped" }], s);
+    expect(s.openVoiceTurns).toEqual([]);
+  });
 });
