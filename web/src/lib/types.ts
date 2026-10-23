@@ -333,8 +333,11 @@ export interface StartMessage {
 
 export type ClientMessage =
   | StartMessage
-  | { type: "activity_start"; turn_id: number }
+  /** `manual`: the Interrupt button, so Mike stops for good (no waiting to see whether it was speech). */
+  | { type: "activity_start"; turn_id: number; manual?: boolean }
   | { type: "audio_stream_end" }
+  /** Browser recognition heard nothing in a voice turn opened by activity_start. */
+  | { type: "activity_cancel" }
   | { type: "user_turn"; text: string; turn_id: number; source: "text" | "browser_stt" }
   | { type: "redo_answer" }
   | { type: "suggest"; on: boolean }
@@ -391,6 +394,8 @@ export type ServerMessage =
     }
   | { type: "response_complete" }
   | { type: "interrupted" }
+  /** The voice turn was no speech (noise, Whisper's "Thank you." on silence, Mike's echo): Mike's reply goes on. */
+  | { type: "voice_turn_dropped"; turn_id?: number }
   | { type: "speech_preview"; turn_id: number; text: string }
   | { type: "user_transcript"; turn_id: number; text: string; backend?: string; low_conf?: LowConfWord[] }
   | { type: "notice"; code: string; message: string }

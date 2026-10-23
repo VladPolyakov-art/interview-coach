@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from server import storage, ws
+from server import storage, stt as stt_module, ws
 from server.engines.base import EngineStatus
 
 ANSWER = "Last year we has redesigned the onboarding and I led the research with twelve users."
@@ -165,3 +165,46 @@ def test_drill_flag_is_read_for_interview_only():
     assert ws.parse_start({"mode": "interview", "drill": True}, settings)["drill"] is True
     assert ws.parse_start({"mode": "interview", "drill": "yes"}, settings)["drill"] is False
     assert ws.parse_start({"mode": "english", "drill": True}, settings)["drill"] is False
+
+
+class SilentSTT:
+    """A recogniser that finds no speech in anything (the clip was a breath)."""
+    available = True
+    backend = "fake"
+
+    def info(self):
+        return {"available": True, "backend": "fake"}
+
+    def warm_up(self):
+        pass
+
+    def transcribe(self, pcm, words=True):
+        return stt_module.Transcript(text="", backend="fake")
+
+    def transcribe_if_idle(self, pcm):
+        return None
+
+
+def test_a_voice_turn_with_no_speech_is_dropped_not_answered(client, monkeypatch, fake_llm):
+    llm = fake_llm({"p1": {"gap": "none", "action": "next_question", "say": "Okay."}})
+
+    async def ready(settings, engine_id, voice=False):
+        return EngineStatus(code="ready", ready=True, model="fake-model")
+    monkeypatch.setattr(ws, "check_engine", ready)
+    monkeypatch.setattr(ws, "get_llm", lambda settings, engine_id, voice=False: llm)
+    monkeypatch.setattr(stt_module, "get_stt", lambda settings: SilentSTT())
+    with client.websocket_connect("/ws/session") as s:
+        s.send_json({"type": "start", "mode": "interview", "input": "voice", "questions": 2, "speak": False})
+        receive_until(s, "response_complete")
+        s.send_json({"type": "activity_start", "turn_id": 4})
+        s.send_bytes(bytes(32000))
+        s.send_json({"type": "audio_stream_end"})
+        dropped, seen = receive_until(s, "voice_turn_dropped")
+        assert dropped["turn_id"] == 4
+        s.send_json({"type": "activity_start", "turn_id": 5})            # browser recognition heard nothing
+        s.send_json({"type": "activity_cancel"})
+        again, more = receive_until(s, "voice_turn_dropped")
+        assert again["turn_id"] == 5
+        assert not [m for m in seen + more if m["type"] in ("interrupted", "user_transcript")]
+        s.send_json({"type": "end_session"})
+        receive_until(s, "session_ended")

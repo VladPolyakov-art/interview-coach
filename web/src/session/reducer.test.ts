@@ -179,3 +179,23 @@ describe("sessionReducer", () => {
     expect(s.recheckError).toBeNull();
   });
 });
+
+describe("a voice turn that was no speech", () => {
+  it("puts the screen back to what it was: Mike is still about to reply", () => {
+    // The user's answer is in, Mike is thinking, a noise opens a voice turn and the server drops it.
+    const thinking = run([started, { type: "local/user_turn", turnId: 1, text: "I worked on payments for two years." }]);
+    expect(thinking.awaitingReply).toBe(true);
+    const s = run([{ type: "local/voice_turn_started", turnId: 2 }, { type: "local/voice_turn_sent" },
+      { type: "voice_turn_dropped", turn_id: 2 }], thinking);
+    expect(s.recording).toBe(false);
+    expect(s.awaitingReply).toBe(true);
+    expect(s.transcript.filter((t) => t.speaker === "user")).toHaveLength(1);
+  });
+
+  it("does not leave the orb waiting for a reply Mike is not about to give", () => {
+    const idle = run([started, ...askQ("A1")]);
+    const s = run([{ type: "local/voice_turn_started", turnId: 1 }, { type: "local/voice_turn_sent" },
+      { type: "voice_turn_dropped", turn_id: 1 }], idle);
+    expect(s.awaitingReply).toBe(false);
+  });
+});

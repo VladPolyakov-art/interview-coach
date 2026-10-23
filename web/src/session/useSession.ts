@@ -1,6 +1,8 @@
 /* Wires the session socket (/ws/session) to the reducer, the mic (VoiceCapture or BrowserStt) and Mike's audio.
- * Turn ids, echo guard and barge-in follow the prototype (studio.js): starting to speak stops Mike's audio at once,
- * drops any frames still arriving for his cut-off line, and sends activity_start so the server records the cut. */
+ * Turn ids, echo guard and barge-in follow the prototype (studio.js): starting to speak silences Mike at once and
+ * sends activity_start. Whether it was speech is the server's call (a breath or a click opens a turn too): with a
+ * local engine his audio is only held back until `interrupted` (speech: it is discarded) or `voice_turn_dropped`
+ * (noise: it plays on). Gemini Live cuts him off for good, as before. */
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { MAX_BUFFERED_BYTES } from "../audio/framing";
 import { BrowserStt, browserSttSupported } from "../audio/browserStt";
@@ -83,14 +85,14 @@ export function useSession(config: SessionConfig) {
       return;
     }
     const cap = new VoiceCapture(context, {
-      onTurnStart: (preRoll) => {
+      onTurnStart: (preRoll, manual) => {
         const pb = playback.current;
-        if (pb) {
+        if (pb && (manual || stateRef.current.engine === "gemini_live")) {
           pb.suppressed = true;
           pb.stop();
-        }
+        } else pb?.hold();
         turnId.current += 1;
-        send({ type: "activity_start", turn_id: turnId.current });
+        send({ type: "activity_start", turn_id: turnId.current, ...(manual ? { manual: true } : {}) });
         if (!useBrowser) preRoll.forEach(sendPcm);
         dispatch({ type: "local/voice_turn_started", turnId: turnId.current });
       },
@@ -112,14 +114,20 @@ export function useSession(config: SessionConfig) {
             send({ type: "user_turn", text, turn_id: turnId.current, source: "browser_stt" });
             dispatch({ type: "local/user_turn", turnId: turnId.current, text });
           } else {
+            // Nothing recognised: the server lets Mike's held reply go on (voice_turn_dropped). The notice is for a
+            // user who was expected to answer, not for a noise while Mike was speaking or about to reply.
+            const mikeBusy = playback.current?.hasHeldAudio || stateRef.current.mikeTurnOpen
+              || stateRef.current.awaitingBeforeVoice;
             dispatch({ type: "local/voice_turn_dropped" });
-            dispatch({ type: "notice", code: "not_heard", message: t("session.notice.notHeard") });
+            if (stateRef.current.engine !== "gemini_live") send({ type: "activity_cancel" });
+            if (!mikeBusy) dispatch({ type: "notice", code: "not_heard", message: t("session.notice.notHeard") });
           }
         }, configRef.current.pauseSec ? 250 : 700);
       },
       onLevel: (rms) => { level.current = micLevel(rms); },
       onMutedSpeech: () => dispatch({ type: "notice", code: "muted_speech", message: t("session.notice.mutedSpeech") }),
-      echoRisk: () => playback.current?.echoRisk ?? false,
+      // Also while Mike is about to reply (his first words are on their way and so is their echo).
+      echoRisk: () => (playback.current?.echoRisk ?? false) || stateRef.current.awaitingReply,
     }, configRef.current.pauseSec * 1000);
     try {
       await cap.start();
@@ -177,7 +185,7 @@ export function useSession(config: SessionConfig) {
     socket.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
       if (ws.current !== socket) return;
       if (event.data instanceof ArrayBuffer) {
-        if (!stateRef.current.recording && !stateRef.current.interrupted) playback.current?.enqueue(event.data);
+        if (!stateRef.current.interrupted) playback.current?.enqueue(event.data);
         return;
       }
       let msg: ServerMessage;
@@ -188,6 +196,7 @@ export function useSession(config: SessionConfig) {
       }
       if (msg.type === "turn_start" && playback.current) playback.current.suppressed = false;
       if (msg.type === "interrupted") playback.current?.stop();
+      if (msg.type === "voice_turn_dropped") playback.current?.resume();
       dispatch(msg);
     };
     socket.onclose = () => {
@@ -277,6 +286,7 @@ export function useSession(config: SessionConfig) {
     },
     redo() {
       capture.current?.cancel();
+      playback.current?.stop();                 // the voice turn is abandoned: nothing will say whether to resume Mike
       dispatch({ type: "local/voice_turn_dropped" });
       send({ type: "redo_answer" });
     },

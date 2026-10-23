@@ -46,6 +46,9 @@ MOVE_ON = re.compile(r"\b(?:next|another|new)[ _]question\b|\b(?:my|our) (?:last
                      r"\b(?:let'?s|let us|we'?ll|I'?ll|now) (?:move|go) on\b|\blet'?s (?:turn|move) to\b", re.I)
 DRIFT_OVERLAP = 0.7      # share of the next question's words that marks a sentence as that question
 PREVIEW_SECONDS = 12
+ECHO_WINDOW_S = 5        # a short transcript that repeats Mike's last words, heard this soon after them, is his echo
+ECHO_MAX_WORDS = 6
+ECHO_MATCH = 0.8
 MAX_RECORD_BYTES = 16000 * 2 * 240      # up to 4 minutes per answer
 
 
@@ -61,6 +64,7 @@ class TextDriver:
                  on_audio_chunk: Optional[Callable] = None, on_notice: Optional[Callable] = None,
                  on_preview: Optional[Callable] = None, on_error: Optional[Callable] = None,
                  on_user_transcript: Optional[Callable] = None, on_metrics: Optional[Callable] = None,
+                 on_voice_dropped: Optional[Callable] = None,
                  gate: ModelGate | None = None, resume: dict | None = None, **_ignored) -> None:
         self.llm = llm
         self.mode = mode
@@ -89,6 +93,7 @@ class TextDriver:
         self.on_error = on_error
         self.on_user_transcript = on_user_transcript
         self.on_metrics = on_metrics
+        self.on_voice_dropped = on_voice_dropped
         self.gate = gate or ModelGate(enabled=False)
 
         self.transcript_history: list[dict] = []
@@ -115,6 +120,14 @@ class TextDriver:
         self._holding = False
         self._hold_token = 0
         self._word_tasks: set[asyncio.Task] = set()
+        # A voice turn opens before anyone knows it is speech (a breath or a click opens one too). Until the
+        # recogniser has heard it Mike's reply waits (`_flow` cleared) instead of being cancelled.
+        self._voice_open = False
+        self._flow = asyncio.Event()
+        self._flow.set()
+        self._said, self._said_at = "", 0.0     # Mike's latest line and when it was written (echo check)
+        self._audio_until = 0.0                 # when the audio sent so far has been played (the client plays faster
+        #                                         than real time is sent, so this is an estimate)
 
     # ---------- interface shared with GeminiLiveDriver ----------
 
@@ -146,6 +159,7 @@ class TextDriver:
         clean = norm(text)[:4000]
         if not clean:
             self._release()
+            self._drop_voice_turn()
             return
         await self._cancel_reply(interrupted=True)
         self._hold()
@@ -179,13 +193,29 @@ class TextDriver:
             self._word_tasks.add(task)
             task.add_done_callback(self._word_tasks.discard)
 
-    async def begin_audio_turn(self) -> None:
-        await self._cancel_reply(interrupted=True)
+    async def begin_audio_turn(self, manual: bool = False) -> None:
+        """The client heard something. That is not yet a barge-in: it may be a breath, a click or Mike's echo, and
+        Whisper turns those into "Thank you.". Mike's reply (text and audio) waits here; real speech cancels it
+        in handle_user_text_turn, anything else lets it carry on (`_drop_voice_turn`).
+        The Interrupt button (`manual`) is a barge-in by definition: Mike stops now."""
+        if manual:
+            await self._cancel_reply(interrupted=True)
+            self._audio_until = 0.0
+        self._voice_open = True
+        self._flow.clear()
         self._buffer = bytearray()
         self._recording = True
         self._stop_preview()
         if self.on_preview and self.stt is not None and self.stt.available:
             self._preview_task = asyncio.create_task(self._preview_loop())
+
+    async def cancel_audio_turn(self) -> None:
+        """The client ended its voice turn without audio (browser recognition heard nothing)."""
+        if self._voice_open or self._recording:
+            self._recording = False
+            self._buffer = bytearray()
+            self._stop_preview()
+            self._drop_voice_turn()
 
     async def end_audio_stream(self, turn_id: int | None = None) -> None:
         if not self._recording:
@@ -194,22 +224,32 @@ class TextDriver:
         self._stop_preview()
         pcm, self._buffer = bytes(self._buffer), bytearray()
         if self.stt is None or not self.stt.available:
+            self._drop_voice_turn()
             self._error("stt_unavailable", "Speech recognition is not installed on this computer. Type your answer "
                                            "or use the browser's speech recognition.", retryable=False)
             return
+        was_holding, token = self._holding, self._hold_token
         self._hold()
         started = time.perf_counter()
         try:
             transcript = await asyncio.to_thread(self.stt.transcribe, pcm, False)   # text first (latency)
         except Exception as exc:
-            self._release()
+            self._unhold(was_holding, token)
+            self._drop_voice_turn()
             log.warning("STT failed: %s", type(exc).__name__)
             self._error("stt_failed", "Could not recognise speech. Try again or type your answer.")
             return
         stt_ms = round((time.perf_counter() - started) * 1000)
+        if transcript.text.strip() and self._is_echo(transcript.text):
+            log.info("STT dropped Mike's own voice coming back through the microphone")
+            transcript.text = ""
         if not transcript.text.strip():
-            self._release()
-            if self.on_notice:
+            # Nothing was said (or only noise): Mike's reply, if there is one, goes on. The notice is for a user
+            # who is expected to answer, not for one who made a noise while Mike was speaking or thinking.
+            busy = self.replying() or time.monotonic() < self._audio_until
+            self._unhold(was_holding, token)
+            self._drop_voice_turn()
+            if not busy and self.on_notice:
                 self.on_notice("not_heard", "I didn't catch that. Please try again a little louder or closer to the "
                                             "microphone.")
             return
@@ -254,6 +294,7 @@ class TextDriver:
     def stop(self) -> None:
         self._running = False
         self._recording = False
+        self._flow.set()
         self._stop_preview()
         self._release()
         for task in (self._reply_task, self._warm_task):
@@ -556,12 +597,14 @@ class TextDriver:
         token = self._hold_token
         try:
             async for sentence in sentences:
+                await self._flow.wait()         # a voice turn is open: wait for the verdict before saying more
                 if not started:
                     started = True
                     self._metrics.setdefault("first_text_ms", self._ms())
                     if self.on_turn_start:
                         self.on_turn_start("model")
                 full = f"{full} {sentence}".strip()
+                self._said, self._said_at = full, time.monotonic()
                 if self.on_transcript_delta:
                     self.on_transcript_delta("model", sentence, full)
                 if voice:
@@ -607,9 +650,12 @@ class TextDriver:
                 log.warning("TTS failed: %s", type(exc).__name__)
                 continue
             for i in range(0, len(pcm), tts.CHUNK_BYTES):
+                await self._flow.wait()
                 self._metrics.setdefault("first_audio_ms", self._ms())
+                chunk = pcm[i:i + tts.CHUNK_BYTES]
+                self._audio_until = max(self._audio_until, time.monotonic()) + len(chunk) / (2 * tts.SAMPLE_RATE)
                 if self.on_audio_chunk:
-                    self.on_audio_chunk(pcm[i:i + tts.CHUNK_BYTES])
+                    self.on_audio_chunk(chunk)
                 if heard:
                     heard.set()
 
@@ -628,11 +674,37 @@ class TextDriver:
 
     async def _cancel_reply(self, interrupted: bool) -> None:
         task = self._reply_task
-        if task and not task.done():
+        running = bool(task and not task.done())
+        if running:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
-            if interrupted and self.on_interrupted:
-                self.on_interrupted()
+        # A voice turn that proved to be speech also tells the client to drop the audio it held back for Mike.
+        if interrupted and (running or self._voice_open) and self.on_interrupted:
+            self.on_interrupted()
+        self._voice_open = False
+        self._flow.set()
+
+    def _drop_voice_turn(self) -> None:
+        """The voice turn was no speech: Mike goes on (the client resumes the audio it held back)."""
+        opened, self._voice_open = self._voice_open, False
+        self._flow.set()
+        if opened and self.on_voice_dropped:
+            self.on_voice_dropped()
+
+    def _is_echo(self, text: str) -> bool:
+        """Mike's own voice through the microphone: a short transcript made of his last words, soon after them."""
+        if not self.produces_audio or not self._said:
+            return False
+        now = time.monotonic()
+        last_heard = now if now < self._audio_until else max(self._said_at, self._audio_until)
+        return now - last_heard <= ECHO_WINDOW_S and echo_of(text, self._said)
+
+    def _unhold(self, was_holding: bool, token: int) -> None:
+        """Undo the hold taken for a voice turn that was no speech. A reply that already held the model keeps it."""
+        if was_holding:
+            self._hold_token = token
+        else:
+            self._release()
 
     def _hold(self) -> None:
         """Mike takes the model (from the end of the user's answer until his reply is written and audible)."""
@@ -688,6 +760,22 @@ class TextDriver:
             raise
         except Exception as exc:
             log.info("Live caption skipped: %s", type(exc).__name__)
+
+
+def echo_of(text: str, said: str) -> bool:
+    """True when a short transcript is made of words Mike just said, in his order (>= 80 %, at least two words)."""
+    heard = [w.lower() for w in WORD.findall(text)]
+    spoken = [w.lower() for w in WORD.findall(said)]
+    if not 2 <= len(heard) <= ECHO_MAX_WORDS:
+        return False
+    at, matched = 0, 0
+    for word in heard:
+        try:
+            at = spoken.index(word, at) + 1
+        except ValueError:
+            continue
+        matched += 1
+    return matched / len(heard) >= ECHO_MATCH
 
 
 def _sentences(text: str) -> list[str]:

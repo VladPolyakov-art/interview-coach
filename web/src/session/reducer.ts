@@ -86,6 +86,8 @@ export interface SessionState {
   /** The user is recording a voice answer (set locally on activity_start). */
   recording: boolean;
   recordingTurnId: number | null;
+  /** `awaitingReply` as it was when the voice turn started: what a dropped turn goes back to. */
+  awaitingBeforeVoice: boolean;
   preview: string;
   transcript: TranscriptItem[];
   /** Main-question thread ids in the order Mike asked them. */
@@ -123,7 +125,7 @@ export function initialState(input: InputMode, mode: "interview" | "english" = "
   return {
     phase: "connecting", input, sessionId: "", mode, engine: "", model: "", speaks: false, questions: [], stt: null,
     suggesterAvailable: false, suggestOn: false, warnings: [], ready: false, mikeTurnOpen: false, awaitingReply: false,
-    recording: false, recordingTurnId: null, preview: "", transcript: [], threadOrder: [], currentThreadId: "",
+    recording: false, recordingTurnId: null, awaitingBeforeVoice: false, preview: "", transcript: [], threadOrder: [], currentThreadId: "",
     followUps: [], currentQuestionText: "", closing: false, threadOfTurn: {}, feedback: {}, feedbackOrder: [],
     pending: {}, unavailable: {}, stronger: {}, rechecking: {}, recheckError: null, suggestion: null, notice: null, error: null, fatal: null,
     savedSessionId: "", debrief: null, saveError: "", endedReason: "", lastTurnMs: null, interrupted: null,
@@ -283,13 +285,17 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     /* ---------- the user's side ---------- */
     case "local/voice_turn_started":
       return {
-        ...state, recording: true, recordingTurnId: action.turnId, preview: "", notice: null,
+        ...state, recording: true, recordingTurnId: action.turnId, awaitingBeforeVoice: state.awaitingReply,
+        preview: "", notice: null,
         threadOfTurn: { ...state.threadOfTurn, [action.turnId]: state.currentThreadId },
       };
     case "local/voice_turn_sent":
       return { ...state, recording: false, awaitingReply: true };
     case "local/voice_turn_dropped":
       return { ...state, recording: false, recordingTurnId: null, preview: "" };
+    case "voice_turn_dropped":
+      // No answer was given: Mike is as busy (or as idle) as before the clip.
+      return { ...state, recording: false, recordingTurnId: null, preview: "", awaitingReply: state.awaitingBeforeVoice };
     case "local/user_turn": {
       const threadId = state.currentThreadId;
       return {

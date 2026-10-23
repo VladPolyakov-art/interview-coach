@@ -69,9 +69,24 @@ Then binary PCM frames, then:
 ```json
 {"type": "audio_stream_end"}
 ```
-`activity_start` interrupts Mike if he is speaking (barge-in: the server sends `interrupted` and records the
-cut-off line). `turn_id` is a non-negative integer chosen by the client; it is echoed in `speech_preview`,
-`user_transcript`, `turn_complete` and `feedback_pending`.
+`activity_start` only says the microphone heard something (a breath or a click counts). If Mike is speaking or
+preparing his reply, the local-engine server pauses him (text and audio) and waits for the verdict on the clip.
+The Interrupt button sends `"manual": true`: that is a barge-in by definition, Mike stops at once and nothing waits.
+
+- speech: the server cancels the reply, records the cut-off line and sends `interrupted`, then the answer goes on
+  as usual (`user_transcript`, `turn_complete`). `interrupted` is sent for every recognised voice answer, also when
+  nothing was cut off;
+- no speech (empty text, Whisper's "Thank you." on silence or noise, Mike's own echo): the server sends
+  `voice_turn_dropped` and Mike's reply goes on from where it stopped. Nothing is added to the transcript. A
+  `notice` `not_heard` follows only when Mike was neither speaking nor replying.
+
+The client holds Mike's audio from `activity_start` (it keeps what was not yet played) and plays it again on
+`voice_turn_dropped` or discards it on `interrupted`. Gemini Live decides on its own and sends `interrupted` at once.
+`turn_id` is a non-negative integer chosen by the client; it is echoed in `speech_preview`, `user_transcript`,
+`turn_complete`, `voice_turn_dropped` and `feedback_pending`.
+
+With browser recognition the verdict is the client's: `user_turn` (text, as below) or, when it heard nothing,
+`{"type": "activity_cancel"}`, which gives `voice_turn_dropped`.
 
 ### Typed or browser-recognised answer
 
@@ -134,6 +149,7 @@ cut-off line). `turn_id` is a non-negative integer chosen by the client; it is e
  "kind": "follow_up", "question_id": "B2", "thread_id": "B2"}
 {"type": "response_complete"}
 {"type": "interrupted"}
+{"type": "voice_turn_dropped", "turn_id": 3}
 ```
 - Mike's text arrives sentence by sentence (`delta` is one sentence, `full_text` the turn so far). With Gemini Live,
   deltas are transcription fragments and user deltas also arrive (`speaker: "user"`).

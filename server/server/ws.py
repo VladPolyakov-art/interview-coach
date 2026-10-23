@@ -438,7 +438,14 @@ async def session_socket(websocket: WebSocket) -> None:
                 await asyncio.wait_for(audio_queue.join(), timeout=3)
                 state["voice_turn"] = turn_id
                 state["pending_voice"] = True
-                await driver.begin_audio_turn()
+                if isinstance(driver, TextDriver):
+                    await driver.begin_audio_turn(manual=data.get("manual") is True)
+                else:
+                    await driver.begin_audio_turn()
+            elif kind == "activity_cancel":
+                # Browser recognition heard nothing: the voice turn opened by activity_start has no speech in it.
+                if isinstance(driver, TextDriver):
+                    await driver.cancel_audio_turn()
             elif kind == "audio_stream_end":
                 await asyncio.wait_for(audio_queue.join(), timeout=3)
                 if isinstance(driver, TextDriver):
@@ -613,6 +620,7 @@ async def session_socket(websocket: WebSocket) -> None:
                 on_notice=lambda code, text: emit("notice", code=code, message=text),
                 on_preview=lambda text: emit("speech_preview", turn_id=state["voice_turn"], text=text),
                 on_error=lambda code, message, hint, retryable: error(code, message, hint, retryable),
+                on_voice_dropped=lambda: emit("voice_turn_dropped", turn_id=state["voice_turn"]),
                 on_user_transcript=user_transcript, on_metrics=metrics, gate=gate, resume=resume_info, **callbacks)
             stt_info = recogniser.info() if recogniser else {"available": False, "backend": "none"}
         session = {"id": storage.new_id("s-"), "mode": opts["mode"], "round_type": opts["round_type"],
