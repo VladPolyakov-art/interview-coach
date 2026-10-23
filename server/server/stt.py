@@ -65,6 +65,9 @@ class Transcript:
     # Two-pass recognition (latency): the reply starts from the text; word timings and confidence follow in
     # the background. `words_ready` is set when `words` is final (already set for a one-pass transcript).
     words_ready: asyncio.Event | None = field(default=None, repr=False, compare=False)
+    # D96: no second recognition pass runs during the call. The recording is kept (within AudioKeep's budget) and
+    # the word timings are made after the call, when the machine is free (`fill_words`).
+    audio: bytes | None = field(default=None, repr=False, compare=False)
 
     def low_confidence(self) -> list[Word]:
         return [w for w in self.words if w.p < LOW_CONFIDENCE]
@@ -75,6 +78,49 @@ class Transcript:
                 await asyncio.wait_for(self.words_ready.wait(), timeout)
             except asyncio.TimeoutError:
                 pass
+
+
+    async def fill_words(self, recogniser: "STT") -> bool:
+        """Word timings and confidence from the kept recording (after the call). The recording is released either
+        way. True when words were found; a failed pass leaves the transcript without them (delivery then works from
+        the text alone) and never raises."""
+        pcm, self.audio = self.audio, None
+        if not pcm or recogniser is None or not recogniser.available:
+            return False
+        try:
+            full = await asyncio.to_thread(recogniser.transcribe, pcm, True)
+        except Exception as exc:
+            log.warning("STT word pass failed: %s", type(exc).__name__)
+            return False
+        self.words = full.words
+        return bool(self.words)
+
+
+# D96: the recordings kept for the after-call word pass. 16 kHz mono int16 is 32 kB per second. One answer is
+# already capped at 4 minutes by the recorder (session.MAX_RECORD_BYTES); across the session at most 45 minutes of
+# speech are kept (about 86 MB): a ten-question round with follow-ups is 20-30 minutes, so the cap is only reached
+# by an unusually long session. Past it an answer keeps its text and loses only pace and pauses (typed-style delivery).
+KEEP_AUDIO_MAX_BYTES = SAMPLE_RATE * 2 * 60 * 45
+
+
+class AudioKeep:
+    """Holds the session's recordings within a fixed memory budget until the after-call word pass has used them."""
+
+    def __init__(self, limit: int = KEEP_AUDIO_MAX_BYTES) -> None:
+        self.limit = limit
+        self.used = 0
+
+    def keep(self, transcript: "Transcript", pcm: bytes) -> bool:
+        if not pcm or self.used + len(pcm) > self.limit:
+            return False
+        transcript.audio = bytes(pcm)
+        self.used += len(pcm)
+        return True
+
+    def free(self, transcript: "Transcript | None") -> None:
+        if transcript is not None and transcript.audio is not None:
+            self.used = max(0, self.used - len(transcript.audio))
+            transcript.audio = None
 
 
 @dataclass
@@ -212,7 +258,7 @@ class STT:
         """16 kHz mono int16 PCM -> English transcript, with per-word timestamps and probability when `words`.
 
         Word timing costs about 0.5 s more on Apple Silicon, so the interviewer reply starts from a text-only
-        pass and the word pass runs in the background (see TextDriver.end_audio_stream)."""
+        pass and the word pass runs after the call (D96; Transcript.fill_words)."""
         duration = len(pcm16k) / 2 / SAMPLE_RATE
         if not self.backend or duration < 0.5:
             return Transcript(text="", duration_s=duration, backend=self.backend or "none")

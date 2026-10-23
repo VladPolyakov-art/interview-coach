@@ -81,37 +81,33 @@ def test_text_turn_feedback_once_save_and_debrief(client, monkeypatch, fake_llm)
         s.send_json({"type": "user_turn", "text": ANSWER, "turn_id": 1})
         user, _ = receive_until(s, "turn_complete")
         assert user["speaker"] == "user" and user["turn_id"] == 1
-        final = None
-        seen = []
-        follow_up = None
-        for _ in range(80):
-            message = s.receive_json()
-            seen.append(message)
-            if message["type"] == "feedback" and message["feedback"]["complete"]:
-                final = message["feedback"]
-            if message["type"] == "turn_complete" and message["speaker"] == "model":
-                follow_up = message
-            if final and follow_up:
-                break
-        assert final is not None and follow_up is not None, [m["type"] for m in seen]
+        follow_up, during = receive_until(s, "turn_complete")
         assert follow_up["full_text"] == "What was the result?" and follow_up["kind"] == "follow_up"
+        suggestion, more = receive_until(s, "suggestion")             # an explicit user request: still works mid-call
+        assert suggestion["story"] == "Onboarding"
+        # D96: not one feedback event and not one feedback model call while the call is on.
+        assert not [m for m in during + more if m["type"].startswith("feedback")]
+        assert [c["key"] for c in llm.calls if c["key"] in ("p2a", "p2b", "p2c", "p5b")] == []
+        s.send_json({"type": "end_session"})
+        saved, rest = receive_until(s, "session_saved")
+        debrief, after = receive_until(s, "debrief")
+        assert [m["type"] for m in rest] == ["saving", "session_saved"]
+        types = [m["type"] for m in after]
+        assert after[0] == {"type": "feedback_progress", "done": 0, "total": 1}
+        assert types.index("feedback_progress") < types.index("debrief_pending") < types.index("debrief")
+        assert [m for m in after if m["type"] == "feedback_progress"][-1]["done"] == 1
+        final = [m["feedback"] for m in rest + after if m["type"] == "feedback" and m["feedback"]["complete"]][-1]
         assert final["layers"]["language"]["items"][0]["original"] == "we has redesigned"
         assert final["layers"]["content"]["tag"] == "no_result"
         assert final["layers"]["delivery"]["metrics"]["mode"] == "text"
-        s.send_json({"type": "flag_action", "feedback_id": final["id"],
-                     "flag_id": final["layers"]["language"]["items"][0]["id"], "action": "dismiss"})
-        flag, _ = receive_until(s, "flag_updated")
-        assert flag["flag"]["status"] == "dismissed"
-        s.send_json({"type": "end_session"})
-        saved, rest = receive_until(s, "session_saved")
-        debrief, _ = receive_until(s, "debrief")
         assert debrief["debrief"]["too_short"] is True
     p2_calls = [c for c in llm.calls if c["key"] in ("p2b", "p2a")]
-    assert len(p2_calls) == 2                                  # feedback ran once per layer
+    assert len(p2_calls) == 2                                  # feedback ran once per layer, after the call
     record = storage.read_record("sessions", saved["session_id"])
     assert record["transcript"][1]["text"] == ANSWER and len(record["feedback"]) == 1
-    assert record["feedback"][0]["layers"]["language"]["items"][0]["status"] == "dismissed"
-    assert record["debrief"]["too_short"] is True
+    assert record["feedback"][0]["complete"] is True
+    assert record["feedback"][0]["layers"]["language"]["items"][0]["status"] == "active"
+    assert record["debrief"]["too_short"] is True and "post_call" not in record
     assert record["usage"] == {"engine": "ollama", "requests": len(llm.calls)}    # D88: every call of the session
 
 
@@ -130,13 +126,14 @@ def test_redo_answer_removes_feedback(client, monkeypatch, fake_llm):
         s.send_json({"type": "start", "mode": "interview", "input": "text", "questions": 2})
         receive_until(s, "turn_complete")
         s.send_json({"type": "user_turn", "text": ANSWER})
-        pending, _ = receive_until(s, "feedback_pending")
+        receive_until(s, "turn_complete")
         s.send_json({"type": "redo_answer"})
         reset, _ = receive_until(s, "answer_reset")
-        assert pending["feedback_id"] in reset["removed_feedback_ids"]
+        assert len(reset["removed_feedback_ids"]) == 1          # the answer's record leaves the after-call queue
         s.send_json({"type": "end_session"})
         receive_until(s, "session_ended")
     assert storage.list_records("sessions") == []              # no answers left: nothing saved
+    assert llm.calls and not [c for c in llm.calls if c["key"] in ("p2a", "p2b")]     # and no feedback was made
 
 
 def test_text_session_switches_to_voice(client, monkeypatch, fake_llm):

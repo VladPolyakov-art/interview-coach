@@ -6,7 +6,8 @@ Latency plan (D33, target 2-3 s per turn):
 - the interviewer reply is JSON (P1) streamed; `action` arrives first, and for `next_question` the code
   speaks "Okay." plus the next question verbatim without waiting for the model;
 - `say` is spoken sentence by sentence while the model is still writing;
-- speech is recognised in two passes: the reply starts from the text, word timings follow in the background;
+- speech is recognised in two passes: the reply starts from the text, word timings are made after the call (D96:
+  the recording is kept, nothing but Mike and the live captions uses the machine during the call);
 - Mike holds the model gate (priority.py) from the end of the answer until his reply text is written, so
   feedback and suggestions on the same local model never delay him.
 
@@ -28,7 +29,7 @@ from .engines.gemini_live import drop_last_answer
 from .feedback import WORD, JsonFieldStreamer, mark_misheard, hints, norm, sanitize_sentence, trim_words
 from .planner import max_follow_ups
 from .priority import ModelGate
-from .stt import STT, Transcript
+from .stt import STT, AudioKeep, Transcript
 
 log = logging.getLogger("uvicorn.error")
 SENTENCE_END = re.compile(r"(.+?[.!?…])(?:\s+|$)", re.S)
@@ -126,7 +127,8 @@ class TextDriver:
         self._metrics: dict = {}
         self._holding = False
         self._hold_token = 0
-        self._word_tasks: set[asyncio.Task] = set()
+        self._word_tasks: set[asyncio.Task] = set()      # warm-ups only: the word pass runs after the call (D96)
+        self.audio_keep = AudioKeep()           # the recordings the after-call word pass needs, within a memory budget
         # A voice turn opens before anyone knows it is speech (a breath or a click opens one too). Until the
         # recogniser has heard it Mike's reply waits (`_flow` cleared) instead of being cancelled.
         # Each voice turn (activity_start) gets exactly one verdict: dropped (no speech) or interrupted (speech).
@@ -275,27 +277,11 @@ class TextDriver:
                 self.on_notice("not_heard", "I didn't catch that. Please try again a little louder or closer to the "
                                             "microphone.")
             return
-        transcript.words_ready = asyncio.Event()
-        task = asyncio.create_task(self._word_pass(pcm, transcript, turn_id))
-        self._word_tasks.add(task)
-        task.add_done_callback(self._word_tasks.discard)
+        if not self.audio_keep.keep(transcript, pcm):
+            log.info("Kept-audio budget is full: this answer gets no word timings")
         if self.on_user_transcript:
             self.on_user_transcript(transcript, turn_id)
         await self.handle_user_text_turn(transcript.text, transcript, turn_id if turn_id is not None else turn, stt_ms)
-
-    async def _word_pass(self, pcm: bytes, transcript: Transcript, turn_id: int | None) -> None:
-        """Word timings and confidence for feedback ("possibly misheard", pace), after Mike's reply text."""
-        try:
-            full = await self.gate.background(lambda: asyncio.to_thread(self.stt.transcribe, pcm, True),
-                                              preemptible=False)
-            transcript.words = full.words
-            if transcript.low_confidence() and self.on_user_transcript:
-                self.on_user_transcript(transcript, turn_id)
-        except Exception as exc:
-            log.warning("STT word pass failed: %s", type(exc).__name__)
-        finally:
-            if transcript.words_ready is not None:
-                transcript.words_ready.set()
 
     async def redo_answer(self) -> str:
         await self._cancel_reply(interrupted=False)

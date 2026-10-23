@@ -184,6 +184,16 @@ export interface SessionRecord {
   stats?: { answers: number; turns: number };
   /** D88: requests this session sent, and how far the plan's own counter moved (Codex, Claude). */
   usage?: SessionUsage;
+  /** D96: present while the feedback and the debrief are still being made after the call. */
+  post_call?: PostCall;
+}
+
+/** Where the work after the call stands: `feedback` (answer by answer), then `debrief`. */
+export interface PostCall {
+  state: "running";
+  stage: "feedback" | "debrief";
+  done: number;
+  total: number;
 }
 
 export interface SessionUsage {
@@ -404,7 +414,8 @@ export type ServerMessage =
   | { type: "user_transcript"; turn_id: number; text: string; backend?: string; low_conf?: LowConfWord[] }
   | { type: "notice"; code: string; message: string }
   | { type: "turn_metrics"; turn_id?: number; total_ms?: number; first_text_ms?: number; path?: string }
-  | { type: "feedback_pending"; feedback_id: string; turn_id: number | null }
+  /** D96: feedback is made after End. `done` of `total` answers are finished (done 0 opens the work). */
+  | { type: "feedback_progress"; done: number; total: number }
   | { type: "feedback"; feedback: FeedbackRecord }
   | { type: "feedback_unavailable"; feedback_id: string; code: string; message: string }
   | { type: "flag_updated"; feedback_id: string; flag: LanguageItem; language: LanguageLayer }

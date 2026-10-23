@@ -61,11 +61,11 @@ describe("sessionReducer", () => {
   });
 
   it("replaces a feedback record by id as layers fill in, and groups records by thread", () => {
-    let s = run([started, ...askQ("A1"), { type: "local/user_turn", turnId: 1, text: "one two three four five" },
-      { type: "feedback_pending", feedback_id: "fb-1", turn_id: 1 }]);
-    expect(selectThreads(s)[0]).toMatchObject({ key: "A1", number: 1, pendingIds: ["fb-1"] });
+    // D96: nothing arrives during the call, so an answer has no thread of feedback yet.
+    let s = run([started, ...askQ("A1"), { type: "local/user_turn", turnId: 1, text: "one two three four five" }]);
+    expect(selectThreads(s)).toEqual([]);
     s = run([{ type: "feedback", feedback: record("fb-1", "A1", { complete: false, layers: { delivery: { status: "ok" } } }) }], s);
-    expect(selectThreads(s)[0]!.pendingIds).toEqual(["fb-1"]);
+    expect(selectThreads(s)[0]).toMatchObject({ key: "A1", number: 1, pendingIds: ["fb-1"] });
     s = run([{ type: "feedback", feedback: record("fb-1", "A1", { layers: { delivery: { status: "ok" }, content: { status: "fix", fix: "Add a result." } } }) }], s);
     const threads = selectThreads(s);
     expect(threads).toHaveLength(1);
@@ -77,10 +77,23 @@ describe("sessionReducer", () => {
     expect(selectThreads(s).map((t) => [t.key, t.records.length])).toEqual([["A1", 2], ["B1", 1]]);
   });
 
-  it("maps a pending feedback to the thread that was open when the user answered", () => {
-    const s = run([started, ...askQ("A1"), { type: "local/user_turn", turnId: 7, text: "My answer to A1 is long enough" },
-      ...askQ("B1"), { type: "feedback_pending", feedback_id: "fb-9", turn_id: 7 }]);
-    expect(selectThreads(s)[0]!.key).toBe("A1");
+  it("tracks the work after the call: answers done of the total (D96)", () => {
+    let s = run([started]);
+    expect(s.feedbackProgress).toBeNull();
+    s = run([{ type: "saving" }, { type: "session_saved", session_id: "s-1" },
+      { type: "feedback_progress", done: 0, total: 5 }], s);
+    expect(s.feedbackProgress).toEqual({ done: 0, total: 5 });
+    expect(s.phase).toBe("saving");                    // the screen keeps saying it is preparing
+    s = run([{ type: "feedback_progress", done: 2, total: 5 }], s);
+    expect(s.feedbackProgress).toEqual({ done: 2, total: 5 });
+    s = run([{ type: "debrief_pending", session_id: "s-1" }], s);
+    expect(s.phase).toBe("debrief_pending");
+  });
+
+  it("a feedback record that is not complete counts as still being made, under its own question", () => {
+    const s = run([started, ...askQ("A1"), ...askQ("B1"),
+      { type: "feedback", feedback: record("fb-9", "A1", { complete: false }) }]);
+    expect(selectThreads(s)[0]).toMatchObject({ key: "A1", pendingIds: ["fb-9"] });
   });
 
   it("counts confirmed and active language items but never unconfirmed ones", () => {

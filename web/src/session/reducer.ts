@@ -103,7 +103,8 @@ export interface SessionState {
   threadOfTurn: Record<number, string>;
   feedback: Record<string, FeedbackRecord>;
   feedbackOrder: string[];
-  pending: Record<string, { turnId: number | null; threadId: string }>;
+  /** D96: feedback is made after End. Where that work is: answers done of the total (null before it starts). */
+  feedbackProgress: { done: number; total: number } | null;
   unavailable: Record<string, { code: string; message: string; threadId: string }>;
   stronger: Record<string, StrongerState>;
   /** "Edit what I said": feedback ids being checked again (the old feedback stays until the new one is there). */
@@ -134,7 +135,7 @@ export function initialState(input: InputMode, mode: "interview" | "english" = "
     suggesterAvailable: false, suggestOn: false, warnings: [], ready: false, mikeTurnOpen: false, awaitingReply: false,
     recording: false, recordingTurnId: null, openVoiceTurns: [], awaitingBeforeVoice: false, preview: "", transcript: [], threadOrder: [], currentThreadId: "",
     followUps: [], currentQuestionText: "", closing: false, threadOfTurn: {}, feedback: {}, feedbackOrder: [],
-    pending: {}, unavailable: {}, stronger: {}, rechecking: {}, recheckError: null, suggestion: null, notice: null, error: null, fatal: null,
+    feedbackProgress: null, unavailable: {}, stronger: {}, rechecking: {}, recheckError: null, suggestion: null, notice: null, error: null, fatal: null,
     savedSessionId: "", debrief: null, saveError: "", endedReason: "", lastTurnMs: null, interrupted: null,
   };
 }
@@ -202,7 +203,8 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         ...state,
         // Continuing a saved session: the transcript and feedback stay, what the cut-off left behind goes.
         ...(state.interrupted ? { interrupted: null, fatal: null, error: null, savedSessionId: "", debrief: null, saveError: "",
-          endedReason: "", mikeTurnOpen: false, awaitingReply: false, recording: false, openVoiceTurns: [], notice: null } : null),
+          endedReason: "", mikeTurnOpen: false, awaitingReply: false, recording: false, openVoiceTurns: [], notice: null,
+          feedbackProgress: null } : null),
         phase: "live", sessionId: action.session_id, mode: action.mode, engine: action.engine,
         model: action.model, speaks: action.speaks, questions: action.questions, stt: action.stt,
         suggesterAvailable: action.suggester_available, suggestOn: action.suggest, warnings: action.warnings ?? [],
@@ -345,34 +347,20 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
       return { ...state, lastTurnMs: action.total_ms ?? state.lastTurnMs };
 
     /* ---------- feedback ---------- */
-    case "feedback_pending": {
-      const threadId = state.mode === "english"
-        ? `t:${action.feedback_id}`
-        : (action.turn_id != null ? state.threadOfTurn[action.turn_id] : undefined) ?? state.currentThreadId;
-      return {
-        ...state,
-        pending: { ...state.pending, [action.feedback_id]: { turnId: action.turn_id, threadId } },
-        feedbackOrder: state.feedbackOrder.includes(action.feedback_id)
-          ? state.feedbackOrder : [...state.feedbackOrder, action.feedback_id],
-      };
-    }
+    case "feedback_progress":
+      return { ...state, feedbackProgress: { done: action.done, total: action.total } };
     case "feedback": {
       const record = action.feedback;
-      const pending = { ...state.pending };
-      if (record.complete) delete pending[record.id];
       return {
         ...state,
         feedback: { ...state.feedback, [record.id]: record },
-        pending,
         feedbackOrder: state.feedbackOrder.includes(record.id) ? state.feedbackOrder : [...state.feedbackOrder, record.id],
       };
     }
     case "feedback_unavailable": {
-      const pending = { ...state.pending };
-      const threadId = pending[action.feedback_id]?.threadId ?? state.currentThreadId;
-      delete pending[action.feedback_id];
+      const threadId = state.currentThreadId;
       return {
-        ...state, pending,
+        ...state,
         unavailable: { ...state.unavailable, [action.feedback_id]: { code: action.code, message: action.message, threadId } },
         feedbackOrder: state.feedbackOrder.includes(action.feedback_id) ? state.feedbackOrder : [...state.feedbackOrder, action.feedback_id],
       };
@@ -417,14 +405,13 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     case "answer_reset": {
       const removed = new Set(action.removed_feedback_ids);
       const feedback = { ...state.feedback };
-      const pending = { ...state.pending };
-      removed.forEach((id) => { delete feedback[id]; delete pending[id]; });
+      removed.forEach((id) => { delete feedback[id]; });
       let lastUser = -1;
       for (let i = state.transcript.length - 1; i >= 0; i--) {
         if (state.transcript[i]!.speaker === "user") { lastUser = i; break; }
       }
       return {
-        ...state, feedback, pending,
+        ...state, feedback,
         feedbackOrder: state.feedbackOrder.filter((id) => !removed.has(id)),
         transcript: lastUser >= 0 ? state.transcript.slice(0, lastUser) : state.transcript,
         awaitingReply: false,
@@ -554,16 +541,12 @@ export function selectThreads(state: SessionState): Thread[] {
   };
   for (const id of state.feedbackOrder) {
     const record = state.feedback[id];
-    const pend = state.pending[id];
     const unav = state.unavailable[id];
     if (record) {
-      const key = state.mode === "english" ? `t:${record.id}` : record.question_id || pend?.threadId || "general";
+      const key = state.mode === "english" ? `t:${record.id}` : record.question_id || "general";
       const t = ensure(key, state.mode === "english" ? record.question : questionText(state, key, record.question));
       t.records.push(record);
-      if (pend) t.pendingIds.push(id);
-    } else if (pend) {
-      const key = pend.threadId || "general";
-      ensure(key, questionText(state, key, "")).pendingIds.push(id);
+      if (!record.complete) t.pendingIds.push(id);       // still being made (a continued session's unfinished answer)
     } else if (unav) {
       const key = state.mode === "english" ? `t:${id}` : unav.threadId || "general";
       ensure(key, questionText(state, key, "")).unavailable.push({ id, code: unav.code, message: unav.message });

@@ -49,6 +49,7 @@ export const debriefReview: ReviewScreen = {
     }),
     state("loading", "Loading", "loading", { note: "Скелеты заголовка, вердикта, карточек слабых мест и вопросов; aria-busy." }),
     state("preparing", "Preparing · пишем разбор", "preparing", { note: "Сразу после сессии: шиммер «Writing your debrief…» над скелетом." }),
+    state("preparing-feedback", "Preparing · фидбек после звонка", "preparingFeedback", { note: "D96: фидбек делается после End, по ответу. Шиммер «Preparing feedback · 2 of 5 answers», под ним строка «You can leave this page…» и скелет. Страница сама перезапрашивает запись, пока на ней есть post_call." }),
     state("storage", "Storage not writable", "storageNotWritable", {
       note: "Сначала предупреждение, Download — главная кнопка, Drill уходит во вторичные; в мете «Not saved».",
     }),
