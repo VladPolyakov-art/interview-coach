@@ -18,7 +18,8 @@ import type { RowContext } from "./parts/Layers";
 import { QuestionCard } from "./parts/QuestionCard";
 import { Plan } from "./parts/Plan";
 import { Scorecard } from "./parts/Scorecard";
-import { Actions, SectionHead, TemplateNote, Verdict, VerdictBar, VerdictNotice, WeakSpots } from "./parts/Sections";
+import { Actions, SectionHead, TemplateNote, Verdict, VerdictBar, VerdictNotice, WeakSpots, orderedSpots } from "./parts/Sections";
+import { verdictLine } from "./parts/verdictLine";
 import { ErrorBody, ExampleBanner, LoadingBody, NotFoundBody, PartialBanner, StorageBanner } from "./parts/States";
 import s from "./DebriefView.module.css";
 
@@ -142,10 +143,11 @@ export function DebriefView(props: DebriefViewProps) {
   // D80: a saved interview opens on the conversation; the verdict, what to fix first and the next step fold into a bar.
   const folded = variant === "interview" && Boolean(model.verdict) && !partial;
   const verdictBlock = model.verdict && !partial ? (
-    <Verdict verdict={model.verdict} id={folded ? `${ids.verdict}-body` : ids.verdict} bare={folded} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} />
+    <Verdict verdict={model.verdict} id={folded ? `${ids.verdict}-body` : ids.verdict} bare={folded} next={verdictLine(model.verdict, orderedSpots(model.weakSpots, layerOrder))} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} />
   ) : null;
-  // D98: the scorecard sits under the verdict and the plan under the weak spots; neither shows without a verdict (US-20 AC4, AC6).
-  const scoreBlock = !partial && !english && model.verdict && model.scorecard?.length ? <Scorecard rows={model.scorecard} id={ids.score} onJump={jump} /> : null;
+  // D98: the plan sits under the weak spots and the scorecard under the plan (r2: what to do comes before the numbers);
+  // neither shows without a verdict (US-20 AC4, AC6), and the scorecard not when no row has a score.
+  const scoreBlock = !partial && !english && model.verdict && model.scorecard?.some((r) => r.score !== null) ? <Scorecard rows={model.scorecard} id={ids.score} onJump={jump} /> : null;
   const planBlock = !partial && !english && model.verdict && model.plan?.length ? (
     <Plan steps={model.plan} id={ids.plan} drill={model.drill} example={variant === "example"} storageError={storageError} onDrill={props.onDrill} />
   ) : null;
@@ -198,17 +200,17 @@ export function DebriefView(props: DebriefViewProps) {
       {folded ? (
         <VerdictBar verdict={model.verdict!} id={ids.verdict} open={verdictOpen} onOpenChange={setVerdictOpen}>
           {verdictBlock}
-          {scoreBlock}
           {spotsBlock}
           {planBlock}
+          {scoreBlock}
           {actionsBlock}
         </VerdictBar>
       ) : (
         <>
           {verdictBlock}
-          {scoreBlock}
           {spotsBlock}
           {planBlock}
+          {scoreBlock}
           {english ? (
             <EnglishBody english={english} ctx={rowsFor(0)} ids={{ summary: `${uid}-sum`, corrections: `${uid}-cor`, phrases: `${uid}-phr` }} />
           ) : null}

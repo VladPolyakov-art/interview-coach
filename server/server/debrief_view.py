@@ -295,22 +295,17 @@ def _cell(text: object) -> str:
 
 
 def markdown_sections(debrief: dict) -> dict[str, list[str]]:
-    """Lines for the export: `scorecard` (a small table), `weak_spots` (three lines each) and `plan` (numbered)."""
+    """Lines for the export, in the order of the page: `weak_spots` (three lines each), `plan` (numbered), then
+    `scorecard` (a small table of the rows that have a score, then "Not asked this time: ..." for the others; no
+    section when no row has a score)."""
     out: dict[str, list[str]] = {}
-    card = (debrief.get("scorecard") or {}).get("rows")
-    if card:
-        lines = ["| Criterion | Score |", "| --- | --- |"]
-        for row in card:
-            score = f"{row['score']}/5" if row.get("score") is not None else "Not asked this time"
-            lines.append(f"| {ROW_LABELS.get(row['key'], row['key'])} | {score} |")
-        lines += ["", "Practice scores from this app's rubric, not a prediction of a hiring decision."]
-        out["scorecard"] = lines
     spots = []
     for spot in debrief.get("weak_spots") or []:
         mark = "\"" if spot.get("said_kind") == "quote" else ""
+        lead = "Measured" if spot.get("said_kind") == "metric" else "What you said"
         spots.append(f"- **{_cell(spot.get('layer'))}**: {_cell(str(spot.get('tag') or '').replace('_', ' '))}")
         if spot.get("said"):
-            spots.append(f"  - What you said: {mark}{_cell(spot['said'])}{mark}")
+            spots.append(f"  - {lead}: {mark}{_cell(spot['said'])}{mark}")
         if spot.get("lands_as"):
             spots.append(f"  - How it lands: {_cell(spot['lands_as'])}")
         spots.append(f"  - How to fix: {_cell(spot.get('text'))}")
@@ -319,4 +314,14 @@ def markdown_sections(debrief: dict) -> dict[str, list[str]]:
     plan = [f"{n}. {_cell(step['text'])}" for n, step in enumerate(debrief.get("plan") or [], 1)]
     if plan:
         out["plan"] = plan
+    card = (debrief.get("scorecard") or {}).get("rows") or []
+    scored = [row for row in card if row.get("score") is not None]
+    if scored:
+        lines = ["| Criterion | Score |", "| --- | --- |"]
+        lines += [f"| {ROW_LABELS.get(row['key'], row['key'])} | {row['score']}/5 |" for row in scored]
+        lines += ["", "Practice scores from this app's rubric, not a prediction of a hiring decision."]
+        skipped = [ROW_LABELS.get(row["key"], row["key"]) for row in card if row.get("score") is None]
+        if skipped:
+            lines += ["", f"Not asked this time: {', '.join(skipped)}"]
+        out["scorecard"] = lines
     return out

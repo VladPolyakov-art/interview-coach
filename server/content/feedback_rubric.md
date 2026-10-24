@@ -230,7 +230,7 @@ Serves US-20 AC6–AC9. Idea taken from the PrepLab teardown (`docs/research/com
 
 ### 9.1 Scorecard
 
-Seven rows: five content criteria, then language and delivery. Each answer that a row applies to gets 0, 1 or 2 points. The row score is `1 + 4 × points / (2 × answers)`, rounded to a whole number (1–5). A row with no answers it applies to shows "Not asked this time" and no score.
+Seven rows: five content criteria, then language and delivery. Each answer that a row applies to gets 0, 1 or 2 points. The row score is `1 + 4 × points / (2 × answers)`, rounded to a whole number (1–5). A row with no answers it applies to has no score (`score: null`): it is **not shown as a row**. One muted line at the end of the scorecard names those rows ("Not asked this time: Lessons learned", several labels joined by commas). If no row has a score, the scorecard is hidden. The Markdown export does the same.
 
 | Row | Applies to | 2 points | 1 point | 0 points |
 |---|---|---|---|---|
@@ -248,11 +248,12 @@ Rules:
 - Answers saved before 2026-10-24 have no `checks` (the raw content answers). For them "situation missing" cannot be known, so Structure uses the tags only.
 - Each row lists the questions that lost points (links to the question cards). A row with a score of 5 lists none.
 - Scores are labelled as practice scores from this app's rubric, never as a hiring prediction (D7).
+- A footnote under the caption: "Words the app may have misheard are not counted. You can check them in each question." True by design (GR9, §5.3): a language item that touches a low-confidence word has the status `unconfirmed`, and `counted_tags` and the scorecard count only `active` and `confirmed` items (a word the user confirmed is no longer in doubt). The delivery numbers (fillers, pace, length) come from the recognised text; no word is flagged there, so the note speaks about the flagged words only.
 
 ### 9.2 Weak spot: "What you said → how it lands → how to fix"
 
 Each weak spot (up to 3, US-20 AC1) gets:
-1. **What you said:** an exact fragment from the first question in its evidence. Content: the verified `evidence` quote of that answer's content layer. Language: the `original` fragment of the item. Delivery: the metric instead of a quote (for example "182 words per minute", "9 fillers per 100 words"). If there is no verified fragment, this line is left out; it is never made up.
+1. **What you said:** an exact fragment from the first question in its evidence. Content: the verified `evidence` quote of that answer's content layer. Language: the `original` fragment of the item. Delivery: the metric instead of a quote (for example "182 words per minute", "9 fillers per 100 words"); a metric is a measurement, not words said, so its label is **"Measured"** (`said_kind: "metric"`; web and Markdown export). If there is no verified fragment, this line is left out; it is never made up.
 2. **How it lands:** one sentence from the table below, the interviewer's likely reading. Neutral, no blame. Named "How it lands", never "Heard as" (that name belongs to speech recognition, §5).
 3. **How to fix:** the weak spot's existing `text`.
 
@@ -281,6 +282,8 @@ Each weak spot (up to 3, US-20 AC1) gets:
 
 An unknown tag gets no "How it lands" line.
 
+**Misheard note.** Under the Language weak spot, after its lines, one muted line: "Words the app may have misheard are not counted. You can check them in each question." ("each question" links to the first evidence question). The same sentence is the footnote under the scorecard caption (§9.1). Not on the content and delivery spots.
+
 ### 9.3 Plan for the next session
 
 Up to 3 steps, one per weak spot, in the same order. Fewer weak spots, fewer steps; no filler steps (§0 principle 3). The first step carries the "Drill these weak spots" action (US-20 AC1, existing drill). Each step is an exercise for the next practice, not a repeat of the fix:
@@ -295,3 +298,15 @@ Up to 3 steps, one per weak spot, in the same order. Fewer weak spots, fewer ste
 | language tags | Drill the phrases from this session's corrections out loud, three times each. |
 | `pace_fast`, `pace_slow`, `filler_high`, `long_pauses`, `restarts` | Record one answer and replay it, listening only for this habit. |
 | `too_long`, `too_short` | Time one answer: aim for one to two minutes. |
+
+### 9.4 What moves the verdict
+
+One muted line under the verdict's three-step scale (`Not ready yet / Getting there / Ready`), built in code on the web from data the page already has (no model, no server field), in the same place in the opened verdict bar and in the page column of the example:
+
+| Step | Line |
+|---|---|
+| Not ready yet, Getting there | "The main thing between you and “<next step>”: <fix of the first weak spot, as written>" (the first weak spot in the order shown on the page, GR8; a closing full stop is added only if the fix has none) |
+| Ready | "Keep it: <strength>" when the debrief has a `strength`; otherwise no line |
+| No step, or no weak spot with a fix | no line |
+
+**Why the generic wording.** No rule decides the step. The server saves the verdict as one sentence (`verdict`) and no step; the fallback template and the model both write the sentence, and the page maps no `step` for a live session (only the example debrief carries one, by hand). So the line cannot say "fix X and you reach Y": it names the first thing to fix and the step above the current one, and claims nothing about what is enough. If the step is ever computed in code from counted weak spots and severities (for instance "any S3 means Not ready yet"), this line must be rewritten to state exactly that rule, and the rule added to `enrich_debrief` and `PROTOCOL.md`.

@@ -345,13 +345,28 @@ def test_markdown_export_has_scorecard_weak_spot_lines_and_plan():
     debrief = model_debrief(("content", "no_result", ["q1"]), ("delivery", "pace_fast", ["q1"]))
     text = storage.render_session_markdown(session_with(records, debrief))
     assert "### Scorecard" in text and "| Criterion | Score |" in text
-    assert "| Structure (STAR) | 4/5 |" in text and "| Lessons learned | Not asked this time |" in text
+    assert "| Structure (STAR) | 4/5 |" in text
+    # D98 r2: a row with no score is not a row; one line names it, at the end of the scorecard.
+    assert "| Lessons learned |" not in text and "Not asked this time: Lessons learned" in text
     assert "  - What you said: \"went up by twelve percent\"" in text
     assert f"  - How it lands: {debrief_view.LANDS_AS['no_result']}" in text
     assert "  - How to fix: fix no_result" in text
-    assert "  - What you said: 182 words per minute" in text
+    assert "  - Measured: 182 words per minute" in text and "What you said: 182" not in text
     assert "### Plan for the next session" in text
     assert f"1. {debrief_view.PLAN_STEPS['no_result']}" in text and f"2. {debrief_view.HABIT_PLAN}" in text
+    # Order of the page: weak spots, plan, scorecard.
+    assert text.index("### Weak spots") < text.index("### Plan for the next session") < text.index("### Scorecard")
+    assert text.index("Not asked this time:") > text.index("| Structure (STAR)")
+
+
+def test_markdown_scorecard_is_left_out_when_no_row_has_a_score():
+    sections = debrief_view.markdown_sections({"scorecard": {"rows": [
+        {"key": "structure", "score": None}, {"key": "reflection", "score": None}]}, "weak_spots": []})
+    assert "scorecard" not in sections
+    some = debrief_view.markdown_sections({"scorecard": {"rows": [
+        {"key": "structure", "score": 3}, {"key": "result", "score": None}, {"key": "reflection", "score": None}]}})
+    assert "| Result |" not in "\n".join(some["scorecard"])
+    assert some["scorecard"][-1] == "Not asked this time: Result, Lessons learned"
 
 
 def test_markdown_for_english_mode_keeps_the_old_format():

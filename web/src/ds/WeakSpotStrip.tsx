@@ -34,6 +34,8 @@ export interface WeakSpot {
   fix?: ReactNode;
   /** Debrief: secondary point under a hairline ("Also: “we” instead of “I” …"). */
   also?: ReactNode;
+  /** Debrief (D98 r2): one muted line at the end of the card (e.g. the "may have misheard" note on Language). */
+  note?: ReactNode;
 }
 
 export interface WeakSpotStripProps {
@@ -135,6 +137,7 @@ export function WeakSpotStrip({
             {it.lands ? <div className={s.cardText}>{it.lands}</div> : null}
             {it.fix ? <div className={s.cardFix}>{it.fix}</div> : null}
             {it.also ? <div className={s.cardAlso}>{it.also}</div> : null}
+            {it.note ? <div className={s.cardNote}>{it.note}</div> : null}
           </li>
         ))}
       </ul>

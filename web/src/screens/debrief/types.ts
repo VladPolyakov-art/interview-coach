@@ -48,6 +48,8 @@ export interface VerdictModel {
   step?: ScaleStep;
   headline: string;
   line?: string;
+  /** What went well (the server's `strength`); only the "Ready" step uses it ("Keep it: …"). */
+  strength?: string;
 }
 
 /** One scorecard row (D98, rubric §9.1). `score: null` = "Not asked this time", no meter. `lost` = question numbers. */

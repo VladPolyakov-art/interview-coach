@@ -1,4 +1,5 @@
-/* US-20 AC6–AC8 (D98): scorecard, "What you said / How it lands / How to fix" and the plan, on the built-in example
+/* US-20 AC6–AC8 (D98, r2): verdict line, weak spots, plan, then the scorecard; "What you said / How it lands / How to fix"
+ * ("Measured" for a number), the misheard note and the plan, on the built-in example
  * debrief (`/sessions/example`, fixtures: no server data needed). Runs on the desktop and the mobile project.
  * Live sessions (new server fields, dismissed flags, old sessions) are covered by the orchestrator's full run. */
 import { expect, test, type Page } from "@playwright/test";
@@ -15,11 +16,11 @@ const scorecard = (page: Page) => page.getByRole("region", { name: "Scorecard" }
 const row = (page: Page, label: string) => scorecard(page).getByRole("listitem").filter({ has: page.getByText(label, { exact: true }) });
 
 test.describe("US-20 AC6 Scorecard", () => {
-  test("happy path: seven rows in a fixed order, each a score out of 5, under a practice-score caption", async ({ page }) => {
+  test("happy path: the scored rows in a fixed order, each a score out of 5, under a practice-score caption", async ({ page }) => {
     await expect(scorecard(page)).toContainText("Practice scores from this app's rubric, not a hiring prediction.");
     const rows = scorecard(page).getByRole("listitem");
-    await expect(rows).toHaveCount(7);
-    const labels = ["Structure (STAR)", "Your part", "Result", "On the question", "Lessons learned", "English", "Delivery"];
+    await expect(rows).toHaveCount(6);
+    const labels = ["Structure (STAR)", "Your part", "Result", "On the question", "English", "Delivery"];
     for (const [i, label] of labels.entries()) await expect(rows.nth(i)).toContainText(label);
 
     // A row reads as "Result, 4 out of 5" to a screen reader; the meter is only decoration.
@@ -31,11 +32,17 @@ test.describe("US-20 AC6 Scorecard", () => {
     await expect(row(page, "Result")).toContainText("Lost points in questions");
   });
 
-  test("negative: a row with nothing to judge says 'Not asked this time', with no score and no links", async ({ page }) => {
-    const lessons = row(page, "Lessons learned");
-    await expect(lessons).toContainText("Not asked this time");
-    await expect(lessons).not.toContainText("out of 5");
-    await expect(lessons.getByRole("button")).toHaveCount(0);
+  test("negative: a row with nothing to judge is not a row; one line at the end names it", async ({ page }) => {
+    await expect(row(page, "Lessons learned")).toHaveCount(0);
+    const line = scorecard(page).getByText("Not asked this time: Lessons learned");
+    await expect(line).toBeVisible();
+    // It comes after the last row.
+    const [last, note] = await Promise.all([row(page, "Delivery").boundingBox(), line.boundingBox()]);
+    expect(note!.y).toBeGreaterThan(last!.y);
+  });
+
+  test("a footnote under the caption says possibly misheard words are not counted", async ({ page }) => {
+    await expect(scorecard(page)).toContainText("Words the app may have misheard are not counted. You can check them in each question.");
   });
 
   test("negative: no grade anywhere on the page (D98)", async ({ page }) => {
@@ -81,9 +88,21 @@ test.describe("US-20 AC7 Weak spot: what you said, how it lands, how to fix", ()
 
   test("a delivery spot shows the number as plain text, not as a quote", async ({ page }) => {
     const delivery = spot(page, "Delivery");
-    await expect(delivery).toContainText(/What you said\s*4:05 for one answer/);
+    await expect(delivery).toContainText(/Measured\s*4:05 for one answer/);
+    await expect(delivery).not.toContainText("What you said");
     await expect(delivery.locator("q")).toHaveCount(0);
     await expect(delivery).not.toContainText("“4:05");
+  });
+
+  test("the Language spot ends with the misheard note; 'each question' opens the first evidence question", async ({ page }) => {
+    const language = spot(page, "Language");
+    await expect(language).toContainText(/How to fix[\s\S]*Words the app may have misheard are not counted\. You can check them in each question\./);
+    // Only the Language spot carries it.
+    await expect(spots(page).getByText("may have misheard")).toHaveCount(1);
+    await page.getByRole("radio", { name: "5", exact: true }).click();
+    await language.getByRole("button", { name: "each question, starting with question 3" }).click();
+    await expect(page.getByRole("region", { name: "Breakdown" })).toContainText("Tell me about a feature that failed");
+    await expect(page.getByRole("radio", { name: "3", exact: true })).toBeChecked();
   });
 
   test("a question number in the evidence still jumps to its card", async ({ page }) => {
@@ -109,6 +128,14 @@ test.describe("US-20 AC8 Plan for the next session", () => {
     expect(planBox!.y).toBeGreaterThan(spots!.y);
   });
 
+  test("the page order is verdict, what to work on, plan, scorecard, then the conversation (r2)", async ({ page }) => {
+    const names = ["Verdict", "What to work on", "Plan for the next session", "Scorecard", "Conversation"];
+    const tops: number[] = [];
+    for (const name of names) tops.push((await page.getByRole("heading", { name, exact: true, level: 2 }).boundingBox())!.y);
+    expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+    expect(new Set(tops).size).toBe(names.length);
+  });
+
   test("the first step has the drill; the page has one drill button, not two", async ({ page }) => {
     const drills = page.getByRole("button", { name: "Drill these weak spots" });
     await expect(drills).toHaveCount(1);
@@ -118,5 +145,18 @@ test.describe("US-20 AC8 Plan for the next session", () => {
   test("the example explains why the drill is off: it is for your own debrief", async ({ page }) => {
     await expect(page.getByRole("button", { name: "Drill these weak spots" })).toBeDisabled();
     await expect(plan(page)).toContainText("In your own debrief, you can drill these weak spots in a short session.");
+  });
+});
+
+test.describe("What moves the verdict (r2)", () => {
+  test("happy path: one line under the verdict scale names the next step and the first weak spot's fix", async ({ page }) => {
+    const verdict = page.getByRole("region", { name: "Verdict" });
+    const line = verdict.getByText(/^The main thing between you and “Ready”: Name the call you made and why/);
+    await expect(line).toBeVisible();
+    await expect(line).toContainText("“I chose to cut the referral flow because…”.");
+    // The same words as the first weak spot's fix.
+    await expect(page.getByRole("region", { name: "What to work on" }).getByRole("listitem").first()).toContainText("Name the call you made and why");
+    const [scale, below] = await Promise.all([verdict.getByText("Ready", { exact: true }).boundingBox(), line.boundingBox()]);
+    expect(below!.y).toBeGreaterThan(scale!.y);
   });
 });

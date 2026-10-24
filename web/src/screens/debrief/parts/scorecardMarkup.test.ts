@@ -25,9 +25,9 @@ describe("scorecard markup (D98, US-20 AC6)", () => {
     expect(text(h)).toContain("Practice scores from this app's rubric, not a hiring prediction.");
   });
 
-  it("one list item per row; a scored row reads as 'label, n out of 5'", () => {
+  it("one list item per scored row; a scored row reads as 'label, n out of 5'", () => {
     const h = html();
-    expect((h.match(/<li /g) ?? []).length).toBe(3);
+    expect((h.match(/<li /g) ?? []).length).toBe(2);
     expect(text(h)).toContain("Structure (STAR) 3/5 , 3 out of 5");
     expect(h).toContain('<span class="visually-hidden">, 3 out of 5</span>');
     expect(h).toContain('<span class="visually-hidden">, 5 out of 5</span>');
@@ -50,12 +50,29 @@ describe("scorecard markup (D98, US-20 AC6)", () => {
     expect(own).not.toContain("Lost points");
   });
 
-  it("a row with nothing to judge says 'Not asked this time' and has no meter, score or links", () => {
-    const li = html().split("<li ")[3]!;
-    expect(text(li)).toContain("Lessons learned Not asked this time");
-    expect(li).not.toContain("meter");
-    expect(li).not.toContain("out of 5");
-    expect(li).not.toContain("<button");
+  it("a row with nothing to judge is not a row: one line at the end names it", () => {
+    const h = html();
+    expect(h).not.toContain("Lessons learned</span>");
+    expect(text(h.split("</ul>")[0]!)).not.toContain("Lessons learned");
+    const after = text(h.split("</ul>")[1]!);
+    expect(after).toBe("Not asked this time: Lessons learned");
+  });
+
+  it("several unscored rows are comma-joined in one line; none unscored: no line", () => {
+    const many = renderToStaticMarkup(createElement(Scorecard, { rows: [rows[0]!, { key: "reflection", score: null, answers: 0, lost: [] }, { key: "delivery", score: null, answers: 0, lost: [] }], id: "sc", onJump: noop }));
+    expect(text(many)).toContain("Not asked this time: Lessons learned, Delivery");
+    const none = renderToStaticMarkup(createElement(Scorecard, { rows: rows.slice(0, 2), id: "sc", onJump: noop }));
+    expect(text(none)).not.toContain("Not asked this time");
+  });
+
+  it("with no scored row the whole scorecard is hidden", () => {
+    const h = renderToStaticMarkup(createElement(Scorecard, { rows: [{ key: "reflection", score: null, answers: 0, lost: [] }], id: "sc", onJump: noop }));
+    expect(h).toBe("");
+  });
+
+  it("a footnote under the caption says possibly misheard words are not counted (GR9)", () => {
+    expect(text(html())).toContain("Words the app may have misheard are not counted. You can check them in each question.");
+    expect(html().indexOf("hiring prediction")).toBeLessThan(html().indexOf("misheard"));
   });
 
   it("uses the singular for one question", () => {
@@ -63,9 +80,10 @@ describe("scorecard markup (D98, US-20 AC6)", () => {
     expect(text(h)).toContain("Lost points in question 2");
   });
 
-  it("the example fixture has a 'Not asked this time' row, and no grade anywhere", () => {
+  it("the example fixture has a null 'Lessons learned' row: six rows and the line, and no grade anywhere", () => {
     const h = renderToStaticMarkup(createElement(Scorecard, { rows: exampleSam.scorecard!, id: "sc", onJump: noop }));
-    expect(text(h)).toContain("Not asked this time");
+    expect((h.match(/<li /g) ?? []).length).toBe(6);
+    expect(text(h)).toContain("Not asked this time: Lessons learned");
     expect(h).not.toMatch(/Intern|Junior|Senior\+/);
   });
 });
@@ -85,6 +103,23 @@ describe("weak-spot lines (D98, US-20 AC7)", () => {
     expect(h).not.toContain("<q ");
     expect(h).toContain(">12 fillers in 3:40<");
     expect(text(h)).not.toContain("“12 fillers");
+  });
+
+  it("a delivery number is labelled Measured, not What you said", () => {
+    const h = render(spots({ said: { kind: "metric", text: "12 fillers in 3:40" } }));
+    expect(text(h)).toMatch(/Measured 12 fillers in 3:40/);
+    expect(text(h)).not.toContain("What you said");
+  });
+
+  it("the Language spot ends with the misheard note; its link goes to the first evidence question", () => {
+    const calls: number[] = [];
+    const model = { ...exampleSam, weakSpots: exampleSam.weakSpots };
+    const h = renderToStaticMarkup(createElement(WeakSpots, { model, order: "content-first", onJump: (n: number) => calls.push(n), id: "ws" }));
+    const language = h.split("<li ").find((li) => li.includes("Language"))!;
+    expect(text(language)).toMatch(/How to fix .*Words the app may have misheard are not counted\. You can check them in each question ?\.$/);
+    expect(language).toContain('aria-label="each question, starting with question 3"');
+    for (const other of h.split("<li ").filter((li) => !li.includes("Language") && li.includes("data-")))
+      expect(other).not.toContain("misheard");
   });
 
   it("a missing line leaves no empty label", () => {

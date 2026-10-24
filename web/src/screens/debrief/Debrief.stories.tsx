@@ -20,10 +20,10 @@ export const InterviewFull = desktop("interviewFull");
 export const InterviewFullMobile = mobile("interviewFull");
 /** D80: the verdict bar above the conversation, opened. */
 export const InterviewVerdictOpen = desktop("interviewVerdictOpen");
-/** D98 (US-20 AC6–AC8): the opened bar shows the scorecard, weak spots with "What you said / How it lands / How to fix", and the plan with the drill. */
+/** D98 (US-20 AC6–AC8, r2): the opened bar shows the verdict with its "what moves it" line, the weak spots ("What you said" / "Measured", "How it lands", "How to fix", the misheard note on Language), the plan with the drill, then the scorecard. */
 export const ScorecardAndPlan = desktop("interviewVerdictOpen");
 export const ScorecardAndPlanMobile = mobile("interviewVerdictOpen");
-/** D98: scorecard rows with nothing to judge say "Not asked this time" and have no meter. */
+/** D98 r2: rows with nothing to judge are not rows; one line at the end says "Not asked this time: Lessons learned, Delivery". */
 export const ScorecardNullRows = desktop("interviewNullRows");
 /** D98: a weak spot with no verified fragment leaves out "What you said". Delivery spots show a number instead of a quote. */
 export const WeakSpotWithoutQuote = desktop("interviewNoQuote");

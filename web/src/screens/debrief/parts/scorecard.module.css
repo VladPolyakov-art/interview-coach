@@ -18,11 +18,10 @@
 .seg { inline-size: var(--space-6); block-size: var(--space-1); border-radius: var(--radius-pill); background: var(--color-border-subtle); }
 .seg.on { background: var(--color-text-primary); }
 .num { min-inline-size: var(--space-8); color: var(--color-text-primary); font-size: var(--text-md); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
-.notAsked { grid-column: 2 / -1; color: var(--color-text-tertiary); font-size: var(--text-sm); }
+.notAsked { margin: 0; color: var(--color-text-tertiary); font-size: var(--text-sm); }
 .lost { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-width: 0; color: var(--color-text-secondary); font-size: var(--text-sm); }
 
 @container page (width < 640px) {
   .row { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-4); }
   .lost { grid-column: 1 / -1; }
-  .notAsked { grid-column: 2; justify-self: end; text-align: end; }
 }

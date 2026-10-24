@@ -310,8 +310,7 @@ def render_session_markdown(session: dict) -> str:
     if debrief.get("verdict"):
         extra = markdown_sections(debrief) if "scorecard" in debrief else {}
         lines += ["## Debrief", "", debrief["verdict"], ""]
-        if extra.get("scorecard"):
-            lines += ["### Scorecard", "", *extra["scorecard"], ""]
+        # The order of the page (rubric §9): weak spots, plan, then the scorecard.
         if extra.get("weak_spots"):
             lines += ["### Weak spots", "", *extra["weak_spots"]]
         else:
@@ -323,6 +322,8 @@ def render_session_markdown(session: dict) -> str:
             lines += ["", f"Next step: {debrief['next_step']}"]
         if extra.get("plan"):
             lines += ["", "### Plan for the next session", "", *extra["plan"]]
+        if extra.get("scorecard"):
+            lines += ["", "### Scorecard", "", *extra["scorecard"]]
         lines.append("")
     feedback = session.get("feedback") or []
     if feedback:

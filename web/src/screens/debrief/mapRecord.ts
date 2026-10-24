@@ -355,7 +355,7 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
     meta: metaFor(record, english ? 0 : asked(record) || threads.length, followUps, threads.length),
     obsidian: opts.obsidian,
     saved: true,
-    verdict: d?.verdict && !partial && !english ? { headline: d.verdict } : undefined,
+    verdict: d?.verdict && !partial && !english ? { headline: d.verdict, strength: d.strength?.trim() || undefined } : undefined,
     verdictNotice: notice,
     partial,
     // D98: only an interview debrief that has a verdict gets the scorecard and the plan (US-20 AC4, AC6).

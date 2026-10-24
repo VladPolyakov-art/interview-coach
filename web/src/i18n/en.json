@@ -1183,6 +1183,17 @@
     "workOnSub": "One per layer, from this session.",
     "fixLead": "How to fix",
     "saidLead": "What you said",
+    "measuredLead": "Measured",
+    "misheard": {
+      "note": "Words the app may have misheard are not counted. You can check them in each question.",
+      "lead": "Words the app may have misheard are not counted. You can check them in",
+      "link": "each question",
+      "linkSr": "each question, starting with question {n}"
+    },
+    "verdictLine": {
+      "next": "The main thing between you and “{next}”: {fix}",
+      "keep": "Keep it: {strength}"
+    },
     "landsLead": "How it lands",
     "score": {
       "title": "Scorecard",
@@ -1199,7 +1210,7 @@
       },
       "value": "{score}/5",
       "sr": "{score} out of 5",
-      "notAsked": "Not asked this time",
+      "notAsked": "Not asked this time: {labels}",
       "lost_one": "Lost points in question",
       "lost_other": "Lost points in questions"
     },

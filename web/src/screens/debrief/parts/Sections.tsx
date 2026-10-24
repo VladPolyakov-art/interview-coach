@@ -4,10 +4,11 @@
 import type { ReactNode } from "react";
 import { Badge, Button, Callout, Disclosure, Skeleton, TextShimmer, WeakSpotStrip, type WeakSpot } from "../../../ds";
 import { t, tp } from "../../../i18n";
-import { layerSequence, type DebriefModel, type DebriefVariant, type EnglishModel, type Evidence, type Layer, type SaidModel, type VerdictModel } from "../types";
+import { layerSequence, type DebriefModel, type DebriefVariant, type EnglishModel, type Evidence, type Layer, type SaidModel, type VerdictModel, type WeakSpotModel } from "../types";
 import type { LayerOrder } from "../../../lib/types";
 import { drillHintText } from "./drillHint";
 import { QuestionLinks } from "./QuestionLinks";
+import q from "./questionLinks.module.css";
 import s from "./sections.module.css";
 
 const SCALE: { step: 0 | 1 | 2; key: "scale.notReady" | "scale.gettingThere" | "scale.ready" }[] = [
@@ -16,12 +17,13 @@ const SCALE: { step: 0 | 1 | 2; key: "scale.notReady" | "scale.gettingThere" | "
   { step: 2, key: "scale.ready" },
 ];
 
-export function SectionHead({ id, title, sub, action }: { id: string; title: ReactNode; sub?: ReactNode; action?: ReactNode }) {
+export function SectionHead({ id, title, sub, note, action }: { id: string; title: ReactNode; sub?: ReactNode; note?: ReactNode; action?: ReactNode }) {
   return (
     <div className={s.head}>
       <div className={s.headText}>
         <h2 id={id} className={s.label}>{title}</h2>
         {sub ? <p className={s.sub}>{sub}</p> : null}
+        {note ? <p className={s.sub}>{note}</p> : null}
       </div>
       {action}
     </div>
@@ -59,7 +61,14 @@ export function VerdictBar({ verdict, id, open, onOpenChange, children }: {
   );
 }
 
-export function Verdict({ verdict, id, note, bare }: { verdict: VerdictModel; id: string; note?: ReactNode; bare?: boolean }) {
+/** The weak spots in the order of the page (the configured layer order, GR8). */
+export function orderedSpots(spots: readonly WeakSpotModel[], order: LayerOrder): WeakSpotModel[] {
+  const seq = layerSequence(order);
+  return [...spots].sort((a, b) => seq.indexOf(a.layer) - seq.indexOf(b.layer));
+}
+
+/** `next`: "What moves the verdict" (rubric §9.4), one line under the scale; built in code by `verdictLine`. */
+export function Verdict({ verdict, id, note, bare, next }: { verdict: VerdictModel; id: string; note?: ReactNode; bare?: boolean; next?: string | null }) {
   const sr = verdict.step !== undefined ? t("debrief.scale.sr", { n: verdict.step + 1 }) : null;
   return (
     <section className={s.verdict} aria-labelledby={bare ? undefined : id} aria-label={bare ? t("debrief.verdict") : undefined} data-review-id="Debrief/Verdict" data-review-section={bare ? undefined : "Debrief · Verdict"} data-comment-target={bare ? undefined : ""}>
@@ -76,6 +85,7 @@ export function Verdict({ verdict, id, note, bare }: { verdict: VerdictModel; id
           ))}
         </ol>
       ) : null}
+      {next ? <p className={s.next}>{next}</p> : null}
     </section>
   );
 }
@@ -131,16 +141,27 @@ export function Said({ said }: { said: SaidModel }) {
   return said.kind === "quote" ? <q className={s.quote}>{said.text}</q> : <span className={s.metric}>{said.text}</span>;
 }
 
+/** "Words the app may have misheard are not counted. You can check them in each question." With a first question, "each question" jumps to it. */
+function MisheardNote({ first, onJump }: { first?: number; onJump: (n: number) => void }) {
+  if (first === undefined) return <>{t("debrief.misheard.note")}</>;
+  return (
+    <>
+      {t("debrief.misheard.lead")}{" "}
+      <Button variant="link" size="sm" className={q.num} aria-label={t("debrief.misheard.linkSr", { n: first })} data-track="debrief-misheard-jump" onClick={() => onJump(first)}>{t("debrief.misheard.link")}</Button>.
+    </>
+  );
+}
+
 export function WeakSpots({ model, order, onJump, id }: { model: DebriefModel; order: LayerOrder; onJump: (n: number) => void; id: string }) {
-  const seq = layerSequence(order);
-  const sorted = [...model.weakSpots].sort((a, b) => seq.indexOf(a.layer) - seq.indexOf(b.layer));
+  const sorted = orderedSpots(model.weakSpots, order);
   const items: WeakSpot[] = sorted.map((w) => ({
     id: w.id,
     layer: w.layer,
     layerLabel: t(`feedback.layer.${w.layer}`),
     title: w.title,
     evidence: w.evidence ? <EvidenceLine e={w.evidence} onJump={onJump} /> : undefined,
-    said: w.said ? <Line label={t("debrief.saidLead")}><Said said={w.said} /></Line> : undefined,
+    // A delivery number is measured, not said (D98 r2).
+    said: w.said ? <Line label={t(w.said.kind === "metric" ? "debrief.measuredLead" : "debrief.saidLead")}><Said said={w.said} /></Line> : undefined,
     lands: w.lands ? <Line label={t("debrief.landsLead")}>{w.lands}</Line> : undefined,
     fix: w.fix ? <Line label={t("debrief.fixLead")}>{w.fix}</Line> : undefined,
     also: w.also ? (
@@ -150,6 +171,8 @@ export function WeakSpots({ model, order, onJump, id }: { model: DebriefModel; o
         {w.also.fix ? <> — {w.also.fix}</> : null}
       </>
     ) : undefined,
+    // D98 r2 (GR9): the language spot says that possibly misheard words are not counted; "each question" opens the first one.
+    note: w.layer === "language" ? <MisheardNote first={w.evidence?.ids[0]} onJump={onJump} /> : undefined,
   }));
   return (
     <section className={s.block} aria-labelledby={id} data-review-id="Debrief/WeakSpots" data-review-section="Debrief · What to work on" data-comment-target="">
