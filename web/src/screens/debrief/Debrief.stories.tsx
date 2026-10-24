@@ -20,6 +20,17 @@ export const InterviewFull = desktop("interviewFull");
 export const InterviewFullMobile = mobile("interviewFull");
 /** D80: the verdict bar above the conversation, opened. */
 export const InterviewVerdictOpen = desktop("interviewVerdictOpen");
+/** D98 (US-20 AC6–AC8): the opened bar shows the scorecard, weak spots with "What you said / How it lands / How to fix", and the plan with the drill. */
+export const ScorecardAndPlan = desktop("interviewVerdictOpen");
+export const ScorecardAndPlanMobile = mobile("interviewVerdictOpen");
+/** D98: scorecard rows with nothing to judge say "Not asked this time" and have no meter. */
+export const ScorecardNullRows = desktop("interviewNullRows");
+/** D98: a weak spot with no verified fragment leaves out "What you said". Delivery spots show a number instead of a quote. */
+export const WeakSpotWithoutQuote = desktop("interviewNoQuote");
+/** D98: an older debrief has no scorecard and no plan; the drill stays in the Actions block. */
+export const NoPlan = desktop("interviewNoPlan");
+/** D98: one weak spot, one plan step. */
+export const OnePlanStep = desktop("interviewOnePlanStep");
 /** The same debrief with the layer order from Settings set to delivery first (GR8). */
 export const InterviewDeliveryFirst = desktop("interviewDeliveryFirst");
 /** The title is being renamed in place (US-23 AC2). */

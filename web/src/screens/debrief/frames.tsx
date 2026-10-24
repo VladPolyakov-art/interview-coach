@@ -84,6 +84,29 @@ const englishTyped = {
   },
 };
 
+/** D98: rows with nothing to judge ("Not asked this time"): no reflection question, no spoken answers (a typed round). */
+const interviewNullRows: DebriefModel = {
+  ...interviewS2,
+  scorecard: interviewS2.scorecard?.map((r) => (r.key === "reflection" || r.key === "delivery" ? { ...r, score: null, answers: 0, lost: [] } : r)),
+};
+
+/** D98: a weak spot with no verified fragment: the "What you said" line is left out, never made up. */
+const interviewNoQuote: DebriefModel = {
+  ...interviewS2,
+  weakSpots: interviewS2.weakSpots.map((w) => (w.layer === "content" ? { ...w, said: undefined } : w)),
+};
+
+/** D98: an older debrief (saved before the scorecard and the plan): the verdict, the weak spots and the old Actions block. */
+const interviewNoPlan: DebriefModel = { ...interviewS2, scorecard: undefined, plan: undefined };
+
+/** D98: the plan has fewer steps when there are fewer weak spots. */
+const interviewOnePlanStep: DebriefModel = {
+  ...interviewS2,
+  weakSpots: interviewS2.weakSpots.slice(0, 1),
+  plan: interviewS2.plan?.slice(0, 1),
+  drill: { questions: 2, points: 1, minutes: 6 },
+};
+
 const base = { variant: "interview", state: "ready" } as const;
 
 export const DEBRIEF_SCENES = {
@@ -91,6 +114,14 @@ export const DEBRIEF_SCENES = {
   interviewFull: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, strongerOpen: [2] } },
   /** D80: the folded verdict bar, opened (summary, scale, what to fix first, next step). */
   interviewVerdictOpen: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, verdictOpen: true } },
+  /** D98: scorecard rows with "Not asked this time" (no meter, no lost-points links). */
+  interviewNullRows: { ...base, model: interviewNullRows, ui: { open: DEFAULT_OPEN.s2, verdictOpen: true } },
+  /** D98: a weak spot without a verified fragment shows "How it lands" and "How to fix" only. */
+  interviewNoQuote: { ...base, model: interviewNoQuote, ui: { open: DEFAULT_OPEN.s2, verdictOpen: true } },
+  /** D98: no plan (an older debrief): no scorecard, the drill stays in Actions. */
+  interviewNoPlan: { ...base, model: interviewNoPlan, ui: { open: DEFAULT_OPEN.s2, verdictOpen: true } },
+  /** D98: one weak spot, one plan step. */
+  interviewOnePlanStep: { ...base, model: interviewOnePlanStep, ui: { open: DEFAULT_OPEN.s2, verdictOpen: true } },
   interviewDeliveryFirst: { ...base, model: interviewS2, layerOrder: "delivery-first", ui: { open: DEFAULT_OPEN.s2, strongerOpen: [2] } },
   interviewRename: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, renaming: true } },
   interviewRecheck: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2, editing: { question: 2, correction: "q2-led" } } },

@@ -1181,7 +1181,31 @@
     },
     "workOn": "What to work on",
     "workOnSub": "One per layer, from this session.",
-    "fixLead": "Fix:",
+    "fixLead": "How to fix",
+    "saidLead": "What you said",
+    "landsLead": "How it lands",
+    "score": {
+      "title": "Scorecard",
+      "sub": "Practice scores from this app's rubric, not a hiring prediction.",
+      "list": "Scores by criterion",
+      "row": {
+        "structure": "Structure (STAR)",
+        "own_part": "Your part",
+        "result": "Result",
+        "relevance": "On the question",
+        "reflection": "Lessons learned",
+        "language": "English",
+        "delivery": "Delivery"
+      },
+      "value": "{score}/5",
+      "sr": "{score} out of 5",
+      "notAsked": "Not asked this time",
+      "lost_one": "Lost points in question",
+      "lost_other": "Lost points in questions"
+    },
+    "plan": {
+      "title": "Plan for the next session"
+    },
     "alsoLead": "Also:",
     "inQuestion_one": "in question",
     "inQuestion_other": "in questions",

@@ -2,7 +2,7 @@
  * into it (`mapRecord.ts`), stories and the review page use the fixtures. Text that comes from the model or the
  * user (questions, answers, fixes) is plain English data; every chrome string comes from the locale file. */
 import type { IconName } from "../../ds";
-import type { LayerOrder } from "../../lib/types";
+import type { LayerOrder, ScoreKey } from "../../lib/types";
 
 export type Layer = "content" | "language" | "delivery";
 export type DebriefVariant = "interview" | "english" | "example";
@@ -24,11 +24,19 @@ export interface MetaItem {
 /** Evidence under a weak spot: "Questions 1, 2, 4" or "Most in question 4 (12)". Numbers are links to the cards. */
 export interface Evidence { kind: "questions" | "most"; ids: number[]; trail?: string }
 
+/** What the user said (D98, rubric §9.2): an exact fragment (`quote`, shown in quotation marks) or a delivery number (`metric`, plain text). */
+export interface SaidModel { text: string; kind: "quote" | "metric" }
+
 export interface WeakSpotModel {
   id: string;
   layer: Layer;
   title: string;
   evidence?: Evidence;
+  /** "What you said". Absent: the line is left out, never made up. */
+  said?: SaidModel;
+  /** "How it lands": the interviewer's likely reading. Absent: the line is left out. */
+  lands?: string;
+  /** "How to fix". */
   fix?: string;
   /** Content only: a second point under a hairline. */
   also?: { text: string; ids: number[]; fix?: string };
@@ -41,6 +49,12 @@ export interface VerdictModel {
   headline: string;
   line?: string;
 }
+
+/** One scorecard row (D98, rubric §9.1). `score: null` = "Not asked this time", no meter. `lost` = question numbers. */
+export interface ScoreRowModel { key: ScoreKey; score: number | null; answers: number; lost: number[] }
+
+/** One step of "Plan for the next session" (D98, rubric §9.3). The `drill` step carries the "Drill these weak spots" action. */
+export interface PlanStepModel { id: string; layer: Layer; text: string; drill: boolean }
 
 export interface Correction {
   id: string;
@@ -138,7 +152,11 @@ export interface DebriefModel {
   /** Live only: the verdict is being written (`pending`), could not be written (`missing`) or was built without the model (`template`). */
   verdictNotice?: "pending" | "missing" | "template";
   partial?: { answered: number; total: number };
+  /** Interview with a verdict only (D98): seven rows in a fixed order. Absent: old session or server, no section. */
+  scorecard?: ScoreRowModel[];
   weakSpots: WeakSpotModel[];
+  /** Up to three steps (D98). Absent or empty: no section, and the drill action stays in the Actions block. */
+  plan?: PlanStepModel[];
   /** `questions` and `minutes` are absent when the server does not tell them (live data). */
   drill?: { questions?: number; points: number; minutes?: number };
   questions: QuestionModel[];

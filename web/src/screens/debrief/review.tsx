@@ -19,7 +19,15 @@ export const debriefReview: ReviewScreen = {
     }),
     state("verdict-open", "Interview · вердикт раскрыт", "interviewVerdictOpen", {
       tall: true,
-      note: "D80: плашка вердикта раскрыта: итог одной фразой, шкала Not ready → Getting there → Ready, «What to fix first» по слоям, Drill / Practise again. Ещё клик — сворачивается.",
+      note: "D80: плашка вердикта раскрыта: итог одной фразой, шкала Not ready → Getting there → Ready, Scorecard (7 строк 1–5 со ссылками на вопросы, потерявшие баллы), «What to work on» с «What you said / How it lands / How to fix», Plan for the next session (до 3 шагов, у первого — Drill), Practise again. Ещё клик — сворачивается.",
+    }),
+    state("scorecard-null", "Interview · строки «Not asked this time»", "interviewNullRows", {
+      mobile: false,
+      note: "D98: строка без оценки (нет вопроса на уроки, нет голосовых ответов) — «Not asked this time», без шкалы и ссылок.",
+    }),
+    state("no-plan", "Interview · старый разбор без плана", "interviewNoPlan", {
+      mobile: false,
+      note: "D98: сессия, сохранённая до D98, не получает scorecard и plan; Drill остаётся в блоке действий, как раньше.",
     }),
     state("interview-delivery-first", "Interview · delivery first", "interviewDeliveryFirst", {
       mobile: false,

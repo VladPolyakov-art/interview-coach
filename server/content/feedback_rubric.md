@@ -223,3 +223,75 @@ Keep 20 short transcripts, each with a hand-made expected output: 5 weak, 5 medi
 
 ## Note from synthetic 09-r2 (2026-10-20) 🟡
 "we → I" (`we_not_i`) can feel unfair for genuine team work. Proposed rule for stage 12: raise it only when the answer contains **no individual action at all** (`n_i == 0` and `voice == "we"`); for `mixed`, show it as a tip ("say which part was yours"), not as the main fix.
+
+## 9. Debrief: scorecard, "how it lands", plan (D98, 2026-10-24)
+
+Serves US-20 AC6–AC9. Idea taken from the PrepLab teardown (`docs/research/competitors/preplab.md`), changed so that every number can be checked: **nothing in this section is written by the model.** All three parts are built in code from the layers already saved for each answer, at read time, so they follow dismissed flags, "Edit what I said" and old sessions without a new model call. Interview mode only; the English track keeps its own debrief. Not shown when the session is too short for a verdict (US-20 AC4). No grade (Intern → Senior+): the owner declined it (D98).
+
+### 9.1 Scorecard
+
+Seven rows: five content criteria, then language and delivery. Each answer that a row applies to gets 0, 1 or 2 points. The row score is `1 + 4 × points / (2 × answers)`, rounded to a whole number (1–5). A row with no answers it applies to shows "Not asked this time" and no score.
+
+| Row | Applies to | 2 points | 1 point | 0 points |
+|---|---|---|---|---|
+| Structure (STAR) | main answers, not competency H | situation, action and result all there | only the situation is missing | action or result is missing (`no_star_action`, `no_result`) |
+| Your part | main answers, not H | "I" for the actions | `we_mixed`, or `we_not_i` at S2 | `we_not_i` at S3 |
+| Result | main answers, not H | a number or a concrete change | `vague_result` | `no_result` |
+| On the question | main answers | answers the question | — | `off_topic` |
+| Lessons learned | main answers to questions that invite it (competency F, or "differently" in the question) | a concrete lesson | — | `no_reflection` |
+| English | every answer with a language layer | S0 or S1 | S2 | S3 |
+| Delivery | every answer with a delivery layer (typed answers: length only) | S0 or S1 | S2 | S3 |
+
+Rules:
+- Only counted items: dismissed and possibly-misheard items never take points (GR9, US-22 AC3).
+- Follow-up answers are not scored on the content rows: the interviewer asked for what was missing, so the main answer is what an interviewer would rate 🟡.
+- Answers saved before 2026-10-24 have no `checks` (the raw content answers). For them "situation missing" cannot be known, so Structure uses the tags only.
+- Each row lists the questions that lost points (links to the question cards). A row with a score of 5 lists none.
+- Scores are labelled as practice scores from this app's rubric, never as a hiring prediction (D7).
+
+### 9.2 Weak spot: "What you said → how it lands → how to fix"
+
+Each weak spot (up to 3, US-20 AC1) gets:
+1. **What you said:** an exact fragment from the first question in its evidence. Content: the verified `evidence` quote of that answer's content layer. Language: the `original` fragment of the item. Delivery: the metric instead of a quote (for example "182 words per minute", "9 fillers per 100 words"). If there is no verified fragment, this line is left out; it is never made up.
+2. **How it lands:** one sentence from the table below, the interviewer's likely reading. Neutral, no blame. Named "How it lands", never "Heard as" (that name belongs to speech recognition, §5).
+3. **How to fix:** the weak spot's existing `text`.
+
+| Tag | How it lands (≤ 18 words) 🟡 |
+|---|---|
+| `no_result` | The interviewer can't tell if your work changed anything, so the story ends without a point. |
+| `vague_result` | "It went well" sounds like a guess; the interviewer will ask for a number or will assume none. |
+| `no_star_action` | It's clear what happened, but not what you did, so your skills stay invisible. |
+| `we_not_i` | All "we" makes it hard to see your part; the interviewer may credit the team, not you. |
+| `we_mixed` | Your part is there but blurred; one clear "I decided" would make it yours. |
+| `off_topic` | The interviewer waits for the answer to their question and may stop listening to the story. |
+| `no_reflection` | Without a lesson the story sounds rehearsed; interviewers look for what you would change. |
+| `meaning_error` | The listener may understand something different from what you meant. |
+| `tense` | Tense slips make it unclear whether this happened before or is still true. |
+| `collocation` | The meaning is clear, but the wording sounds unusual and pulls attention from the content. |
+| `preposition` | Small but repeated, it makes fluent answers sound less polished. |
+| `article` | Rarely changes the meaning; it matters only because it repeats. |
+| `word_choice` | A less exact word makes the point weaker than your experience. |
+| `pace_fast` | Fast speech makes the listener work hard, and key facts get lost. |
+| `pace_slow` | A slow pace can read as unsure, even when the content is good. |
+| `too_long` | Long answers make the interviewer cut in or lose the main point. |
+| `too_short` | Short answers read as little experience or little interest. |
+| `filler_high` | Many "um"s read as unsure, even when the content is strong. |
+| `long_pauses` | Long silences read as being stuck, though a short pause reads as thinking. |
+| `restarts` | Restarted sentences make the answer sound unprepared. |
+
+An unknown tag gets no "How it lands" line.
+
+### 9.3 Plan for the next session
+
+Up to 3 steps, one per weak spot, in the same order. Fewer weak spots, fewer steps; no filler steps (§0 principle 3). The first step carries the "Drill these weak spots" action (US-20 AC1, existing drill). Each step is an exercise for the next practice, not a repeat of the fix:
+
+| Tag | Step 🟡 |
+|---|---|
+| `no_result`, `vague_result` | Before your next session, write one number for each of your 3 main stories. |
+| `no_star_action` | Retell one story using only sentences that start with "I". |
+| `we_not_i`, `we_mixed` | For each story, name the one decision that was yours. |
+| `off_topic` | Practise opening with a one-sentence answer, then the story. |
+| `no_reflection` | Add a last sentence to each story: what you would do differently. |
+| language tags | Drill the phrases from this session's corrections out loud, three times each. |
+| `pace_fast`, `pace_slow`, `filler_high`, `long_pauses`, `restarts` | Record one answer and replay it, listening only for this habit. |
+| `too_long`, `too_short` | Time one answer: aim for one to two minutes. |

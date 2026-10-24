@@ -39,3 +39,8 @@
   .action { max-width: none; align-items: stretch; }
   .action > button { width: 100%; }
 }
+
+/* D98: the lines of a weak-spot card ("What you said", "How it lands", "How to fix"): label on its own line. */
+.lineLabel { display: block; color: var(--color-text-secondary); font-weight: var(--weight-semibold); }
+.quote { quotes: "\201C" "\201D"; color: var(--color-text-primary); }
+.metric { color: var(--color-text-primary); font-variant-numeric: tabular-nums; }

@@ -5,11 +5,11 @@ import { percent, windowName } from "../../components/engine/PlanLimit";
 import { diffMarks, paceVerdict } from "../../components/Feedback";
 import { t, tMaybe, tp } from "../../i18n";
 import { formatClock, formatDateTime, formatDuration } from "../../lib/format";
-import type { FeedbackRecord, LanguageItem, LayerName, LowConfWord, SessionRecord } from "../../lib/types";
+import type { FeedbackRecord, LanguageItem, LayerName, LowConfWord, ScoreKey, SessionRecord } from "../../lib/types";
 import { languageCounts, type StrongerState, type Thread } from "../../session/reducer";
 import type {
   ContentBlock, ConversationTurn, Correction, DebriefModel, DeliveryBlock, EnglishModel, LanguageBlock, MetaItem, QuestionModel, Segments,
-  StrongerModel, WeakSpotModel,
+  PlanStepModel, ScoreRowModel, StrongerModel, WeakSpotModel,
 } from "./types";
 
 /** A verdict needs at least this many answered questions (US-17 AC1). */
@@ -145,25 +145,62 @@ function deliveryBlock(record: FeedbackRecord | undefined): DeliveryBlock | unde
   };
 }
 
+/** "q2" → 2: the same ids in weak-spot evidence and in scorecard `lost`. Anything else is dropped; a number listed
+ * twice (one id per item on the server) is shown once, in order. */
+export function questionRefs(ids?: string[]): number[] {
+  const refs = (ids ?? []).map((e) => /^q(\d+)$/i.exec(e)).filter((m): m is RegExpExecArray => Boolean(m)).map((m) => Number(m[1]));
+  return [...new Set(refs)];
+}
+
 function weakSpots(record: SessionRecord): WeakSpotModel[] {
   const out: WeakSpotModel[] = [];
-  const ref = (ids?: string[]) => (ids ?? []).map((e) => /^q(\d+)$/i.exec(e)).filter((m): m is RegExpExecArray => Boolean(m)).map((m) => Number(m[1]));
-  for (const w of record.debrief?.weak_spots ?? []) {
-    const title = w.text || tMaybe(`feedback.tag.${w.tag}`, w.tag.replace(/_/g, " "));
-    const ids = ref(w.evidence);
+  const list = record.debrief?.weak_spots ?? [];
+  // D98: with "What you said" / "How it lands" the card needs a short heading and the server's `text` becomes "How to fix";
+  // an older debrief keeps its sentence as the heading.
+  const rich = list.some((w) => w.said || w.lands_as);
+  for (const w of list) {
+    const label = tMaybe(`feedback.tag.${w.tag}`, w.tag.replace(/_/g, " "));
+    const title = rich ? label : w.text || label;
+    const ids = questionRefs(w.evidence);
     const first = out.find((o) => o.layer === w.layer);
     if (first) {
       if (w.layer === "content" && !first.also) first.also = { text: title, ids };
       continue;
     }
+    const said = w.said?.trim();
     out.push({
       id: `${w.layer}-${w.tag}`,
       layer: w.layer,
       title,
       evidence: ids.length ? { kind: "questions", ids } : undefined,
+      said: said ? { text: said, kind: w.said_kind ?? (w.layer === "delivery" ? "metric" : "quote") } : undefined,
+      lands: w.lands_as?.trim() || undefined,
+      fix: rich && w.text ? w.text : undefined,
     });
   }
   return out;
+}
+
+/** The scorecard rows in the fixed order of rubric §9.1; unknown keys are dropped, a score outside 1–5 counts as "not asked". */
+export const SCORE_ORDER: ScoreKey[] = ["structure", "own_part", "result", "relevance", "reflection", "language", "delivery"];
+
+function scorecard(record: SessionRecord): ScoreRowModel[] | undefined {
+  const rows = record.debrief?.scorecard?.rows;
+  if (!rows?.length) return undefined;
+  const out = SCORE_ORDER.flatMap((key) => {
+    const row = rows.find((r) => r.key === key);
+    if (!row) return [];
+    const score = typeof row.score === "number" && row.score >= 1 && row.score <= 5 ? Math.round(row.score) : null;
+    return [{ key, score, answers: row.answers ?? 0, lost: score === null ? [] : questionRefs(row.lost) }];
+  });
+  return out.length ? out : undefined;
+}
+
+function plan(record: SessionRecord): PlanStepModel[] | undefined {
+  const steps = (record.debrief?.plan ?? []).filter((p) => p.text?.trim()).slice(0, 3);
+  if (!steps.length) return undefined;
+  // Only the first step carries the drill (US-20 AC8).
+  return steps.map((p, i) => ({ id: `${i}-${p.layer}-${p.tag}`, layer: p.layer, text: p.text.trim(), drill: i === 0 && p.drill }));
 }
 
 export interface MapOptions {
@@ -321,7 +358,10 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
     verdict: d?.verdict && !partial && !english ? { headline: d.verdict } : undefined,
     verdictNotice: notice,
     partial,
+    // D98: only an interview debrief that has a verdict gets the scorecard and the plan (US-20 AC4, AC6).
+    scorecard: !partial && !english && d?.verdict ? scorecard(record) : undefined,
     weakSpots: spots,
+    plan: !partial && !english && d?.verdict ? plan(record) : undefined,
     drill: !partial && !english && spots.length ? { points: spots.length } : undefined,
     questions: english ? [] : threads.map((th) => questionModel(record, th, opts)),
     skipped: partial && maxAsked < total ? { from: maxAsked + 1, to: total } : undefined,

@@ -16,6 +16,8 @@ import { Conversation, conversationFromQuestions } from "./parts/Conversation";
 import { EnglishBody } from "./parts/English";
 import type { RowContext } from "./parts/Layers";
 import { QuestionCard } from "./parts/QuestionCard";
+import { Plan } from "./parts/Plan";
+import { Scorecard } from "./parts/Scorecard";
 import { Actions, SectionHead, TemplateNote, Verdict, VerdictBar, VerdictNotice, WeakSpots } from "./parts/Sections";
 import { ErrorBody, ExampleBanner, LoadingBody, NotFoundBody, PartialBanner, StorageBanner } from "./parts/States";
 import s from "./DebriefView.module.css";
@@ -135,13 +137,19 @@ export function DebriefView(props: DebriefViewProps) {
   const english = variant === "english" ? model.english : undefined;
   const turns = model.conversation?.length ? model.conversation : conversationFromQuestions(model.questions);
   const partial = Boolean(model.partial);
-  const ids = { verdict: `${uid}-verdict`, spots: `${uid}-spots`, actions: `${uid}-actions`, questions: `${uid}-questions` };
+  const ids = { verdict: `${uid}-verdict`, score: `${uid}-score`, spots: `${uid}-spots`, plan: `${uid}-plan`, actions: `${uid}-actions`, questions: `${uid}-questions` };
 
   // D80: a saved interview opens on the conversation; the verdict, what to fix first and the next step fold into a bar.
   const folded = variant === "interview" && Boolean(model.verdict) && !partial;
   const verdictBlock = model.verdict && !partial ? (
     <Verdict verdict={model.verdict} id={folded ? `${ids.verdict}-body` : ids.verdict} bare={folded} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} />
   ) : null;
+  // D98: the scorecard sits under the verdict and the plan under the weak spots; neither shows without a verdict (US-20 AC4, AC6).
+  const scoreBlock = !partial && !english && model.verdict && model.scorecard?.length ? <Scorecard rows={model.scorecard} id={ids.score} onJump={jump} /> : null;
+  const planBlock = !partial && !english && model.verdict && model.plan?.length ? (
+    <Plan steps={model.plan} id={ids.plan} drill={model.drill} example={variant === "example"} storageError={storageError} onDrill={props.onDrill} />
+  ) : null;
+  const drillInPlan = Boolean(planBlock) && Boolean(model.plan?.some((p) => p.drill));
   const spotsBlock = !partial && !english && model.weakSpots.length ? <WeakSpots model={model} order={layerOrder} onJump={jump} id={ids.spots} /> : null;
   const actionsBlock = (
     <Actions
@@ -150,6 +158,7 @@ export function DebriefView(props: DebriefViewProps) {
       english={english}
       partial={partial}
       storageError={storageError}
+      drillInPlan={drillInPlan}
       onDrill={props.onDrill}
       onPractise={props.onPractise}
       onStartFirst={props.onStartFirst}
@@ -189,13 +198,17 @@ export function DebriefView(props: DebriefViewProps) {
       {folded ? (
         <VerdictBar verdict={model.verdict!} id={ids.verdict} open={verdictOpen} onOpenChange={setVerdictOpen}>
           {verdictBlock}
+          {scoreBlock}
           {spotsBlock}
+          {planBlock}
           {actionsBlock}
         </VerdictBar>
       ) : (
         <>
           {verdictBlock}
+          {scoreBlock}
           {spotsBlock}
+          {planBlock}
           {english ? (
             <EnglishBody english={english} ctx={rowsFor(0)} ids={{ summary: `${uid}-sum`, corrections: `${uid}-cor`, phrases: `${uid}-phr` }} />
           ) : null}

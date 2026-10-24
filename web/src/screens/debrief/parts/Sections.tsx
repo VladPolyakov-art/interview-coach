@@ -4,8 +4,10 @@
 import type { ReactNode } from "react";
 import { Badge, Button, Callout, Disclosure, Skeleton, TextShimmer, WeakSpotStrip, type WeakSpot } from "../../../ds";
 import { t, tp } from "../../../i18n";
-import { layerSequence, type DebriefModel, type DebriefVariant, type EnglishModel, type Evidence, type Layer, type VerdictModel } from "../types";
+import { layerSequence, type DebriefModel, type DebriefVariant, type EnglishModel, type Evidence, type Layer, type SaidModel, type VerdictModel } from "../types";
 import type { LayerOrder } from "../../../lib/types";
+import { drillHintText } from "./drillHint";
+import { QuestionLinks } from "./QuestionLinks";
 import s from "./sections.module.css";
 
 const SCALE: { step: 0 | 1 | 2; key: "scale.notReady" | "scale.gettingThere" | "scale.ready" }[] = [
@@ -109,19 +111,24 @@ export function VerdictNotice({ kind, id, rerunning, onRerun }: { kind: "pending
 
 /** "Questions 1, 2, 4" or "Most in question 4 (12)": every number jumps to its card (open + scroll + focus). */
 function EvidenceLine({ e, onJump }: { e: Evidence; onJump: (n: number) => void }) {
-  const links = e.ids.map((n, i) => (
-    <span key={n}>
-      <Button variant="link" size="sm" aria-label={t("debrief.evidence.goTo", { n })} data-track="debrief-evidence-jump" onClick={() => onJump(n)}>{n}</Button>
-      {i < e.ids.length - 1 ? "," : ""}
-    </span>
-  ));
   return (
     <>
       {e.kind === "most" ? t("debrief.evidence.mostIn") : tp("debrief.evidence.questions", e.ids.length)}
-      {links}
-      {e.trail ? <span>{e.trail}</span> : null}
+      {" "}
+      <QuestionLinks ids={e.ids} onJump={onJump} />
+      {e.trail ? <> <span>{e.trail}</span></> : null}
     </>
   );
+}
+
+/** A labelled line inside a weak-spot card: the label on its own line, the text under it. */
+function Line({ label, children }: { label: string; children: ReactNode }) {
+  return <><span className={s.lineLabel}>{label}</span>{children}</>;
+}
+
+/** D98: an exact fragment is a quote (quotation marks); a delivery number is plain text. */
+export function Said({ said }: { said: SaidModel }) {
+  return said.kind === "quote" ? <q className={s.quote}>{said.text}</q> : <span className={s.metric}>{said.text}</span>;
 }
 
 export function WeakSpots({ model, order, onJump, id }: { model: DebriefModel; order: LayerOrder; onJump: (n: number) => void; id: string }) {
@@ -133,16 +140,13 @@ export function WeakSpots({ model, order, onJump, id }: { model: DebriefModel; o
     layerLabel: t(`feedback.layer.${w.layer}`),
     title: w.title,
     evidence: w.evidence ? <EvidenceLine e={w.evidence} onJump={onJump} /> : undefined,
-    fix: w.fix ? <><strong className={s.lead}>{t("debrief.fixLead")}</strong> {w.fix}</> : undefined,
+    said: w.said ? <Line label={t("debrief.saidLead")}><Said said={w.said} /></Line> : undefined,
+    lands: w.lands ? <Line label={t("debrief.landsLead")}>{w.lands}</Line> : undefined,
+    fix: w.fix ? <Line label={t("debrief.fixLead")}>{w.fix}</Line> : undefined,
     also: w.also ? (
       <>
         <strong className={s.lead}>{t("debrief.alsoLead")}</strong> {w.also.text} {tp("debrief.inQuestion", w.also.ids.length)}{" "}
-        {w.also.ids.map((n, i) => (
-          <span key={n}>
-            <Button variant="link" size="sm" aria-label={t("debrief.evidence.goTo", { n })} data-track="debrief-evidence-jump" onClick={() => onJump(n)}>{n}</Button>
-            {i < w.also!.ids.length - 1 ? "," : ""}
-          </span>
-        ))}
+        <QuestionLinks ids={w.also.ids} onJump={onJump} />
         {w.also.fix ? <> — {w.also.fix}</> : null}
       </>
     ) : undefined,
@@ -160,6 +164,8 @@ export interface ActionsProps {
   model: DebriefModel;
   /** The storage is not writable: Download is the only primary, Drill drops to secondary (one primary per page). */
   storageError?: boolean;
+  /** D98: the plan's first step carries the drill action, so this block does not repeat it (and the example's hint moves there too). */
+  drillInPlan?: boolean;
   partial?: boolean;
   onDrill?: () => void;
   onPractise?: () => void;
@@ -168,12 +174,12 @@ export interface ActionsProps {
   id: string;
 }
 
-export function Actions({ variant, model, storageError, partial, onDrill, onPractise, onStartFirst, english, id }: ActionsProps) {
+export function Actions({ variant, model, storageError, drillInPlan, partial, onDrill, onPractise, onStartFirst, english, id }: ActionsProps) {
   let body: ReactNode;
   if (variant === "example") {
     body = (
       <>
-        <p className={s.exampleHint}>{t("debrief.example.own")}</p>
+        {drillInPlan ? null : <p className={s.exampleHint}>{t("debrief.example.own")}</p>}
         <Button variant="link" data-track="debrief-example-start" onClick={onStartFirst}>{t("debrief.example.start")}</Button>
       </>
     );
@@ -209,16 +215,10 @@ export function Actions({ variant, model, storageError, partial, onDrill, onPrac
     const d = model.drill;
     body = (
       <>
-        {d ? (
+        {d && !drillInPlan ? (
           <div className={s.action}>
             <Button variant={storageError ? "secondary" : "primary"} size="lg" icon="play" data-track="drill-start" onClick={onDrill}>{t("debrief.drill")}</Button>
-            <p className={s.hint}>
-              {d.questions === undefined
-                ? tp("debrief.drillHintPoints", d.points)
-                : d.minutes !== undefined
-                  ? t("debrief.drillHint", { questions: d.questions, points: d.points, minutes: d.minutes })
-                  : t("debrief.drillHintNoTime", { questions: d.questions, points: d.points })}
-            </p>
+            <p className={s.hint}>{drillHintText(d)}</p>
           </div>
         ) : null}
         <div className={s.action}>
