@@ -1,5 +1,5 @@
 /* Live data → Debrief view model. Pure (no I/O), unit-tested in mapRecord.test.ts.
- * What the saved session does not carry (verdict step, per-question start time, corrections count) is left out of the
+ * What the saved session does not carry (per-question start time, corrections count) is left out of the
  * model; the view shows only what is there (see "live data gaps" in docs/frontend.md). */
 import { percent, windowName } from "../../components/engine/PlanLimit";
 import { diffMarks, paceVerdict } from "../../components/Feedback";
@@ -7,9 +7,10 @@ import { t, tMaybe, tp } from "../../i18n";
 import { formatClock, formatDateTime, formatDuration } from "../../lib/format";
 import type { FeedbackRecord, LanguageItem, LayerName, LowConfWord, ScoreKey, SessionRecord } from "../../lib/types";
 import { languageCounts, type StrongerState, type Thread } from "../../session/reducer";
+import { verdictModel } from "./verdictStep";
 import type {
   ContentBlock, ConversationTurn, Correction, DebriefModel, DeliveryBlock, EnglishModel, LanguageBlock, MetaItem, QuestionModel, Segments,
-  PlanStepModel, ScoreRowModel, StrongerModel, WeakSpotModel,
+  PlanStepModel, ScoreRowModel, StrongerModel, VerdictModel, WeakSpotModel,
 } from "./types";
 
 /** A verdict needs at least this many answered questions (US-17 AC1). */
@@ -196,6 +197,20 @@ function scorecard(record: SessionRecord): ScoreRowModel[] | undefined {
   return out.length ? out : undefined;
 }
 
+/** D99: the verdict. With the server's step (computed from the scorecard) the headline is the step's name and the
+ * model's sentence is the line under it; without one (too short, no scored row, an older server) the sentence is the
+ * headline and there is no scale. */
+function verdict(record: SessionRecord): VerdictModel | undefined {
+  const d = record.debrief;
+  if (!d?.verdict) return undefined;
+  const strength = d.strength?.trim() || undefined;
+  const value = d.step?.value;
+  if (value !== 0 && value !== 1 && value !== 2) return { headline: d.verdict, strength };
+  const gap = (d.step?.gap ?? []).filter((k, i, all) => SCORE_ORDER.includes(k) && all.indexOf(k) === i);
+  const target = d.step?.target === 3 || d.step?.target === 4 ? d.step.target : undefined;
+  return verdictModel({ value, gap, target: target ?? null }, d.verdict, strength);
+}
+
 function plan(record: SessionRecord): PlanStepModel[] | undefined {
   const steps = (record.debrief?.plan ?? []).filter((p) => p.text?.trim()).slice(0, 3);
   if (!steps.length) return undefined;
@@ -355,7 +370,7 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
     meta: metaFor(record, english ? 0 : asked(record) || threads.length, followUps, threads.length),
     obsidian: opts.obsidian,
     saved: true,
-    verdict: d?.verdict && !partial && !english ? { headline: d.verdict, strength: d.strength?.trim() || undefined } : undefined,
+    verdict: !partial && !english ? verdict(record) : undefined,
     verdictNotice: notice,
     partial,
     // D98: only an interview debrief that has a verdict gets the scorecard and the plan (US-20 AC4, AC6).

@@ -299,14 +299,32 @@ Up to 3 steps, one per weak spot, in the same order. Fewer weak spots, fewer ste
 | `pace_fast`, `pace_slow`, `filler_high`, `long_pauses`, `restarts` | Record one answer and replay it, listening only for this habit. |
 | `too_long`, `too_short` | Time one answer: aim for one to two minutes. |
 
-### 9.4 What moves the verdict
+### 9.4 What moves the verdict (D99, 2026-10-24)
 
-One muted line under the verdict's three-step scale (`Not ready yet / Getting there / Ready`), built in code on the web from data the page already has (no model, no server field), in the same place in the opened verdict bar and in the page column of the example:
+The three-step scale (`Not ready yet / Getting there / Ready`) and the muted line under it are **computed in code from the scorecard the user sees** (§9.1). The step is not stored and not written by the model (no model call, no change to the debrief prompt, decision D99): `enrich_debrief` derives it at read time, so it follows dismissed corrections, misheard words, "Edit what I said", recheck and rerun, and a session saved before this rule gets it too. The page headline is the step name; the model's sentence stays as the line under it. The ws `debrief` message, `GET /api/sessions/{id}` and the Markdown export (a "Verdict: <step>" line before the sentence) carry it.
+
+A row is **shown** when its score is not null. **Content rows** are Structure (STAR), Your part, Result and On the question.
+
+| Step | Condition |
+|---|---|
+| **Not ready yet** (0) | any content row scores 1 or 2 |
+| **Ready** (2) | every shown row scores 4 or more |
+| **Getting there** (1) | everything else |
+
+So Lessons learned, English and Delivery can never cause "Not ready yet", but any of them below 4 holds the step at "Getting there". No step, so no scale and no line, when the session is too short (`too_short`, fewer than 3 answers) or no row is shown.
+
+**The gap.** The rows that stand between the user and the next step, lowest score first, ties in scorecard order (§9.1): for Not ready yet, the content rows scoring 1 or 2 (target 3); for Getting there, every shown row scoring 1 to 3 (target 4); for Ready, none. Field: `step = {value, gap, target}` ("PROTOCOL.md").
+
+**The line** (one muted line under the scale, in the same place in the opened verdict bar and in the page column of the example). Row names are the scorecard labels. At most 2 names, the lowest; with exactly 3 rows all 3 are named (a third name takes no more room than "and 1 more"); with more, the first 2 and " and N more".
 
 | Step | Line |
 |---|---|
-| Not ready yet, Getting there | "The main thing between you and “<next step>”: <fix of the first weak spot, as written>" (the first weak spot in the order shown on the page, GR8; a closing full stop is added only if the fix has none) |
+| Not ready yet | "To reach “Getting there”: get <rows> to 3 of 5 or more." |
+| Getting there | "To reach “Ready”: get <rows> to 4 of 5 or more." |
 | Ready | "Keep it: <strength>" when the debrief has a `strength`; otherwise no line |
-| No step, or no weak spot with a fix | no line |
+| No step | no line |
 
-**Why the generic wording.** No rule decides the step. The server saves the verdict as one sentence (`verdict`) and no step; the fallback template and the model both write the sentence, and the page maps no `step` for a live session (only the example debrief carries one, by hand). So the line cannot say "fix X and you reach Y": it names the first thing to fix and the step above the current one, and claims nothing about what is enough. If the step is ever computed in code from counted weak spots and severities (for instance "any S3 means Not ready yet"), this line must be rewritten to state exactly that rule, and the rule added to `enrich_debrief` and `PROTOCOL.md`.
+`<rows>`: "Result"; "Structure (STAR) and Result"; "Structure (STAR), Result and Delivery"; "Lessons learned, Structure (STAR) and 2 more". The line ends with a full stop.
+
+**One rule, two places.** The server (`debrief_view.verdict_step`) is the source for live sessions. The built-in example has no server, so the web mirrors the rule as a pure function (`verdictStep.ts`) and both are tested against the same cases (`server/tests/verdict_step_cases.json`).
+

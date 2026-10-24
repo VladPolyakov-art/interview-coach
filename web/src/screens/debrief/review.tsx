@@ -19,7 +19,7 @@ export const debriefReview: ReviewScreen = {
     }),
     state("verdict-open", "Interview · вердикт раскрыт", "interviewVerdictOpen", {
       tall: true,
-      note: "D80: плашка вердикта раскрыта: итог одной фразой, шкала Not ready → Getting there → Ready и строка «The main thing between you and …», «What to work on» с «What you said / Measured · How it lands · How to fix» (у Language — заметка про misheard), Plan for the next session (до 3 шагов, у первого — Drill), Scorecard (строки 1–5 со ссылками на вопросы, потерявшие баллы; строки без оценки — одной строкой «Not asked this time: …»), Practise again. Ещё клик — сворачивается.",
+      note: "D80: плашка вердикта раскрыта: итог одной фразой, шкала Not ready → Getting there → Ready и строка «To reach “Ready”: get … to 4 of 5 or more.», «What to work on» с «What you said / Measured · How it lands · How to fix» (у Language — заметка про misheard), Plan for the next session (до 3 шагов, у первого — Drill), Scorecard (строки 1–5 со ссылками на вопросы, потерявшие баллы; строки без оценки — одной строкой «Not asked this time: …»), Practise again. Ещё клик — сворачивается.",
     }),
     state("scorecard-null", "Interview · строки «Not asked this time»", "interviewNullRows", {
       mobile: false,

@@ -1,9 +1,10 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { VerdictModel, WeakSpotModel } from "../types";
+import { t } from "../../../i18n";
+import type { VerdictModel } from "../types";
 import { Verdict, VerdictBar } from "./Sections";
-import { verdictLine } from "./verdictLine";
+import { rowsText, verdictLine } from "./verdictLine";
 
 const verdict: VerdictModel = { headline: "Getting there", step: 1, line: "Clear answers." };
 const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -22,32 +23,48 @@ describe("verdict screen-reader text (13, QA-20)", () => {
   });
 });
 
-describe("what moves the verdict (D98 r2, rubric §9.4)", () => {
-  const spot = (layer: WeakSpotModel["layer"], fix?: string): WeakSpotModel => ({ id: layer, layer, title: layer, fix });
-  const spots = [spot("content", "Name the call you made and why: “I chose to cut the referral flow because…”."), spot("delivery", "One sentence of context.")];
+describe("what moves the verdict (D99, rubric §9.4)", () => {
+  const at = (step: 0 | 1 | 2, gap: VerdictModel["gap"], extra: Partial<VerdictModel> = {}): VerdictModel =>
+    ({ headline: "x", step, gap, target: step === 0 ? 3 : step === 1 ? 4 : undefined, ...extra });
 
-  it("Getting there: the next step's name and the first weak spot's fix, as written", () => {
-    expect(verdictLine(verdict, spots)).toBe("The main thing between you and “Ready”: Name the call you made and why: “I chose to cut the referral flow because…”.");
+  it("Not ready yet: the rule for “Getting there”, 3 of 5, the named rows", () => {
+    expect(verdictLine(at(0, ["structure"]))).toBe("To reach “Getting there”: get Structure (STAR) to 3 of 5 or more.");
+    expect(verdictLine(at(0, ["structure", "result"]))).toBe("To reach “Getting there”: get Structure (STAR) and Result to 3 of 5 or more.");
+    expect(verdictLine(at(0, ["structure", "result", "relevance"]))).toBe("To reach “Getting there”: get Structure (STAR), Result and On the question to 3 of 5 or more.");
   });
-  it("Not ready yet points to Getting there; a fix without a full stop gets one", () => {
-    expect(verdictLine({ ...verdict, step: 0 }, [spot("content", "End with a number")])).toBe("The main thing between you and “Getting there”: End with a number.");
+  it("Getting there: the rule for “Ready”, 4 of 5; one, two, three rows", () => {
+    expect(verdictLine(at(1, ["delivery"]))).toBe("To reach “Ready”: get Delivery to 4 of 5 or more.");
+    expect(verdictLine(at(1, ["reflection", "language"]))).toBe("To reach “Ready”: get Lessons learned and English to 4 of 5 or more.");
+    expect(verdictLine(at(1, ["own_part", "result", "delivery"]))).toBe("To reach “Ready”: get Your part, Result and Delivery to 4 of 5 or more.");
+  });
+  it("more than three rows: the two lowest and “N more”", () => {
+    expect(verdictLine(at(1, ["reflection", "structure", "result", "delivery"]))).toBe("To reach “Ready”: get Lessons learned, Structure (STAR) and 2 more to 4 of 5 or more.");
+    expect(verdictLine(at(1, ["structure", "own_part", "result", "relevance", "delivery"]))).toBe("To reach “Ready”: get Structure (STAR), Your part and 3 more to 4 of 5 or more.");
   });
   it("Ready: keeps the strength when there is one, else no line", () => {
-    expect(verdictLine({ ...verdict, step: 2, strength: "Clear results." }, spots)).toBe("Keep it: Clear results.");
-    expect(verdictLine({ ...verdict, step: 2 }, spots)).toBeNull();
+    expect(verdictLine(at(2, [], { strength: "Clear results." }))).toBe("Keep it: Clear results.");
+    expect(verdictLine(at(2, []))).toBeNull();
+    expect(verdictLine(at(2, [], { strength: "  " }))).toBeNull();
   });
-  it("no step, or no weak spot with a fix: no line", () => {
-    expect(verdictLine({ headline: "Clear answers." }, spots)).toBeNull();
-    expect(verdictLine(verdict, [])).toBeNull();
-    expect(verdictLine(verdict, [spot("content")])).toBeNull();
+  it("no step, or a step 0/1 without a gap or a target: no line", () => {
+    expect(verdictLine({ headline: "Clear answers.", strength: "Clear results." })).toBeNull();
+    expect(verdictLine(at(1, []))).toBeNull();
+    expect(verdictLine(at(0, undefined))).toBeNull();
+    expect(verdictLine({ headline: "x", step: 1, gap: ["delivery"] })).toBeNull();
+  });
+  it("names the rows with the scorecard's own labels", () => {
+    expect(rowsText(["On the question"])).toBe("On the question");
+    for (const key of ["structure", "own_part", "result", "relevance", "reflection", "language", "delivery"] as const) {
+      expect(verdictLine(at(1, [key]))).toContain(`get ${t(`debrief.score.row.${key}`)} to`);
+    }
   });
   it("is shown under the scale in the page and in the opened bar's verdict", () => {
-    const line = "The main thing between you and “Ready”: Fix it.";
+    const line = "To reach “Ready”: get Delivery to 4 of 5 or more.";
     const html = renderToStaticMarkup(createElement(Verdict, { verdict, id: "v", next: line }));
     expect(text(html)).toContain(line);
     expect(html.indexOf("Not ready yet")).toBeLessThan(html.indexOf(line));
     const bare = renderToStaticMarkup(createElement(Verdict, { verdict, id: "v", bare: true, next: line }));
     expect(text(bare)).toContain(line);
-    expect(text(renderToStaticMarkup(createElement(Verdict, { verdict, id: "v" })))).not.toContain("The main thing");
+    expect(text(renderToStaticMarkup(createElement(Verdict, { verdict, id: "v" })))).not.toContain("To reach");
   });
 });

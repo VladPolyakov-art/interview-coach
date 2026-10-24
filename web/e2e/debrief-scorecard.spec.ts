@@ -148,15 +148,22 @@ test.describe("US-20 AC8 Plan for the next session", () => {
   });
 });
 
-test.describe("What moves the verdict (r2)", () => {
-  test("happy path: one line under the verdict scale names the next step and the first weak spot's fix", async ({ page }) => {
+test.describe("What moves the verdict (D99)", () => {
+  test("happy path: the scale marks the computed step and one line under it states the rule", async ({ page }) => {
     const verdict = page.getByRole("region", { name: "Verdict" });
-    const line = verdict.getByText(/^The main thing between you and “Ready”: Name the call you made and why/);
+    // The example's scorecard: no content row at 1-2 (not "Not ready yet"), a row below 4 (not "Ready"): "Getting there".
+    await expect(verdict.getByText("Getting there", { exact: true }).first()).toBeVisible();
+    await expect(verdict.locator("ol[data-review-id='Debrief/VerdictScale'] li[aria-current='true']")).toHaveText("Getting there");
+    // Only Your part (3 of 5) stands between the example and "Ready".
+    const line = verdict.getByText("To reach “Ready”: get Your part to 4 of 5 or more.", { exact: true });
     await expect(line).toBeVisible();
-    await expect(line).toContainText("“I chose to cut the referral flow because…”.");
-    // The same words as the first weak spot's fix.
-    await expect(page.getByRole("region", { name: "What to work on" }).getByRole("listitem").first()).toContainText("Name the call you made and why");
+    // The model's sentence stays under the headline; the rule's line comes after the scale.
+    await expect(verdict).toContainText("Strong on the why, but 3 answers skip the decision you made yourself.");
     const [scale, below] = await Promise.all([verdict.getByText("Ready", { exact: true }).boundingBox(), line.boundingBox()]);
     expect(below!.y).toBeGreaterThan(scale!.y);
+  });
+
+  test("negative: the old wording is gone (the line no longer quotes the first weak spot's fix)", async ({ page }) => {
+    await expect(page.getByText("The main thing between you and")).toHaveCount(0);
   });
 });

@@ -18,7 +18,7 @@ import type { RowContext } from "./parts/Layers";
 import { QuestionCard } from "./parts/QuestionCard";
 import { Plan } from "./parts/Plan";
 import { Scorecard } from "./parts/Scorecard";
-import { Actions, SectionHead, TemplateNote, Verdict, VerdictBar, VerdictNotice, WeakSpots, orderedSpots } from "./parts/Sections";
+import { Actions, SectionHead, TemplateNote, Verdict, VerdictBar, VerdictNotice, WeakSpots } from "./parts/Sections";
 import { verdictLine } from "./parts/verdictLine";
 import { ErrorBody, ExampleBanner, LoadingBody, NotFoundBody, PartialBanner, StorageBanner } from "./parts/States";
 import s from "./DebriefView.module.css";
@@ -143,7 +143,7 @@ export function DebriefView(props: DebriefViewProps) {
   // D80: a saved interview opens on the conversation; the verdict, what to fix first and the next step fold into a bar.
   const folded = variant === "interview" && Boolean(model.verdict) && !partial;
   const verdictBlock = model.verdict && !partial ? (
-    <Verdict verdict={model.verdict} id={folded ? `${ids.verdict}-body` : ids.verdict} bare={folded} next={verdictLine(model.verdict, orderedSpots(model.weakSpots, layerOrder))} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} />
+    <Verdict verdict={model.verdict} id={folded ? `${ids.verdict}-body` : ids.verdict} bare={folded} next={verdictLine(model.verdict)} note={model.verdictNotice === "template" ? <TemplateNote rerunning={props.rerunning} onRerun={props.onRerun} /> : undefined} />
   ) : null;
   // D98: the plan sits under the weak spots and the scorecard under the plan (r2: what to do comes before the numbers);
   // neither shows without a verdict (US-20 AC4, AC6), and the scorecard not when no row has a score.

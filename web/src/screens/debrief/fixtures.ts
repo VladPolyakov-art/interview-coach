@@ -5,6 +5,7 @@ import { t, tp } from "../../i18n";
 import type {
   Correction, DebriefModel, DeliveryBlock, EnglishModel, MetaItem, PlanStepModel, QuestionModel, ScoreRowModel, Segments, WeakSpotModel,
 } from "./types";
+import { verdictFromRows } from "./verdictStep";
 
 const saved: MetaItem = { icon: "check", text: t("debrief.savedHere"), href: "/settings/storage" };
 const counts = (questions: number, followUps: number) =>
@@ -232,7 +233,8 @@ export const interviewS2: DebriefModel = {
   ],
   obsidian: true,
   saved: true,
-  verdict: { step: 1, headline: "Getting there", line: "Clear stories, but 3 of 5 answers end before the result." },
+  // The step follows the scorecard by the one rule (D99, verdictStep.ts): here "Getting there", gap Lessons learned, Structure, Result, Delivery.
+  verdict: verdictFromRows(interviewScorecard, "Clear stories, but 3 of 5 answers end before the result."),
   scorecard: interviewScorecard,
   weakSpots: interviewWeakSpots,
   plan: interviewPlan,
@@ -249,10 +251,8 @@ export const interviewLong: DebriefModel = {
   ...interviewS2,
   id: "s-long",
   title: LONG_TITLE,
-  verdict: {
-    step: 1, headline: "Getting there",
-    line: "Clear, well-structured stories, but 3 of 5 answers end before the result, and two of them skip the part you personally did.",
-  },
+  verdict: verdictFromRows(interviewScorecard,
+    "Clear, well-structured stories, but 3 of 5 answers end before the result, and two of them skip the part you personally did."),
   weakSpots: [
     {
       ...interviewWeakSpots[0]!, title: "No measurable result in 3 of 5 answers, and in two of them no decision either",
@@ -403,6 +403,16 @@ const q3Sam: QuestionModel = sq(
   },
 );
 
+const exampleScorecard: ScoreRowModel[] = [
+  row("structure", 4, 5, [3, 4]),
+  row("own_part", 3, 5, [1, 3, 4]),
+  row("result", 4, 5, [1, 4]),
+  row("relevance", 5, 5),
+  row("reflection", null, 0),
+  row("language", 4, 5, [3, 4, 5]),
+  row("delivery", 4, 5, [3, 4]),
+];
+
 export const exampleSam: DebriefModel = {
   id: "example",
   title: "Brightline · Product Manager, Growth",
@@ -411,17 +421,9 @@ export const exampleSam: DebriefModel = {
     { icon: "clock", text: "Oct 14, 7:30 PM · 22 min" },
     { icon: "chat", text: counts(5, 3) },
   ],
-  verdict: { step: 1, headline: "Getting there", line: "Strong on the why, but 3 answers skip the decision you made yourself." },
-  // Lessons learned: no question here invites a lesson, so the row says "Not asked this time".
-  scorecard: [
-    row("structure", 4, 5, [3, 4]),
-    row("own_part", 3, 5, [1, 3, 4]),
-    row("result", 4, 5, [1, 4]),
-    row("relevance", 5, 5),
-    row("reflection", null, 0),
-    row("language", 4, 5, [3, 4, 5]),
-    row("delivery", 4, 5, [3, 4]),
-  ],
+  verdict: verdictFromRows(exampleScorecard, "Strong on the why, but 3 answers skip the decision you made yourself."),
+  // Lessons learned: no question here invites a lesson, so the row says "Not asked this time". Step: Getting there, gap Your part.
+  scorecard: exampleScorecard,
   weakSpots: [
     {
       id: "ws-content", layer: "content", title: "Your own decision is missing in 3 of 5 answers",

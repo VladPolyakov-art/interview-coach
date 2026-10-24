@@ -3,6 +3,7 @@ time from the saved layers, never by the model and never saved."""
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
 
 import pytest
@@ -313,6 +314,91 @@ def test_tables_match_the_rubric_text():
         assert text in rubric, text
 
 
+# ---------- verdict step (rubric 9.4, D99) ----------
+
+STEP_CASES = json.loads((Path(__file__).parent / "verdict_step_cases.json").read_text())["cases"]
+
+
+def card_of(scores: dict) -> dict:
+    return {"rows": [{"key": key, "score": scores.get(key), "answers": 1 if scores.get(key) else 0, "lost": []}
+                     for key in debrief_view.ROWS]}
+
+
+@pytest.mark.parametrize("case", STEP_CASES, ids=[c["name"] for c in STEP_CASES])
+def test_the_step_rule_on_the_shared_cases(case):
+    assert debrief_view.verdict_step(card_of(case["scores"])) == case["step"]
+
+
+def test_the_step_rule_edges():
+    assert debrief_view.verdict_step(None) is None and debrief_view.verdict_step({"rows": []}) is None
+    # Exactly the thresholds: 2 and 3 on a content row, 3 and 4 on the rest.
+    assert debrief_view.verdict_step(card_of({"structure": 3}))["value"] == 1
+    assert debrief_view.verdict_step(card_of({"structure": 2}))["value"] == 0
+    assert debrief_view.verdict_step(card_of({"delivery": 3}))["value"] == 1
+    assert debrief_view.verdict_step(card_of({"delivery": 4}))["value"] == 2
+    assert debrief_view.STEP_NAMES == ("Not ready yet", "Getting there", "Ready")
+
+
+def step_of(records: list[dict]) -> dict | None:
+    return debrief_view.enrich_debrief(model_debrief(("content", "no_result", ["q1"])), records, "interview").get("step")
+
+
+def test_the_step_is_computed_from_the_records_at_read_time():
+    assert step_of([record(1), record(2), record(3)]) == {"value": 2, "gap": [], "target": None}
+    miss = {"result": False, "result_type": "none"}
+    assert step_of([record(1), record(2, data=miss), record(3)])["value"] == 2        # 4 of 6 points is still 4 of 5
+    assert step_of([record(1), record(2, data=miss), record(3, data=miss)]) == \
+        {"value": 0, "gap": ["structure", "result"], "target": 3}                      # 2 of 6 points: 2 of 5
+    only = [record(1, data={"result": False, "result_type": "none"})]
+    assert step_of(only) == {"value": 0, "gap": ["structure", "result"], "target": 3}
+    # Reflection alone cannot make it "Not ready yet".
+    lesson = [record(1, competency="F", data={"reflection": False}), record(2), record(3)]
+    assert step_of(lesson) == {"value": 1, "gap": ["reflection"], "target": 4}
+    # Delivery below 4 holds "Ready" back.
+    slow = [record(1, layers={"delivery": delivery(3, "pace_fast", wpm=190)})]
+    assert step_of(slow) == {"value": 1, "gap": ["delivery"], "target": 4}
+
+
+def test_a_dismissed_correction_that_lifts_a_row_changes_the_step():
+    def with_flag(status: str) -> list[dict]:
+        layer = language(SLIP_ANSWER, [{**SLIP, "class": "M"}])
+        layer["items"][0]["status"] = status
+        return [record(1, answer=SLIP_ANSWER, layers={"language": feedback.language_layer(layer["items"])})]
+    assert step_of(with_flag("active")) == {"value": 1, "gap": ["language"], "target": 4}
+    assert step_of(with_flag("dismissed")) == {"value": 2, "gap": [], "target": None}
+    bad = record(1, data={"result": False, "result_type": "none"})
+    assert step_of([bad])["value"] == 0
+    bad["layers"]["content"]["dismissed"] = True            # the user dismissed the content fix: no points lost
+    assert step_of([bad])["value"] == 2
+
+
+def test_no_step_for_a_too_short_session_english_mode_and_no_shown_rows():
+    debrief = model_debrief(("content", "no_result", ["q1"]))
+    assert "step" not in debrief_view.enrich_debrief({**debrief, "too_short": True}, spot_records(), "interview")
+    assert "step" not in debrief_view.enrich_debrief(debrief, spot_records(), "english")
+    empty = {"id": "fb-0", "answer_kind": "main", "answer": "x", "layers": {}}
+    out = debrief_view.enrich_debrief(debrief, [empty], "interview")
+    assert "step" not in out and all(r["score"] is None for r in out["scorecard"]["rows"])
+
+
+def test_the_step_is_never_stored():
+    debrief = model_debrief(("content", "no_result", ["q1"]))
+    shown = debrief_view.enrich_debrief(debrief, spot_records(), "interview")
+    assert "step" in shown and "step" not in debrief_view.strip_enriched(shown)
+    session = session_with(spot_records(), shown)
+    storage.save_session(session)
+    assert "step" not in storage.read_record("sessions", session["id"])["debrief"]
+
+
+def test_the_markdown_export_names_the_step_before_the_sentence():
+    records = spot_records()
+    text = storage.render_session_markdown(session_with(records, model_debrief(("content", "no_result", ["q1"]))))
+    step = debrief_view.enrich_debrief(model_debrief(), records, "interview")["step"]["value"]
+    assert f"Verdict: {debrief_view.STEP_NAMES[step]}\n\nClear answers." in text
+    english = storage.render_session_markdown(session_with(records, model_debrief(), mode="english"))
+    assert "Verdict:" not in english
+
+
 # ---------- modes that stay as they were ----------
 
 def test_english_mode_and_too_short_and_missing_debrief_are_untouched():
@@ -403,6 +489,7 @@ def saved(records: list[dict], debrief: dict, **over) -> str:
 def check_shown(debrief: dict) -> None:
     assert [r["key"] for r in debrief["scorecard"]["rows"]] == list(debrief_view.ROWS)
     assert isinstance(debrief["plan"], list)
+    assert debrief["step"]["value"] in (0, 1, 2) and isinstance(debrief["step"]["gap"], list)      # D99
     assert debrief["weak_spots"][0]["lands_as"] and debrief["verdict"]
 
 

@@ -1191,7 +1191,10 @@
       "linkSr": "each question, starting with question {n}"
     },
     "verdictLine": {
-      "next": "The main thing between you and “{next}”: {fix}",
+      "up": "To reach “{next}”: get {rows} to {target} of 5 or more.",
+      "two": "{a} and {b}",
+      "three": "{a}, {b} and {c}",
+      "more": "{a}, {b} and {n} more",
       "keep": "Keep it: {strength}"
     },
     "landsLead": "How it lands",

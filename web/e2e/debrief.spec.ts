@@ -1,7 +1,9 @@
 /* The debrief of a saved session: "Edit what I said" checks one answer again (US-18 AC3), and dismissing a correction
  * after the fact changes what counts as a weak spot (US-17 AC2, US-22 AC3). */
 import { expect, test, type Page } from "@playwright/test";
-import { blockStorage, resetApp, seedReturningUser, skipSetup, startTextInterview } from "./helpers";
+import {
+  ANSWER_WITH_RESULT, blockStorage, debriefCard, endSession, resetApp, seedReturningUser, sendAnswer, skipSetup, startTextInterview,
+} from "./helpers";
 
 test.beforeEach(async ({ page, request }) => {
   await resetApp(request);
@@ -87,8 +89,11 @@ test.describe("US-20 QA-07 The verdict follows the weak spots after a recheck", 
     const id = sessions[0]!.id;
     await page.goto(`/sessions/${id}`);
     const bar = page.getByRole("button", { name: /^Verdict/ });
+    // D99: the bar's headline is the step's name; the model's sentence is inside, under it.
+    const verdict = page.getByRole("region", { name: "Verdict", exact: true });
+    await bar.click();
     // Premise: the verdict names the Language weak spot ("preposition") that the edit below removes.
-    await expect(bar).toContainText("preposition");
+    await expect(verdict).toContainText("preposition");
 
     await page.getByRole("radio", { name: "2", exact: true }).click();
     const card = page.getByRole("region", { name: "Breakdown" }).getByRole("article");
@@ -104,12 +109,77 @@ test.describe("US-20 QA-07 The verdict follows the weak spots after a recheck", 
     await expect(card.getByText("Edited by you")).toBeVisible();
 
     // "What to work on" lost the Language item, and the verdict says the same thing.
-    await bar.click();
     await expect(page.getByRole("region", { name: "What to work on" })).not.toContainText("Language");
-    await expect(bar).not.toContainText("preposition");
+    await expect(verdict).not.toContainText("preposition");
     // Saved on this computer, not only on screen.
     await page.reload();
-    await expect(page.getByRole("button", { name: /^Verdict/ })).not.toContainText("preposition");
+    await page.getByRole("button", { name: /^Verdict/ }).click();
+    await expect(page.getByRole("region", { name: "Verdict", exact: true })).not.toContainText("preposition");
+  });
+});
+
+/* D99 (rubric 9.4): the step of the verdict scale is computed in code from the scorecard, at read time. The scripted
+ * engine finds an action only in "I ..." sentences and a result only in a number, and adds the language slip "since five years". */
+const GOOD =
+  "Two weeks before launch legal asked for a consent step in checkout. I led the redesign: I put the consent inline next to the pay button and I tested it with five merchants in three days. Activation went up by twelve percent and support tickets fell by a third, so we shipped on time.";
+const GOOD_WITH_SLIP = `I am working on this team since five years. ${GOOD}`;
+const marked = (page: Page) => page.locator("ol[data-review-id='Debrief/VerdictScale'] li[aria-current='true']");
+
+/** Run a text interview with these answers and open its debrief with the verdict bar open. */
+async function debriefAfter(page: Page, answers: string[]) {
+  await startTextInterview(page);
+  for (const [i, answer] of answers.entries()) {
+    await sendAnswer(page, answer);
+    if (i < answers.length - 1) await expect(page.getByRole("heading", { name: `Question ${i + 2}`, level: 2 })).toBeVisible();
+  }
+  await (await endSession(page)).click();
+  await expect(page).toHaveURL(/\/sessions\/s-/);
+  await page.getByRole("button", { name: /^Verdict/ }).click();
+  return page.getByRole("region", { name: "Verdict", exact: true });
+}
+
+test.describe("US-20 D99 The verdict step follows the scorecard", () => {
+  test("Not ready yet: a content row at 1-2; the line names it and the score to reach", async ({ page }) => {
+    // No first-person action in these answers: Structure (STAR) scores 1.
+    const verdict = await debriefAfter(page, [ANSWER_WITH_RESULT, ANSWER_WITH_RESULT, ANSWER_WITH_RESULT]);
+    await expect(page.getByRole("button", { name: /^Verdict/ })).toContainText("Not ready yet");
+    await expect(marked(page)).toHaveText("Not ready yet");
+    await expect(verdict.getByText("To reach “Getting there”: get Structure (STAR) to 3 of 5 or more.", { exact: true })).toBeVisible();
+    await expect(verdict).toContainText("The main thing to fix");                    // the model's sentence is still there, under the name
+    await expect(page.getByRole("region", { name: "Scorecard" }).getByRole("listitem").filter({ hasText: "Structure (STAR)" })).toContainText("1 out of 5");
+  });
+
+  test("Ready: every shown row at 4 or more; no rule line", async ({ page }) => {
+    const verdict = await debriefAfter(page, [GOOD, GOOD, GOOD]);
+    await expect(page.getByRole("button", { name: /^Verdict/ })).toContainText("Ready");
+    await expect(marked(page)).toHaveText("Ready");
+    await expect(verdict).not.toContainText("To reach");
+  });
+
+  test("a dismissed correction that lifts a row moves the step: Getting there becomes Ready", async ({ page }) => {
+    const verdict = await debriefAfter(page, [GOOD_WITH_SLIP, GOOD_WITH_SLIP, GOOD_WITH_SLIP]);
+    // English scores 3 (a slip in each answer), so only English stands between the user and "Ready"; content is fine.
+    await expect(marked(page)).toHaveText("Getting there");
+    await expect(verdict.getByText("To reach “Ready”: get English to 4 of 5 or more.", { exact: true })).toBeVisible();
+    for (const n of [1, 2, 3]) {
+      const card = await debriefCard(page, n);
+      await card.getByRole("button", { name: "Dismiss" }).click();
+      await expect(card.getByText("You typed")).toHaveCount(0);
+    }
+    await expect(marked(page)).toHaveText("Ready");
+    await expect(verdict).not.toContainText("To reach");
+    // The step is read-time: it holds after a reload, from the saved corrections.
+    await page.reload();
+    await page.getByRole("button", { name: /^Verdict/ }).click();
+    await expect(marked(page)).toHaveText("Ready");
+  });
+
+  test("an older saved session gets the step too, and the scale has one marked step", async ({ page, request }) => {
+    const { sessions } = await seedReturningUser(request);
+    await page.goto(`/sessions/${sessions[0]!.id}`);
+    await expect(page.getByRole("button", { name: /^Verdict (Not ready yet|Getting there|Ready)/ })).toBeVisible();
+    await page.getByRole("button", { name: /^Verdict/ }).click();
+    await expect(marked(page)).toHaveCount(1);
   });
 });
 

@@ -230,3 +230,31 @@ describe("D98: scorecard, how it lands, plan", () => {
     expect(english.plan).toBeUndefined();
   });
 });
+
+describe("D99: the verdict step comes from the server", () => {
+  const withStep = (step: unknown, over: Partial<NonNullable<SessionRecord["debrief"]>> = {}) =>
+    mapRecord(rec({ debrief: { verdict: "Clear stories.", weak_spots: [], strength: " Clear results. ", next_step: "", source: "model", step, ...over } as SessionRecord["debrief"] }), opts);
+
+  it("with a step the headline is the step's name and the model's sentence is the line under it", () => {
+    const v = withStep({ value: 1, gap: ["reflection", "structure"], target: 4 }).verdict!;
+    expect(v).toMatchObject({ step: 1, headline: "Getting there", line: "Clear stories.", gap: ["reflection", "structure"], target: 4, strength: "Clear results." });
+    expect(withStep({ value: 0, gap: ["result"], target: 3 }).verdict).toMatchObject({ step: 0, headline: "Not ready yet", target: 3 });
+    expect(withStep({ value: 2, gap: [], target: null }).verdict).toMatchObject({ step: 2, headline: "Ready", gap: [], target: undefined });
+  });
+  it("without a step (too short, no scored row, older server) the sentence stays the headline, no scale", () => {
+    const v = withStep(undefined).verdict!;
+    expect(v).toEqual({ headline: "Clear stories.", strength: "Clear results." });
+    expect(v.step).toBeUndefined();
+  });
+  it("ignores a step value outside 0–2, unknown gap keys and a repeated key", () => {
+    expect(withStep({ value: 3, gap: [], target: 4 }).verdict?.step).toBeUndefined();
+    expect(withStep({ value: 1, gap: ["result", "nonsense", "result"], target: 4 }).verdict?.gap).toEqual(["result"]);
+    expect(withStep({ value: 1, gap: ["result"], target: 7 }).verdict?.target).toBeUndefined();
+  });
+  it("a template verdict also gets the step; its sentence goes under the name", () => {
+    const m = withStep({ value: 1, gap: ["delivery"], target: 4 }, { source: "template", verdict: "You finished the practice round." });
+    expect(m.verdictNotice).toBe("template");
+    expect(m.verdict).toMatchObject({ headline: "Getting there", line: "You finished the practice round." });
+  });
+});
+

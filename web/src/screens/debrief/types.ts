@@ -44,9 +44,14 @@ export interface WeakSpotModel {
 
 export type ScaleStep = 0 | 1 | 2;
 export interface VerdictModel {
-  /** Index in `Not ready yet · Getting there · Ready`; absent when the server gives only a sentence. */
+  /** Index in `Not ready yet · Getting there · Ready`, computed from the scorecard (D99); absent: no scale, no line. */
   step?: ScaleStep;
+  /** D99: the scorecard rows between the user and the next step, lowest first; `target`: the score they need (3 or 4). */
+  gap?: ScoreKey[];
+  target?: 3 | 4;
+  /** The step's name when there is a step, else the model's sentence. */
   headline: string;
+  /** The model's sentence, under the headline (only when the headline is the step's name). */
   line?: string;
   /** What went well (the server's `strength`); only the "Ready" step uses it ("Keep it: …"). */
   strength?: string;

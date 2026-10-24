@@ -1,6 +1,6 @@
 """What the debrief page shows on top of the saved debrief (feedback_rubric.md §9, US-20 AC6-AC9).
 
-Nothing here is written by the model and nothing here is saved. The scorecard, the "How it lands" line and the plan
+Nothing here is written by the model and nothing here is saved. The scorecard, the verdict step (D99), the "How it lands" line and the plan
 are built in code, at read time, from the feedback layers of each answer. So they follow dismissed corrections, words
 the recogniser may have misheard, "Edit what I said" and sessions saved before these fields existed. Every place that
 sends a debrief to a client (and the Markdown export) calls `enrich_debrief`; the saved session never holds
@@ -12,10 +12,12 @@ from . import feedback
 from .feedback import CONTENT_FIX, counted_tags, hints, is_quote, norm
 
 # Keys this module adds. `scorecard` is on the debrief, `said`/`said_kind`/`said_from`/`lands_as` on each weak spot.
-ENRICHED_KEYS = ("scorecard", "plan")
+ENRICHED_KEYS = ("scorecard", "plan", "step")
 ENRICHED_SPOT_KEYS = ("said", "said_kind", "said_from", "lands_as")
 
 ROWS = ("structure", "own_part", "result", "relevance", "reflection", "language", "delivery")
+CONTENT_ROWS = ROWS[:4]            # structure, own_part, result, relevance: the rows that can make a verdict "Not ready yet"
+STEP_NAMES = ("Not ready yet", "Getting there", "Ready")
 ROW_LABELS = {"structure": "Structure (STAR)", "own_part": "Your part", "result": "Result",
               "relevance": "On the question", "reflection": "Lessons learned", "language": "English",
               "delivery": "Delivery"}
@@ -175,6 +177,28 @@ def build_scorecard(feedback_records: list[dict]) -> dict:
     return {"rows": rows}
 
 
+def verdict_step(scorecard: dict | None) -> dict | None:
+    """The step of the verdict scale, computed from the scorecard the user sees (rubric §9.4, D99). Shown rows are those
+    with a score. Not ready yet (0): a content row (structure, own_part, result, relevance) scores 1 or 2. Ready (2):
+    every shown row scores 4 or more. Getting there (1): everything else, so reflection, language and delivery never
+    cause "Not ready yet" but any of them below 4 holds the step at "Getting there". No shown row: no step.
+    `gap` = the rows between the user and the next step (lowest score first, ties in scorecard order): the content rows
+    at 1-2 for step 0 (`target` 3), every shown row at 1-3 for step 1 (`target` 4), none for step 2 (`target` None)."""
+    shown = [(i, r["key"], r["score"]) for i, r in enumerate((scorecard or {}).get("rows") or [])
+             if isinstance(r.get("score"), int)]
+    if not shown:
+        return None
+    if any(key in CONTENT_ROWS and score <= 2 for _i, key, score in shown):
+        value, limit, target = 0, 2, 3
+    elif all(score >= 4 for _i, _key, score in shown):
+        return {"value": 2, "gap": [], "target": None}
+    else:
+        value, limit, target = 1, 3, 4
+    gap = sorted((x for x in shown if x[2] <= limit and (value == 1 or x[1] in CONTENT_ROWS)),
+                 key=lambda x: (x[2], x[0]))
+    return {"value": value, "gap": [key for _i, key, _s in gap], "target": target}
+
+
 # ---------- Weak spots: what you said, how it lands ----------
 
 def _minutes(seconds: float) -> str:
@@ -259,7 +283,7 @@ def build_plan(spots: list[dict]) -> list[dict]:
 
 
 def enrich_debrief(debrief: dict | None, feedback_records: list[dict], mode: str) -> dict | None:
-    """A copy of the debrief with the scorecard, "what you said / how it lands" on each weak spot and the plan.
+    """A copy of the debrief with the scorecard, the verdict step, "what you said / how it lands" on each weak spot and the plan.
     Interview mode only; no debrief or a too-short one is returned as it is. The saved debrief is never changed."""
     if not debrief or debrief.get("too_short") or mode != "interview":
         return debrief
@@ -269,6 +293,8 @@ def enrich_debrief(debrief: dict | None, feedback_records: list[dict], mode: str
     out["weak_spots"] = spots
     out["scorecard"] = build_scorecard(feedback_records)
     out["plan"] = build_plan(spots)
+    if (step := verdict_step(out["scorecard"])) is not None:
+        out["step"] = step                                  # D99: from the scorecard just built, so it follows the same edits
     return out
 
 
