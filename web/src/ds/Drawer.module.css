@@ -26,7 +26,7 @@
   transition: transform var(--duration-slow) var(--ease-standard);
 }
 .slower { transition-duration: var(--duration-slower); }
-.raised { background: var(--color-raised); }
+.raised { background: var(--color-raised); --note-fill: var(--color-subtle); --note-shadow: none; }
 .sidebar { background: var(--color-sidebar); }
 
 .left {

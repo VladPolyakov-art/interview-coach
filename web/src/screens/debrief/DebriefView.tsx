@@ -1,8 +1,8 @@
 /* Debrief of a saved session (ds/screens/debrief.md; variants interview · english · example). Pure: every state comes
  * from props, so stories and the review page render it without a server; `screens/Debrief.tsx` is the live container.
- * The page is chat-first: by default it shows the conversation across the whole main area, with the jump between
- * questions; a Segmented switch under the title ("Conversation | Debrief", `?view=debrief` in the URL) opens the debrief
- * (layout D, 2026-10-27: the verdict with the level and the one score → plan + Drill → sticky question switcher → one
+ * The page opens on the debrief (D101, 2026-10-27); a Segmented switch under the title ("Debrief | Conversation",
+ * `?view=conversation` in the URL) shows the conversation across the whole main area, with the jump between questions.
+ * The debrief (layout D, 2026-10-27: the verdict with the level and the one score → plan + Drill → sticky question switcher → one
  * question at a time, after Otter's summary, R5; the seven skills open from the score). One
  * "Practise again" sits next to the switch in both views. A session with nothing to show (`model.empty`) has the
  * conversation only, and no switch. Layer tints live only in the debrief (CONTRACT §2.6); fixes are marked inside the
@@ -37,7 +37,7 @@ export function DebriefView(props: DebriefViewProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   /** The question picked in the conversation's jump bar (it scrolls the chat to that question). */
   const [chatQ, setChatQ] = useState<number | undefined>(undefined);
-  const [viewOwn, setViewOwn] = useState<DebriefViewMode>(ui?.view ?? "conversation");
+  const [viewOwn, setViewOwn] = useState<DebriefViewMode>(ui?.view ?? "debrief");
   const [strongerOpen, setStrongerOpen] = useState<ReadonlySet<number>>(() => new Set(ui?.strongerOpen ?? []));
   const [renaming, setRenaming] = useState(ui?.renaming ?? false);
   const [titleOverride, setTitleOverride] = useState<string | null>(null);
@@ -202,8 +202,8 @@ export function DebriefView(props: DebriefViewProps) {
                 label={t("debrief.view.label")}
                 hideLabel
                 options={[
-                  { value: "conversation", label: t("debrief.view.conversation") },
                   { value: "debrief", label: t("debrief.view.debrief") },
+                  { value: "conversation", label: t("debrief.view.conversation") },
                 ] satisfies { value: DebriefViewMode; label: string }[]}
                 value={view}
                 onChange={setView}

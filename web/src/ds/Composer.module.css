@@ -8,6 +8,8 @@
   border: 0;
   border-radius: var(--radius-xl);
   background: var(--color-surface-card);
+  /* D101: white on the grey canvas, lifted by the raised shadow (dark: no shadow, the fill separates). */
+  box-shadow: var(--shadow-raised);
   transition: background-color var(--duration-fast) var(--ease-standard);
 }
 /* Focus (owner, 2026-10-27, repeated from the first review): clicking into the chat input changes nothing: no ring, no

@@ -176,7 +176,7 @@ export interface DebriefModel {
   empty?: boolean;
 }
 
-/** The two views of a saved session: the chat (default) and the debrief (`?view=debrief`). */
+/** The two views of a saved session: the debrief (default, D101) and the chat (`?view=conversation`). */
 export type DebriefViewMode = "conversation" | "debrief";
 
 /** Local UI state a static state can start in (review frames, stories). */
@@ -189,7 +189,7 @@ export interface DebriefUi {
   renaming?: boolean;
   editing?: { question: number; correction: string };
   rechecking?: number;
-  /** Which view the page starts in (review, stories). Default: the conversation. */
+  /** Which view the page starts in (review, stories). Default: the debrief (D101). */
   view?: DebriefViewMode;
 }
 
@@ -233,7 +233,7 @@ export interface DebriefViewProps extends DebriefActions {
   rerunning?: boolean;
   /** Live: an action failed (flag, stronger answer, trash); shown as an error callout under the header. */
   notice?: string;
-  /** Which view shows. The live container keeps it in the URL (`?view=debrief`); without it the view keeps its own state. */
+  /** Which view shows. The live container keeps it in the URL (`?view=conversation`; the debrief is the default); without it the view keeps its own state. */
   view?: DebriefViewMode;
   onViewChange?: (view: DebriefViewMode) => void;
   /** The question the viewer shows (a question number). The live container keeps it in the URL (`?q=n`); without it the

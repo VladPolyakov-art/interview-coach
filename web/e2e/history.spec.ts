@@ -45,9 +45,9 @@ test.describe("US-21 One history", () => {
     await expect(
       page.getByRole("heading", { name: "Northwind Logistics · Product Owner", level: 1 }),
     ).toBeVisible();
-    await expect(page.getByRole("log", { name: "Conversation with Mike" })).toBeVisible(); // chat-first
+    await expect(page.getByRole("region", { name: /^Verdict/ })).toBeVisible(); // D101: it opens on the debrief
+    await expect(page.getByRole("log", { name: "Conversation with Mike" })).toHaveCount(0);
     await showDebrief(page);
-    await expect(page.getByRole("region", { name: /^Verdict/ })).toBeVisible();
   });
 
   test("the track filter narrows the list; the English filter has nothing to show for interviews", async ({

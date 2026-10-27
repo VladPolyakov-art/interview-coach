@@ -133,12 +133,21 @@ export async function showFeedbackLater(page: Page) {
   return panel;
 }
 
-/** A saved session opens on its conversation; "Conversation | Debrief" under the title switches (`?view=debrief`). Opens the Debrief view. */
+/** A saved session opens on its debrief (D101); "Debrief | Conversation" under the title switches (`?view=conversation`).
+ * Makes sure the Debrief view shows (a click only when another view is on). */
 export async function showDebrief(page: Page) {
   const debrief = page.getByRole("radio", { name: "Debrief", exact: true });
   await expect(debrief).toBeVisible();
   if ((await debrief.getAttribute("aria-checked")) !== "true") await debrief.click();
   await expect(debrief).toBeChecked();
+}
+
+/** The Conversation view of a saved session (the switch's second option). */
+export async function showConversation(page: Page) {
+  const chat = page.getByRole("radio", { name: "Conversation", exact: true });
+  await expect(chat).toBeVisible();
+  if ((await chat.getAttribute("aria-checked")) !== "true") await chat.click();
+  await expect(chat).toBeChecked();
 }
 
 /** The viewer of the Debrief view (layout D): the sticky switcher, one question at a time and Previous / Next. */

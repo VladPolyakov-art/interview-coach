@@ -3,8 +3,12 @@
   flex-direction: column;
   min-height: 0;
   background: var(--color-surface-card);
+  box-shadow: var(--shadow-raised);
   border: 0;
   border-radius: var(--radius-lg);
+  /* D101: an info Callout / EmptyState disc inside an island falls back to the sunken grey, no shadow. */
+  --note-fill: var(--color-subtle);
+  --note-shadow: none;
 }
 .header {
   display: flex;

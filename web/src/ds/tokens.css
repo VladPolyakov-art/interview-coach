@@ -160,6 +160,7 @@
   --elevation-overlay-light: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
   --elevation-raised-dark: 0 0 0 0 rgba(255, 255, 255, 0);
   --elevation-overlay-dark: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --color-text-nav: var(--color-neutral-900);
   --color-text-primary: var(--color-neutral-900);
   --color-text-primary_on-brand: var(--color-white);
   --color-text-secondary: var(--color-neutral-700);
@@ -195,6 +196,7 @@
   --color-border-selected: var(--color-neutral-900);
   --color-border-layer-session: var(--color-neutral-250);
   --color-border-mark-heard: var(--color-neutral-500);
+  --color-fg-icon: var(--color-neutral-900);
   --color-fg-primary: var(--color-neutral-900);
   --color-fg-secondary: var(--color-neutral-700);
   --color-fg-secondary_hover: var(--color-neutral-800);
@@ -220,7 +222,7 @@
   --color-fg-presence-strong: var(--color-blue-600);
   --color-fg-presence-core: var(--color-blue-500);
   --color-fg-presence-soft: var(--color-blue-400);
-  --color-bg-primary: var(--color-white);
+  --color-bg-primary: var(--color-neutral-25);
   --color-bg-primary_alt: var(--color-white);
   --color-bg-primary_hover: var(--color-neutral-50);
   --color-bg-primary-solid: var(--color-neutral-950);
@@ -248,7 +250,7 @@
   --color-bg-success-primary: var(--color-green-50);
   --color-bg-success-secondary: var(--color-green-100);
   --color-bg-success-solid: var(--color-green-600);
-  --color-bg-sidebar: var(--color-neutral-25);
+  --color-bg-sidebar: var(--color-white);
   --color-bg-scrim: var(--color-alpha-black-40);
   --color-bg-brand-solid_pressed: var(--color-neutral-750);
   --color-bg-disabled: var(--color-neutral-100);
@@ -257,12 +259,15 @@
   --color-bg-layer-language: var(--color-neutral-50);
   --color-bg-layer-delivery: var(--color-neutral-100);
   --color-bg-mark-fix: var(--color-neutral-100);
-  --color-bg-card: var(--color-neutral-50);
-  --color-bg-card_hover: var(--color-neutral-100);
+  --color-bg-card: var(--color-white);
+  --color-bg-card_hover: var(--color-neutral-50);
   --color-bg-chip: var(--color-neutral-100);
   --color-bg-chip_hover: var(--color-neutral-200);
   --color-bg-chip-selected: var(--color-neutral-900);
   --color-bg-chip-selected_hover: var(--color-neutral-800);
+  --color-bg-bubble: var(--color-white);
+  --color-bg-plaque: var(--color-white);
+  --color-bg-note: var(--color-white);
   --color-bg-field: var(--color-neutral-100);
   --color-focus-ring: var(--color-brand-500);
   --color-focus-ring-error: var(--color-red-500);
@@ -318,9 +323,13 @@
   --color-surface-chip-hover: var(--color-bg-chip_hover);
   --color-surface-chip-selected: var(--color-bg-chip-selected);
   --color-surface-chip-selected-hover: var(--color-bg-chip-selected_hover);
+  --color-surface-bubble: var(--color-bg-bubble);
+  --color-surface-plaque: var(--color-bg-plaque);
+  --color-surface-note: var(--color-bg-note);
   --color-surface-field: var(--color-bg-field);
 }
 [data-theme="dark"] {
+  --color-text-nav: var(--color-neutral-300);
   --color-text-primary: var(--color-neutral-100);
   --color-text-primary_on-brand: var(--color-neutral-900);
   --color-text-secondary: var(--color-neutral-300);
@@ -356,6 +365,7 @@
   --color-border-selected: var(--color-neutral-100);
   --color-border-layer-session: var(--color-neutral-750);
   --color-border-mark-heard: var(--color-neutral-550);
+  --color-fg-icon: var(--color-neutral-300);
   --color-fg-primary: var(--color-neutral-100);
   --color-fg-secondary: var(--color-neutral-300);
   --color-fg-secondary_hover: var(--color-neutral-200);
@@ -424,6 +434,9 @@
   --color-bg-chip_hover: var(--color-neutral-750);
   --color-bg-chip-selected: var(--color-neutral-100);
   --color-bg-chip-selected_hover: var(--color-neutral-200);
+  --color-bg-bubble: var(--color-neutral-850);
+  --color-bg-plaque: var(--color-neutral-800);
+  --color-bg-note: var(--color-neutral-850);
   --color-bg-field: var(--color-neutral-800);
   --color-focus-ring: var(--color-brand-400);
   --color-focus-ring-error: var(--color-red-500);
@@ -479,10 +492,14 @@
   --color-surface-chip-hover: var(--color-bg-chip_hover);
   --color-surface-chip-selected: var(--color-bg-chip-selected);
   --color-surface-chip-selected-hover: var(--color-bg-chip-selected_hover);
+  --color-surface-bubble: var(--color-bg-bubble);
+  --color-surface-plaque: var(--color-bg-plaque);
+  --color-surface-note: var(--color-bg-note);
   --color-surface-field: var(--color-bg-field);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --color-text-nav: var(--color-neutral-300);
     --color-text-primary: var(--color-neutral-100);
     --color-text-primary_on-brand: var(--color-neutral-900);
     --color-text-secondary: var(--color-neutral-300);
@@ -518,6 +535,7 @@
     --color-border-selected: var(--color-neutral-100);
     --color-border-layer-session: var(--color-neutral-750);
     --color-border-mark-heard: var(--color-neutral-550);
+    --color-fg-icon: var(--color-neutral-300);
     --color-fg-primary: var(--color-neutral-100);
     --color-fg-secondary: var(--color-neutral-300);
     --color-fg-secondary_hover: var(--color-neutral-200);
@@ -586,6 +604,9 @@
     --color-bg-chip_hover: var(--color-neutral-750);
     --color-bg-chip-selected: var(--color-neutral-100);
     --color-bg-chip-selected_hover: var(--color-neutral-200);
+    --color-bg-bubble: var(--color-neutral-850);
+    --color-bg-plaque: var(--color-neutral-800);
+    --color-bg-note: var(--color-neutral-850);
     --color-bg-field: var(--color-neutral-800);
     --color-focus-ring: var(--color-brand-400);
     --color-focus-ring-error: var(--color-red-500);
@@ -641,6 +662,9 @@
     --color-surface-chip-hover: var(--color-bg-chip_hover);
     --color-surface-chip-selected: var(--color-bg-chip-selected);
     --color-surface-chip-selected-hover: var(--color-bg-chip-selected_hover);
+    --color-surface-bubble: var(--color-bg-bubble);
+    --color-surface-plaque: var(--color-bg-plaque);
+    --color-surface-note: var(--color-bg-note);
     --color-surface-field: var(--color-bg-field);
   }
 }

@@ -16,10 +16,10 @@ const mobile = (id: DebriefSceneId): StoryObj => ({
   parameters: { viewport: { defaultViewport: "mobile1" } },
 });
 
-/** The default view of a saved session: the conversation across the whole main area, "Conversation | Debrief" and "Practise again" under the title, the jump between questions on top of the chat. */
+/** The second view of a saved session (the first, Debrief, is the default; D101): the conversation across the whole main area, "Debrief | Conversation" and "Practise again" under the title, the jump between questions on top of the chat. */
 export const InterviewConversation = desktop("interviewConversation");
 export const InterviewConversationMobile = mobile("interviewConversation");
-/** The Debrief view (`?view=debrief`, layout D): verdict and level with the one score, the plan with Drill, the sticky question switcher, then Q2 with its feedback list and its stronger answer. */
+/** The Debrief view (the default, layout D): verdict and level with the one score, the plan with Drill, the sticky question switcher, then Q2 with its feedback list and its stronger answer. */
 export const InterviewFull = desktop("interviewFull");
 export const InterviewFullMobile = mobile("interviewFull");
 /** The Debrief view, the verdict first. */
@@ -92,6 +92,6 @@ export const Error = desktop("error");
 /** Stress fixture: +30% text, a very long title and token, one question without feedback. */
 export const LongText = desktop("longText");
 export const LongTextMobile = mobile("longText");
-/** Stress fixture, default view: the chat with a very long title and a long token. */
+/** Stress fixture, the Conversation view: the chat with a very long title and a long token. */
 export const LongTextConversation = desktop("longTextConversation");
 export const LongTextConversationMobile = mobile("longTextConversation");

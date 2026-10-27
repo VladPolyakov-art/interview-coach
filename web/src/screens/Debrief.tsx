@@ -22,10 +22,11 @@ export { threadsFromRecord };
 /** The build-up plays on the first open of each session in this visit (Debrief build-up, motion.md). */
 const seen = new Set<string>();
 
-/** The view lives in the URL: `?view=debrief` opens the debrief (the "debrief ready" toast links to it); no param is the
- * conversation. Switching replaces the entry, so Back leaves the page instead of flipping between the views. The
- * example is the other way round: its point is the debrief, so it opens there and `?view=conversation` is the chat. */
-function useViewParam(initial: DebriefViewMode): [DebriefViewMode, (next: DebriefViewMode) => void] {
+/** The view lives in the URL (D101): a saved session opens on the debrief, so no param is the debrief and `?view=conversation`
+ * is the chat; `?view=debrief` (old links, the "debrief ready" toast) is still the debrief. Switching replaces the entry, so
+ * Back leaves the page instead of flipping between the views. A session with nothing to show but its chat has no debrief
+ * view: the view itself falls back to the conversation. */
+function useViewParam(initial: DebriefViewMode = "debrief"): [DebriefViewMode, (next: DebriefViewMode) => void] {
   const [params, setParams] = useSearchParams();
   const param = params.get("view");
   const view: DebriefViewMode = param === "debrief" || param === "conversation" ? param : initial;
@@ -62,7 +63,7 @@ function useQuestionParam(): [number | undefined, (n: number) => void] {
 function ExampleDebrief() {
   const navigate = useNavigate();
   const { settings } = useApp();
-  const [view, setView] = useViewParam("debrief");
+  const [view, setView] = useViewParam();
   const [question, setQuestion] = useQuestionParam();
   useDocumentTitle(exampleSam.title);
   return (
@@ -91,7 +92,7 @@ function LiveDebrief() {
   const navigate = useNavigate();
   const toast = useToast();
   const { settings } = useApp();
-  const [view, setView] = useViewParam("conversation");
+  const [view, setView] = useViewParam();
   const [question, setQuestion] = useQuestionParam();
   const storageWritable = useStorageWritable();
   const session = useLoad(() => api.session(id), [id]);

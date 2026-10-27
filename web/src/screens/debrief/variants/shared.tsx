@@ -97,7 +97,7 @@ export interface VariantPageProps {
   children: (ctx: PageCtx) => ReactNode;
 }
 
-/** The debrief page as it is today down to the toolbar (banner, title, meta, "Conversation | Debrief", Practise again),
+/** The debrief page as it is today down to the toolbar (banner, title, meta, "Debrief | Conversation", Practise again),
  * then the variant's body in the reading column. */
 export function VariantPage({ model, variant = "interview", layerOrder = "content-first", selected, reviewId, bodyClassName, children }: VariantPageProps) {
   const uid = useId();
@@ -135,8 +135,8 @@ export function VariantPage({ model, variant = "interview", layerOrder = "conten
               label={t("debrief.view.label")}
               hideLabel
               options={[
-                { value: "conversation", label: t("debrief.view.conversation") },
                 { value: "debrief", label: t("debrief.view.debrief") },
+                { value: "conversation", label: t("debrief.view.conversation") },
               ]}
               value="debrief"
               onChange={() => {}}

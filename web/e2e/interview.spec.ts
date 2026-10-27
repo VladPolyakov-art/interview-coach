@@ -64,7 +64,7 @@ test.describe("US-14 / US-15 / US-20 A text interview", () => {
     await openDebrief.click();
     await expect(page).toHaveURL(/\/sessions\/s-/);
     await expect(page.getByRole("heading", { name: /^Kestrel Pay · Product Manager$/, level: 1 })).toBeVisible();
-    await showDebrief(page); // the page opens on the conversation; "Debrief" is next to it
+    await showDebrief(page); // the page opens on the debrief (D101); the call only makes sure
     await expect(page.getByRole("region", { name: /^Verdict/ })).toBeVisible(); // AC1: the verdict is on top of the debrief
     await expect(page.getByRole("list", { name: "Session details" })).toContainText("1 follow-up");
     await expect(page.getByRole("link", { name: "Saved on this computer" })).toBeVisible(); // AC5

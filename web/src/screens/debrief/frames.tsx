@@ -124,8 +124,8 @@ export const DEBRIEF_SCENES = {
   interviewTwelve: { ...base, model: interviewTwelve, ui: { view: "debrief", selected: 12 } },
   /** The Debrief view of a session whose verdict has no step (written before the steps existed): the level comes from the scorecard. */
   interviewNoStep: { ...base, model: { ...interviewS2, verdict: interviewS2.verdict && { headline: interviewS2.verdict.line ?? interviewS2.verdict.headline } }, ui: { view: "debrief", selected: 1 } },
-  /** The default view of a saved session: the conversation across the whole main area, the jump between questions on top. */
-  interviewConversation: { ...base, model: interviewS2, ui: { open: DEFAULT_OPEN.s2 } },
+  /** The conversation view (the switch's second option; D101: the debrief is the default): the conversation across the whole main area, the jump between questions on top. */
+  interviewConversation: { ...base, model: interviewS2, ui: { view: "conversation", open: DEFAULT_OPEN.s2 } },
   /** The Debrief view: verdict with its rule, what to work on, plan, scorecard, then the questions. */
   interviewVerdictOpen: { ...base, model: interviewS2, ui: { view: "debrief", open: DEFAULT_OPEN.s2 } },
   /** D98: scorecard rows with "Not asked this time" (no meter, no lost-points links). */
@@ -162,7 +162,7 @@ export const DEBRIEF_SCENES = {
   notFound: { ...base, state: "notFound", route: "/sessions/gone" },
   error: { ...base, state: "error" },
   /** Stress: the Debrief view with the long title and token (question 2 selected). */
-  longTextConversation: { ...base, model: interviewLong, ui: { open: DEFAULT_OPEN["s-long"] }, route: "/sessions/s-long" },
+  longTextConversation: { ...base, model: interviewLong, ui: { view: "conversation", open: DEFAULT_OPEN["s-long"] }, route: "/sessions/s-long" },
   longText: { ...base, model: interviewLong, ui: { view: "debrief", open: DEFAULT_OPEN["s-long"] }, route: "/sessions/s-long" },
 } satisfies Record<string, DebriefSceneSpec>;
 export type DebriefSceneId = keyof typeof DEBRIEF_SCENES;
