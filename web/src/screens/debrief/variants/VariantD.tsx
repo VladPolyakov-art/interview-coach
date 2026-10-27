@@ -271,7 +271,7 @@ function useSidePanel(active: boolean, anchor: RefObject<HTMLElement | null>, fl
   return { style, side };
 }
 
-/** The final score shows the scorecard on HOVER (owner, v3: "при наведении, а не при нажатии"): no pin step for a
+/** The final score shows the scorecard on HOVER (owner, v3: "on hover, not on click"): no pin step for a
  * mouse. Pointer on the score → opens after `--duration-fast`; the pointer can travel into the panel (grace
  * `--duration-slow`, so a diagonal move does not close it) and click its question links; leaving both closes it.
  * Accessible fallbacks open the same panel and keep it until Esc, ×, a press outside or a link: keyboard focus

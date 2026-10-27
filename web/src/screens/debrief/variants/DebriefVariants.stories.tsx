@@ -84,7 +84,7 @@ export const D_TwelveQuestionsMobile = at(375, <VariantD model={twelve} selected
 /** D at 1024 (rail + content): five labelled tabs still fit. */
 export const D_SwitcherTablet = at(1024, <VariantD model={interviewS2} selected={1} />);
 
-/* "Your level" as progress (owner, v3: «классный прогресс-бар»): three looks on the same four states, for the owner to
+/* "Your level" as progress (owner, v3: "a nice progress bar"): three looks on the same four states, for the owner to
  * pick. C (blocks) is the owner's pick and the D default; A/B are kept here for the record. The position between two steps is derived from the scorecard (🟡, `levelProgress`). */
 const row = (key: ScoreKey, score: number | null): ScoreRowModel => ({ key, score, answers: score === null ? 0 : 5, lost: [] });
 const LEVEL_STATES: { note: string; rows: ScoreRowModel[]; sentence: string }[] = [
