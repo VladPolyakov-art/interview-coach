@@ -76,7 +76,9 @@
     "deleteTitle": "Delete this chat?",
     "deleteBody": "“{title}” and its debrief leave the app. You can bring it back from Trash in Settings → Privacy and data.",
     "deleteConfirm": "Delete",
-    "deleted": "Chat deleted."
+    "deleted": "Chat deleted.",
+    "pendingProgress": "{done} of {n}",
+    "pendingPreparing": "Preparing feedback"
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -1215,10 +1217,17 @@
       "sr": "{score} out of 5",
       "notAsked": "Not asked this time: {labels}",
       "lost_one": "Lost points in question",
-      "lost_other": "Lost points in questions"
+      "lost_other": "Lost points in questions",
+      "average_one": "Average of {n} skill",
+      "average_other": "Average of {n} skills",
+      "averageSr": "Average score: {score} out of 5.",
+      "outOf": "/5",
+      "skillsTitle": "Your skills, weakest first",
+      "noneLost": "No points lost."
     },
     "plan": {
-      "title": "Plan for the next session"
+      "title": "Plan for the next session",
+      "card": "Your plan for the next session"
     },
     "alsoLead": "Also:",
     "inQuestion_one": "in question",
@@ -1229,13 +1238,18 @@
     "backHome": "Back to home",
     "actions": "What next",
     "qSection": "Question by question",
+    "view": {
+      "label": "View",
+      "conversation": "Conversation",
+      "debrief": "Debrief"
+    },
     "convo": {
       "title": "Conversation",
-      "sub": "Pick an answer to see its breakdown",
       "label": "Conversation with Mike",
       "you": "You",
       "breakdown": "Breakdown",
-      "pick": "Question"
+      "pick": "Question",
+      "jump": "Jump to question"
     },
     "openAll": "Open all",
     "closeAll": "Close all",
@@ -1257,7 +1271,15 @@
       "suggestion": "Answered with a suggestion",
       "unavailable": "Feedback wasn't available for this answer. It isn't counted in the verdict.",
       "rechecking": "Checking this answer again…",
-      "recheckFailed": "Couldn't check that answer again. It was not changed."
+      "recheckFailed": "Couldn't check that answer again. It was not changed.",
+      "of": "Question {n} of {total}",
+      "feedback": "Feedback",
+      "lostOn": "Lost points on",
+      "noLoss": "No points lost in this answer.",
+      "prev": "Previous",
+      "next": "Next: question {n}",
+      "last": "Last question",
+      "weakSpot": "Weak spot"
     },
     "sum": {
       "contentNothing": "Nothing major to fix",
@@ -1348,7 +1370,20 @@
     },
     "drillHintNoTime": "{questions} questions on these {points} points",
     "drillHintPoints_one": "Focused on this weak spot",
-    "drillHintPoints_other": "Focused on these {n} weak spots"
+    "drillHintPoints_other": "Focused on these {n} weak spots",
+    "level": {
+      "label": "Your level",
+      "sr": "Your level: {name}, step {n} of 3 (Not ready yet, Getting there, Ready).",
+      "captionReady": "All {total} skills at 4/5 or more",
+      "captionGettingThere": "{done} of {total} skills at 4/5 or more",
+      "captionNotReady": "{done} of {total} answer skills at 3/5 or more",
+      "toGo": "{n} to go to “{next}”"
+    },
+    "tabs": {
+      "label": "Questions from this interview",
+      "prev": "Previous question",
+      "next": "Next question"
+    }
   },
   "history": {
     "title": "Archive",

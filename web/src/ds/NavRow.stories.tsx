@@ -22,6 +22,18 @@ export const Default: StoryObj = {
   ),
 };
 
+/** A chat still being saved after End: the title shimmers (the text treatment of "preparing" lines), progress such as
+ * "2 of 5" sits quietly in `end`. Still a link; plain secondary text under reduced motion. */
+export const Loading: StoryObj = {
+  render: () => (
+    <nav aria-label="Recents" style={rail}>
+      <NavRow href="#s4" label="Kestrel Pay · Senior Product Designer" loading end={<span style={{ fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)" }}>2 of 5</span>} />
+      <NavRow href="#s3" label="English practice" loading end={<span style={{ fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)" }}>EN</span>} />
+      <NavRow href="#s1" label="Lumen Health · Product Designer, Design Systems" />
+    </nav>
+  ),
+};
+
 /** The engine warning at the bottom of the rail (only while the AI engine is not ready): icon + label, the Badge in `end`. */
 export const EngineWarning: StoryObj = {
   render: () => (

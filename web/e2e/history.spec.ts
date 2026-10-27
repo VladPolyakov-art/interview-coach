@@ -1,7 +1,7 @@
 /* Flow D: one history. Recents in the sidebar, the Archive page with its track filter, open a session, rename it.
  * US-21 (one history), US-23 AC2 (trash and restore are in trash.spec.ts). */
 import { expect, test, type Page } from "@playwright/test";
-import { goToArchive, openMenu, resetApp, seedReturningUser, skipSetup } from "./helpers";
+import { goToArchive, openMenu, resetApp, seedReturningUser, showDebrief, skipSetup } from "./helpers";
 
 test.beforeEach(async ({ page, request }) => {
   await resetApp(request);
@@ -45,6 +45,8 @@ test.describe("US-21 One history", () => {
     await expect(
       page.getByRole("heading", { name: "Northwind Logistics · Product Owner", level: 1 }),
     ).toBeVisible();
+    await expect(page.getByRole("log", { name: "Conversation with Mike" })).toBeVisible(); // chat-first
+    await showDebrief(page);
     await expect(page.getByRole("region", { name: /^Verdict/ })).toBeVisible();
   });
 

@@ -148,7 +148,7 @@ export const StartDropping: Story = {
 export const StartModeMenu: Story = {
   render: () => <div style={{ paddingBottom: "13rem" }}><Start menuOpen /></div>,
 };
-/** QA-16: the field is focused: the whole box shows the focus ring (token ring, 2px offset). */
+/** Owner 2026-10-27: the field is focused and nothing changes: no ring, no fill step, no shadow (the caret alone is the focus mark). */
 export const Focused: Story = {
   render: () => <div style={{ padding: "var(--space-2)" }}><Start initial="Product Manager at Kestrel Pay" /></div>,
   play: ({ canvasElement }) => { canvasElement.querySelector("textarea")?.focus(); },

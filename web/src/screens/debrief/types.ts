@@ -172,11 +172,16 @@ export interface DebriefModel {
   english?: EnglishModel;
   /** The saved transcript; without it (fixtures) the chat is rebuilt from the questions. */
   conversation?: ConversationTurn[];
+  /** Nothing to show besides the conversation (a too-short session with no feedback): the page has no "Debrief" view and no switch. */
+  empty?: boolean;
 }
+
+/** The two views of a saved session: the chat (default) and the debrief (`?view=debrief`). */
+export type DebriefViewMode = "conversation" | "debrief";
 
 /** Local UI state a static state can start in (review frames, stories). */
 export interface DebriefUi {
-  /** The question whose breakdown shows next to the chat (default: the first one in `open`, else the first question). */
+  /** The question whose breakdown shows in the debrief view (default: the first one in `open`, else the first question). */
   selected?: number;
   open?: number[];
   /** Questions whose "stronger answer" starts open. */
@@ -184,8 +189,8 @@ export interface DebriefUi {
   renaming?: boolean;
   editing?: { question: number; correction: string };
   rechecking?: number;
-  /** D80: the folded verdict bar starts open (review, stories). */
-  verdictOpen?: boolean;
+  /** Which view the page starts in (review, stories). Default: the conversation. */
+  view?: DebriefViewMode;
 }
 
 export interface DebriefActions {
@@ -228,6 +233,13 @@ export interface DebriefViewProps extends DebriefActions {
   rerunning?: boolean;
   /** Live: an action failed (flag, stronger answer, trash); shown as an error callout under the header. */
   notice?: string;
+  /** Which view shows. The live container keeps it in the URL (`?view=debrief`); without it the view keeps its own state. */
+  view?: DebriefViewMode;
+  onViewChange?: (view: DebriefViewMode) => void;
+  /** The question the viewer shows (a question number). The live container keeps it in the URL (`?q=n`); without it the
+   * view keeps its own state (starting at `ui.selected`, else the first question). */
+  question?: number;
+  onQuestionChange?: (n: number) => void;
   /** Live: the question being checked again (the container knows when it is done); undefined = the view's own state. */
   rechecking?: number | null;
   className?: string;

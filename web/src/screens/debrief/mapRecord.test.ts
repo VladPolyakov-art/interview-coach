@@ -41,6 +41,22 @@ describe("mapRecord", () => {
     expect(m.questions[0]!.layers.language?.corrections).toHaveLength(1);
   });
 
+  it("`empty`: a debrief view exists whenever there is something to show besides the chat", () => {
+    expect(mapRecord(rec(), opts).empty).toBe(false);
+    // Too short, no feedback at all: only the conversation, no switch.
+    const noFeedback = rec({ feedback: [], debrief: { verdict: "Too short.", weak_spots: [], strength: "", next_step: "", source: "template", too_short: true } });
+    expect(mapRecord(noFeedback, opts).empty).toBe(true);
+    // Too short, but two answers were checked: their cards are the debrief view.
+    const twoCards = rec({ feedback: [fb("a", "q1"), fb("b", "q2")], debrief: { verdict: "Too short.", weak_spots: [], strength: "", next_step: "", source: "template", too_short: true } });
+    expect(mapRecord(twoCards, opts).empty).toBe(false);
+    // While the debrief is being written the pending state belongs to the debrief view.
+    expect(mapRecord(rec({ debrief: undefined }), { ...opts, waiting: true }).empty).toBe(false);
+    // English: even a one-turn talk with nothing to correct has its summary and "No corrections this time."
+    const english = rec({ mode: "english", questions: [], feedback: [], debrief: { verdict: "", weak_spots: [], strength: "", next_step: "", source: "template", too_short: true } });
+    expect(mapRecord(english, opts).empty).toBe(false);
+    expect(mapRecord({ ...english, debrief: null }, opts).empty).toBe(false);
+  });
+
   it("keeps the whole talk as chat lines, each tied to its question (D71)", () => {
     const m = mapRecord(rec({
       transcript: [
@@ -70,6 +86,29 @@ describe("mapRecord", () => {
     expect(m.verdict).toBeUndefined();
     expect(m.weakSpots).toEqual([]);
     expect(m.skipped).toEqual({ from: 3, to: 5 });
+  });
+
+  describe("answered counts questions, not replies", () => {
+    const tooShort = { verdict: "", weak_spots: [], strength: "", next_step: "", source: "template" as const, too_short: true };
+    const partialOf = (feedback: FeedbackRecord[], over: Partial<SessionRecord> = {}) =>
+      mapRecord(rec({ feedback, debrief: tooShort, ...over }), opts).partial;
+    it("many voice fragments of one question are one answered question, whatever stats.answers says", () => {
+      const fragments = Array.from({ length: 11 }, (_, i) => fb(`f${i}`, "q1"));
+      expect(partialOf(fragments, { stats: { answers: 11, turns: 16 } })).toEqual({ answered: 1, total: 5 });
+    });
+    it("two questions answered read 2", () => {
+      expect(partialOf([fb("a", "q1"), fb("b", "q1"), fb("c", "q2")], { stats: { answers: 9, turns: 12 } })).toEqual({ answered: 2, total: 5 });
+    });
+    it("follow-ups do not count", () => {
+      const m = partialOf([fb("a", "q1"), fb("b", "q2", { answer_kind: "follow_up" }), fb("c", "q3", { answer_kind: "follow_up" })]);
+      expect(m).toEqual({ answered: 1, total: 5 });
+    });
+    it("a question without an id is told apart by its text; the count never exceeds the total", () => {
+      const noId = (id: string, question: string) => fb(id, "", { question });
+      expect(partialOf([noId("a", "Tell me about X"), noId("b", "Tell me about X")])?.answered).toBe(1);
+      const many = ["q1", "q2", "q3", "q4", "q5", "q6", "q7"].map((q) => fb(q, q));
+      expect(partialOf(many, { questions: [{ id: "q1", competency: "x", text: "Question 1" }], feedback: many.slice(0, 3) })?.answered).toBeLessThanOrEqual(3);
+    });
   });
 
   it("says why the verdict is missing", () => {

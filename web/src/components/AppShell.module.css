@@ -188,6 +188,10 @@
   .chatItem .track { display: none; }
 }
 
+/* A chat still being saved after End has no "…" menu: its row keeps its padding and its progress on hover and on touch. */
+.chatItem[data-pending] .chat { padding-right: var(--space-2); }
+.chatItem[data-pending] .track { display: inline; }
+
 /* ---- Bottom: engine warning (only when not ready) + account ---- */
 .foot { display: flex; flex: none; flex-direction: column; gap: var(--space-1); }
 

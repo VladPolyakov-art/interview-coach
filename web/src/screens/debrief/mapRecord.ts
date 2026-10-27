@@ -348,12 +348,18 @@ function asked(record: SessionRecord): number {
   return new Set(record.transcript.filter((x) => x.role === "model" && x.kind === "question").map((x) => x.question_id ?? x.text)).size;
 }
 
+/** Distinct questions that got at least one main (non-follow-up) answer. `stats.answers` counts raw replies (a long voice answer
+ * arrives as many fragments: 11 of them for one question read "answered 11 of 5"), so it is never used here. */
+function answeredQuestions(record: SessionRecord): number {
+  return new Set(record.feedback.filter((f) => f.answer_kind !== "follow_up").map((f) => f.question_id || f.question)).size;
+}
+
 /** Map a saved session to the view model. */
 export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel {
   const threads = threadsFromRecord(record);
   const english = record.mode === "english";
-  const answered = record.stats?.answers ?? record.feedback.filter((f) => f.answer_kind !== "follow_up").length;
   const total = Math.max(record.questions.length, threads.length);
+  const answered = Math.min(answeredQuestions(record), total);
   const d = record.debrief;
   const partial = !english && (Boolean(d?.too_short) || (answered < MIN_ANSWERS && total > 0 && answered < total && !d?.verdict)) ? { answered, total } : undefined;
   const followUps = record.feedback.filter((f) => f.answer_kind === "follow_up").length;
@@ -364,13 +370,19 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
       : d.source === "template" ? "template" : undefined;
   const questionNumbers = threads.map((th) => th.number);
   const maxAsked = Math.max(0, ...questionNumbers);
+  const eng = english ? englishModel(threads) : undefined;
+  const questions = english ? [] : threads.map((th) => questionModel(record, th, opts));
+  const shownVerdict = !partial && !english ? verdict(record) : undefined;
+  // Nothing to show besides the chat: no verdict, no notice, no answer cards. An English talk always has its summary and
+  // corrections ("No corrections this time."), so it keeps the Debrief view.
+  const empty = !shownVerdict && !notice && !questions.length && !eng;
   return {
     id: record.id,
     title: record.title || t("debrief.title"),
     meta: metaFor(record, english ? 0 : asked(record) || threads.length, followUps, threads.length),
     obsidian: opts.obsidian,
     saved: true,
-    verdict: !partial && !english ? verdict(record) : undefined,
+    verdict: shownVerdict,
     verdictNotice: notice,
     partial,
     // D98: only an interview debrief that has a verdict gets the scorecard and the plan (US-20 AC4, AC6).
@@ -378,10 +390,11 @@ export function mapRecord(record: SessionRecord, opts: MapOptions): DebriefModel
     weakSpots: spots,
     plan: !partial && !english && d?.verdict ? plan(record) : undefined,
     drill: !partial && !english && spots.length ? { points: spots.length } : undefined,
-    questions: english ? [] : threads.map((th) => questionModel(record, th, opts)),
+    questions,
     skipped: partial && maxAsked < total ? { from: maxAsked + 1, to: total } : undefined,
-    english: english ? englishModel(threads) : undefined,
+    english: eng,
     conversation: conversation(record),
+    empty,
   };
 }
 

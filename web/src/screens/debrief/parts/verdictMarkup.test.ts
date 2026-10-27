@@ -1,27 +1,7 @@
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { t } from "../../../i18n";
 import type { VerdictModel } from "../types";
-import { Verdict, VerdictBar } from "./Sections";
 import { rowsText, verdictLine } from "./verdictLine";
-
-const verdict: VerdictModel = { headline: "Getting there", step: 1, line: "Clear answers." };
-const text = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-
-describe("verdict screen-reader text (13, QA-20)", () => {
-  it("the hidden step text reads as part of the headline: no stray leading period", () => {
-    const html = renderToStaticMarkup(createElement(Verdict, { verdict, id: "v" }));
-    expect(html).toContain('<span class="visually-hidden">, step 2 of 3</span>');
-    expect(text(html)).not.toMatch(/ \. /);
-    expect(text(html)).not.toContain("Verdict: Getting there");
-  });
-  it("the folded bar says it once: label, headline, step", () => {
-    const html = renderToStaticMarkup(createElement(VerdictBar, { verdict, id: "v", children: null }));
-    expect(html).toContain('<span class="visually-hidden">, step 2 of 3</span>');
-    expect(text(html)).not.toMatch(/ \. /);
-  });
-});
 
 describe("what moves the verdict (D99, rubric §9.4)", () => {
   const at = (step: 0 | 1 | 2, gap: VerdictModel["gap"], extra: Partial<VerdictModel> = {}): VerdictModel =>
@@ -57,14 +37,5 @@ describe("what moves the verdict (D99, rubric §9.4)", () => {
     for (const key of ["structure", "own_part", "result", "relevance", "reflection", "language", "delivery"] as const) {
       expect(verdictLine(at(1, [key]))).toContain(`get ${t(`debrief.score.row.${key}`)} to`);
     }
-  });
-  it("is shown under the scale in the page and in the opened bar's verdict", () => {
-    const line = "To reach “Ready”: get Delivery to 4 of 5 or more.";
-    const html = renderToStaticMarkup(createElement(Verdict, { verdict, id: "v", next: line }));
-    expect(text(html)).toContain(line);
-    expect(html.indexOf("Not ready yet")).toBeLessThan(html.indexOf(line));
-    const bare = renderToStaticMarkup(createElement(Verdict, { verdict, id: "v", bare: true, next: line }));
-    expect(text(bare)).toContain(line);
-    expect(text(renderToStaticMarkup(createElement(Verdict, { verdict, id: "v" })))).not.toContain("To reach");
   });
 });

@@ -5,7 +5,9 @@
   background: var(--color-raised);
   color: var(--color-text-primary);
   box-shadow: var(--shadow-overlay);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   /* The actions row adapts to the dialog's own width (full width minus gutters on a phone). */
   container: dialog / inline-size;
 }
