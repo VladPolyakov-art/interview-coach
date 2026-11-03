@@ -9,8 +9,15 @@ const state = (id: string, label: string, scene: SetupSceneId, extra: Partial<Re
 export const setupReview: ReviewScreen = {
   id: "setup",
   title: "Setup",
-  note: "D81/D82: онбординг — три шага: AI engine (выбор из четырёх) → Check → About you. Проверка — один настоящий обмен (сказал фразу → видно, что распознано → Майк ответил выбранным голосом), а не пять карточек. Голос Майка выбирается на шаге проверки. Всё на шаге 3 необязательно; «Start the first round» сразу запускает раунд. Заново — Settings → About → «Run setup again».",
+  note: "D81/D82/D104: онбординг — три шага (и четвёртый, «Install», первым, если браузер умеет установить приложение): AI engine (выбор из четырёх) → Check → About you. Проверка — один настоящий обмен (сказал фразу → видно, что распознано → Майк ответил выбранным голосом), а не пять карточек. Голос Майка выбирается на шаге проверки. Всё на шаге 3 необязательно; «Start the first round» сразу запускает раунд. Заново — Settings → About → «Run setup again».",
   states: [
+    state("install-first", "0 · Установка приложения (если браузер умеет)", "installFirst", {
+      note: "D104: первый шаг, только когда Chrome/Edge может установить Vukoli (событие beforeinstallprompt; ждём до 1,5 с после загрузки). «Install Vukoli» открывает окно браузера; «Skip» — сразу к движку. Шагов в степпере четыре; без установки — три, как раньше. На Windows и Linux — «on your taskbar», «Start menu».",
+    }),
+    state("install-busy", "0 · Установка идёт — ждём окно приложения", "installBusy", {
+      mobile: false,
+      note: "D104: после «Install» Chrome открывает установленное приложение в новом окне (тот же профиль). Это окно ничего не показывает: «Install Vukoli» остаётся занятой, «Skip» неактивна, пока новое окно не скажет «hello» — тогда это окно закрывается само, а новое продолжает мастер с шага «AI engine» (прогресс хранится в localStorage). Если за 4 с окно не ответило или закрыться нельзя — мастер идёт дальше здесь, один тост «Vukoli is installed. Next time open it from the Dock».",
+    }),
     state("engine-first", "1 · Выбор движка (первый запуск)", "engineFirst", {
       dark: true,
       note: "D82: четыре движка списком, ничего не выбрано за человека (владелец: «нужно давать выбор людям»). Отметка выбора — справа. Ollama — «Recommended», у готовых — «Ready · qwen3:8b». Continue выключена, пока не выбран движок.",
