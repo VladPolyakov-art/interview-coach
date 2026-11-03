@@ -14,10 +14,23 @@ from server import __version__, config, feedback_form
 def client(monkeypatch, tmp_path):
     monkeypatch.delenv("IC_E2E", raising=False)
     monkeypatch.delenv("IC_FEEDBACK_URL", raising=False)
+    monkeypatch.setattr(config, "FEEDBACK_URL", "")     # the built-in form is real: tests never reach it
     monkeypatch.setenv("IC_WEB_DIST", str(tmp_path / "no-web"))
     from server.main import create_app
     with TestClient(create_app()) as c:
         yield c
+
+
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """Any send that is not routed through `serving()` fails here instead of reaching a real form service."""
+    async def refuse(*args, **kwargs):
+        raise AssertionError("a test tried to reach the real feedback service")
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", refuse)
+
+
+def test_built_in_form_is_https():
+    assert feedback_form.urlparse(config.FEEDBACK_URL).scheme == "https"
 
 
 @pytest.fixture

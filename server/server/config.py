@@ -84,9 +84,9 @@ PORT = int(os.getenv("IC_PORT", "8000"))
 DEV_ORIGINS = {o.strip().rstrip("/") for o in os.getenv(
     "IC_DEV_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()}
 
-# US-60 (D102): the form service for in-app feedback (a Formspree-style address, https). Empty until the owner creates the
-# form; IC_FEEDBACK_URL overrides it. With neither, "Send feedback" offers Copy text and the GitHub issues link.
-FEEDBACK_URL = ""
+# US-60 (D102): the form service for in-app feedback, the owner's Formspree form (https). IC_FEEDBACK_URL overrides it;
+# with neither, "Send feedback" offers Copy text and the GitHub issues link.
+FEEDBACK_URL = "https://formspree.io/f/xgaarepw"
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     "engine": "ollama",                       # ollama | openai_compatible | claude_cli | codex_cli | antigravity_cli | gemini_live
