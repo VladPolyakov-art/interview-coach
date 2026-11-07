@@ -65,12 +65,12 @@ export const shellReview: ReviewScreen = {
       dark: true,
       note: "Вся строка «Alex · Ollama» с шевроном (D59) — одна кнопка; D79: меню открывается справа от неё, в рабочую область, а не поверх сайдбара (шеврон смотрит вправо; в мобильной панели — листом снизу). Пункты: Settings, Privacy and data, Help & what's free (D58). D80: переключателя темы в меню больше нет — тема только в Settings → General. Enter/Space открывают, стрелки двигают, Esc закрывает и возвращает фокус на строку. Выхода (Log out) нет: приложение локальное.",
     }),
-    state("about", "Help & what's free → Settings · About", () => (
+    state("about", "Help → Settings · About", () => (
       <Scene at="/settings/about" current="settings" currentSessionId={undefined}
         page={<Routes><Route path="/settings/:section" element={<SettingsScreen />} /></Routes>} />
     ), {
       dark: true,
-      note: "D58: пункт «Help & what's free» в меню аккаунта и ссылка «What's free» на Home ведут сюда (/settings/about#free); с D76 — в попапе настроек. Одна таблица US-30: бесплатно навсегда — практика, английский, подготовка по CV и вакансии, банк вопросов, разбор, память ошибок, дрилл; Premium помечен «Coming later», цены нет. Ниже — «Practice only» и лицензия AGPL-3.0-or-later.",
+      note: "D108 (2026-11-07): упоминания платных функций убраны до их появления — таблицы «бесплатно / Premium» нет. Пункт «Help» в меню аккаунта ведёт сюда (/settings/about); с D76 — в попапе настроек. Содержимое: «Practice only», запуск setup, обратная связь, лицензия AGPL-3.0-or-later.",
     }),
     state("settings-voice", "Settings · попап, строки", () => (
       <EngineFixture engines={makeEngines()}>

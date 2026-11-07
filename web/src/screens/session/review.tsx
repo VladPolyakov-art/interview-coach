@@ -3,12 +3,12 @@
  * Fixture: docs/ia.md §6, Alex Morgan · Kestrel Pay · Senior Product Designer. All states: Storybook. */
 import type { ReviewScreen, ReviewState } from "../../review/screens";
 import { fixtureProps, type FixtureOptions } from "./fixtures";
-import { SessionPreview } from "./SessionPreview";
+import { SessionView } from "./SessionView";
 import type { SessionViewProps } from "./types";
 
-const show = (opts: FixtureOptions, extra: Partial<SessionViewProps> = {}) => () => <SessionPreview {...fixtureProps(opts)} {...extra} />;
+const show = (opts: FixtureOptions, extra: Partial<SessionViewProps> = {}) => () => <SessionView {...fixtureProps(opts)} {...extra} />;
 /** A fixture with its live data patched (12d states: interrupted variants, both banners). */
-const patch = (opts: FixtureOptions, fn: (p: SessionViewProps) => SessionViewProps) => () => <SessionPreview {...fn(fixtureProps(opts))} />;
+const patch = (opts: FixtureOptions, fn: (p: SessionViewProps) => SessionViewProps) => () => <SessionView {...fn(fixtureProps(opts))} />;
 const interrupted = (i: NonNullable<SessionViewProps["data"]["interrupted"]>) => (p: SessionViewProps): SessionViewProps =>
   ({ ...p, data: { ...p.data, interrupted: i } });
 
@@ -20,22 +20,17 @@ const states: ReviewState[] = [
   },
   {
     id: "s1-open", label: "D62 · Вариант A (по умолчанию): ничего не спрятано",
-    note: "Меню «…» на широком экране нет. Инструменты — иконками: Redo, Type, лампочка «пример ответа» (подсказчик), Feedback; у End — «?»: горячие клавиши и помощь с микрофоном. Вакансия и раунд — в подсказке при наведении на «Question 1 of 5». На телефоне меню «…» остаётся (места нет).",
+    note: "Меню «…» на широком экране нет. Инструменты — иконками: Redo, Type, лампочка «пример ответа» (подсказчик); у End — «?»: горячие клавиши и помощь с микрофоном. Вакансия и раунд — в подсказке при наведении на «Question 1 of 5». На телефоне меню «…» остаётся (места нет).",
     render: show({ scene: "q1-start" }, { suggester: "on" }),
   },
   {
     id: "s1-more", label: "D62 · Вариант B: те же иконки, остальное в More",
-    note: "Лампочка и Feedback — иконками, как в A; горячие клавиши, помощь с микрофоном и контекст (вакансия, раунд) — в меню «…».",
+    note: "Лампочка — иконкой, как в A; горячие клавиши, помощь с микрофоном и контекст (вакансия, раунд) — в меню «…».",
     render: show({ scene: "q1-start" }, { suggester: "on", tools: "menu", initialOverlay: "more" }), mobile: false,
   },
   {
-    id: "s1-panel", label: "D62 · Разбор открыт до первого ответа",
-    note: "Кнопка Feedback работает всегда. Пока разбора нет, панель говорит, что появится здесь; во время ответа — «Still in progress…».",
-    render: show({ scene: "q1-start" }, { panelOpen: true }),
-  },
-  {
     id: "s2", label: "S2 · Майк задаёт уточняющий вопрос", dark: true,
-    note: "Весь диалог в транскрипте: «Question 1», «Question 2», уточняющий вопрос — с бейджем Follow-up. Панель разбора закрылась сама, когда Майк заговорил; по Feedback (или F) — разбор прошлого ответа.",
+    note: "Весь диалог в транскрипте: «Question 1», «Question 2», уточняющий вопрос — с бейджем Follow-up.",
     render: show({ scene: "follow-up" }),
   },
   {
@@ -54,50 +49,19 @@ const states: ReviewState[] = [
     render: show({ scene: "thinking" }),
   },
   {
-    id: "s1-tips-text", label: "S1 · Подсказки первого раза (текст): где откроется разбор",
-    note: "D96: во время звонка разбора нет — подсказка одна на все раскладки: «Feedback comes after the call, so Mike stays fast.» (английский: «Corrections come after the call…»). Раньше слова следовали за раскладкой («on the right», «slides in…»).",
+    id: "s1-tips-text", label: "S1 · Подсказки первого раза (текст)",
+    note: "D96/D107: во время звонка разбора нет и панели нет — подсказка одна на все раскладки: «Feedback comes after the call, so Mike stays fast.» (английский: «Corrections come after the call…»).",
     render: show({ scene: "q1-start" }, { input: "text" }),
   },
   {
-    id: "s5a", label: "S5a · Разбор готов: панель открылась сама", dark: true,
-    note: "D96: так панель выглядит только у возобновлённого звонка, где разбор уже сохранён; в живом звонке разбора нет (панель говорит «Feedback comes after the call»). На широком экране панель плавает справа, без затемнения; сцена сдвинулась влево, чтобы остаться по центру свободного места. Основная кнопка «Next question» — в островке, в подвале панели она вторичная (одна основная на экран, 🟡). Скрыть — X, F или Esc.",
-    render: show({ scene: "feedback" }),
-  },
-  {
-    id: "s5-hidden", label: "S5 · Разбор готов, панель скрыта пользователем", dark: true,
-    note: "Никто не говорит — свечения нет (🟡 D49: в покое без свечения). Кнопка Feedback не нажата; Next question остаётся в островке.",
-    render: show({ scene: "feedback" }, { panelOpen: false }),
-  },
-  {
-    id: "s5-unread", label: "S5 · Разбор готов, панель закрыта: точка на кнопке Feedback (13, QA-01)", dark: true,
-    note: "D96: во время живого звонка точка не загорается (разбор делается после звонка); состояние остаётся для возобновлённых сессий. 13 (QA-01): на среднем экране и на телефоне панель сама сцену не закрывает — о готовом разборе говорит точка на кнопке Feedback (имя кнопки: «Show feedback (F), new feedback is ready»). Нажали — панель открылась, точка погасла. На широком экране панель открывается сама; точка там только если пользователь закрыл панель сам, а пришёл новый разбор. 🟡 Закрытие вручную держится, пока пользователь сам не откроет панель.",
-    render: show({ scene: "feedback" }, { panelOpen: false, feedbackUnread: true }),
-  },
-  {
-    id: "s5b", label: "S5b · Тот же разбор, delivery first (порядок слоёв из настроек)", mobile: false,
-    render: show({ scene: "feedback", layerOrder: "delivery-first" }),
-  },
-  {
-    id: "s5c", label: "S5c · «That's not what I said»: поле «What did you say?»",
-    note: "Фраза уже снята со счёта; поле необязательное. Фокус остаётся в панели.",
-    render: show({ scene: "that-not-said" }),
-  },
-  {
-    id: "s5d", label: "S5d · Edit what I said",
-    note: "Исправить только своё слово; перепроверяется один ответ. «Next question» в островке становится вторичной.",
-    render: show({ scene: "edit" }),
-  },
-  { id: "s5e", label: "S5e · Edit what I said: перепроверка не удалась", note: "12d (Q3): редактор открыт снова с вашим текстом и ошибкой; старый ответ не изменился.", render: show({ scene: "edit-failed" }) },
-  { id: "s5f", label: "S5f · Проверяем исправленный ответ", note: "12d (Q3): панель остаётся открытой, скелет «Checking question N again…»; потом приходит новый разбор.", render: show({ scene: "rechecking" }) },
-  {
     id: "s6", label: "S6 · Текстовый режим: островок превращается в поле ввода",
     note: "Сверху поле «Type your answer» без своей рамки (Composer surface none), под линией — та же строка управления без микрофона. D64: «Switch to voice» активна — голос и текст переключаются в одной сессии в обе стороны.",
-    render: show({ scene: "text", withChecks: false }),
+    render: show({ scene: "text" }),
   },
   {
     id: "s6-answer", label: "S6 · Текстовый режим: ваш ход, вы печатаете ответ",
-    note: "Пока вы пишете, в строке управления нет главной кнопки: отправка — стрелкой в поле или Enter. Разбор открывается кнопкой Feedback.",
-    render: show({ scene: "text", withChecks: false }, { phase: "your-turn" }),
+    note: "Пока вы пишете, в строке управления нет главной кнопки: отправка — стрелкой в поле или Enter.",
+    render: show({ scene: "text" }, { phase: "your-turn" }),
   },
   {
     id: "s2-turn", label: "S2 · Ваш ход (голос): слабое свечение-приглашение", dark: true,
@@ -107,7 +71,7 @@ const states: ReviewState[] = [
   {
     id: "s2-reading", label: "S2 · Вы листаете транскрипт вверх: «Jump to latest»",
     note: "Пока вы читаете выше, новые реплики не сдвигают текст; кнопка «Jump to latest» над островком возвращает к последней строке. Внизу — снова автопрокрутка.",
-    render: show({ scene: "feedback" }, { initialFollow: "reading", panelOpen: false }),
+    render: show({ scene: "answered" }, { initialFollow: "reading" }),
   },
   {
     id: "s1-reduced", label: "S1/S3/S4 · Reduced motion: неподвижные кадры", mobile: false,
@@ -118,12 +82,12 @@ const states: ReviewState[] = [
   {
     id: "s8", label: "S8 · English: ход 4",
     note: "«Turn 4» вместо «2 of 5», после хода — снова «Talk now»: Next question нет, разговор идёт дальше. End practice. Уровень B2 — в подсказке у статуса.",
-    render: show({ scene: "english", withChecks: false }),
+    render: show({ scene: "english" }),
   },
   { id: "s9", label: "S9 · Подключение", note: "Пилюля «Connecting to Mike…» занимает весь островок, остаётся только End.", render: show({ scene: "connecting" }) },
   {
     id: "s10a", label: "S10a · Сессия прервана: ИИ-модель перестала отвечать",
-    note: "Шара больше нет: блок с ошибкой — в конце транскрипта, статус «Paused» — над островком. Панель с разбором остаётся открытой. Resume выключена, пока движок не вернётся.",
+    note: "Шара больше нет: блок с ошибкой — в конце транскрипта, статус «Paused» — над островком. Resume выключена, пока движок не вернётся.",
     render: show({ scene: "interrupted-engine" }),
   },
   { id: "s10b", label: "S10b · Сессия прервана: пропал голосовой канал", note: "Микрофон неактивен, «Type instead» работает (продолжить текстом).", render: show({ scene: "interrupted-voice" }) },
@@ -141,13 +105,6 @@ const states: ReviewState[] = [
     note: "Таймер «1:02:14» помещается в свой слот, островок не расширяется. Длинное название — в подсказке у статуса.",
     render: show({ scene: "overflow" }),
   },
-  { id: "s14a", label: "S14a · Готовим разбор (P2)", note: "В слоте — «Preparing feedback», панель открыта и показывает ожидание.", render: show({ scene: "preparing" }) },
-  { id: "s14b", label: "S14b · Разбор недоступен (P4)", render: show({ scene: "unavailable" }) },
-  {
-    id: "s14e", label: "S14e · Не получилось проверить слои: Content и Language",
-    note: "12d (US-15 AC5): слой, который движок не смог сделать, говорит «Not available for this answer.» и «n/a» в сводке, а не «Nothing to fix» и «Good». Delivery считается локально и остаётся.",
-    render: show({ scene: "layers-unavailable" }),
-  },
   { id: "s14c", label: "S14c · Микрофон выключен", note: "Кнопка микрофона перечёркнута, «Talk now» неактивна до включения (M).", render: show({ scene: "muted" }) },
   { id: "s14c2", label: "S14c2 · Говорите при выключенном микрофоне", note: "D72: вместо плашки над сценой — тултип над кнопкой микрофона; исчезает при включении (M) или через 6 с.", render: show({ scene: "muted-talking" }) },
   {
@@ -157,14 +114,14 @@ const states: ReviewState[] = [
   },
   {
     id: "shortcuts", label: "Горячие клавиши",
-    note: "Строка подсказок под доком из v1 переехала сюда: More → Keyboard shortcuts или «?». Новые: F — разбор, N — следующий вопрос, Esc — закрыть панель/меню.",
-    render: show({ scene: "feedback" }, { initialOverlay: "shortcuts" }), mobile: false,
+    note: "Строка подсказок под доком из v1 переехала сюда: More → Keyboard shortcuts или «?». Новые: N — следующий вопрос, Esc — закрыть меню.",
+    render: show({ scene: "answered" }, { initialOverlay: "shortcuts" }), mobile: false,
   },
 ];
 
 export const sessionReview: ReviewScreen = {
   id: "session",
   title: "Session",
-  note: "v2.1 (D49): в центре — транскрипт всего разговора (новое внизу, автопрокрутка, «Jump to latest»). Шар заменён свечением вдоль верхнего края с точечным паттерном: только пока кто-то говорит или Майк думает. Статус — одна строка над «таблеткой» управления. Разбор — плавающей панелью справа (широкий экран) или шторкой снизу (телефон).",
+  note: "v2.1 (D49): в центре — транскрипт всего разговора (новое внизу, автопрокрутка, «Jump to latest»). Шар заменён свечением вдоль верхнего края с точечным паттерном: только пока кто-то говорит или Майк думает. Статус — одна строка над «таблеткой» управления. D107: панели разбора в звонке нет — разбор только после сессии.",
   states,
 };
