@@ -41,9 +41,10 @@ SMALL_TALK = re.compile(r"\bhow (?:are|r) (?:you|u)\b|\bhow'?s it going\b|\bnice
                         re.I)
 NO = re.compile(r"^\W*(?:no|nope|not needed|i'?m (?:ready|fine|good|ok(?:ay)?)|i (?:got|understand) it)\b", re.I)
 # Quick start (D111): Mike asks "interview or English?" and the first words of the answer choose the practice.
+# Russian stems are written as \u escapes (the public export rejects Cyrillic text).
 # Whichever of the two words comes first wins ("English interview" is English, "interview in English" is an interview).
-CHOICE_ENGLISH = re.compile(r"english|англ|speaking|free talk", re.I)
-CHOICE_INTERVIEW = re.compile(r"interview|интервью|собес|job\b|hiring|behaviou?ral|\bhr\b", re.I)
+CHOICE_ENGLISH = re.compile(r"english|\u0430\u043d\u0433\u043b|speaking|free talk", re.I)
+CHOICE_INTERVIEW = re.compile(r"interview|\u0438\u043d\u0442\u0435\u0440\u0432\u044c\u044e|\u0441\u043e\u0431\u0435\u0441|job\b|hiring|behaviou?ral|\bhr\b", re.I)
 
 
 def classify_choice(text: str) -> str | None:

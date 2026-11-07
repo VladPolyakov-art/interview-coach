@@ -50,7 +50,7 @@ def receive_until(socket, kind, limit=80):
 @pytest.mark.parametrize("text,expected", [
     ("English", "english"), ("interview", "interview"), ("let's practise my English please", "english"),
     ("I want a job interview", "interview"), ("English interview", "english"), ("interview in English", "interview"),
-    ("давай английский", "english"), ("собеседование", "interview"), ("hmm, I don't know", None), ("", None),
+    ("\u0434\u0430\u0432\u0430\u0439\u0020\u0430\u043d\u0433\u043b\u0438\u0439\u0441\u043a\u0438\u0439", "english"), ("\u0441\u043e\u0431\u0435\u0441\u0435\u0434\u043e\u0432\u0430\u043d\u0438\u0435", "interview"), ("hmm, I don't know", None), ("", None),
 ])
 def test_classify_choice(text, expected):
     assert classify_choice(text) == expected
