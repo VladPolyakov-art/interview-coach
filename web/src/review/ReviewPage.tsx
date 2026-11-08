@@ -3,7 +3,7 @@ import { Gallery } from "./Gallery";
 import { ENTRIES } from "./entries";
 import { CommentButton } from "./CommentButton";
 import { DECISIONS } from "./decisions";
-import { REVIEW_SCREENS, type ReviewScreen, type ReviewState } from "./screens";
+import { REVIEW_ONLY, REVIEW_SCREENS, type ReviewScreen, type ReviewState } from "./screens";
 import s from "./review.module.css";
 
 /* Review viewport sizes (not design values): desktop and phone from ds/screens/*.md. */
@@ -40,17 +40,18 @@ function StateBlock({ screen, state }: { screen: ReviewScreen; state: ReviewStat
 }
 
 export function ReviewPage() {
+  const only = REVIEW_ONLY === "tough-talk";
   const specimens = ENTRIES.reduce((n, e) => n + e.stories.length, 0);
   return (
     <div className={s.page}>
       <header className={s.intro}>
         <p className={s.kicker}>Vukoli · дизайн в коде · 20 окт 2026</p>
-        <h1 className={s.h1}>Дизайн-ревью: ключевые экраны</h1>
+        <h1 className={s.h1}>{only ? "Дизайн-ревью: Tough talk" : "Дизайн-ревью: ключевые экраны"}</h1>
         <p className={s.lead}>
           Это не макет, а живой код: экраны собраны на React из токенов и компонентов дизайн-системы (направление A, «Тихий чат, одна живая вещь»).
           Данные вымышленные. Интерфейс продукта — на английском.
         </p>
-        <section className={s.v2} aria-labelledby="h-v2" data-review-id="Intro/v2" data-review-section="Версия 2" data-comment-target>
+        {!only && <section className={s.v2} aria-labelledby="h-v2" data-review-id="Intro/v2" data-review-section="Версия 2" data-comment-target>
           <h2 id="h-v2" className={s.v2Title}>Версия 2 — по вашим комментариям к v1</h2>
           <ul className={s.v2List}>
             <li><strong>a.</strong> Кнопка отправки «уезжала» из поля — теперь она внутри поля, справа.</li>
@@ -60,20 +61,20 @@ export function ReviewPage() {
             <li><strong>e.</strong> Главная разгружена: одно поле и до трёх подсказок, а настройки (вакансия, раунд, пожелания) — в коротком чате с Майком, который заканчивается карточкой плана.</li>
           </ul>
           <p className={s.note}>Орб в сессии пока прежний: его новый вид подбираем на отдельном мудборде.</p>
-        </section>
+        </section>}
         <p className={s.how}>
           <strong>Как комментировать:</strong> наведите курсор на блок — справа вверху появится кнопка с его названием. Нажмите её и оставьте комментарий прямо к этому элементу.
           Комментарий к экрану целиком — кнопка над рамкой. Если кнопок нет, комментарии в этом просмотре недоступны: напишите правки сообщением и назовите блок.
         </p>
         <nav className={s.toc} aria-label="Разделы">
           {REVIEW_SCREENS.map((sc) => <a key={sc.id} href={`#${sc.id}`}>{sc.title}</a>)}
-          <a href="#decisions">Решения по умолчанию · {DECISIONS.length}</a>
+          {!only && <><a href="#decisions">Решения по умолчанию · {DECISIONS.length}</a>
           <a href="#components">Компоненты · {ENTRIES.length} / {specimens}</a>
-          <a href="#components-dark">Компоненты · тёмная</a>
+          <a href="#components-dark">Компоненты · тёмная</a></>}
         </nav>
       </header>
 
-      <section id="decisions" className={s.section} aria-labelledby="h-decisions">
+      {!only && <section id="decisions" className={s.section} aria-labelledby="h-decisions">
         <h2 id="h-decisions" className={s.h2}>Решения по умолчанию</h2>
         <p className={s.note}>Экраны собраны с этими ответами. Если не согласен — оставь комментарий на строке, переделаю.</p>
         <ol className={s.decisions}>
@@ -85,7 +86,7 @@ export function ReviewPage() {
             </li>
           ))}
         </ol>
-      </section>
+      </section>}
 
       {REVIEW_SCREENS.map((sc) => (
         <section key={sc.id} id={sc.id} className={s.section} aria-labelledby={`h-${sc.id}`}>
@@ -95,6 +96,7 @@ export function ReviewPage() {
         </section>
       ))}
 
+      {!only && <>
       <section id="components" className={s.section} aria-labelledby="h-components">
         <h2 id="h-components" className={s.h2}>Компоненты · светлая</h2>
         <p className={s.note}>Все компоненты во всех вариантах и состояниях. Те же образцы — в Storybook.</p>
@@ -104,6 +106,7 @@ export function ReviewPage() {
         <h2 id="h-components-dark" className={s.h2}>Компоненты · тёмная</h2>
         <Gallery theme="dark" />
       </section>
+      </>}
 
       <CommentButton />
     </div>

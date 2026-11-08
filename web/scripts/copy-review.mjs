@@ -1,7 +1,7 @@
 // Copies the built review page to docs/artifacts/11-design-review.html and fails on external hosts outside the allowed CDNs.
 import { copyFileSync, readFileSync, statSync } from "node:fs";
 const src = "dist-review/review.html";
-const dst = "../../docs/artifacts/11-design-review.html";
+const dst = process.env.REVIEW_ONLY === "tough-talk" ? "../../docs/artifacts/11-tough-talk-review.html" : "../../docs/artifacts/11-design-review.html";
 const html = readFileSync(src, "utf8");
 const ALLOWED = /^(https?:)?\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
 const refs = [...html.matchAll(/(?:src|href)\s*=\s*["']((?:https?:)?\/\/[^"']+)["']/g)].map((m) => m[1]).filter((u) => !ALLOWED.test(u));

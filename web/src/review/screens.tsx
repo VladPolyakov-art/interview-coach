@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { sessionReview } from "../screens/session/review";
-import { homeReview } from "../screens/home/review";
-import { historyReview, trashReview } from "../screens/history/review";
+import { trashReview } from "../screens/history/review";
 import { debriefReview } from "../screens/debrief/review";
 import { engineReview } from "../screens/engine/review";
 import { setupReview } from "../screens/setup/review";
 import { shellReview } from "../screens/shell/review";
+import { TOUGH_TALK_SCREENS, historyWithoutTalk, homeWithoutTalk } from "./toughTalk";
 
 /*
  * Screens on the review page. Each screen agent adds its own entry file (screens/<name>/review.tsx) and registers it here.
@@ -33,4 +33,8 @@ export interface ReviewScreen {
   states: ReviewState[];
 }
 
-export const REVIEW_SCREENS: ReviewScreen[] = [homeReview, sessionReview, debriefReview, historyReview, trashReview, engineReview, setupReview, shellReview];
+/** Build-time filter (REVIEW_ONLY=tough-talk): only the Tough talk rows. The default build lists every screen, Tough talk first. */
+export const REVIEW_ONLY: string = typeof __REVIEW_ONLY__ === "string" ? __REVIEW_ONLY__ : "";
+export const REVIEW_SCREENS: ReviewScreen[] = REVIEW_ONLY === "tough-talk"
+  ? TOUGH_TALK_SCREENS
+  : [...TOUGH_TALK_SCREENS, homeWithoutTalk, sessionReview, debriefReview, historyWithoutTalk, trashReview, engineReview, setupReview, shellReview];
