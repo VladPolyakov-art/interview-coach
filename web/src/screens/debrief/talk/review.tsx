@@ -2,8 +2,9 @@
 import type { ReviewState } from "../../../review/screens";
 import type { SessionRecord } from "../../../lib/types";
 import {
-  negotiateAcceptedFirst, negotiateNoOffer, negotiateNotInWriting, negotiateStrong, toughModelFailed, toughNormal, toughOne, toughTwo,
+  negotiateCounter, negotiateInternship, negotiateRaise, negotiateScreening, negotiateAcceptedFirst, negotiateNoOffer, negotiateNotInWriting, negotiateStrong, toughModelFailed, toughNormal, toughOne, toughTwo,
 } from "./fixtures";
+import { DebriefScene } from "../frames";
 import { Scene } from "./TalkScene";
 
 const st = (id: string, label: string, record: SessionRecord, extra: Partial<ReviewState> & { q?: number } = {}): ReviewState => {
@@ -16,6 +17,10 @@ export const debriefNegotiateStates: ReviewState[] = [
   st("neg-verbal", "Debrief Negotiate · step-up не в письменном виде", negotiateNotInWriting, { note: "«Not in writing» и строка Say it better, которая просит зафиксировать." }),
   st("neg-first", "Debrief Negotiate · принято первое предложение", negotiateAcceptedFirst, { note: "Нет строки про сделку и блока «moves»." }),
   st("neg-none", "Debrief Negotiate · оффера ещё нет", negotiateNoOffer, { note: "Прочерк вместо суммы, объяснение и две плитки тактик." }),
+  st("neg-raise", "Debrief Raise · повышение к дате, проверка у руководителя", negotiateRaise, { dark: true, note: "Результат: сейчас / к дате / не деньгами, факты разговора, возражения Майка с пометкой «May be wrong», отметка про проверку у hiring manager." }),
+  st("neg-screening", "Debrief Screening · назвал число или уклонился", negotiateScreening, { note: "Без цифр оффера: первое число и где оно относительно вилки, возражения." }),
+  st("neg-counter", "Debrief Counteroffer · два оффера рядом", negotiateCounter, { note: "Два предложения рядом, без вердикта «остаться или уйти»." }),
+  st("neg-intern", "Debrief Internship → full-time · условия перехода", negotiateInternship, { note: "Уровень, шаг вверх по датам, условия перехода." }),
 ];
 
 export const debriefToughStates: ReviewState[] = [
@@ -24,4 +29,8 @@ export const debriefToughStates: ReviewState[] = [
   st("tough-failed", "Debrief Tough · модель не отработала (только сигналы кода)", toughModelFailed, { note: "Без цитаты, форма ответа и тихая заметка." }),
   st("tough-two", "Debrief Tough · 2 ответа", toughTwo, { note: "Без счётчиков." }),
   st("tough-one", "Debrief Tough · 1 ответ", toughOne, { note: "Без счётчиков." }),
+];
+
+export const debriefMoneyStates: ReviewState[] = [
+  { id: "money-talk", label: "Debrief Interview · кадр «Salary talk»", tall: true, dark: true, note: "Интервью, которое закончилось разговором о зарплате: после плана идут кадры «Salary talk» (первое число, возражения Майка) и обычные вопросы.", render: () => <DebriefScene id="interviewMoney" /> },
 ];
